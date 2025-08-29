@@ -1,0 +1,4 @@
+@import "tailwindcss";
+
+/* biome-ignore lint/suspicious/noUnknownAtRules: <explanation> */
+@plugin "@iconify/tailwind4";
