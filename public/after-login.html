@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login...</title>
+    <script>
+      localStorage.setItem("_oauth_res", location.href);
+      if (!location.href.includes("error")) {
+        setTimeout(() => {
+          location.replace(window.origin);
+        }, 1);
+      }
+    </script>
+  </head>
+  <body>
+    <div>Login...</div>
+  </body>
+</html>
