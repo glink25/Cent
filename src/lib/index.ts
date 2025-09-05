@@ -1,6 +1,63 @@
-// To use this library, you need to install octokit and uuid:
-// npm install octokit uuid
-// npm install -D @types/uuid
+/**
+ * @file oncent-db.ts
+ * @author Oncent
+ * @version 1.0.0
+ * @license MIT
+ *
+ * @description
+ * OncentDB - A TypeScript library for using GitHub repositories as a structured array database.
+ * 这是一个客户端TypeScript库，它将GitHub仓库巧妙地用作一个简单、无服务器的数据库，专门用于存储、管理和共享结构化的数组数据。
+ *
+ * @origin-story (来源场景)
+ * 本项目的灵感来源于一个纯前端记账应用 "Oncent" 的构想。最初的设计是：
+ * 1. 一条记账记录 (Entry)。
+ * 2. 多个 Entries 组成一个用户的账单 (Ledger)。
+ * 3. 多个用户的 Ledgers 组成一本共享账本 (Journal)，对应一个GitHub仓库。
+ * 为了将这个想法通用化，我们抽象出了这个库。它不仅仅能用于记账，还能用于任何需要在前端持久化和协作处理数组数据的场景（如博客文章、待办事项列表等），同时利用GitHub的协作功能天然地支持了数据共享。
+ *
+ * @core-concepts (核心概念)
+ * 1.  **Repository as Database (仓库即数据库):** 每个GitHub仓库都被视为一个独立的数据库。通过 `repoFullName` ('owner/repo') 来定位。
+ *
+ * 2.  **Collection (集合):** 在每个仓库中，可以存储一个或多个数据集合。本库的客户端实例在初始化时会绑定一个 `collectionName` (例如 'entries')，之后的所有操作都将围绕这个名称的集合进行。
+ *
+ * 3.  **User-Scoped Data (用户数据隔离):** 在一个仓库内（特别是共享仓库中），每个协作者的数据都存储在以其GitHub用户ID命名的独立文件夹下 (例如 `/1234567/`)。这确保了不同用户的数据不会互相干扰，实现了天然的多租户隔离。
+ *
+ * 4.  **Chunking/Sharding (数据分片):** 为了避免单个JSON文件过大导致性能问题，一个集合内的所有数据项会根据 `itemsPerChunk` (默认为2000) 被自动分割成多个小的JSON文件 (例如 `entries-001.json`, `entries-002.json`)。这个过程对用户是完全透明的。
+ *
+ * 5.  **Asset Handling (附件处理):** 当用户在数据项中传入一个 `File` 对象时，本库会自动将其上传到对应用户目录下的 `assets` 文件夹中，并在原始数据项中将 `File` 对象替换为该文件在GitHub上的永久URL。支持通过 `uploader` 配置自定义上传逻辑。
+ *
+ * 6.  **Atomic Operations (原子性操作):** 所有的写入操作（增、删、改）都通过一个核心的 `_batch` 方法实现。该方法利用GitHub的Git Trees API，确保数据分片和文件附件的所有变更都在一次Git Commit中完成，保证了操作的原子性。
+ *
+ * 7.  **Dynamic Authentication (动态认证):** 身份验证不是通过一个静态的token，而是通过一个开发者提供的异步函数 `auth()` 来实现。本库在每次需要调用API前都会执行此函数，以获取最新的`accessToken`，从而完美支持token的刷新和动态获取。
+ *
+ * 8.  **Smart Caching (智能缓存):** 提供了内置的缓存机制，默认使用 IndexedDB 作为存储后端。缓存策略包括：
+ *     - 自动缓存所有读取操作的结果
+ *     - 写入操作后智能更新缓存（而不是简单地使其失效）
+ *     - 可配置的缓存有效期（TTL）
+ *     - 支持自定义缓存存储实现
+ *     这显著减少了对 GitHub API 的请求次数，提升了应用性能。
+ *
+ * @example
+ * ```typescript
+ * // 1. 导入并初始化客户端
+ * import { OncentDbClient, BaseItem, createIndexedDBStorage } from './oncent-db';
+ *
+ * const storage = await createIndexedDBStorage('my-app-cache');
+ * const dbClient = new OncentDbClient({
+ *   collectionName: 'posts',
+ *   auth: async () => {
+ *     // 在这里实现你的token获取和刷新逻辑
+ *     return { accessToken: 'YOUR_GITHUB_PAT' };
+ *   },
+ *   cache: {
+ *     storage,        // 使用 IndexedDB 缓存
+ *     ttl: 300000,    // 5分钟缓存有效期
+ *   }
+ * });
+ *
+ * // ...rest of the example...
+ * ```
+ */
 
 import { Octokit } from "octokit";
 import { v4 as uuidv4 } from "uuid";
@@ -17,6 +74,12 @@ async function blobToBase64(blob: Blob): Promise<string> {
 		reader.onerror = (error) => reject(error);
 		reader.readAsDataURL(blob);
 	});
+}
+
+export interface CacheStorage {
+	get(key: string): Promise<any | null>;
+	set(key: string, value: any): Promise<void>;
+	remove(key: string): Promise<void>;
 }
 
 // =================================================================
@@ -44,6 +107,21 @@ export interface OncentDbClientConfig {
 	 * @default 'oncent-db-'
 	 */
 	repoPrefix?: string;
+
+	/**
+	 * 缓存配置
+	 */
+	cache?: {
+		/**
+		 * 自定义的缓存存储实现
+		 */
+		storage: CacheStorage;
+
+		/**
+		 * 缓存有效期（毫秒）
+		 */
+		ttl?: number;
+	};
 }
 
 /**
@@ -90,7 +168,7 @@ type GitTreeItem = {
  */
 export class OncentDbClient {
 	private config: Required<
-		Omit<OncentDbClientConfig, "collectionName" | "auth">
+		Omit<OncentDbClientConfig, "collectionName" | "auth" | "cache">
 	>;
 	private readonly collectionName: string;
 	private authProvider: () => Promise<{
@@ -98,6 +176,11 @@ export class OncentDbClient {
 		refreshToken?: string;
 	}>;
 	private userInfo: { id: number; login: string } | null = null;
+
+	private cache?: {
+		storage: CacheStorage;
+		ttl: number;
+	};
 
 	constructor(config: OncentDbClientConfig) {
 		if (!config.collectionName) {
@@ -116,6 +199,13 @@ export class OncentDbClient {
 			repoPrefix: "oncent-db-",
 			...config,
 		};
+
+		if (config.cache) {
+			this.cache = {
+				storage: config.cache.storage,
+				ttl: config.cache.ttl || 5 * 60 * 1000, // 默认5分钟
+			};
+		}
 	}
 
 	// ----------------------------------------------------------------
@@ -176,83 +266,125 @@ export class OncentDbClient {
 		};
 	}
 
+	private getCacheKey(
+		owner: string,
+		repo: string,
+		path: string,
+		name: string,
+	): string {
+		return `oncent-db:${owner}/${repo}:${path}${name}`;
+	}
+
 	private async _getAllItemsAndChunks<T extends BaseItem>(
 		owner: string,
 		repo: string,
 		path: string,
 		name: string,
+		forceRefresh: boolean = false,
 	): Promise<{ allItems: T[]; existingChunks: Map<string, string> }> {
-		const allItems: T[] = [];
-		const existingChunks = new Map<string, string>();
-		const octokit = await this.getOctokit();
+		const cacheKey = this.getCacheKey(owner, repo, path, name);
 
-		try {
-			// Step 1: Get ref to the latest commit on the default branch
-			const { data: repoData } = await octokit.request(
-				"GET /repos/{owner}/{repo}",
-				{ owner, repo },
-			);
-			const { data: refData } = await octokit.request(
-				"GET /repos/{owner}/{repo}/git/ref/{ref}",
-				{ owner, repo, ref: `heads/${repoData.default_branch}` },
-			);
-			const latestCommitSha = refData.object.sha;
-
-			// Step 2: Get the commit to find the root tree SHA
-			const { data: commitData } = await octokit.request(
-				"GET /repos/{owner}/{repo}/git/commits/{commit_sha}",
-				{ owner, repo, commit_sha: latestCommitSha },
-			);
-			const treeSha = commitData.tree.sha;
-
-			// Step 3: Get the repo's file tree recursively. This avoids CORS issues with non-existent /contents/ paths.
-			const { data: treeData } = await octokit.request(
-				"GET /repos/{owner}/{repo}/git/trees/{tree_sha}",
-				{
-					owner,
-					repo,
-					tree_sha: treeSha,
-					recursive: "true",
-				},
-			);
-
-			// Step 4: Filter the tree to find our specific chunk files
-			const chunkFiles = treeData.tree.filter(
-				(file) =>
-					!!file.path &&
-					file.type === "blob" &&
-					file.path.startsWith(path) &&
-					file.path.endsWith(".json") &&
-					file.path.split("/").pop()!.startsWith(`${name}-`),
-			);
-
-			// Step 5: Fetch content for each found chunk file
-			for (const file of chunkFiles) {
-				if (file.path && file.sha) {
-					existingChunks.set(file.path, file.sha);
-					const { data: content } = await octokit.request(
-						"GET /repos/{owner}/{repo}/git/blobs/{file_sha}",
-						{ owner, repo, file_sha: file.sha },
-					);
-					const chunkData = JSON.parse(atob(content.content));
-					allItems.push(...chunkData);
+		// 尝试从缓存获取
+		if (!forceRefresh && this.cache) {
+			const cached = await this.cache.storage.get(cacheKey);
+			if (cached) {
+				const { data, timestamp } = cached;
+				if (Date.now() - timestamp < this.cache.ttl) {
+					return {
+						allItems: data.allItems,
+						existingChunks: new Map(data.existingChunks),
+					};
 				}
 			}
-		} catch (error) {
-			// This catch block handles the case where the repo is empty (the ref doesn't exist)
-			// or other network issues. For an empty repo, a 404 or 409 is expected.
-			if (
-				error &&
-				typeof error === "object" &&
-				"status" in error &&
-				(error.status === 404 || error.status === 409)
-			) {
-				// It's a new/empty repo or the user has no data yet. Silently return empty results.
-			} else {
-				throw error;
-			}
 		}
-		return { allItems, existingChunks };
+
+		// 原有的获取逻辑
+		const result = await (async () => {
+			const allItems: T[] = [];
+			const existingChunks = new Map<string, string>();
+			const octokit = await this.getOctokit();
+
+			try {
+				// Step 1: Get ref to the latest commit on the default branch
+				const { data: repoData } = await octokit.request(
+					"GET /repos/{owner}/{repo}",
+					{ owner, repo },
+				);
+				const { data: refData } = await octokit.request(
+					"GET /repos/{owner}/{repo}/git/ref/{ref}",
+					{ owner, repo, ref: `heads/${repoData.default_branch}` },
+				);
+				const latestCommitSha = refData.object.sha;
+
+				// Step 2: Get the commit to find the root tree SHA
+				const { data: commitData } = await octokit.request(
+					"GET /repos/{owner}/{repo}/git/commits/{commit_sha}",
+					{ owner, repo, commit_sha: latestCommitSha },
+				);
+				const treeSha = commitData.tree.sha;
+
+				// Step 3: Get the repo's file tree recursively. This avoids CORS issues with non-existent /contents/ paths.
+				const { data: treeData } = await octokit.request(
+					"GET /repos/{owner}/{repo}/git/trees/{tree_sha}",
+					{
+						owner,
+						repo,
+						tree_sha: treeSha,
+						recursive: "true",
+					},
+				);
+
+				// Step 4: Filter the tree to find our specific chunk files
+				const chunkFiles = treeData.tree.filter(
+					(file) =>
+						!!file.path &&
+						file.type === "blob" &&
+						file.path.startsWith(path) &&
+						file.path.endsWith(".json") &&
+						file.path.split("/").pop()!.startsWith(`${name}-`),
+				);
+
+				// Step 5: Fetch content for each found chunk file
+				for (const file of chunkFiles) {
+					if (file.path && file.sha) {
+						existingChunks.set(file.path, file.sha);
+						const { data: content } = await octokit.request(
+							"GET /repos/{owner}/{repo}/git/blobs/{file_sha}",
+							{ owner, repo, file_sha: file.sha },
+						);
+						const chunkData = JSON.parse(atob(content.content));
+						allItems.push(...chunkData);
+					}
+				}
+			} catch (error) {
+				// This catch block handles the case where the repo is empty (the ref doesn't exist)
+				// or other network issues. For an empty repo, a 404 or 409 is expected.
+				if (
+					error &&
+					typeof error === "object" &&
+					"status" in error &&
+					(error.status === 404 || error.status === 409)
+				) {
+					// It's a new/empty repo or the user has no data yet. Silently return empty results.
+				} else {
+					throw error;
+				}
+			}
+			return { allItems, existingChunks };
+		})();
+
+		// 存入缓存
+		if (this.cache) {
+			await this.cache.storage.set(cacheKey, {
+				data: {
+					allItems: result.allItems,
+					existingChunks: Array.from(result.existingChunks.entries()),
+				},
+				timestamp: Date.now(),
+			});
+		}
+
+		return result;
 	}
 
 	private async _batch<T extends BaseItem>(
@@ -404,6 +536,45 @@ export class OncentDbClient {
 			ref: `heads/${repoData.default_branch}`,
 			sha: newCommit.sha,
 		});
+		// 成功提交后更新缓存，而不是简单地删除
+		if (this.cache) {
+			const context = await this.getCollectionContext(repoFullName, config);
+			const cacheKey = this.getCacheKey(
+				context.owner,
+				context.repo,
+				context.collectionPath,
+				context.collectionName,
+			);
+
+			// 从新的树中提取每个文件的 SHA
+			const newChunkShas = new Map(
+				newTree.tree
+					.filter(
+						(item) =>
+							item.path?.startsWith(collectionPath) &&
+							item.path.endsWith(".json") &&
+							item.path.split("/").pop()?.startsWith(`${collectionName}-`),
+					)
+					.map((item) => [item.path!, item.sha!]),
+			);
+
+			const updatedCache = {
+				data: {
+					allItems: finalItems,
+					existingChunks: Array.from(
+						newChunksData.map((_, index) => {
+							const chunkIndex = (index + 1).toString().padStart(3, "0");
+							const path = `${collectionPath}${collectionName}-${chunkIndex}.json`;
+							// 使用新树中的实际 SHA
+							return [path, newChunkShas.get(path) || ""] as [string, string];
+						}),
+					),
+				},
+				timestamp: Date.now(),
+			};
+
+			await this.cache.storage.set(cacheKey, updatedCache);
+		}
 	}
 
 	// ----------------------------------------------------------------
@@ -536,4 +707,66 @@ export class OncentDbClient {
 	): Promise<void> {
 		await this._batch<T>(repoFullName, operations, config);
 	}
+}
+
+/**
+ * 创建基于 IndexedDB 的缓存存储实现
+ * @param dbName 数据库名称
+ * @param storeName 存储对象名称
+ * @returns CacheStorage 实现
+ */
+export async function createIndexedDBStorage(
+	dbName: string = "oncent-db-cache",
+	storeName: string = "cache-store",
+): Promise<CacheStorage> {
+	// 打开数据库连接
+	const db = await new Promise<IDBDatabase>((resolve, reject) => {
+		const request = indexedDB.open(dbName, 1);
+
+		request.onerror = () => reject(request.error);
+		request.onsuccess = () => resolve(request.result);
+
+		request.onupgradeneeded = (event) => {
+			const db = (event.target as IDBOpenDBRequest).result;
+			if (!db.objectStoreNames.contains(storeName)) {
+				db.createObjectStore(storeName);
+			}
+		};
+	});
+
+	// 创建通用的事务处理函数
+	const createTransaction = (mode: IDBTransactionMode = "readonly") => {
+		const transaction = db.transaction(storeName, mode);
+		const store = transaction.objectStore(storeName);
+		return { transaction, store };
+	};
+
+	return {
+		async get(key: string): Promise<any> {
+			const { store } = createTransaction("readonly");
+			return new Promise((resolve, reject) => {
+				const request = store.get(key);
+				request.onerror = () => reject(request.error);
+				request.onsuccess = () => resolve(request.result);
+			});
+		},
+
+		async set(key: string, value: any): Promise<void> {
+			const { store } = createTransaction("readwrite");
+			return new Promise((resolve, reject) => {
+				const request = store.put(value, key);
+				request.onerror = () => reject(request.error);
+				request.onsuccess = () => resolve();
+			});
+		},
+
+		async remove(key: string): Promise<void> {
+			const { store } = createTransaction("readwrite");
+			return new Promise((resolve, reject) => {
+				const request = store.delete(key);
+				request.onerror = () => reject(request.error);
+				request.onsuccess = () => resolve();
+			});
+		},
+	};
 }

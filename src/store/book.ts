@@ -25,50 +25,50 @@ type Persist<S> = (
 ) => StateCreator<S>;
 
 export const useBookStore = create<BookStore>()(
-	// (persist as Persist<BookStore>)(
-	(set) => {
-		const updateBookList = async () => {
-			const res = await StorageAPI.listRepositories();
-			console.log(res, "ssss");
-			set(
-				produce((state: BookStore) => {
-					state.books = res.map((repo) => {
-						return {
-							repo,
-							id: repo,
-						};
-					});
-					if (state.books.length > 0) {
-						state.currentBookId = state.books[0].id;
-					}
-				}),
-			);
-		};
-		updateBookList();
-		return {
-			books: [],
-			currentBookId: undefined,
-			updateBookList,
-			addBook: async (name) => {
-				await StorageAPI.createRepository(name);
-				await updateBookList();
-			},
-			deleteBook: async (id) => {
-				await updateBookList();
-			},
-			switchToBook: async (id) => {
+	(persist as Persist<BookStore>)(
+		(set) => {
+			const updateBookList = async () => {
+				const res = await StorageAPI.listRepositories();
+				console.log(res, "ssss");
 				set(
-					produce((state) => {
-						state.currentBookId = id;
+					produce((state: BookStore) => {
+						state.books = res.map((repo) => {
+							return {
+								repo,
+								id: repo,
+							};
+						});
+						if (state.books.length > 0) {
+							state.currentBookId = state.books[0].id;
+						}
 					}),
 				);
-			},
-		};
-	},
-	// 	{
-	// 		name: "book-store",
-	// 		storage: createJSONStorage(() => localStorage),
-	// 		version: 0,
-	// 	},
-	// ),
+			};
+			updateBookList();
+			return {
+				books: [],
+				currentBookId: undefined,
+				updateBookList,
+				addBook: async (name) => {
+					await StorageAPI.createRepository(name);
+					await updateBookList();
+				},
+				deleteBook: async (id) => {
+					await updateBookList();
+				},
+				switchToBook: async (id) => {
+					set(
+						produce((state) => {
+							state.currentBookId = id;
+						}),
+					);
+				},
+			};
+		},
+		{
+			name: "book-store",
+			storage: createJSONStorage(() => localStorage),
+			version: 0,
+		},
+	),
 );
