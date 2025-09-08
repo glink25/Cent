@@ -1,13 +1,15 @@
-import { createIndexedDBStorage, OncentDbClient } from "../lib";
+import type { Bill } from "@/ledger/type";
+import { createIndexedDBStorage, Gitray } from "../gitray";
 import { getToken } from "./login";
 
-const storage = await createIndexedDBStorage();
-const repo = new OncentDbClient({
+const cacheStorage = await createIndexedDBStorage();
+
+const repo = new Gitray<Bill>({
 	auth: getToken,
 	repoPrefix: "oncent-journal",
 	collectionName: "ledger",
 	cache: {
-		storage,
+		storage: cacheStorage,
 		ttl: 24 * 60 * 60 * 1000, // 24hour
 	},
 });
