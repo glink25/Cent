@@ -1,30 +1,26 @@
 import { produce } from "immer";
 import { v4 } from "uuid";
-import type { StateCreator } from "zustand";
 import { create } from "zustand";
-import type { PersistOptions } from "zustand/middleware";
-import { createJSONStorage, persist } from "zustand/middleware";
+import type { OutputType } from "@/gitray";
+import type { Bill } from "@/ledger/type";
 import { StorageAPI } from "../api/storage";
 import { useBookStore } from "./book";
 
-type Entry = { id: string; amount: number; comment?: string };
+export type EditBill = Omit<OutputType<Bill>, "id"> & { id?: Bill["id"] };
 
 type LedgerStoreState = {
-	entries: Entry[];
+	bills: OutputType<Bill & { creatorId: string }>[];
 };
 
 type LedgerStoreActions = {
-	addEntry: (entry: Omit<Entry, "id">) => Promise<void>;
-	deleteEntry: (id: Entry["id"]) => Promise<void>;
-	updateEntryList: () => Promise<void>;
+	addBill: (entry: Omit<Bill, "id">) => Promise<void>;
+	removeBill: (id: Bill["id"]) => Promise<void>;
+	updateBill: (id: Bill["id"], entry: Omit<Bill, "id">) => Promise<void>;
+
+	refreshBillList: () => Promise<void>;
 };
 
 type BookStore = LedgerStoreState & LedgerStoreActions;
-
-type Persist<S> = (
-	config: StateCreator<S>,
-	options: PersistOptions<S>,
-) => StateCreator<S>;
 
 export const useLedgerStore = create<BookStore>()(
 	// (persist as Persist<BookStore>)(
@@ -41,30 +37,32 @@ export const useLedgerStore = create<BookStore>()(
 			const res = await StorageAPI.getAllItems(repo);
 			set(
 				produce((state: BookStore) => {
-					state.entries = res as any[];
+					state.bills = res.map((v) => {
+						const creatorId = v._meta.filePath;
+						return { ...v, creatorId };
+					});
 				}),
 			);
 		};
 		updateEntryList();
 		return {
-			entries: [],
-			updateEntryList,
-			deleteEntry: async (id) => {
+			bills: [],
+			refreshBillList: updateEntryList,
+			removeBill: async (id) => {
 				const repo = getCurrentFullRepoName();
 				await StorageAPI.removeItem(repo, id);
 				await updateEntryList();
 			},
-			addEntry: async (v) => {
+			addBill: async (v) => {
 				const repo = getCurrentFullRepoName();
 				await StorageAPI.addItem(repo, { ...v, id: v4() });
 				await updateEntryList();
 			},
+			updateBill: async (id, v) => {
+				const repo = getCurrentFullRepoName();
+				await StorageAPI.updateItem(repo, id, { ...v });
+				await updateEntryList();
+			},
 		};
 	},
-	// 	{
-	// 		name: "book-store",
-	// 		storage: createJSONStorage(() => localStorage),
-	// 		version: 0,
-	// 	},
-	// ),
 );

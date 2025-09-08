@@ -1,11 +1,9 @@
 /**
- * @file oncent-db.ts
- * @author Oncent
  * @version 1.0.0
  * @license MIT
  *
  * @description
- * OncentDB - A TypeScript library for using GitHub repositories as a structured array database.
+ * Gitray - A TypeScript library for using GitHub repositories as a structured array database.
  * 这是一个客户端TypeScript库，它将GitHub仓库巧妙地用作一个简单、无服务器的数据库，专门用于存储、管理和共享结构化的数组数据。
  *
  * @origin-story (来源场景)
@@ -40,10 +38,10 @@
  * @example
  * ```typescript
  * // 1. 导入并初始化客户端
- * import { OncentDbClient, BaseItem, createIndexedDBStorage } from './oncent-db';
+ * import { Gitray, BaseItem, createIndexedDBStorage } from './lib';
  *
  * const storage = await createIndexedDBStorage('my-app-cache');
- * const dbClient = new OncentDbClient({
+ * const dbClient = new Gitray({
  *   collectionName: 'posts',
  *   auth: async () => {
  *     // 在这里实现你的token获取和刷新逻辑
@@ -89,7 +87,7 @@ export interface CacheStorage {
 /**
  * 主客户端的配置选项
  */
-export interface OncentDbClientConfig {
+export interface GitrayConfig {
 	/**
 	 * Dynamically provides authentication tokens. It's called before each API request.
 	 * 必须具备读写仓库的权限 (repo scope).
@@ -139,7 +137,22 @@ export type InputType<T extends BaseItem> = {
 	[P in keyof T]: T[P] | File;
 };
 
-export type OutputType<T extends BaseItem> = T;
+type FileToString<T> =
+	// File → string
+	T extends File
+		? string
+		: // 数组 → 递归处理数组元素
+			T extends (infer U)[]
+			? FileToString<U>[]
+			: // 对象 → 递归处理属性
+				T extends object
+				? { [K in keyof T]: FileToString<T[K]> }
+				: // 其他类型保持不变
+					T;
+
+export type OutputType<T extends BaseItem> = FileToString<
+	T & { _meta: { filePath: string } }
+>;
 
 export interface BatchOperations<T extends BaseItem> {
 	adds?: InputType<T>[];
@@ -159,16 +172,16 @@ type GitTreeItem = {
 };
 
 // =================================================================
-// PART 2: THE UNIFIED ONCENT DB CLIENT
+// PART 2: THE UNIFIED Gitray
 // =================================================================
 
 /**
- * OncentDB 统一客户端.
+ * Gitray 统一客户端.
  * 一个客户端实例在创建时会绑定一个 `collectionName`，之后所有操作都针对该名称的集合。
  */
-export class OncentDbClient {
+export class Gitray<T extends BaseItem> {
 	private config: Required<
-		Omit<OncentDbClientConfig, "collectionName" | "auth" | "cache">
+		Omit<GitrayConfig, "collectionName" | "auth" | "cache">
 	>;
 	private readonly collectionName: string;
 	private authProvider: () => Promise<{
@@ -182,11 +195,9 @@ export class OncentDbClient {
 		ttl: number;
 	};
 
-	constructor(config: OncentDbClientConfig) {
+	constructor(config: GitrayConfig) {
 		if (!config.collectionName) {
-			throw new Error(
-				"`collectionName` must be provided in OncentDbClientConfig.",
-			);
+			throw new Error("`collectionName` must be provided in GitrayConfig.");
 		}
 		if (typeof config.auth !== "function") {
 			throw new Error(
@@ -275,13 +286,16 @@ export class OncentDbClient {
 		return `oncent-db:${owner}/${repo}:${path}${name}`;
 	}
 
-	private async _getAllItemsAndChunks<T extends BaseItem>(
+	private async _getAllItemsAndChunks(
 		owner: string,
 		repo: string,
 		path: string,
 		name: string,
 		forceRefresh: boolean = false,
-	): Promise<{ allItems: T[]; existingChunks: Map<string, string> }> {
+	): Promise<{
+		allItems: (T & { _meta: { filePath: string } })[];
+		existingChunks: Map<string, string>;
+	}> {
 		const cacheKey = this.getCacheKey(owner, repo, path, name);
 
 		// 尝试从缓存获取
@@ -300,7 +314,9 @@ export class OncentDbClient {
 
 		// 原有的获取逻辑
 		const result = await (async () => {
-			const allItems: T[] = [];
+			const allItems: (T & {
+				_meta: { filePath: string };
+			})[] = [];
 			const existingChunks = new Map<string, string>();
 			const octokit = await this.getOctokit();
 
@@ -352,8 +368,13 @@ export class OncentDbClient {
 							"GET /repos/{owner}/{repo}/git/blobs/{file_sha}",
 							{ owner, repo, file_sha: file.sha },
 						);
-						const chunkData = JSON.parse(atob(content.content));
-						allItems.push(...chunkData);
+						const chunkData = JSON.parse(atob(content.content)) as any[];
+						allItems.push(
+							...chunkData.map((v) => ({
+								...v,
+								_meta: { filePath: file.path },
+							})),
+						);
 					}
 				}
 			} catch (error) {
@@ -387,7 +408,7 @@ export class OncentDbClient {
 		return result;
 	}
 
-	private async _batch<T extends BaseItem>(
+	private async _batch(
 		repoFullName: string,
 		operations: BatchOperations<T>,
 		config?: CollectionConfig,
@@ -418,7 +439,7 @@ export class OncentDbClient {
 		const baseTreeSha = commitData.tree.sha;
 		const latestCommitSha = refData.object.sha;
 
-		const { allItems, existingChunks } = await this._getAllItemsAndChunks<T>(
+		const { allItems, existingChunks } = await this._getAllItemsAndChunks(
 			owner,
 			repo,
 			collectionPath,
@@ -525,7 +546,7 @@ export class OncentDbClient {
 			{
 				owner,
 				repo,
-				message: `[OncentDB] Batch update for ${collectionName}`,
+				message: `[Gitray] Batch update for ${collectionName}`,
 				tree: newTree.sha,
 				parents: [latestCommitSha],
 			},
@@ -602,8 +623,8 @@ export class OncentDbClient {
 			owner,
 			repo: repoName,
 			path: "README.md",
-			message: "Initial commit by OncentDB",
-			content: btoa("This repository was initialized by OncentDB."), // btoa is for browser environment
+			message: "Initial commit by Gitray",
+			content: btoa("This repository was initialized by Gitray."), // btoa is for browser environment
 		});
 	}
 
@@ -611,12 +632,12 @@ export class OncentDbClient {
 	// PUBLIC API - COLLECTION/ITEM LEVEL
 	// ----------------------------------------------------------------
 
-	async getAllItems<T extends BaseItem>(
+	async getAllItems(
 		repoFullName: string,
 		config?: CollectionConfig,
 	): Promise<OutputType<T>[]> {
 		const context = await this.getCollectionContext(repoFullName, config);
-		const { allItems } = await this._getAllItemsAndChunks<T>(
+		const { allItems } = await this._getAllItemsAndChunks(
 			context.owner,
 			context.repo,
 			context.collectionPath,
@@ -640,13 +661,13 @@ export class OncentDbClient {
 		return results as OutputType<T>[];
 	}
 
-	async getItemById<T extends BaseItem>(
+	async getItemById(
 		repoFullName: string,
 		itemId: string,
 		config?: CollectionConfig,
 	): Promise<OutputType<T> | undefined> {
 		const context = await this.getCollectionContext(repoFullName, config);
-		const { allItems } = await this._getAllItemsAndChunks<T>(
+		const { allItems } = await this._getAllItemsAndChunks(
 			context.owner,
 			context.repo,
 			context.collectionPath,
@@ -671,41 +692,41 @@ export class OncentDbClient {
 		return item as OutputType<T>;
 	}
 
-	async addItem<T extends BaseItem>(
+	async addItem(
 		repoFullName: string,
 		item: InputType<T>,
 		config?: CollectionConfig,
 	): Promise<void> {
-		await this._batch<T>(repoFullName, { adds: [item] }, config);
+		await this._batch(repoFullName, { adds: [item] }, config);
 	}
 
-	async updateItem<T extends BaseItem>(
+	async updateItem(
 		repoFullName: string,
 		itemId: string,
 		changes: Partial<InputType<T>>,
 		config?: CollectionConfig,
 	): Promise<void> {
-		await this._batch<T>(
+		await this._batch(
 			repoFullName,
 			{ updates: [{ id: itemId, changes }] },
 			config,
 		);
 	}
 
-	async removeItem<T extends BaseItem>(
+	async removeItem(
 		repoFullName: string,
 		itemId: string,
 		config?: CollectionConfig,
 	): Promise<void> {
-		await this._batch<T>(repoFullName, { removes: [itemId] }, config);
+		await this._batch(repoFullName, { removes: [itemId] }, config);
 	}
 
-	async batch<T extends BaseItem>(
+	async batch(
 		repoFullName: string,
 		operations: BatchOperations<T>,
 		config?: CollectionConfig,
 	): Promise<void> {
-		await this._batch<T>(repoFullName, operations, config);
+		await this._batch(repoFullName, operations, config);
 	}
 }
 

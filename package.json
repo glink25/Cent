@@ -10,12 +10,15 @@
 		"preview": "vite preview"
 	},
 	"dependencies": {
-		"@octokit/rest": "^22.0.0",
+		"class-variance-authority": "^0.7.1",
+		"clsx": "^2.1.1",
 		"immer": "^10.1.1",
-		"js-base64": "^3.7.8",
 		"octokit": "^5.0.3",
+		"radix-ui": "^1.4.3",
 		"react": "^19.1.1",
 		"react-dom": "^19.1.1",
+		"react-router": "^7.8.2",
+		"tailwind-merge": "^3.3.1",
 		"uuid": "^11.1.0",
 		"zustand": "^5.0.8"
 	},
@@ -25,6 +28,7 @@
 		"@iconify-json/mdi-light": "^1.2.2",
 		"@iconify/tailwind4": "^1.0.6",
 		"@tailwindcss/vite": "^4.1.12",
+		"@types/node": "^24.3.1",
 		"@types/react": "^19.1.10",
 		"@types/react-dom": "^19.1.7",
 		"@vitejs/plugin-react-swc": "^4.0.0",

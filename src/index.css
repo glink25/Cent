@@ -2,3 +2,18 @@
 
 /* biome-ignore lint/suspicious/noUnknownAtRules: <explanation> */
 @plugin "@iconify/tailwind4";
+
+body {
+	width: 100vw;
+	height: 100vh;
+	min-width: 200px;
+	min-height: 200px;
+}
+
+#root {
+	width: 100%;
+	height: 100%;
+	padding: env(safe-area-inset-top) env(safe-area-inset-right)
+		env(safe-area-inset-bottom) env(safe-area-inset-left);
+	overflow: hidden;
+}
