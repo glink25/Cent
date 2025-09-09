@@ -1,13 +1,9 @@
-import { useShallow } from "zustand/shallow";
 import Ledger from "@/components/ledger";
-import { useLedgerStore } from "@/store/ledger";
+import { useBills } from "@/store/ledger";
 
 export default function Page() {
-	const [bills] = useLedgerStore(
-		useShallow((state) => {
-			return [state.bills];
-		}),
-	);
+	const bills = useBills();
+	console.log(bills, "bllis");
 	return (
 		<div className="w-full h-full p-2 flex flex-col overflow-hidden">
 			<div className="flex flex-wrap">

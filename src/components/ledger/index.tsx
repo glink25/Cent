@@ -3,11 +3,7 @@ import type { Bill } from "@/ledger/type";
 import { showBillInfo } from "../bill-info";
 import BillItem from "./item";
 
-export default function Ledger({
-	bills,
-}: {
-	bills: OutputType<Bill & { creatorId: string }>[];
-}) {
+export default function Ledger({ bills }: { bills: OutputType<Bill>[] }) {
 	return (
 		<div>
 			{bills.map((v) => {

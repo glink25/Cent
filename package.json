@@ -20,7 +20,8 @@
 		"react-router": "^7.8.2",
 		"tailwind-merge": "^3.3.1",
 		"uuid": "^11.1.0",
-		"zustand": "^5.0.8"
+		"zustand": "^5.0.8",
+		"zustand-computed": "^2.1.0"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.2.2",

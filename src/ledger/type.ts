@@ -15,6 +15,7 @@ export type Bill = {
 	id: string;
 	type: BillType;
 	categoryId: string;
+	creatorId: number;
 	comment: string;
 	/** 整数金额，10000:1 */
 	amount: Amount;
