@@ -5,7 +5,7 @@ import type { Bill } from "@/ledger/type";
 import { cn } from "@/utils";
 
 interface BillItemProps {
-	bill: Bill & { creatorId: string };
+	bill: Bill;
 	onClick?: () => void;
 	className?: string;
 }

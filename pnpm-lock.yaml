@@ -41,6 +41,9 @@ importers:
       zustand:
         specifier: ^5.0.8
         version: 5.0.8(@types/react@19.1.12)(immer@10.1.1)(react@19.1.1)(use-sync-external-store@1.5.0(react@19.1.1))
+      zustand-computed:
+        specifier: ^2.1.0
+        version: 2.1.0(react@19.1.1)(zustand@5.0.8(@types/react@19.1.12)(immer@10.1.1)(react@19.1.1)(use-sync-external-store@1.5.0(react@19.1.1)))
     devDependencies:
       '@biomejs/biome':
         specifier: 2.2.2
@@ -2357,6 +2360,12 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
 
+  zustand-computed@2.1.0:
+    resolution: {integrity: sha512-KX/giJu5L6QeWLsSDe1bHRKUxMsGeYHmrP20Ys9bKHlHJC6THsPTK3k0iAX4WoJ/a6c+qaNBUjF24WigAsLTVQ==}
+    peerDependencies:
+      react: '>=18.2.0 <20.0.0'
+      zustand: '>=5.0.0 <6.0.0'
+
   zustand@5.0.8:
     resolution: {integrity: sha512-gyPKpIaxY9XcO2vSMrLbiER7QMAMGOQZVRdJ6Zi782jkbzZygq5GI9nG8g+sMgitRtndwaBSl7uiqC49o1SSiw==}
     engines: {node: '>=12.20.0'}
@@ -4588,6 +4597,11 @@ snapshots:
   yallist@5.0.0: {}
 
   yocto-queue@0.1.0: {}
+
+  zustand-computed@2.1.0(react@19.1.1)(zustand@5.0.8(@types/react@19.1.12)(immer@10.1.1)(react@19.1.1)(use-sync-external-store@1.5.0(react@19.1.1))):
+    dependencies:
+      react: 19.1.1
+      zustand: 5.0.8(@types/react@19.1.12)(immer@10.1.1)(react@19.1.1)(use-sync-external-store@1.5.0(react@19.1.1))
 
   zustand@5.0.8(@types/react@19.1.12)(immer@10.1.1)(react@19.1.1)(use-sync-external-store@1.5.0(react@19.1.1)):
     optionalDependencies:

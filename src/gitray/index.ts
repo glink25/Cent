@@ -131,7 +131,11 @@ export interface CollectionConfig {
 	uploader?: (file: File) => Promise<string>;
 }
 
-export type BaseItem = { id: string; [key: string]: any; _deleted_at?: string };
+export type BaseItem = {
+	id: string;
+	[key: string]: any;
+	_deleted_at?: string;
+};
 
 export type InputType<T extends BaseItem> = {
 	[P in keyof T]: T[P] | File;
@@ -150,9 +154,7 @@ type FileToString<T> =
 				: // 其他类型保持不变
 					T;
 
-export type OutputType<T extends BaseItem> = FileToString<
-	T & { _meta: { filePath: string } }
->;
+export type OutputType<T extends BaseItem> = FileToString<T>;
 
 export interface BatchOperations<T extends BaseItem> {
 	adds?: InputType<T>[];
@@ -293,7 +295,7 @@ export class Gitray<T extends BaseItem> {
 		name: string,
 		forceRefresh: boolean = false,
 	): Promise<{
-		allItems: (T & { _meta: { filePath: string } })[];
+		allItems: T[];
 		existingChunks: Map<string, string>;
 	}> {
 		const cacheKey = this.getCacheKey(owner, repo, path, name);
@@ -314,9 +316,7 @@ export class Gitray<T extends BaseItem> {
 
 		// 原有的获取逻辑
 		const result = await (async () => {
-			const allItems: (T & {
-				_meta: { filePath: string };
-			})[] = [];
+			const allItems: T[] = [];
 			const existingChunks = new Map<string, string>();
 			const octokit = await this.getOctokit();
 
@@ -372,7 +372,6 @@ export class Gitray<T extends BaseItem> {
 						allItems.push(
 							...chunkData.map((v) => ({
 								...v,
-								_meta: { filePath: file.path },
 							})),
 						);
 					}
@@ -444,6 +443,7 @@ export class Gitray<T extends BaseItem> {
 			repo,
 			collectionPath,
 			collectionName,
+			true,
 		);
 		const allItemsMap = new Map<string, T>(
 			allItems.map((item) => [item.id, item]),
@@ -512,7 +512,9 @@ export class Gitray<T extends BaseItem> {
 		for (let i = 0; i < finalItems.length; i += finalConfig.itemsPerChunk) {
 			newChunksData.push(
 				JSON.stringify(
-					finalItems.slice(i, i + finalConfig.itemsPerChunk),
+					finalItems
+						.slice(i, i + finalConfig.itemsPerChunk)
+						.map((v) => ({ ...v })),
 					null,
 					2,
 				),

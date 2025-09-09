@@ -7,7 +7,7 @@ export default function BillInfo({
 	onCancel,
 }: {
 	edit?: EditBill;
-	onConfirm?: (v: any) => void;
+	onConfirm?: (isEdit: boolean) => void;
 	onCancel?: () => void;
 }) {
 	return (
@@ -19,7 +19,8 @@ export default function BillInfo({
 					onClick={async () => {
 						if (edit?.id) {
 							const newBill = await showBillEditor(edit);
-							useLedgerStore.getState().updateBill(edit.id, newBill);
+							await useLedgerStore.getState().updateBill(edit.id, newBill);
+							onConfirm?.(true);
 						}
 					}}
 				>
@@ -30,6 +31,7 @@ export default function BillInfo({
 					onClick={() => {
 						if (edit?.id) {
 							useLedgerStore.getState().removeBill(edit?.id);
+							onConfirm?.(false);
 						}
 					}}
 				>
