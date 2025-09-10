@@ -19,6 +19,14 @@ import { type IDBPDatabase, openDB } from "idb";
 import { Octokit } from "octokit";
 import { getCurrentVersion, getOrCreateStore } from "./db";
 import { Scheduler } from "./scheduler";
+import { computeGitBlobSha1 } from "./sha";
+import type {
+	BaseItem,
+	FileLike,
+	Meta,
+	StoreDetail,
+	StoreStructure,
+} from "./type";
 
 export interface GitrayConfig {
 	/**
@@ -45,14 +53,6 @@ export interface GitrayConfig {
 	itemsPerChunk?: number;
 	deletionStrategy?: "hard" | "soft";
 }
-
-export type BaseItem = {
-	id: string;
-	[key: string]: any;
-	_created_at: number;
-	_updated_at: number;
-	_deleted_at?: string;
-};
 
 export type ItemAction<T extends BaseItem> =
 	| {
@@ -86,30 +86,6 @@ export type MetaAction<M = any> = {
 };
 
 export type Action<T extends BaseItem, M = any> = ItemAction<T> | MetaAction<M>;
-
-export type FileLike = { path: string; sha: string };
-
-export type Meta = { [key: string]: any };
-
-export type StoreStructure = {
-	collections: {
-		name: string;
-		meta: FileLike;
-		chunks: FileLike[];
-	}[];
-	meta: FileLike;
-};
-
-export type StoreDetail<Item extends BaseItem> = {
-	collections: {
-		name: string;
-		meta: FileLike & { content: Meta };
-		chunks: (FileLike & { content: Item[] })[];
-	}[];
-	meta: FileLike & { content: any };
-};
-
-export type OutputType<T> = T;
 
 export type Processor = (finished: Promise<void>) => void;
 
@@ -262,7 +238,7 @@ export class Gitray<Item extends BaseItem> {
 			const collectionName = pathParts[0];
 			if (!collections.has(collectionName)) {
 				collections.set(collectionName, {
-					meta: { path: "", sha: "" },
+					meta: { path: `${collectionName}/meta.json`, sha: "" },
 					chunks: [],
 				});
 			}
@@ -484,12 +460,12 @@ export class Gitray<Item extends BaseItem> {
 
 	async getMeta(
 		storeFullName: string,
-		collectionName: string,
-		withStash: boolean = true,
+		collectionName?: string,
+		withStash: boolean = false,
 	) {
 		const db = await this.getDB();
 		const metaId = `${storeFullName}${collectionName ? `/${collectionName}` : ""}`;
-		const localMeta = (await db.get("meta", metaId)) || {};
+		const localMeta = (await db.get(META_STORE_NAME, metaId)) || {};
 
 		if (withStash) {
 			const stashed = await this.getStash();
@@ -499,7 +475,7 @@ export class Gitray<Item extends BaseItem> {
 					if (storeFullName !== ac.store) return false;
 					return collectionName === ac.collection;
 				});
-			return metaStashes[metaStashes.length - 1]?.params ?? localMeta;
+			return metaStashes[metaStashes.length - 1]?.params || localMeta;
 		}
 		return localMeta;
 	}
@@ -535,45 +511,75 @@ export class Gitray<Item extends BaseItem> {
 			);
 
 			const localDetail: StoreDetail<Item> = {
-				collections: Array.from(Object.entries(collections)).map(
-					([collection, items]) => {
-						const chunks: StoreDetail<Item>["collections"][number]["chunks"] =
-							[];
-						for (let i = 0; i < items.length; i += this.config.itemsPerChunk) {
-							const con = items.slice(i, i + this.config.itemsPerChunk);
-							chunks.push({
-								content: con,
-								sha: "",
-								path: `${collection}/${this.config.entryName}-${i}.json`,
-							});
-						}
-						return {
-							chunks: chunks,
-							meta: {
-								path: "meta.json",
-								sha: "",
-								content: {},
-							},
-							name: collection,
-						};
-					},
+				collections: await Promise.all(
+					Array.from(Object.entries(collections)).map(
+						async ([collection, items]) => {
+							const chunks: StoreDetail<Item>["collections"][number]["chunks"] =
+								[];
+							for (
+								let i = 0;
+								i < items.length;
+								i += this.config.itemsPerChunk
+							) {
+								const con = items.slice(i, i + this.config.itemsPerChunk);
+								const path = `${collection}/${this.config.entryName}-${i}.json`;
+								const file = new File(
+									[new Blob([JSON.stringify(con, null, 2)])],
+									pathToName(path),
+								);
+								chunks.push({
+									file,
+									content: con,
+									sha: await computeGitBlobSha1(file),
+									path,
+								});
+							}
+							const metaPath = `${collection}/meta.json`;
+							const metaContent = (await this.getMeta(store, collection)) ?? {};
+							const metaFile = new File(
+								[new Blob([JSON.stringify(metaContent, null, 2)])],
+								pathToName(metaPath),
+							);
+							return {
+								chunks: chunks,
+								meta: {
+									path: metaPath,
+									sha: await computeGitBlobSha1(metaFile),
+									content: metaContent,
+									file: metaFile,
+								},
+								name: collection,
+							};
+						},
+					),
 				),
-				meta: {
-					path: "meta.json",
-					sha: "",
-					content: {},
-				},
+				meta: await (async () => {
+					const content = (await this.getMeta(store)) ?? {};
+					const metaPath = `meta.json`;
+					const metaFile = new File(
+						[new Blob([JSON.stringify(content, null, 2)])],
+						pathToName(metaPath),
+					);
+					return {
+						path: metaPath,
+						sha: await computeGitBlobSha1(metaFile),
+						content,
+					};
+				})(),
 			};
 
 			const [changedPaths, deletedPaths] = diff(remoteDetail, localDetail);
+			console.log(changedPaths, "cahnged paths");
 			const allFiles = toFiles(localDetail);
 			const treePayload: GitTreeItem[] = await Promise.all([
 				...changedPaths.map(async (path) => {
-					const content = allFiles[path];
-					const file = new File(
-						[new Blob([JSON.stringify(content.content)])],
-						pathToName(path),
-					);
+					const { content } = allFiles[path];
+					const file =
+						content.file ??
+						new File(
+							[new Blob([JSON.stringify(content.content, null, 2)])],
+							pathToName(path),
+						);
 					const base64Content = await blobToBase64(file);
 					const { data: blob } = await octokit.request(
 						"POST /repos/{owner}/{repo}/git/blobs",
@@ -633,16 +639,12 @@ export class Gitray<Item extends BaseItem> {
 				} else if (action.type === "remove") {
 					await db.delete(storeName, action.params);
 				} else if (action.type === "update") {
-					await db.put(
-						storeName,
-						{
-							...action.params.changes,
-							id: action.params.id,
-						},
-						action.params.id,
-					);
+					await db.put(storeName, {
+						...action.params.changes,
+						id: action.params.id,
+					});
 				} else if (action.type === "meta") {
-					await db.put(META_STORE_NAME, action.params, storeName);
+					await db.put(META_STORE_NAME, action.params);
 				}
 				await db.delete(STASH_STORE_NAME, action.id);
 				db.close();
@@ -739,6 +741,7 @@ const applyStash = <Item extends BaseItem>(
 };
 
 const diff = (a: StoreStructure, b: StoreStructure) => {
+	console.log(a, b, "diffffffff");
 	const changedPaths = [
 		b.meta.path,
 		b.collections.flatMap((c) => [c.meta.path, ...c.chunks.map((c) => c.path)]),
@@ -769,3 +772,5 @@ async function blobToBase64(blob: Blob): Promise<string> {
 		reader.readAsDataURL(blob);
 	});
 }
+
+export type * from "./type";

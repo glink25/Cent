@@ -29,7 +29,6 @@ export const useBookStore = create<BookStore>()(
 		(set) => {
 			const updateBookList = async () => {
 				const res = await StorageAPI.fetchAllStore();
-				console.log(res, "ssss");
 				set(
 					produce((state: BookStore) => {
 						state.books = res.map((repo) => {

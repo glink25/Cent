@@ -42,7 +42,6 @@ export async function getOrCreateStore<DB>(
 	if (!exists) {
 		const currentVersion = await getCurrentVersion(dbName);
 		const newVersion = currentVersion + 1;
-		console.log("create or get", storeName);
 		return openDB<DB>(dbName, newVersion, {
 			upgrade(db) {
 				if (!db.objectStoreNames.contains(storeName as any)) {

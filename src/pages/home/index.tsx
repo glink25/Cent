@@ -3,7 +3,6 @@ import { useBills } from "@/store/ledger";
 
 export default function Page() {
 	const bills = useBills();
-	console.log(bills, "bllis");
 	return (
 		<div className="w-full h-full p-2 flex flex-col overflow-hidden">
 			<div className="flex flex-wrap">

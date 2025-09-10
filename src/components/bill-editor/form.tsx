@@ -23,7 +23,7 @@ export default function EditorForm({
 	onConfirm,
 }: {
 	edit?: EditBill;
-	onConfirm?: (v: Omit<Bill, "id">) => void;
+	onConfirm?: (v: Omit<Bill, "id" | "creatorId">) => void;
 	onCancel?: () => void;
 }) {
 	const goBack = () => {
@@ -40,12 +40,11 @@ export default function EditorForm({
 		billState.type === "expense" ? ExpenseBillCategories : IncomeBillCategories;
 
 	const toConfirm = () => {
-		console.log(billState, "new bill");
 		const time = Date.now();
 		onConfirm?.({
-			createAt: time,
+			_created_at: time,
 			...billState,
-			updateAt: time,
+			_updated_at: time,
 		});
 	};
 
