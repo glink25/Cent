@@ -1,5 +1,5 @@
-const LOGIN_API_HOST = "http://localhost:8787";
-// const LOGIN_API_HOST = "https://oncent-backend.linkai.work";
+// const LOGIN_API_HOST = "http://localhost:8787";
+const LOGIN_API_HOST = "https://oncent-backend.linkai.work";
 
 const LOCAL_TOKEN_KEY = "github_user_token";
 

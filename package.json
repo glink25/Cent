@@ -12,6 +12,7 @@
 	"dependencies": {
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
+		"idb": "^8.0.3",
 		"immer": "^10.1.1",
 		"octokit": "^5.0.3",
 		"radix-ui": "^1.4.3",
