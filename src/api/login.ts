@@ -53,9 +53,17 @@ export type Token = { accessToken: string; refreshToken?: string };
 
 export const getToken = async () => {
 	await loginFinished;
+	const token = getLocalToken();
+	if (!token) {
+		throw new Error("token not found");
+	}
+	return token;
+};
+
+export const getLocalToken = () => {
 	const item = localStorage.getItem(LOCAL_TOKEN_KEY);
 	if (!item) {
-		throw new Error("token not found");
+		return undefined;
 	}
 	return JSON.parse(item) as Token;
 };

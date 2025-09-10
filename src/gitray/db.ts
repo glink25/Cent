@@ -36,7 +36,7 @@ export async function getCurrentVersion(dbName: string) {
 export async function getOrCreateStore<DB>(
 	dbName: string,
 	storeName: string,
-	options = { keyPath: "id", autoIncrement: true },
+	options?: IDBObjectStoreParameters,
 ) {
 	const exists = await storeExists(dbName, storeName);
 	if (!exists) {

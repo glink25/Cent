@@ -101,7 +101,7 @@ type ITEM_STORE_NAME__HELPER = "__item";
 
 type GitrayDB<Item extends BaseItem> = {
 	[STASH_STORE_NAME]: Action<Item>[];
-	[META_STORE_NAME]: Meta;
+	[META_STORE_NAME]: { id: string; value: Meta };
 } & { __item: Item[] };
 
 type GitTreeItem = {
@@ -126,9 +126,13 @@ export class Gitray<Item extends BaseItem> {
 			...config,
 		};
 		// this.getDB().then((db) => db.close());
-		getOrCreateStore(this.config.dbName, STASH_STORE_NAME).then((db) => {
+		getOrCreateStore(this.config.dbName, STASH_STORE_NAME, {
+			keyPath: "id",
+		}).then((db) => {
 			db.close();
-			getOrCreateStore(this.config.dbName, META_STORE_NAME).then((db) => {
+			getOrCreateStore(this.config.dbName, META_STORE_NAME, {
+				keyPath: "id",
+			}).then((db) => {
 				db.close();
 			});
 		});
@@ -145,7 +149,7 @@ export class Gitray<Item extends BaseItem> {
 					db.createObjectStore(STASH_STORE_NAME, { keyPath: "id" });
 				}
 				if (!db.objectStoreNames.contains(META_STORE_NAME)) {
-					db.createObjectStore(META_STORE_NAME, { keyPath: "id" });
+					db.createObjectStore(META_STORE_NAME);
 				}
 			},
 		});
@@ -302,7 +306,7 @@ export class Gitray<Item extends BaseItem> {
 		return structure as StoreDetail<Item>;
 	}
 
-	private async getStash() {
+	async getStash() {
 		const db = await this.getDB();
 		const stashStore = db
 			.transaction(STASH_STORE_NAME)
@@ -383,7 +387,7 @@ export class Gitray<Item extends BaseItem> {
 
 		await metaStore.put({
 			id: storeFullName,
-			...detail.meta.content,
+			value: detail.meta.content,
 		});
 		db.close();
 
@@ -392,11 +396,14 @@ export class Gitray<Item extends BaseItem> {
 			const key = `${storeFullName}/${collection.name}`;
 			await metaStore.put({
 				id: key,
-				...collection.meta.content,
+				value: collection.meta.content,
 			});
 			const db = await getOrCreateStore<GitrayDB<Item>>(
 				this.config.dbName,
 				key,
+				{
+					keyPath: "id",
+				},
 			);
 			// Store items
 			for (const chunk of collection.chunks) {
@@ -465,8 +472,8 @@ export class Gitray<Item extends BaseItem> {
 	) {
 		const db = await this.getDB();
 		const metaId = `${storeFullName}${collectionName ? `/${collectionName}` : ""}`;
-		const localMeta = (await db.get(META_STORE_NAME, metaId)) || {};
-
+		const localMeta = (await db.get(META_STORE_NAME, metaId))?.value || {};
+		db.close();
 		if (withStash) {
 			const stashed = await this.getStash();
 			const metaStashes = stashed
@@ -535,7 +542,8 @@ export class Gitray<Item extends BaseItem> {
 								});
 							}
 							const metaPath = `${collection}/meta.json`;
-							const metaContent = (await this.getMeta(store, collection)) ?? {};
+							const metaContent = (await this.getMeta(store, collection)) || {};
+							console.log(metaContent, "metacontent");
 							const metaFile = new File(
 								[new Blob([JSON.stringify(metaContent, null, 2)])],
 								pathToName(metaPath),
@@ -554,7 +562,8 @@ export class Gitray<Item extends BaseItem> {
 					),
 				),
 				meta: await (async () => {
-					const content = (await this.getMeta(store)) ?? {};
+					const content = (await this.getMeta(store)) || {};
+					console.log(content, "metacontent");
 					const metaPath = `meta.json`;
 					const metaFile = new File(
 						[new Blob([JSON.stringify(content, null, 2)])],
@@ -573,7 +582,8 @@ export class Gitray<Item extends BaseItem> {
 			const allFiles = toFiles(localDetail);
 			const treePayload: GitTreeItem[] = await Promise.all([
 				...changedPaths.map(async (path) => {
-					const { content } = allFiles[path];
+					const content = allFiles[path];
+					console.log(content, "content h");
 					const file =
 						content.file ??
 						new File(
@@ -632,7 +642,9 @@ export class Gitray<Item extends BaseItem> {
 			for (let i = 0; i < actions.length; i++) {
 				const action = actions[i];
 				const storeName = `${action.store}/${action.collection}`;
-				const db = await getOrCreateStore(this.config.dbName, storeName);
+				const db = await getOrCreateStore(this.config.dbName, storeName, {
+					keyPath: "id",
+				});
 				console.log(db, action, storeName);
 				if (action.type === "add") {
 					await db.put(storeName, action.params);
@@ -644,7 +656,8 @@ export class Gitray<Item extends BaseItem> {
 						id: action.params.id,
 					});
 				} else if (action.type === "meta") {
-					await db.put(META_STORE_NAME, action.params);
+					const key = `${action.store}${action.collection ? `${action.collection}/` : "/"}meta.json`;
+					await db.put(META_STORE_NAME, { id: key, value: action.params });
 				}
 				await db.delete(STASH_STORE_NAME, action.id);
 				db.close();
