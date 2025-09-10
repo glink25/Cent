@@ -1,7 +1,7 @@
 import dayjs, { type Dayjs } from "dayjs";
 
 export const formatTime = (t: number) =>
-	dayjs.unix(t).format("YYYY-MM-DD HH:mm");
+	dayjs.unix(t / 1000).format("YYYY-MM-DD HH:mm");
 
 // import { currentLanguage, t } from "@/locale";
 

@@ -4,7 +4,10 @@ const GITHUB_API_HOST = "https://api.github.com";
 
 export type tokenGetter = () => Promise<Token | undefined>;
 
-export const createGithubFetcher = (tokenGetter: tokenGetter) => {
+export const createGithubFetcher = (
+	tokenGetter: tokenGetter,
+	host = GITHUB_API_HOST,
+) => {
 	let token: Token | undefined;
 	const withToken = async () => {
 		if (token === undefined) {
@@ -19,13 +22,14 @@ export const createGithubFetcher = (tokenGetter: tokenGetter) => {
 
 	const fetcher = async (route: string, init?: RequestInit) => {
 		const { accessToken } = await withToken();
-		return fetch(`${GITHUB_API_HOST}${route}`, {
+		return fetch(`${host}${route}`, {
+			...init,
 			headers: {
 				Authorization: `Bearer ${accessToken}`,
 				Accept: "application/vnd.github+json",
 				"X-GitHub-Api-Version": "2022-11-28",
+				...init?.headers,
 			},
-			...init,
 		});
 	};
 

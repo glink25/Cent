@@ -19,8 +19,9 @@ export type Bill = {
 	comment: string;
 	/** 整数金额，10000:1 */
 	amount: Amount;
-	_created_at: number;
-	_updated_at: number;
+	time: number;
+	// _created_at: number;
+	// _updated_at: number;
 	image?: File | string;
 	location?: string;
 	tags?: string[];
