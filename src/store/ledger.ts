@@ -9,17 +9,26 @@ import { useUserStore } from "./user";
 
 export type EditBill = Omit<OutputType<Bill>, "id"> & {
 	id?: Bill["id"];
-	creatorId?: Bill["categoryId"];
+	creatorId?: Bill["creatorId"];
 };
 
 type LedgerStoreState = {
-	_bills: OutputType<Bill>[];
-
+	bills: OutputType<Bill>[];
 	actions: Action<Bill>[];
+
+	loading: boolean;
+	sync: /** 等待同步 */
+		| "wait"
+		/** 正在同步*/
+		| "syncing"
+		/** 同步成功*/
+		| "success"
+		/** 同步失败*/
+		| "failed";
 };
 
 type LedgerStoreActions = {
-	addBill: (entry: Omit<Bill, "id">) => Promise<void>;
+	addBill: (entry: Omit<Bill, "id" | "creatorId">) => Promise<void>;
 	removeBill: (id: Bill["id"]) => Promise<void>;
 	updateBill: (
 		id: Bill["id"],
@@ -39,31 +48,112 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
 		}
 		return id;
 	};
-	const updateEntryList = async () => {
+	const updateBillList = async () => {
+		await Promise.resolve();
 		const repo = getCurrentFullRepoName();
 		const res = await StorageAPI.getAllItems(repo, true);
 		set(
 			produce((state: LedgerStore) => {
-				state._bills = res;
+				state.bills = res;
 			}),
 		);
 	};
-	// subscribe changes
-	useBookStore.subscribe((state) => {
-		if (state.currentBookId === undefined) {
+
+	const init = async () => {
+		await Promise.resolve();
+		set(
+			produce((state: LedgerStoreState) => {
+				state.loading = true;
+			}),
+		);
+		updateBillList();
+		const currentBookId = useBookStore.getState().currentBookId;
+		if (!currentBookId) {
 			return;
 		}
-		updateEntryList();
+		try {
+			await StorageAPI.initStore(currentBookId);
+			await updateBillList();
+		} finally {
+			set(
+				produce((state: LedgerStoreState) => {
+					state.loading = false;
+				}),
+			);
+		}
+	};
+	init();
+
+	// subscribe changes
+	useBookStore.subscribe(async (state, prev) => {
+		const { currentBookId } = state;
+		if (!currentBookId) {
+			return;
+		}
+		if (currentBookId === prev.currentBookId) {
+			return;
+		}
+		set(
+			produce((state: LedgerStoreState) => {
+				state.loading = true;
+			}),
+		);
+		try {
+			await StorageAPI.initStore(currentBookId);
+			await updateBillList();
+		} finally {
+			set(
+				produce((state: LedgerStoreState) => {
+					state.loading = false;
+				}),
+			);
+		}
 	});
+
 	StorageAPI.onChange(() => {
-		updateEntryList();
+		updateBillList();
+
+		StorageAPI.getStash().then((stashes) => {
+			if (stashes.length > 0) {
+				set(
+					produce((state: LedgerStoreState) => {
+						state.sync = "wait";
+					}),
+				);
+			}
+		});
+	});
+
+	StorageAPI.onSync(async (finished) => {
+		set(
+			produce((state: LedgerStoreState) => {
+				state.sync = "syncing";
+			}),
+		);
+		try {
+			await finished;
+			set(
+				produce((state: LedgerStoreState) => {
+					state.sync = "success";
+				}),
+			);
+		} catch (error) {
+			console.error(error);
+			set(
+				produce((state: LedgerStoreState) => {
+					state.sync = "failed";
+				}),
+			);
+		}
 	});
 
 	return {
-		_bills: [],
+		loading: false,
+		sync: "success",
+		bills: [],
 		actions: [],
 		pendingCursor: undefined,
-		refreshBillList: updateEntryList,
+		refreshBillList: updateBillList,
 		removeBill: async (id) => {
 			const repo = getCurrentFullRepoName();
 			const collection = `${useUserStore.getState().id}`;
@@ -103,8 +193,3 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
 		},
 	};
 });
-
-export const useBills = () => {
-	const bills = useLedgerStore()._bills;
-	return bills;
-};

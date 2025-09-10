@@ -3,6 +3,7 @@ import type { StateCreator } from "zustand";
 import { create } from "zustand";
 import type { PersistOptions } from "zustand/middleware";
 import { createJSONStorage, persist } from "zustand/middleware";
+import { getLocalToken } from "@/api/login";
 import { UserAPI } from "../api/user";
 
 type UserStoreState = {
@@ -10,6 +11,7 @@ type UserStoreState = {
 	login: string;
 	name: string;
 	id: number;
+	loading: boolean;
 };
 
 type UserStoreActions = {
@@ -26,19 +28,35 @@ type Persist<S> = (
 export const useUserStore = create<UserStore>()(
 	(persist as Persist<UserStore>)(
 		(set) => {
+			const loading = Boolean(getLocalToken());
 			const updateUserInfo = async () => {
-				const res = await UserAPI.getUserInfo();
+				await Promise.resolve();
 				set(
-					produce((state: UserStore) => {
-						state.avatar = res.avatar_url;
-						state.login = res.login;
-						state.name = res.name;
-						state.id = res.id;
+					produce((state) => {
+						state.loading = true;
 					}),
 				);
+				try {
+					const res = await UserAPI.getUserInfo();
+					set(
+						produce((state: UserStore) => {
+							state.avatar = res.avatar_url;
+							state.login = res.login;
+							state.name = res.name;
+							state.id = res.id;
+						}),
+					);
+				} finally {
+					set(
+						produce((state) => {
+							state.loading = false;
+						}),
+					);
+				}
 			};
 			updateUserInfo();
 			return {
+				loading,
 				avatar: "",
 				login: "",
 				name: "",

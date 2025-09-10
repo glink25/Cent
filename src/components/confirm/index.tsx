@@ -1,5 +1,5 @@
 import { Dialog, VisuallyHidden } from "radix-ui";
-import type { JSX } from "react";
+import type { ReactNode } from "react";
 import { useShallow } from "zustand/shallow";
 import { confirmStoreFactory } from "./state";
 
@@ -8,7 +8,7 @@ export default function createConfirmProvider<Value, Returned = Value>(
 		edit?: Value;
 		onCancel?: () => void;
 		onConfirm?: (v: Returned) => void;
-	}) => JSX.Element,
+	}) => ReactNode,
 	{
 		dialogTitle,
 		dialogDescription = dialogTitle,
