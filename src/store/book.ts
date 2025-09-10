@@ -28,7 +28,7 @@ export const useBookStore = create<BookStore>()(
 	(persist as Persist<BookStore>)(
 		(set) => {
 			const updateBookList = async () => {
-				const res = await StorageAPI.listRepositories();
+				const res = await StorageAPI.fetchAllStore();
 				console.log(res, "ssss");
 				set(
 					produce((state: BookStore) => {
@@ -40,6 +40,7 @@ export const useBookStore = create<BookStore>()(
 						});
 						if (state.books.length > 0) {
 							state.currentBookId = state.books[0].id;
+							StorageAPI.initStore(state.currentBookId);
 						}
 					}),
 				);
@@ -50,7 +51,7 @@ export const useBookStore = create<BookStore>()(
 				currentBookId: undefined,
 				updateBookList,
 				addBook: async (name) => {
-					await StorageAPI.createRepository(name);
+					await StorageAPI.createStore(name);
 					await updateBookList();
 				},
 				deleteBook: async (id) => {
