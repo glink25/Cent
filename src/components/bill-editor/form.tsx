@@ -9,6 +9,9 @@ import {
 import { ExpenseBillCategories, IncomeBillCategories } from "@/ledger/category";
 import type { Bill } from "@/ledger/type";
 import type { EditBill } from "@/store/ledger";
+import { DatePicker } from "../date-picker";
+import { FORMAT_IMAGE_SUPPORTED, showFilePicker } from "../file-picker";
+import SmartImage from "../image";
 
 const defaultBill = {
 	type: "expense" as Bill["type"],
@@ -30,7 +33,11 @@ export default function EditorForm({
 		onCancel?.();
 	};
 
-	const [billState, setBillState] = useState({ ...defaultBill, ...edit });
+	const [billState, setBillState] = useState({
+		...defaultBill,
+		time: Date.now(),
+		...edit,
+	});
 
 	// useEffect(() => {
 	// 	setBillState({ ...defaultBill, ...edit });
@@ -40,12 +47,14 @@ export default function EditorForm({
 		billState.type === "expense" ? ExpenseBillCategories : IncomeBillCategories;
 
 	const toConfirm = () => {
-		const time = Date.now();
 		onConfirm?.({
-			_created_at: time,
 			...billState,
-			_updated_at: time,
 		});
+	};
+
+	const chooseImage = async () => {
+		const [file] = await showFilePicker({ accept: FORMAT_IMAGE_SUPPORTED });
+		setBillState((v) => ({ ...v, image: file }));
 	};
 
 	const commentInputEl = useRef<HTMLInputElement>(null);
@@ -130,23 +139,28 @@ export default function EditorForm({
 			<div className="keyboard-field <sm:(flex-1) flex flex-col justify-start bg-stone-900 rounded-b-lg text-[white] p-2">
 				<div className="mb-1 flex justify-between items-center p-2">
 					<div className="flex items-center">
-						{/* <button
+						<button
 							type="button"
 							className="mx-1 p-2 flex justify-center items-center rounded-full transition-all hover:(bg-stone-700) active:(bg-stone-500) cursor-pointer"
 							onClick={chooseImage}
 						>
-							{!image.value ? (
-								<i className="icon-xs icon-image text-[white]"></i>
+							{!billState.image ? (
+								<i className="icon-xs icon-[mdi--image-plus-outline] text-[white]"></i>
 							) : (
-								<img
-									src={image.value.url}
+								<SmartImage
+									source={billState.image}
 									alt=""
 									className="w-6 h-6 object-cover rounded"
 								/>
 							)}
-						</button> */}
+						</button>
 						<div className="p-2 rounded-full transition-all hover:(bg-stone-700) active:(bg-stone-500)">
-							{/* <DateTime value={time.value} onChange={(v) => (time.value = v)} /> */}
+							<DatePicker
+								value={billState.time}
+								onChange={(time) => {
+									setBillState((v) => ({ ...v, time: time }));
+								}}
+							/>
 						</div>
 					</div>
 					<div className="flex h-full flex-1">

@@ -16,6 +16,7 @@ const create = (tokenGetter: tokenGetter) => {
 			id: number;
 		};
 	};
+
 	return { getUserInfo };
 };
 

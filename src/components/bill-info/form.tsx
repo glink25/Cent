@@ -4,6 +4,7 @@ import { type EditBill, useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
 import { formatTime } from "@/utils/time";
 import { showBillEditor } from "../bill-editor";
+import SmartImage from "../image";
 
 const t = (v: any) => v;
 
@@ -79,19 +80,19 @@ export default function BillInfo({
 						</div>
 						<div className="flex justify-between items-center my-1">
 							<div>{t("time")}:</div>
-							<div>{formatTime(edit._created_at)}</div>
+							<div>{formatTime(edit.time)}</div>
 						</div>
 					</div>
 
-					{/* {controller.info.image && (
+					{edit.image && (
 						<div className="flex-1 py-2 flex items-center justify-center">
-							<img
-								src={blobToUrl(controller.info.image)}
+							<SmartImage
+								source={edit.image}
 								alt=""
 								className="max-h-200px object-contain rounded"
 							/>
 						</div>
-					)} */}
+					)}
 				</div>
 
 				{/* footer */}

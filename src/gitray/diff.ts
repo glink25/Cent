@@ -14,6 +14,7 @@ const buildPathMap = (s?: StoreStructure): Map<string, string | undefined> => {
 	for (const col of s.collections || []) {
 		add(col.meta);
 		for (const ch of col.chunks || []) add(ch);
+		for (const ch of col.assets || []) add(ch);
 	}
 
 	return map;

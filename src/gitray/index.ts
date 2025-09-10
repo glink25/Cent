@@ -18,8 +18,10 @@
 import { type IDBPDatabase, openDB } from "idb";
 import { Octokit } from "octokit";
 import { getCurrentVersion, getOrCreateStore } from "./db";
+import { diff } from "./diff";
 import { Scheduler } from "./scheduler";
 import { computeGitBlobSha1 } from "./sha";
+import { omitAssets } from "./transform";
 import type {
 	BaseItem,
 	FileLike,
@@ -111,6 +113,8 @@ type GitTreeItem = {
 	sha?: string | null;
 	content?: string;
 };
+
+const genId = () => `${Date.now()}-${Math.random().toString(36).substring(2)}`;
 
 export class Gitray<Item extends BaseItem> {
 	private readonly config: Required<GitrayConfig>;
@@ -260,6 +264,11 @@ export class Gitray<Item extends BaseItem> {
 				name,
 				meta: data.meta,
 				chunks: data.chunks.sort((a, b) => a.path.localeCompare(b.path)),
+				assets: treeData.tree
+					.filter(
+						(v) => v.type === "blob" && v.path.startsWith(`${name}/assets`),
+					)
+					.map((v) => ({ path: v.path, sha: v.sha })),
 			}),
 		);
 
@@ -368,7 +377,7 @@ export class Gitray<Item extends BaseItem> {
 			// Store in stash for later sync
 			await store.put({
 				...action,
-				id: `${Date.now()}-${Math.random().toString(36).substring(2)}`,
+				id: genId(),
 			});
 		}
 		db.close();
@@ -520,9 +529,17 @@ export class Gitray<Item extends BaseItem> {
 			const localDetail: StoreDetail<Item> = {
 				collections: await Promise.all(
 					Array.from(Object.entries(collections)).map(
-						async ([collection, items]) => {
+						async ([collection, _items]) => {
+							const { items, assets } = omitAssets(_items, (file) => {
+								const id = genId();
+								return [
+									`https://raw.githubusercontent.com/${owner}/${repo}/main/${collection}/assets/${id}-${file.name}`,
+									`${collection}/assets/${id}-${file.name}`,
+								];
+							});
 							const chunks: StoreDetail<Item>["collections"][number]["chunks"] =
 								[];
+
 							for (
 								let i = 0;
 								i < items.length;
@@ -557,6 +574,15 @@ export class Gitray<Item extends BaseItem> {
 									file: metaFile,
 								},
 								name: collection,
+								assets: await Promise.all(
+									assets.map(async ({ path, file }) => {
+										return {
+											path,
+											file,
+											sha: await computeGitBlobSha1(file),
+										};
+									}),
+								),
 							};
 						},
 					),
@@ -600,6 +626,14 @@ export class Gitray<Item extends BaseItem> {
 						mode: "100644" as const,
 						type: "blob" as const,
 						sha: blob.sha,
+					};
+				}),
+				...deletedPaths.map((path) => {
+					return {
+						path,
+						mode: "100644" as const,
+						type: "blob" as const,
+						sha: null,
 					};
 				}),
 			]);
@@ -753,21 +787,13 @@ const applyStash = <Item extends BaseItem>(
 	return target as (Item & { collection: string })[];
 };
 
-const diff = (a: StoreStructure, b: StoreStructure) => {
-	console.log(a, b, "diffffffff");
-	const changedPaths = [
-		b.meta.path,
-		b.collections.flatMap((c) => [c.meta.path, ...c.chunks.map((c) => c.path)]),
-	].flat();
-	return [changedPaths];
-};
-
 const toFiles = <Item extends BaseItem>(a: StoreDetail<Item>) => {
 	return Object.fromEntries([
 		[a.meta.path, a.meta] as const,
 		...a.collections.flatMap((v) => [
 			[v.meta.path, v.meta] as const,
 			...v.chunks.map((c) => [c.path, c] as const),
+			...v.assets.map((c) => [c.path, c] as const),
 		]),
 	]);
 };

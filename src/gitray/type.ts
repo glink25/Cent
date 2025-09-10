@@ -7,6 +7,7 @@ export type StoreStructure = {
 		name: string;
 		meta: FileLike;
 		chunks: FileLike[];
+		assets: FileLike[];
 	}[];
 	meta: FileLike;
 };
@@ -16,6 +17,7 @@ export type StoreDetail<Item extends BaseItem> = {
 		name: string;
 		meta: FileLike & { content: Meta; file?: File };
 		chunks: (FileLike & { content: Item[]; file?: File })[];
+		assets: (FileLike & { file: File })[];
 	}[];
 	meta: FileLike & { content: any; file?: File };
 };
@@ -23,8 +25,8 @@ export type StoreDetail<Item extends BaseItem> = {
 export type BaseItem = {
 	id: string;
 	[key: string]: any;
-	_created_at: number;
-	_updated_at: number;
+	// _created_at: number;
+	// _updated_at: number;
 	_deleted_at?: string;
 };
 
