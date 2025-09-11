@@ -1,7 +1,9 @@
 import React, { useMemo } from "react";
+import { useCreator } from "@/hooks/use-creator";
 import { amountToNumber } from "@/ledger/bill";
 import { getCategoryById } from "@/ledger/category";
 import type { Bill } from "@/ledger/type";
+import { useUserStore } from "@/store/user";
 import { cn } from "@/utils";
 
 interface BillItemProps {
@@ -15,10 +17,10 @@ export default function BillItem({ bill, className, onClick }: BillItemProps) {
 		() => getCategoryById(bill.categoryId),
 		[bill.categoryId],
 	);
-	const creator = useMemo(
-		() => ({ me: true, name: `${bill.creatorId}` }),
-		[bill.creatorId],
-	);
+
+	const { login: selfLogin, id: selfId } = useUserStore();
+	const { name, login } = useCreator(bill.creatorId);
+	const isMe = login === selfLogin || login === selfId;
 
 	return (
 		<button
@@ -39,7 +41,7 @@ export default function BillItem({ bill, className, onClick }: BillItemProps) {
 						<div>{category ? category.name : ""}</div>
 					</div>
 					<div className="flex text-xs">
-						<div>{creator?.me ? "me" : (creator?.name ?? "unknown-user")}</div>
+						<div>{isMe ? "me" : (name ?? "unknown-user")}</div>
 						{bill.comment && (
 							<>
 								<div className="px-1">|</div>

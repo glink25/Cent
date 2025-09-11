@@ -4,18 +4,21 @@ import { create } from "zustand";
 import type { PersistOptions } from "zustand/middleware";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { getLocalToken } from "@/api/login";
-import { UserAPI } from "../api/user";
+import { UserAPI, type UserInfo } from "../api/user";
 
 type UserStoreState = {
-	avatar: string;
+	avatar_url: string;
 	login: string;
 	name: string;
 	id: number;
 	loading: boolean;
+	cachedUsers: Record<string, UserInfo>;
 };
 
 type UserStoreActions = {
 	updateUserInfo: () => Promise<void>;
+
+	getUserInfo: (login: string | number) => Promise<UserInfo>;
 };
 
 type UserStore = UserStoreState & UserStoreActions;
@@ -27,7 +30,7 @@ type Persist<S> = (
 
 export const useUserStore = create<UserStore>()(
 	(persist as Persist<UserStore>)(
-		(set) => {
+		(set, get) => {
 			const loading = Boolean(getLocalToken());
 			const updateUserInfo = async () => {
 				await Promise.resolve();
@@ -40,7 +43,7 @@ export const useUserStore = create<UserStore>()(
 					const res = await UserAPI.getUserInfo();
 					set(
 						produce((state: UserStore) => {
-							state.avatar = res.avatar_url;
+							state.avatar_url = res.avatar_url;
 							state.login = res.login;
 							state.name = res.name;
 							state.id = res.id;
@@ -55,13 +58,35 @@ export const useUserStore = create<UserStore>()(
 				}
 			};
 			updateUserInfo();
+
+			const getUserInfo = async (login: string | number) => {
+				const cachedUsers = get().cachedUsers;
+				if (cachedUsers[login]) {
+					return cachedUsers[login];
+				}
+				const res = await UserAPI.getUserInfo(login);
+				const info = {
+					avatar_url: res.avatar_url,
+					login: res.login,
+					name: res.name,
+					id: res.id,
+				};
+				set(
+					produce((state: UserStore) => {
+						state.cachedUsers[login] = info;
+					}),
+				);
+				return info;
+			};
 			return {
 				loading,
-				avatar: "",
+				avatar_url: "",
 				login: "",
 				name: "",
 				id: -1,
 				updateUserInfo,
+				getUserInfo,
+				cachedUsers: {},
 			};
 		},
 		{

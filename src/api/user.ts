@@ -1,20 +1,22 @@
 import { createGithubFetcher, type tokenGetter } from "./base";
 import { getToken } from "./login";
 
+export type UserInfo = {
+	avatar_url: string;
+	name: string;
+	login: string;
+	id: number;
+};
+
 const create = (tokenGetter: tokenGetter) => {
 	const fetcher = createGithubFetcher(tokenGetter);
-	const getUserInfo = async () => {
-		const res = await fetcher("/user");
+	const getUserInfo = async (login?: string | number) => {
+		const res = await fetcher(`/user${login ? `/${login}` : ""}`);
 		const json = await res.json();
 		if (!res.ok) {
 			throw json;
 		}
-		return json as {
-			avatar_url: string;
-			name: string;
-			login: string;
-			id: number;
-		};
+		return json as UserInfo;
 	};
 
 	return { getUserInfo };
