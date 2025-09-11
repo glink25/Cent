@@ -4,7 +4,7 @@ import { FORMAT_BACKUP, showFilePicker } from "../file-picker";
 import { OncentImport, showOncentImport } from "./oncent";
 
 function UserInfo() {
-	const { login, avatar, name } = useUserStore();
+	const { login, avatar_url, name } = useUserStore();
 	const toLogOut = async () => {
 		const ok = confirm(
 			"Are you sure to log out? changes not synced will be discard",
@@ -23,7 +23,7 @@ function UserInfo() {
         "
 		>
 			<div className="flex items-center gap-2">
-				<img src={avatar} alt={login} className="w-12 h-12 rounded-full" />
+				<img src={avatar_url} alt={login} className="w-12 h-12 rounded-full" />
 
 				<div>
 					<div className="font-semibold">{name}</div>

@@ -1,3 +1,4 @@
+import { useCreator } from "@/hooks/use-creator";
 import { amountToNumber } from "@/ledger/bill";
 import { getCategoryById } from "@/ledger/category";
 import { type EditBill, useLedgerStore } from "@/store/ledger";
@@ -18,6 +19,9 @@ export default function BillInfo({
 	onCancel?: () => void;
 }) {
 	const { id: curUserId } = useUserStore();
+	const { name, login } = useCreator(edit?.creatorId ?? "");
+	const { login: selfLogin, id: selfId } = useUserStore();
+	const isMe = login === selfLogin || login === selfId;
 
 	if (!edit) {
 		return null;
@@ -76,7 +80,7 @@ export default function BillInfo({
 						</div>
 						<div className="flex justify-between items-center my-1">
 							<div>{t("creator")}:</div>
-							<div>{edit.creatorId}</div>
+							<div>{isMe ? "me" : name}</div>
 						</div>
 						<div className="flex justify-between items-center my-1">
 							<div>{t("time")}:</div>
