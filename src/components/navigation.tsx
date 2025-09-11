@@ -55,7 +55,7 @@ export default function Navigation() {
 						await useLedgerStore.getState().addBill(newBill);
 					}}
 				>
-					<i className="icon-[mdi-light--plus] text-[white]"></i>
+					<i className="icon-[mdi-plus] text-[white]"></i>
 				</button>
 
 				<button

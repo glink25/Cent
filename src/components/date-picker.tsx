@@ -10,9 +10,8 @@ type Props = {
 	children?: React.ReactNode;
 };
 
-export function DatePicker<T extends string | Dayjs = string>({
+export function DatePicker({
 	value,
-	formatter,
 	displayFormatter = "MM-DD",
 	onChange,
 	children,
@@ -30,7 +29,7 @@ export function DatePicker<T extends string | Dayjs = string>({
 		if (value === undefined) {
 			const now = dayjs().unix();
 			// const initial = formatter?.(now) ?? now;
-			onChange?.(now);
+			onChange?.(now * 1000);
 		}
 	}, [value, onChange]);
 
@@ -43,7 +42,7 @@ export function DatePicker<T extends string | Dayjs = string>({
 		const value = e.target.value;
 		const time = dayjs(value).unix();
 		// const formatted = formatter?.(time) ?? time;
-		onChange?.(time);
+		onChange?.(time * 1000);
 	};
 
 	const current = value ? dayjs(value as any) : dayjs();

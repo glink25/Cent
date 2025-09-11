@@ -1,7 +1,7 @@
 import { produce } from "immer";
 import { v4 } from "uuid";
 import { create } from "zustand";
-import type { Action, OutputType } from "@/gitray";
+import type { Action, BaseItemAction, OutputType } from "@/gitray";
 import type { Bill } from "@/ledger/type";
 import { StorageAPI } from "../api/storage";
 import { useBookStore } from "./book";
@@ -55,7 +55,7 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
 	const updateBillList = async () => {
 		await Promise.resolve();
 		const repo = getCurrentFullRepoName();
-		const res = await StorageAPI.getAllItems(repo, true);
+		const res = await StorageAPI.getAllItems(repo, true, ["time", "desc"]);
 		set(
 			produce((state: LedgerStore) => {
 				state.bills = res;
@@ -178,7 +178,7 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
 					type: "add",
 					store: repo,
 					collection: `${creatorId}`,
-					params: { ...v, creatorId, id: v4(), _created_at: Date.now() },
+					params: { ...v, creatorId, id: v4() },
 				},
 			]);
 		},
@@ -191,7 +191,7 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
 					type: "update",
 					store: repo,
 					collection,
-					params: { id, changes: { ...v, _updated_at: Date.now() } },
+					params: { id, changes: { ...v } },
 				},
 			]);
 		},
@@ -205,13 +205,12 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
 			const repo = getCurrentFullRepoName();
 			const creatorId = useUserStore.getState().id;
 			const createTime = Date.now();
-			const actions: Action<Bill>[] = data.map((v) => {
+			const actions: BaseItemAction<Bill>[] = data.map((v) => {
 				return {
-					id: v4(),
 					type: "add",
 					store: repo,
 					collection: `${creatorId}`,
-					params: { ...v, creatorId, id: v4(), _created_at: createTime },
+					params: { ...v, creatorId, id: v4() },
 				};
 			});
 			if (overlap) {
@@ -221,11 +220,10 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
 						(v) =>
 							({
 								type: "remove",
-								id: v4(),
 								store: repo,
 								params: v.id,
 								collection: `${creatorId}`,
-							}) as Action<Bill>,
+							}) as BaseItemAction<Bill>,
 					),
 				);
 			}

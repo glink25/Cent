@@ -15,17 +15,19 @@
  * ---- uid-a.jpg       collection中携带的二进制文件
  */
 
-import { deleteDB, openDB } from "idb";
+import { type DBSchema, deleteDB, openDB } from "idb";
 import { decode, encode } from "js-base64";
 import { Octokit } from "octokit";
-import { getCurrentVersion, getOrCreateStore } from "./db";
 import { diff } from "./diff";
 import { Scheduler } from "./scheduler";
 import { computeGitBlobSha1 } from "./sha";
 import { omitAssets } from "./transform";
 import type {
+	Action,
 	BaseItem,
+	BaseItemAction,
 	FileLike,
+	ItemAction,
 	Meta,
 	StoreDetail,
 	StoreStructure,
@@ -55,40 +57,8 @@ export interface GitrayConfig {
 	entryName?: string;
 	itemsPerChunk?: number;
 	deletionStrategy?: "hard" | "soft";
+	orderKeys?: string[];
 }
-
-export type ItemAction<T extends BaseItem> =
-	| {
-			id: string;
-			type: "add";
-			collection: string;
-			store: string;
-			params: T;
-	  }
-	| {
-			id: string;
-			type: "remove";
-			collection: string;
-			store: string;
-			params: T["id"];
-	  }
-	| {
-			id: string;
-			type: "update";
-			collection: string;
-			store: string;
-			params: { id: T["id"]; changes: Partial<T> };
-	  };
-
-export type MetaAction<M = any> = {
-	id: string;
-	type: "meta";
-	collection: string | undefined;
-	store: string;
-	params: M;
-};
-
-export type Action<T extends BaseItem, M = any> = ItemAction<T> | MetaAction<M>;
 
 export type Processor = (finished: Promise<void>) => void;
 
@@ -99,13 +69,40 @@ export type ChangeListener = (args: {
 
 const STASH_STORE_NAME = "__stash";
 const META_STORE_NAME = "__meta";
+const ITEM_STORE_NAME = "__item";
 
-type ITEM_STORE_NAME__HELPER = "__item";
+type Full<T extends BaseItem> = T & {
+	__store: string;
+	__collection: string;
+	__updated_at: number;
+	__created_at: number;
+	__deleted_at?: string;
+};
 
-type GitrayDB<Item extends BaseItem> = {
-	[STASH_STORE_NAME]: Action<Item>[];
-	[META_STORE_NAME]: { id: string; value: Meta };
-} & { __item: Item[] };
+type IndexKeys = { [s: string]: IDBValidKey };
+interface GitrayDB<Item extends BaseItem, ItemIndexes extends IndexKeys>
+	extends DBSchema {
+	[STASH_STORE_NAME]: {
+		key: string;
+		value: Action<Full<Item>>;
+	};
+	[META_STORE_NAME]: {
+		key: string;
+		value: { path: string; value: Meta };
+		indexes: {
+			path: string;
+		};
+	};
+	[ITEM_STORE_NAME]: {
+		key: string;
+		value: Full<Item>;
+		indexes: {
+			id: string;
+			__store: string;
+			__store___created_at: string;
+		} & ItemIndexes;
+	};
+}
 
 type GitTreeItem = {
 	path?: string;
@@ -117,7 +114,7 @@ type GitTreeItem = {
 
 const genId = () => `${Date.now()}-${Math.random().toString(36).substring(2)}`;
 
-export class Gitray<Item extends BaseItem> {
+export class Gitray<Item extends BaseItem, ItemIndexes extends IndexKeys> {
 	private readonly config: Required<GitrayConfig>;
 	private userInfo?: { id: number; login: string };
 
@@ -128,31 +125,42 @@ export class Gitray<Item extends BaseItem> {
 			entryName: "entry",
 			itemsPerChunk: 1000,
 			deletionStrategy: "hard",
+			orderKeys: [],
 			...config,
 		};
-		// this.getDB().then((db) => db.close());
-		getOrCreateStore(this.config.dbName, STASH_STORE_NAME, {
-			keyPath: "id",
-		}).then((db) => {
-			db.close();
-			getOrCreateStore(this.config.dbName, META_STORE_NAME, {
-				keyPath: "id",
-			}).then((db) => {
-				db.close();
-			});
-		});
+		this.getDB().then((db) => db.close());
 	}
 
 	private async getDB() {
-		const currentVersion = await getCurrentVersion(this.config.dbName);
-		return openDB<GitrayDB<Item>>(`${this.config.dbName}`, currentVersion, {
-			upgrade(db) {
+		// const currentVersion = await getCurrentVersion(this.config.dbName);
+		return openDB<GitrayDB<Item, ItemIndexes>>(`${this.config.dbName}`, 1, {
+			upgrade: (db) => {
 				// Create stores if they don't exist
 				if (!db.objectStoreNames.contains(STASH_STORE_NAME)) {
-					db.createObjectStore(STASH_STORE_NAME, { keyPath: "id" });
+					db.createObjectStore(STASH_STORE_NAME, {
+						autoIncrement: true,
+						keyPath: "id",
+					});
 				}
 				if (!db.objectStoreNames.contains(META_STORE_NAME)) {
-					db.createObjectStore(META_STORE_NAME);
+					const store = db.createObjectStore(META_STORE_NAME, {
+						keyPath: "path",
+					});
+					store.createIndex("path", ["path"]);
+				}
+				if (!db.objectStoreNames.contains(ITEM_STORE_NAME)) {
+					const store = db.createObjectStore(ITEM_STORE_NAME, {
+						keyPath: "id",
+					});
+					store.createIndex("__store", "__store");
+					store.createIndex("__store___created_at", [
+						"__store",
+						"__created_at",
+					]);
+					this.config.orderKeys.forEach((k) => {
+						const pair = ["__store", k];
+						store.createIndex(pair.join("_"), pair, { unique: false });
+					});
 				}
 			},
 		});
@@ -301,14 +309,20 @@ export class Gitray<Item extends BaseItem> {
 						"GET /repos/{owner}/{repo}/git/blobs/{file_sha}",
 						{ owner, repo, file_sha: file.sha },
 					);
+					const collection = file.path.split("/")[0];
 					const chunkData = JSON.parse(decode(content.content)) as any[];
+					if (Array.isArray(chunkData)) {
+						chunkData?.forEach((item) => {
+							item.__collection = collection;
+							item.__store = storeFullName;
+						});
+					}
 					(file as any).content = chunkData;
+
 					return { content: chunkData, path: file.path };
 				}),
 		);
-		// const detail = { ...structure } as StoreDetail<Item>;
-		// detail.meta.content=results.map()
-		return structure as StoreDetail<Item>;
+		return structure as StoreDetail<Full<Item>>;
 	}
 
 	async getStash() {
@@ -317,7 +331,7 @@ export class Gitray<Item extends BaseItem> {
 			.transaction(STASH_STORE_NAME)
 			.objectStore(STASH_STORE_NAME);
 		const stashed = await stashStore.getAll();
-		return stashed as Action<Item>[];
+		return stashed;
 	}
 
 	// public methods
@@ -359,21 +373,33 @@ export class Gitray<Item extends BaseItem> {
 	/**
 	 * 批量操作指定的 collection （增删改）
 	 * 如果collection不存在则会创建对应的collection
-	 * @param storeFullName store的全名，包含login/前缀
-	 * @param collection collection名称
 	 */
-	async batch(actions: Omit<Action<Item>, "id">[]): Promise<void> {
+	async batch(actions: BaseItemAction<Item>[]): Promise<void> {
 		const db = await this.getDB();
+		const now = Date.now();
 		const store = db
 			.transaction(STASH_STORE_NAME, "readwrite")
 			.objectStore(STASH_STORE_NAME);
 
 		for (const action of actions) {
 			// Store in stash for later sync
-			await store.put({
+			const finalAction = {
 				...action,
+				params:
+					action.type === "add"
+						? {
+								...action.params,
+								__created_at: now,
+								__updated_at: now,
+								__collection: action.collection,
+								__store: action.store,
+							}
+						: action.type === "update"
+							? { ...action.params, __updated_at: now }
+							: action.params,
 				id: genId(),
-			});
+			} as Action<Full<Item>>;
+			await store.put(finalAction);
 		}
 		db.close();
 		this.scheduleSync();
@@ -385,42 +411,36 @@ export class Gitray<Item extends BaseItem> {
 	async initStore(storeFullName: string) {
 		const detail = await this.fetchStoreDetail(storeFullName);
 		const db = await this.getDB();
-		const metaStore = db
-			.transaction(META_STORE_NAME, "readwrite")
-			.objectStore(META_STORE_NAME);
+		// 创建一个事务，包含所有需要操作的 object store
+		const transaction = db.transaction(
+			[META_STORE_NAME, ITEM_STORE_NAME],
+			"readwrite",
+		);
+
+		const metaStore = transaction.objectStore(META_STORE_NAME);
+		const itemStore = transaction.objectStore(ITEM_STORE_NAME);
 
 		await metaStore.put({
-			id: storeFullName,
+			path: storeFullName,
 			value: detail.meta.content,
 		});
-		db.close();
 
 		// Store collections
 		for (const collection of detail.collections) {
 			const key = `${storeFullName}/${collection.name}`;
 			await metaStore.put({
-				id: key,
+				path: key,
 				value: collection.meta.content,
 			});
-			const db = await getOrCreateStore<GitrayDB<Item>>(
-				this.config.dbName,
-				key,
-				{
-					keyPath: "id",
-				},
-			);
 			// Store items
 			for (const chunk of collection.chunks) {
 				for (const item of chunk.content) {
-					const itemStore = db
-						.transaction(key as ITEM_STORE_NAME__HELPER, "readwrite")
-						.objectStore(key as ITEM_STORE_NAME__HELPER);
 					await itemStore.put(item);
 				}
 			}
-			db.close();
 		}
 
+		db.close();
 		this.notifyChange(storeFullName);
 		return detail;
 	}
@@ -434,24 +454,27 @@ export class Gitray<Item extends BaseItem> {
 	async getAllItems(
 		storeFullName: string,
 		withStash: boolean = false,
-	): Promise<(Item & { collection: string })[]> {
+		orderBy?: [string, "asc" | "desc"],
+	): Promise<Full<Item>[]> {
 		const db = await this.getDB();
-		const collectionNames = Array.from(db.objectStoreNames).filter((name) =>
-			name.startsWith(storeFullName),
-		);
 
-		const promises = (await Promise.all(
-			collectionNames.map((name) =>
-				db
-					.transaction(name as ITEM_STORE_NAME__HELPER)
-					.objectStore(name as ITEM_STORE_NAME__HELPER)
-					.getAll(),
-			),
-		)) as unknown as Item[][];
-		const localItems = promises.flatMap((v, i) =>
-			v.map((c) => ({ ...c, collection: pathToName(collectionNames[i]) })),
-		);
+		const itemStore = db
+			.transaction(ITEM_STORE_NAME)
+			.objectStore(ITEM_STORE_NAME);
+		const index = orderBy
+			? itemStore.index(["__store", orderBy[0]].join("_"))
+			: itemStore.index("__store");
+		const direction = orderBy?.[1] === "asc" ? "next" : "prev"; // 或 'prev'，根据需要选择升序或降序
 
+		const localItems: Full<Item>[] = [];
+		const range = orderBy
+			? IDBKeyRange.bound([storeFullName, 0], [storeFullName, Infinity])
+			: IDBKeyRange.only(storeFullName);
+		let cursor = await index.openCursor(range, direction);
+		while (cursor) {
+			localItems.push(cursor.value);
+			cursor = await cursor.continue();
+		}
 		if (withStash) {
 			const stashed = await this.getStash();
 			applyStash(
@@ -459,6 +482,7 @@ export class Gitray<Item extends BaseItem> {
 				stashed
 					.filter((ac) => ac.type !== "meta")
 					.filter((ac) => storeFullName === ac.store),
+				orderBy,
 			);
 			return localItems;
 		}
@@ -469,7 +493,7 @@ export class Gitray<Item extends BaseItem> {
 	async getMeta(
 		storeFullName: string,
 		collectionName?: string,
-		withStash: boolean = false,
+		withStash: boolean = true,
 	) {
 		const db = await this.getDB();
 		const metaId = `${storeFullName}${collectionName ? `/${collectionName}` : ""}`;
@@ -500,7 +524,10 @@ export class Gitray<Item extends BaseItem> {
 			const actions = stashed.filter((ac) => ac.store === store);
 			const remoteDetail = await this.fetchStoreDetail(store);
 
-			const localItems = await this.getAllItems(store);
+			const localItems = await this.getAllItems(store, false, [
+				"__created_at",
+				"desc",
+			]);
 
 			const newItems = applyStash(
 				localItems,
@@ -508,10 +535,14 @@ export class Gitray<Item extends BaseItem> {
 			);
 			const collections = newItems.reduce(
 				(p, c) => {
-					if (p[c.collection] === undefined) {
-						p[c.collection] = [];
+					if (p[c.__collection] === undefined) {
+						p[c.__collection] = [];
 					}
-					p[c.collection].push(c);
+					p[c.__collection].push({
+						...c,
+						__collection: undefined,
+						__store: undefined,
+					});
 					return p;
 				},
 				{} as Record<string, Item[]>,
@@ -550,7 +581,8 @@ export class Gitray<Item extends BaseItem> {
 								});
 							}
 							const metaPath = `${collection}/meta.json`;
-							const metaContent = (await this.getMeta(store, collection)) || {};
+							const metaContent =
+								(await this.getMeta(store, collection, true)) || {};
 							const metaFile = new File(
 								[new Blob([JSON.stringify(metaContent, null, 2)])],
 								pathToName(metaPath),
@@ -578,7 +610,7 @@ export class Gitray<Item extends BaseItem> {
 					),
 				),
 				meta: await (async () => {
-					const content = (await this.getMeta(store)) || {};
+					const content = (await this.getMeta(store, undefined, true)) || {};
 					const metaPath = `meta.json`;
 					const metaFile = new File(
 						[new Blob([JSON.stringify(content, null, 2)])],
@@ -661,24 +693,34 @@ export class Gitray<Item extends BaseItem> {
 			for (let i = 0; i < actions.length; i++) {
 				const action = actions[i];
 				const storeName = `${action.store}/${action.collection}`;
-				const db = await getOrCreateStore(this.config.dbName, storeName, {
-					keyPath: "id",
-				});
+				const db = await this.getDB();
+				const transaction = db.transaction(
+					[META_STORE_NAME, ITEM_STORE_NAME, STASH_STORE_NAME],
+					"readwrite",
+				);
+				const itemStore = transaction.objectStore(ITEM_STORE_NAME);
+				const metaStore = transaction.objectStore(META_STORE_NAME);
+				const stashStore = transaction.objectStore(STASH_STORE_NAME);
+
 				// TODO: 在写回stash的时候，将File对象替换成在线地址
 				if (action.type === "add") {
-					await db.put(storeName, action.params);
+					await itemStore.put(action.params);
 				} else if (action.type === "remove") {
-					await db.delete(storeName, action.params);
+					await itemStore.delete(action.params);
 				} else if (action.type === "update") {
-					await db.put(storeName, {
-						...action.params.changes,
-						id: action.params.id,
-					});
+					const old = await itemStore.get(action.params.id);
+					if (old) {
+						await itemStore.put({
+							...old,
+							...action.params.changes,
+							id: action.params.id,
+						});
+					}
 				} else if (action.type === "meta") {
 					const key = `${action.store}${action.collection ? `${action.collection}/` : "/"}meta.json`;
-					await db.put(META_STORE_NAME, { id: key, value: action.params });
+					await metaStore.put({ path: key, value: action.params });
 				}
-				await db.delete(STASH_STORE_NAME, action.id);
+				await stashStore.delete(action.id);
 				db.close();
 			}
 		}
@@ -740,38 +782,89 @@ const pathToName = (path: string) => {
 };
 
 const applyStash = <Item extends BaseItem>(
-	target: Item[],
-	stashed: ItemAction<Item>[],
-) => {
-	stashed.reduce((prev, ac) => {
-		if (ac.type === "add") {
-			prev.push({
-				...ac.params,
-				collection: ac.collection,
-			});
-			return prev;
-		} else if (ac.type === "remove") {
-			const index = prev.findIndex((b) => b.id === ac.params);
-			if (index === -1) {
-				return prev;
+	target: Full<Item>[],
+	stashed: ItemAction<Full<Item>>[],
+	orderBy?: [string, "asc" | "desc"],
+): Full<Item>[] => {
+	// 如果没有提供 orderBy 参数，使用原始的简单逻辑以提高效率
+	if (!orderBy) {
+		stashed.forEach((ac) => {
+			if (ac.type === "add") {
+				target.push({ ...ac.params });
+			} else if (ac.type === "remove") {
+				const index = target.findIndex((b) => b.id === ac.params);
+				if (index !== -1) {
+					target.splice(index, 1);
+				}
+			} else if (ac.type === "update") {
+				const index = target.findIndex((b) => b.id === ac.params.id);
+				if (index !== -1) {
+					target[index] = { ...target[index], ...ac.params.changes };
+				}
 			}
-			prev.splice(index, 1);
-			return prev;
+		});
+		return target;
+	}
+
+	// --- 带排序逻辑的核心实现 ---
+	const [key, dir] = orderBy;
+
+	// 定义一个辅助函数，用于将项插入到已排序数组的正确位置
+	const sortedInsert = (arr: Full<Item>[], item: Full<Item>) => {
+		// 寻找插入点：找到第一个比当前项“大”的元素
+		const insertionIndex = arr.findIndex((existingItem) =>
+			dir === "asc"
+				? existingItem[key] > item[key]
+				: existingItem[key] < item[key],
+		);
+
+		if (insertionIndex === -1) {
+			// 如果没找到，说明当前项是最大（或最小）的，直接推入数组末尾
+			arr.push(item);
+		} else {
+			// 否则，插入到找到的那个元素之前
+			arr.splice(insertionIndex, 0, item);
+		}
+	};
+
+	// 遍历所有操作
+	stashed.forEach((ac) => {
+		if (ac.type === "add") {
+			const newItem = { ...ac.params } as Full<Item>;
+			sortedInsert(target, newItem);
+		} else if (ac.type === "remove") {
+			const index = target.findIndex((b) => b.id === ac.params);
+			if (index !== -1) {
+				target.splice(index, 1);
+			}
 		} else if (ac.type === "update") {
 			const index = target.findIndex((b) => b.id === ac.params.id);
 			if (index === -1) {
-				return prev;
+				return; // 如果未找到要更新的项，则跳过
 			}
-			prev[index] = {
-				...prev[index],
-				...ac.params.changes,
-				collection: ac.collection,
-			};
-			return prev;
+
+			// 检查被更新的属性中是否包含排序键
+			const sortKeyChanged = Object.hasOwn(ac.params.changes, key);
+
+			if (!sortKeyChanged) {
+				// 如果排序键未改变，直接在原位置更新，不影响排序
+				target[index] = {
+					...target[index],
+					...ac.params.changes,
+				};
+			} else {
+				// 如果排序键已改变，项的位置可能需要移动
+				// 1. 先从原位置移除
+				const [itemToMove] = target.splice(index, 1);
+				// 2. 应用更改
+				const updatedItem = { ...itemToMove, ...ac.params.changes };
+				// 3. 将更新后的项插入到新的正确位置
+				sortedInsert(target, updatedItem);
+			}
 		}
-		return prev;
-	}, target);
-	return target as (Item & { collection: string })[];
+	});
+
+	return target;
 };
 
 const toFiles = <Item extends BaseItem>(a: StoreDetail<Item>) => {
