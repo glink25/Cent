@@ -5,7 +5,6 @@ import { cn } from "@/utils";
 
 export default function Page() {
 	const { bills, loading, sync } = useLedgerStore();
-	console.log(loading, "loading");
 	const syncIcon =
 		sync === "wait"
 			? "icon-[mdi--cloud-minus-outline]"
