@@ -34,6 +34,10 @@ type LedgerStoreActions = {
 		id: Bill["id"],
 		entry: Omit<Bill, "id" | "creatorId">,
 	) => Promise<void>;
+	batchImport: (
+		entries: Omit<Bill, "id" | "creatorId">[],
+		overlap?: boolean,
+	) => Promise<void>;
 
 	refreshBillList: () => Promise<void>;
 };
@@ -174,7 +178,7 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
 					type: "add",
 					store: repo,
 					collection: `${creatorId}`,
-					params: { ...v, creatorId, id: v4() },
+					params: { ...v, creatorId, id: v4(), _created_at: Date.now() },
 				},
 			]);
 		},
@@ -187,9 +191,45 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
 					type: "update",
 					store: repo,
 					collection,
-					params: { id, changes: { ...v } },
+					params: { id, changes: { ...v, _updated_at: Date.now() } },
 				},
 			]);
+		},
+		batchImport: async (
+			data: Omit<Bill, "id" | "creatorId">[],
+			overlap = false,
+		) => {
+			if (data.length === 0) {
+				return;
+			}
+			const repo = getCurrentFullRepoName();
+			const creatorId = useUserStore.getState().id;
+			const createTime = Date.now();
+			const actions: Action<Bill>[] = data.map((v) => {
+				return {
+					id: v4(),
+					type: "add",
+					store: repo,
+					collection: `${creatorId}`,
+					params: { ...v, creatorId, id: v4(), _created_at: createTime },
+				};
+			});
+			if (overlap) {
+				const current = get().bills.filter((v) => v.creatorId === creatorId);
+				actions.push(
+					...current.map(
+						(v) =>
+							({
+								type: "remove",
+								id: v4(),
+								store: repo,
+								params: v.id,
+								collection: `${creatorId}`,
+							}) as Action<Bill>,
+					),
+				);
+			}
+			StorageAPI.batch(actions);
 		},
 	};
 });

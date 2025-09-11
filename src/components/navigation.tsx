@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router";
 import { useLedgerStore } from "@/store/ledger";
 import { showBillEditor } from "./bill-editor";
+import { showSettings } from "./settings";
 
 export default function Navigation() {
 	const location = useLocation();
@@ -74,7 +75,9 @@ export default function Navigation() {
 			<button
 				type="button"
 				className="w-14 h-14 sm:w-10 sm:h-10 cursor-pointer flex items-center justify-center rounded-full shadow-md m-2 bg-white transition-all hover:bg-gray-200 active(bg-gray-300"
-				onClick={() => {}}
+				onClick={() => {
+					showSettings();
+				}}
 			>
 				<i className="icon-[mdi--more-horiz]"></i>
 			</button>
