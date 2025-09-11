@@ -1,6 +1,5 @@
 import { Switch } from "radix-ui";
-import { useEffect, useRef, useState } from "react";
-import type { OutputType } from "@/gitray";
+import { useRef, useState } from "react";
 import {
 	amountToNumber,
 	isValidNumberForAmount,
@@ -183,7 +182,7 @@ export default function EditorForm({
 					className="flex h-80px justify-center items-center bg-green-700 rounded-lg m-2 font-bold text-lg cursor-pointer"
 					onClick={toConfirm}
 				>
-					<i className="icon-[mdi-light--check] icon-md"></i>
+					<i className="icon-[mdi--check] icon-md"></i>
 				</button>
 			</div>
 		</div>
