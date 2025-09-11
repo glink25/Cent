@@ -15,7 +15,8 @@
  * ---- uid-a.jpg       collection中携带的二进制文件
  */
 
-import { type IDBPDatabase, openDB } from "idb";
+import { deleteDB, openDB } from "idb";
+import { decode, encode } from "js-base64";
 import { Octokit } from "octokit";
 import { getCurrentVersion, getOrCreateStore } from "./db";
 import { diff } from "./diff";
@@ -125,7 +126,7 @@ export class Gitray<Item extends BaseItem> {
 			dbName: "local-gitray",
 			repoPrefix: "gitray-db",
 			entryName: "entry",
-			itemsPerChunk: 2000,
+			itemsPerChunk: 1000,
 			deletionStrategy: "hard",
 			...config,
 		};
@@ -300,7 +301,7 @@ export class Gitray<Item extends BaseItem> {
 						"GET /repos/{owner}/{repo}/git/blobs/{file_sha}",
 						{ owner, repo, file_sha: file.sha },
 					);
-					const chunkData = JSON.parse(atob(content.content)) as any[];
+					const chunkData = JSON.parse(decode(content.content)) as any[];
 					(file as any).content = chunkData;
 					return { content: chunkData, path: file.path };
 				}),
@@ -339,7 +340,7 @@ export class Gitray<Item extends BaseItem> {
 			repo: storeName,
 			path: "meta.json",
 			message: "Initial commit by Gitray",
-			content: btoa(JSON.stringify({})), // btoa is for browser environment
+			content: encode(JSON.stringify({})),
 		});
 		return { fullName: `${owner}/${storeName}`, name: storeName };
 	}
@@ -416,8 +417,8 @@ export class Gitray<Item extends BaseItem> {
 						.objectStore(key as ITEM_STORE_NAME__HELPER);
 					await itemStore.put(item);
 				}
-				db.close();
 			}
+			db.close();
 		}
 
 		this.notifyChange(storeFullName);
@@ -725,6 +726,10 @@ export class Gitray<Item extends BaseItem> {
 			const i = this.changeListeners.indexOf(listener);
 			this.changeListeners.splice(i, 1);
 		};
+	}
+
+	dangerousClearAll() {
+		return deleteDB(this.config.dbName);
 	}
 }
 

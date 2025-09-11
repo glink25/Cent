@@ -4,6 +4,7 @@ import { BillInfoProvider } from "@/components/bill-info";
 import Book from "@/components/book";
 import Login from "@/components/login";
 import Navigation from "@/components/navigation";
+import { Settings } from "@/components/settings";
 
 export default function MainLayout() {
 	return (
@@ -14,6 +15,7 @@ export default function MainLayout() {
 			</div>
 			<BillEditorProvider />
 			<BillInfoProvider />
+			<Settings />
 			<Book />
 			<Login />
 		</>
