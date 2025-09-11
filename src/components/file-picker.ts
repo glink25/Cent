@@ -23,7 +23,6 @@ export const showFilePicker = ({ accept, multiple }: Partial<PickerParam>) => {
 				rej();
 				return;
 			}
-			console.log(picker.files);
 			res(Array.from(picker.files));
 		});
 		picker.addEventListener("error", rej);

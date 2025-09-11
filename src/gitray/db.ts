@@ -46,9 +46,6 @@ export async function getOrCreateStore<DB>(
 			upgrade(db) {
 				if (!db.objectStoreNames.contains(storeName as any)) {
 					db.createObjectStore(storeName as any, options);
-					console.log(
-						`Created store "${storeName}" in database "${dbName}" at version ${newVersion}`,
-					);
 				}
 			},
 		});

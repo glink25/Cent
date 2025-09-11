@@ -144,10 +144,8 @@ export class Gitray<Item extends BaseItem> {
 
 	private async getDB() {
 		const currentVersion = await getCurrentVersion(this.config.dbName);
-		console.log(currentVersion, "cccv");
 		return openDB<GitrayDB<Item>>(`${this.config.dbName}`, currentVersion, {
 			upgrade(db) {
-				console.log(db.objectStoreNames, "storenames");
 				// Create stores if they don't exist
 				if (!db.objectStoreNames.contains(STASH_STORE_NAME)) {
 					db.createObjectStore(STASH_STORE_NAME, { keyPath: "id" });
@@ -287,7 +285,6 @@ export class Gitray<Item extends BaseItem> {
 			_structure === undefined
 				? await this.fetchStoreStructure(storeFullName)
 				: _structure;
-		console.log(structure);
 		// const results =
 		await Promise.all(
 			[
@@ -296,7 +293,6 @@ export class Gitray<Item extends BaseItem> {
 			]
 				.flat()
 				.map(async (file) => {
-					console.log(file, "ssfile");
 					if (!file.path || !file.sha) {
 						return;
 					}
@@ -311,7 +307,6 @@ export class Gitray<Item extends BaseItem> {
 		);
 		// const detail = { ...structure } as StoreDetail<Item>;
 		// detail.meta.content=results.map()
-		console.log(structure, "struc");
 		return structure as StoreDetail<Item>;
 	}
 
@@ -355,7 +350,6 @@ export class Gitray<Item extends BaseItem> {
 	async fetchAllStore() {
 		const octokit = await this.getOctokit();
 		const repos = await octokit.paginate("GET /user/repos", { type: "all" });
-		console.log(this.config.repoPrefix, "ppp");
 		return repos
 			.filter((repo) => repo.name.startsWith(this.config.repoPrefix))
 			.map((repo) => repo.full_name);
@@ -444,7 +438,6 @@ export class Gitray<Item extends BaseItem> {
 		const collectionNames = Array.from(db.objectStoreNames).filter((name) =>
 			name.startsWith(storeFullName),
 		);
-		console.log(collectionNames, "all items");
 
 		const promises = (await Promise.all(
 			collectionNames.map((name) =>
@@ -460,14 +453,12 @@ export class Gitray<Item extends BaseItem> {
 
 		if (withStash) {
 			const stashed = await this.getStash();
-			console.log(stashed, "stashed", promises);
 			applyStash(
 				localItems,
 				stashed
 					.filter((ac) => ac.type !== "meta")
 					.filter((ac) => storeFullName === ac.store),
 			);
-			console.log(localItems, "stashed local");
 			return localItems;
 		}
 
@@ -514,7 +505,6 @@ export class Gitray<Item extends BaseItem> {
 				localItems,
 				actions.filter((ac) => ac.type !== "meta"),
 			);
-			console.log(localItems, "local");
 			const collections = newItems.reduce(
 				(p, c) => {
 					if (p[c.collection] === undefined) {
@@ -560,7 +550,6 @@ export class Gitray<Item extends BaseItem> {
 							}
 							const metaPath = `${collection}/meta.json`;
 							const metaContent = (await this.getMeta(store, collection)) || {};
-							console.log(metaContent, "metacontent");
 							const metaFile = new File(
 								[new Blob([JSON.stringify(metaContent, null, 2)])],
 								pathToName(metaPath),
@@ -589,7 +578,6 @@ export class Gitray<Item extends BaseItem> {
 				),
 				meta: await (async () => {
 					const content = (await this.getMeta(store)) || {};
-					console.log(content, "metacontent");
 					const metaPath = `meta.json`;
 					const metaFile = new File(
 						[new Blob([JSON.stringify(content, null, 2)])],
@@ -604,12 +592,10 @@ export class Gitray<Item extends BaseItem> {
 			};
 
 			const [changedPaths, deletedPaths] = diff(remoteDetail, localDetail);
-			console.log(changedPaths, "cahnged paths");
 			const allFiles = toFiles(localDetail);
 			const treePayload: GitTreeItem[] = await Promise.all([
 				...changedPaths.map(async (path) => {
 					const content = allFiles[path];
-					console.log(content, "content h");
 					const file =
 						content.file ??
 						new File(
@@ -671,15 +657,13 @@ export class Gitray<Item extends BaseItem> {
 				ref: `heads/${repoData.default_branch}`,
 				sha: newCommit.sha,
 			});
-
-			console.log(actions, "accccc");
 			for (let i = 0; i < actions.length; i++) {
 				const action = actions[i];
 				const storeName = `${action.store}/${action.collection}`;
 				const db = await getOrCreateStore(this.config.dbName, storeName, {
 					keyPath: "id",
 				});
-				console.log(db, action, storeName);
+				// TODO: 在写回stash的时候，将File对象替换成在线地址
 				if (action.type === "add") {
 					await db.put(storeName, action.params);
 				} else if (action.type === "remove") {
@@ -695,7 +679,6 @@ export class Gitray<Item extends BaseItem> {
 				}
 				await db.delete(STASH_STORE_NAME, action.id);
 				db.close();
-				console.log("run out", action);
 			}
 		}
 	}
@@ -756,7 +739,6 @@ const applyStash = <Item extends BaseItem>(
 	stashed: ItemAction<Item>[],
 ) => {
 	stashed.reduce((prev, ac) => {
-		console.log(ac.type, ac.params, "acc");
 		if (ac.type === "add") {
 			prev.push({
 				...ac.params,
