@@ -1,6 +1,7 @@
 import { Dialog, VisuallyHidden } from "radix-ui";
 import type { ReactNode } from "react";
 import { useShallow } from "zustand/shallow";
+import { cn } from "@/utils";
 import { confirmStoreFactory } from "./state";
 
 export default function createConfirmProvider<Value, Returned = Value>(
@@ -13,10 +14,12 @@ export default function createConfirmProvider<Value, Returned = Value>(
 		dialogTitle,
 		dialogDescription = dialogTitle,
 		dialogModalClose,
+		contentClassName,
 	}: {
 		dialogTitle: string;
 		dialogDescription?: string;
 		dialogModalClose?: boolean;
+		contentClassName?: string;
 	},
 ) {
 	const useStore = confirmStoreFactory<Value, Returned>();
@@ -48,14 +51,16 @@ export default function createConfirmProvider<Value, Returned = Value>(
 				}}
 			>
 				<Dialog.Portal>
-					<Dialog.Overlay className="fixed inset-0 bg-[rgba(128,128,128,0.5)] data-[state=open]:animate-overlayShow" />
-					<Dialog.Content className="fixed left-1/2 top-1/2 max-h-[85vh] w-[90vw] max-w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-md bg-[white] p-[25px] shadow-[var(--shadow-6)] focus:outline-none data-[state=open]:animate-contentShow">
-						<VisuallyHidden.Root>
-							<Dialog.Title>{dialogTitle}</Dialog.Title>
-							<Dialog.Description>{dialogDescription}</Dialog.Description>
-						</VisuallyHidden.Root>
-						<Form edit={editBill} onCancel={onCancel} onConfirm={onConfirm} />
-					</Dialog.Content>
+					<Dialog.Overlay className="fixed inset-0 bg-[rgba(128,128,128,0.5)] data-[state=open]:animate-overlay-show" />
+					<div className="fixed top-0 left-0 w-full h-full flex justify-center items-center">
+						<Dialog.Content className={cn('bg-white max-h-[85vh] w-[90vw] max-w-[500px] data-[state=open]:animate-content-show', contentClassName)}>
+							<VisuallyHidden.Root>
+								<Dialog.Title>{dialogTitle}</Dialog.Title>
+								<Dialog.Description>{dialogDescription}</Dialog.Description>
+							</VisuallyHidden.Root>
+							<Form edit={editBill} onCancel={onCancel} onConfirm={onConfirm} />
+						</Dialog.Content>
+					</div>
 				</Dialog.Portal>
 			</Dialog.Root>
 		);
