@@ -18,10 +18,19 @@ module.exports = {
           },
           to: { opacity: "1", transform: "scale(1)" },
         },
+        "slide-from-right": {
+          from: {
+            transform: "translateX(100%)",
+          },
+          to: {
+            transform: "translateX(0)",
+          },
+        }
       },
       animation: {
         "overlay-show": "overlay-show 150ms cubic-bezier(0.16, 1, 0.3, 1)",
         "content-show": "content-show 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "slide-from-right": "slide-from-right 150ms cubic-bezier(0.16, 1, 0.3, 1)"
       },
     },
   },
