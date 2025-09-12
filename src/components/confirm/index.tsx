@@ -53,7 +53,7 @@ export default function createConfirmProvider<Value, Returned = Value>(
 				<Dialog.Portal>
 					<Dialog.Overlay className="fixed inset-0 bg-[rgba(128,128,128,0.5)] data-[state=open]:animate-overlay-show" />
 					<div className="fixed top-0 left-0 w-full h-full flex justify-center items-center">
-						<Dialog.Content className={cn('bg-white max-h-[85vh] w-[90vw] max-w-[500px] data-[state=open]:animate-content-show', contentClassName)}>
+						<Dialog.Content className={cn('bg-white max-h-[55vh] w-[90vw] max-w-[500px] rounded-md data-[state=open]:animate-content-show', contentClassName)}>
 							<VisuallyHidden.Root>
 								<Dialog.Title>{dialogTitle}</Dialog.Title>
 								<Dialog.Description>{dialogDescription}</Dialog.Description>

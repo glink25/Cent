@@ -8,6 +8,7 @@ import {
 import { ExpenseBillCategories, IncomeBillCategories } from "@/ledger/category";
 import type { Bill } from "@/ledger/type";
 import type { EditBill } from "@/store/ledger";
+import { cn } from "@/utils";
 import { DatePicker } from "../date-picker";
 import { FORMAT_IMAGE_SUPPORTED, showFilePicker } from "../file-picker";
 import SmartImage from "../image";
@@ -58,7 +59,7 @@ export default function EditorForm({
 
 	const commentInputEl = useRef<HTMLInputElement>(null);
 	return (
-		<div className="w-full h-full flex flex-col justify-between">
+		<div className="w-full h-full flex flex-col">
 			{/* header */}
 			<div className="header flex pt-2">
 				<button
@@ -67,7 +68,7 @@ export default function EditorForm({
 					onClick={goBack}
 				>
 					<div className="flex items-center justify-center">
-						<i className="icon-chevron-left"></i>
+						<i className="icon-[mdi--chevron-left]"></i>
 					</div>
 					{/* @todo: 替换为 i18n hook */}
 					{"back"}
@@ -84,10 +85,17 @@ export default function EditorForm({
 							setBillState((v) => ({
 								...v,
 								type: v.type === "expense" ? "income" : "expense",
+								categoryId: v.type === "expense"
+									? IncomeBillCategories[0].id
+									: ExpenseBillCategories[0].id
 							}));
 						}}
 					>
-						<Switch.Thumb className="block w-1/2 h-[calc(100%-8px)] transition-all rounded-lg absolute left-0 bg-red-700 data-[state=checked]:bg-green-700 data-[state=checked]:left-[unset] data-[state=checked]:right-0"></Switch.Thumb>
+						<Switch.Thumb className="w-1/2 h-full flex justify-center items-center transition-all rounded-md bg-red-700 data-[state=checked]:bg-green-700 -translate-x-[28px] data-[state=checked]:translate-x-[28px]">
+							<span className="text-xs">
+								{billState.type === "expense" ? "expense" : "income"}
+							</span>
+						</Switch.Thumb>
 					</Switch.Root>
 				</div>
 				<div className="flex-1 flex flex-col justify-center items-end bg-stone-400 rounded-lg ml-2 p-2 overflow-x-scroll">
@@ -118,11 +126,12 @@ export default function EditorForm({
 						<button
 							type="button"
 							key={item.id}
-							className={`rounded-lg bg-stone-200 border  flex-1 py-1 px-2 my-1 mr-1 h-8 flex items-center justify-center whitespace-nowrap cursor-pointer ${
+							className={cn(
+								`rounded-lg border  flex-1 py-1 px-2 my-1 mr-1 h-8 flex items-center justify-center whitespace-nowrap cursor-pointer`,
 								billState.categoryId === item.id
-									? "bg-gray-600 text-light-900"
-									: "text-stone-700"
-							}`}
+									? "bg-slate-700 text-white "
+									: "bg-stone-200  text-light-900",
+							)}
 							onMouseDown={() =>
 								setBillState((v) => ({ ...v, categoryId: item.id }))
 							}
@@ -135,7 +144,7 @@ export default function EditorForm({
 			</div>
 
 			{/* keyboard area */}
-			<div className="keyboard-field <sm:(flex-1) flex flex-col justify-start bg-stone-900 rounded-b-lg text-[white] p-2">
+			<div className="keyboard-field flex-1 flex flex-col justify-start bg-stone-900 rounded-b-lg text-[white] p-2">
 				<div className="mb-1 flex justify-between items-center p-2">
 					<div className="flex items-center">
 						<button
@@ -179,7 +188,7 @@ export default function EditorForm({
 
 				<button
 					type="button"
-					className="flex h-80px justify-center items-center bg-green-700 rounded-lg m-2 font-bold text-lg cursor-pointer"
+					className="flex h-[80px] justify-center items-center bg-green-700 rounded-lg m-2 font-bold text-lg cursor-pointer"
 					onClick={toConfirm}
 				>
 					<i className="icon-[mdi--check] icon-md"></i>
