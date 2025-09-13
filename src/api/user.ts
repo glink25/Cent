@@ -13,7 +13,7 @@ const create = (tokenGetter: tokenGetter) => {
 	const getUserInfo = async (login?: string | number) => {
 		const res = await fetcher(`/user${login ? `/${login}` : ""}`);
 		const json = await res.json();
-		if (!res.ok) {
+		if (!res.ok || res.status === 401) {
 			throw json;
 		}
 		return json as UserInfo;

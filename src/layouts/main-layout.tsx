@@ -1,10 +1,11 @@
 import { Outlet } from "react-router";
 import { BillEditorProvider } from "@/components/bill-editor";
 import { BillInfoProvider } from "@/components/bill-info";
-import Book from "@/components/book";
+import BookGuide from "@/components/book";
 import Login from "@/components/login";
 import Navigation from "@/components/navigation";
 import { Settings } from "@/components/settings";
+import { Toaster } from "@/components/ui/sonner";
 
 export default function MainLayout() {
 	return (
@@ -16,8 +17,9 @@ export default function MainLayout() {
 			<BillEditorProvider />
 			<BillInfoProvider />
 			<Settings />
-			<Book />
+			<BookGuide />
 			<Login />
+			<Toaster />
 		</>
 	);
 }

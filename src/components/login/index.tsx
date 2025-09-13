@@ -16,7 +16,7 @@ export default function Login() {
 		<div className="fixed top-0 right-0 z-[9999] w-screen h-screen overflow-hidden">
 			<div className="absolute w-full h-full bg-[rgba(0,0,0,0.5)] z-[-1]"></div>
 			<div className="w-full h-full flex justify-center items-center">
-				<div className="bg-[white] w-[350px] h-[350px] flex justify-center items-center rounded">
+				<div className="bg-[white] w-[350px] h-[450px] flex justify-center items-center rounded">
 					{loading ? (
 						<div>
 							<i className="icon-[mdi--loading] animate-spin"></i>Login...

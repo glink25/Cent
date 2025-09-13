@@ -1,11 +1,26 @@
-import { RadioGroup, Select } from "radix-ui";
+import {
+	SelectContent,
+	SelectItemText,
+	SelectPortal,
+	SelectViewport,
+} from "@radix-ui/react-select";
+import { RadioGroup } from "radix-ui";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { v4 } from "uuid";
+import {
+	Select,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { numberToAmount } from "@/ledger/bill";
 import { BillCategories } from "@/ledger/category";
 import type { Bill } from "@/ledger/type";
 import { useLedgerStore } from "@/store/ledger";
 import createConfirmProvider from "../confirm";
+import Loading from "../loading";
+import { Button } from "../ui/button";
 
 // 单条用户行
 export interface UserRow {
@@ -106,44 +121,54 @@ function OncentImportForm({
 	}, [edit]);
 
 	console.log(data, "import data");
+	const [loading, setLoading] = useState(false);
 	const toConfirm = async () => {
 		const selected = data?.find((v) => v.user.id === selectedUserId);
 		if (!selected) {
 			return;
 		}
-		useLedgerStore
-			.getState()
-			.batchImport(
-				selected.data?.map((v) => transferToBill(v as BillRow)) ?? [],
-				importStrategy === "overlap",
-			);
+		setLoading(true);
+		try {
+			await useLedgerStore
+				.getState()
+				.batchImport(
+					selected.data?.map((v) => transferToBill(v as BillRow)) ?? [],
+					importStrategy === "overlap",
+				);
+			toast.success("Import success");
+			onConfirm?.(true);
+			setLoading(false);
+		} catch (error) {
+			toast.error(`Import Failed: ${error}`);
+			onConfirm?.(false);
+		}
 	};
 	return (
-		<div>
+		<div className="flex flex-col p-4 gap-4 h-full">
 			<div>Oncent </div>
-			<div>
-				<Select.Root
+			<div className="flex-1 flex flex-col gap-4">
+				<Select
 					value={selectedUserId}
 					onValueChange={(v) => setSelectedUserId(v)}
 				>
-					<Select.Trigger className="SelectTrigger" aria-label="Food">
-						<Select.Value placeholder="Select a user" />
-					</Select.Trigger>
-					<Select.Portal>
-						<Select.Content className="bg-white shadow">
-							<Select.Viewport className="SelectViewport">
+					<SelectTrigger className="SelectTrigger" aria-label="Food">
+						<SelectValue placeholder="Select a user" />
+					</SelectTrigger>
+					<SelectPortal>
+						<SelectContent className="bg-white shadow">
+							<SelectViewport className="SelectViewport">
 								{data?.map((item) => {
 									return (
-										<Select.Item key={item.user.id} value={item.user.id}>
-											<Select.ItemText>{`${item.user.nickname}(${item.data?.length})`}</Select.ItemText>
-										</Select.Item>
+										<SelectItem key={item.user.id} value={item.user.id}>
+											{`${item.user.nickname}(${item.data?.length})`}
+										</SelectItem>
 									);
 								})}
-							</Select.Viewport>
-						</Select.Content>
-					</Select.Portal>
-				</Select.Root>
-				<div>
+							</SelectViewport>
+						</SelectContent>
+					</SelectPortal>
+				</Select>
+				<div className="flex flex-col gap-4">
 					Import Strategy:
 					<RadioGroup.Root
 						className="flex items-center gap-4"
@@ -153,7 +178,7 @@ function OncentImportForm({
 						}}
 						aria-label="View density"
 					>
-						<div style={{ display: "flex", alignItems: "center" }}>
+						<div className="flex gap-2 items-center">
 							<RadioGroup.Item
 								className="w-6 h-6 rounded-full border flex justify-center items-center"
 								value="add"
@@ -164,7 +189,7 @@ function OncentImportForm({
 								Add
 							</label>
 						</div>
-						<div style={{ display: "flex", alignItems: "center" }}>
+						<div className="flex gap-2 items-center">
 							<RadioGroup.Item
 								className="w-6 h-6 rounded-full border flex justify-center items-center"
 								value="overlap"
@@ -179,12 +204,10 @@ function OncentImportForm({
 				</div>
 			</div>
 			<div className="flex justify-end gap-2 items-center">
-				<button type="button" onClick={() => onCancel?.()}>
-					cancel
-				</button>
-				<button type="button" onClick={toConfirm}>
-					confirm
-				</button>
+				<Button variant="ghost" onClick={() => onCancel?.()}>
+					Cancel
+				</Button>
+				<Button disabled={loading} onClick={toConfirm}>{loading && <Loading />} Confirm</Button>
 			</div>
 		</div>
 	);
@@ -195,5 +218,7 @@ export const [OncentImport, showOncentImport] = createConfirmProvider(
 	{
 		dialogTitle: "import from oncent",
 		dialogModalClose: false,
+		contentClassName:
+			"h-full w-full max-h-full max-w-full rounded-none sm:rounded-md data-[state=open]:animate-slide-from-right sm:max-h-[55vh] sm:w-[90vw] sm:max-w-[500px] sm:data-[state=open]:animate-content-show",
 	},
 );
