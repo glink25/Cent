@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { useCreator } from "@/hooks/use-creator";
 import { amountToNumber } from "@/ledger/bill";
-import { getCategoryById } from "@/ledger/category";
+import { getDefaultCategoryById } from "@/ledger/category";
 import type { Bill } from "@/ledger/type";
 import { useUserStore } from "@/store/user";
 import { cn } from "@/utils";
@@ -14,7 +14,7 @@ interface BillItemProps {
 
 export default function BillItem({ bill, className, onClick }: BillItemProps) {
 	const category = useMemo(
-		() => getCategoryById(bill.categoryId),
+		() => getDefaultCategoryById(bill.categoryId),
 		[bill.categoryId],
 	);
 
@@ -54,13 +54,12 @@ export default function BillItem({ bill, className, onClick }: BillItemProps) {
 
 			{/* 金额 */}
 			<div
-				className={`text-lg font-bold truncate flex-shrink-0 text-right ${
-					bill.type === "expense"
+				className={`text-lg font-bold truncate flex-shrink-0 text-right ${bill.type === "expense"
 						? "text-red-700"
 						: bill.type === "income"
 							? "text-green-900"
 							: ""
-				}`}
+					}`}
 			>
 				{amountToNumber(bill.amount)}
 			</div>

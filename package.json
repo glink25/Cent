@@ -4,17 +4,20 @@
 	"version": "0.0.0",
 	"type": "module",
 	"scripts": {
-		"dev": "vite",
-		"build": "tsc -b && vite build",
+		"dev": "vite --host",
+		"build": "vite build",
 		"lint": "biome lint",
 		"preview": "vite preview"
 	},
 	"dependencies": {
 		"@iconify-json/line-md": "^1.2.11",
+		"@radix-ui/react-dropdown-menu": "^2.1.16",
+		"@radix-ui/react-select": "^2.2.6",
 		"@radix-ui/react-slot": "^1.2.3",
 		"@tanstack/react-virtual": "^3.13.12",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
+		"comlink": "^4.4.2",
 		"dayjs": "^1.11.18",
 		"idb": "^8.0.3",
 		"immer": "^10.1.1",

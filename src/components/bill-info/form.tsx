@@ -1,6 +1,6 @@
 import { useCreator } from "@/hooks/use-creator";
 import { amountToNumber } from "@/ledger/bill";
-import { getCategoryById } from "@/ledger/category";
+import { getDefaultCategoryById } from "@/ledger/category";
 import { type EditBill, useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
 import { formatTime } from "@/utils/time";
@@ -26,7 +26,7 @@ export default function BillInfo({
 	if (!edit) {
 		return null;
 	}
-	const categoryInfo = getCategoryById(edit.categoryId);
+	const categoryInfo = getDefaultCategoryById(edit.categoryId);
 
 	const toEdit = async () => {
 		if (edit?.id) {
@@ -59,9 +59,8 @@ export default function BillInfo({
 							</div>
 						</div>
 						<div
-							className={`text-2xl font-bold flex overflow-x-auto ${
-								edit.type === "expense" ? "text-red-700" : "text-green-900"
-							}`}
+							className={`text-2xl font-bold flex overflow-x-auto ${edit.type === "expense" ? "text-red-700" : "text-green-900"
+								}`}
 						>
 							<div>{edit.type === "expense" ? "-" : "+"}</div>
 							<div>{amountToNumber(edit.amount)}</div>

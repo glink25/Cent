@@ -25,12 +25,30 @@ module.exports = {
           to: {
             transform: "translateX(0)",
           },
+        },
+        "collapse-open": {
+          from: {
+            height: '0'
+          },
+          to: {
+            height: 'var(--radix-collapsible-content-height)'
+          }
+        },
+        "collapse-close": {
+          from: {
+            height: 'var(--radix-collapsible-content-height)'
+          },
+          to: {
+            height: '0'
+          },
         }
       },
       animation: {
         "overlay-show": "overlay-show 150ms cubic-bezier(0.16, 1, 0.3, 1)",
         "content-show": "content-show 150ms cubic-bezier(0.16, 1, 0.3, 1)",
-        "slide-from-right": "slide-from-right 150ms cubic-bezier(0.16, 1, 0.3, 1)"
+        "slide-from-right": "slide-from-right 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "collapse-open": "collapse-open 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "collapse-close": "collapse-close 150ms cubic-bezier(0.16, 1, 0.3, 1)"
       },
     },
   },
