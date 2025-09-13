@@ -22,12 +22,14 @@ export default function Page() {
 				<div>{loading && <Loading />}</div>
 				{<i className={cn(syncIcon)} />}
 			</div>
-			<div className="flex-1 overflow-y-auto translate-0">
-				<Ledger
-					bills={bills}
-					className="relative before:block before:fixed before:top-0 before:left-9 before:w-[1px] before:h-full before:bg-black"
-					enableDivideAsOrdered
-				/>
+			<div className="flex-1 translate-0 pb-[10px] overflow-hidden">
+				<div className="w-full h-full">
+					<Ledger
+						bills={bills}
+						className={cn(bills.length > 0 && "relative ")}
+						enableDivideAsOrdered
+					/>
+				</div>
 			</div>
 		</div>
 	);

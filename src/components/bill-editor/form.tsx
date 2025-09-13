@@ -1,5 +1,6 @@
 import { Switch } from "radix-ui";
 import { useRef, useState } from "react";
+import PopupLayout from "@/layouts/popup-layout";
 import {
 	amountToNumber,
 	isValidNumberForAmount,
@@ -58,23 +59,9 @@ export default function EditorForm({
 	};
 
 	const commentInputEl = useRef<HTMLInputElement>(null);
-	return (
-		<div className="w-full h-full flex flex-col">
-			{/* header */}
-			<div className="header flex pt-2">
-				<button
-					type="button"
-					className="flex buttoned rounded-full py-1 px-3 cursor-pointer"
-					onClick={goBack}
-				>
-					<div className="flex items-center justify-center">
-						<i className="icon-[mdi--chevron-left]"></i>
-					</div>
-					{/* @todo: 替换为 i18n hook */}
-					{"back"}
-				</button>
-			</div>
 
+	return (
+		<PopupLayout className="h-full" onBack={goBack}>
 			{/* input area */}
 			<div className="w-full min-h-20 rounded-lg flex p-2 pb-0">
 				<div className="text-white">
@@ -85,9 +72,10 @@ export default function EditorForm({
 							setBillState((v) => ({
 								...v,
 								type: v.type === "expense" ? "income" : "expense",
-								categoryId: v.type === "expense"
-									? IncomeBillCategories[0].id
-									: ExpenseBillCategories[0].id
+								categoryId:
+									v.type === "expense"
+										? IncomeBillCategories[0].id
+										: ExpenseBillCategories[0].id,
 							}));
 						}}
 					>
@@ -194,6 +182,7 @@ export default function EditorForm({
 					<i className="icon-[mdi--check] icon-md"></i>
 				</button>
 			</div>
-		</div>
+
+		</PopupLayout>
 	);
 }

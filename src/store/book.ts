@@ -80,6 +80,9 @@ export const useBookStore = create<BookStore>()(
 						produce((state) => {
 							state.currentBookId = id;
 							state.visible = false;
+							Promise.resolve().then(() => {
+								location.reload()
+							})
 						}),
 					);
 				},
@@ -89,6 +92,12 @@ export const useBookStore = create<BookStore>()(
 			name: "book-store",
 			storage: createJSONStorage(() => localStorage),
 			version: 0,
+			partialize(state) {
+				return {
+					books: state.books,
+					currentBookId: state.currentBookId
+				} as any
+			},
 		},
 	),
 );

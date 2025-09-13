@@ -3,6 +3,7 @@ import dayjs, { type Dayjs } from "dayjs";
 import { useRef } from "react";
 import type { OutputType } from "@/gitray";
 import type { Bill } from "@/ledger/type";
+import { cn } from "@/utils";
 import { denseTime } from "@/utils/time";
 import { showBillInfo } from "../bill-info";
 import BillItem from "./item";
@@ -42,6 +43,10 @@ export default function Ledger({
 			}}
 		>
 			<div
+				className={cn(
+					enableDivideAsOrdered &&
+					"translate-x-0 before:block before:fixed before:top-0 before:left-9 before:w-[1px] before:h-[calc(100%-15px)] before:bg-black",
+				)}
 				style={{
 					height: `${rowVirtualizer.getTotalSize()}px`,
 					width: "100%",
@@ -80,11 +85,14 @@ export default function Ledger({
 								transform: `translateY(${virtualRow.start}px)`,
 							}}
 						>
-							{virtualRow.index === 0 && (
-								<Divider date={curDate} />
-							)}
+							{virtualRow.index === 0 && <Divider date={curDate} />}
 							<BillItem bill={bill} onClick={() => showBillInfo(bill)} />
 							{isDivider && <Divider date={isDivider} />}
+							{enableDivideAsOrdered && virtualRow.index === bills.length - 1 &&
+								<div className="flex items-center py-1 pl-12 text-xs before:absolute before:-translate-x-[15px] before:block before:size-2 before:rounded-full before:border">
+									The end
+								</div>
+							}
 						</div>
 					);
 				})}

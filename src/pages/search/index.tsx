@@ -134,13 +134,11 @@ export default function Page() {
 
 	const [list, setList] = useState<Bill[]>([]);
 	const toSearch = async () => {
-		console.log('search start', 'res')
 		const book = useBookStore.getState().currentBookId;
 		if (!book) {
 			return;
 		}
 		const result = await StorageDeferredAPI.filter(book, form);
-		console.log(result, 'res')
 		setList(result);
 	};
 

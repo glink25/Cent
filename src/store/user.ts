@@ -1,4 +1,5 @@
 import { produce } from "immer";
+import { toast } from "sonner";
 import type { StateCreator } from "zustand";
 import { create } from "zustand";
 import type { PersistOptions } from "zustand/middleware";
@@ -12,6 +13,7 @@ type UserStoreState = {
 	name: string;
 	id: number;
 	loading: boolean;
+	expired?: boolean
 	cachedUsers: Record<string, UserInfo>;
 };
 
@@ -47,8 +49,19 @@ export const useUserStore = create<UserStore>()(
 							state.login = res.login;
 							state.name = res.name;
 							state.id = res.id;
+							state.expired = undefined
 						}),
 					);
+				} catch (error) {
+					if ((error as any)?.status === "401") {
+						toast.error("Token expired, Please re-login to Github from setting page.");
+					}
+					set(
+						produce((state: UserStore) => {
+							state.expired = true
+						}),
+					);
+					throw error;
 				} finally {
 					set(
 						produce((state) => {
