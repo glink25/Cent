@@ -5,9 +5,10 @@ import { useEffect, useRef } from "react";
 type Props = {
 	value?: number;
 	formatter?: (time: number) => string;
-	displayFormatter?: string | ((time: Dayjs) => string);
+	displayFormatter?: string | ((time?: Dayjs) => string);
 	onChange?: (value: number) => void;
 	children?: React.ReactNode;
+	onBlur?: () => void
 };
 
 export function DatePicker({
@@ -15,6 +16,7 @@ export function DatePicker({
 	displayFormatter = "MM-DD",
 	onChange,
 	children,
+	onBlur,
 }: Props) {
 	const inputRef = useRef<HTMLInputElement>(null);
 
@@ -22,16 +24,16 @@ export function DatePicker({
 	const display =
 		typeof displayFormatter === "function"
 			? displayFormatter
-			: (d: Dayjs) => d.format(displayFormatter as string);
+			: (d?: Dayjs) => d?.format(displayFormatter as string);
 
 	// 初始值处理（等价于 Vue: if props.modelValue === undefined）
-	useEffect(() => {
-		if (value === undefined) {
-			const now = dayjs().unix();
-			// const initial = formatter?.(now) ?? now;
-			onChange?.(now * 1000);
-		}
-	}, [value, onChange]);
+	// useEffect(() => {
+	// 	if (value === undefined) {
+	// 		const now = Date.now()
+	// 		// const initial = formatter?.(now) ?? now;
+	// 		onChange?.(now);
+	// 	}
+	// }, [value, onChange]);
 
 	const onClickInput = (e: React.MouseEvent<HTMLInputElement>) => {
 		// 调用原生 datetime-local 的选择器
@@ -40,15 +42,15 @@ export function DatePicker({
 
 	const onTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const value = e.target.value;
-		const time = dayjs(value).unix();
+		const time = Date.parse(value)
 		// const formatted = formatter?.(time) ?? time;
-		onChange?.(time * 1000);
+		onChange?.(time);
 	};
 
-	const current = value ? dayjs(value as any) : dayjs();
+	const current = value ? dayjs(value as any) : undefined
 
 	return (
-		<label className="flex items-center relative">
+		<label className="flex items-center relative cursor-pointer">
 			{children}
 			<div className="mx-2">{display(current)}</div>
 			<input
@@ -57,6 +59,7 @@ export function DatePicker({
 				className="absolute top-0 left-0 w-2 h-full opacity-0"
 				onClick={onClickInput}
 				onChange={onTimeChange}
+				onBlur={onBlur}
 			/>
 		</label>
 	);

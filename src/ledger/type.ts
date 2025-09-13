@@ -15,7 +15,7 @@ export type Bill = {
 	id: string;
 	type: BillType;
 	categoryId: string;
-	creatorId: number;
+	creatorId: number | string;
 	comment?: string;
 	/** 整数金额，10000:1 */
 	amount: Amount;
@@ -26,3 +26,14 @@ export type Bill = {
 	location?: string;
 	tags?: string[];
 };
+
+export type BillFilter = Partial<{
+	comment: string;
+	start: number;
+	end: number;
+	type: BillType | undefined;
+	creators: (string | number)[];
+	categories: string[]
+	minAmount: number;
+	maxAmount: number;
+}>

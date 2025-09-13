@@ -2,8 +2,8 @@ import { produce } from "immer";
 import { v4 } from "uuid";
 import { create } from "zustand";
 import type { Action, BaseItemAction, OutputType } from "@/gitray";
-import type { Bill } from "@/ledger/type";
-import { StorageAPI } from "../api/storage";
+import type { Bill, BillCategory } from "@/ledger/type";
+import { type GlobalMeta, StorageAPI, StorageDeferredAPI } from "../api/storage";
 import { useBookStore } from "./book";
 import { useUserStore } from "./user";
 
@@ -15,16 +15,24 @@ export type EditBill = Omit<OutputType<Bill>, "id"> & {
 type LedgerStoreState = {
 	bills: OutputType<Bill>[];
 	actions: Action<Bill>[];
+	infos?: {
+		globalMeta: GlobalMeta;
+		creators: {
+			id: string | number;
+			meta: any;
+		}[];
+		categories: BillCategory[];
+	};
 
 	loading: boolean;
 	sync: /** 等待同步 */
-		| "wait"
-		/** 正在同步*/
-		| "syncing"
-		/** 同步成功*/
-		| "success"
-		/** 同步失败*/
-		| "failed";
+	| "wait"
+	/** 正在同步*/
+	| "syncing"
+	/** 同步成功*/
+	| "success"
+	/** 同步失败*/
+	| "failed";
 };
 
 type LedgerStoreActions = {
@@ -55,10 +63,12 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
 	const updateBillList = async () => {
 		await Promise.resolve();
 		const repo = getCurrentFullRepoName();
-		const res = await StorageAPI.getAllItems(repo, true, ["time", "desc"]);
+		const [bills, infos] = await Promise.all([StorageAPI.getAllItems(repo, true, ["time", "desc"]), StorageDeferredAPI.getInfo(repo)]);
+
 		set(
 			produce((state: LedgerStore) => {
-				state.bills = res;
+				state.bills = bills;
+				state.infos = infos
 			}),
 		);
 	};
@@ -117,8 +127,8 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
 	StorageAPI.onChange(() => {
 		updateBillList();
 
-		StorageAPI.getStash().then((stashes) => {
-			if (stashes.length > 0) {
+		StorageAPI.getIsNeedSync().then((needSync) => {
+			if (needSync) {
 				set(
 					produce((state: LedgerStoreState) => {
 						state.sync = "wait";
@@ -204,7 +214,6 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
 			}
 			const repo = getCurrentFullRepoName();
 			const creatorId = useUserStore.getState().id;
-			const createTime = Date.now();
 			const actions: BaseItemAction<Bill>[] = data.map((v) => {
 				return {
 					type: "add",

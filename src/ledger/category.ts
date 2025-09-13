@@ -149,7 +149,7 @@ export const BillCategories: BillCategory[] = [
 
 const map = new Map<string, BillCategory>();
 
-export const getCategoryById = (id: string) => {
+export const getDefaultCategoryById = (id: string) => {
 	if (map.has(id)) return map.get(id)!;
 	const cate = BillCategories.find((c) => c.id === id);
 	if (cate) {
