@@ -10,11 +10,9 @@ import {
 	DropdownMenuCheckboxItem,
 	DropdownMenuContent,
 	DropdownMenuLabel,
-	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useCreators } from "@/hooks/use-creator";
-import { BillCategories } from "@/ledger/category";
 import type { Bill, BillCategory, BillFilter, BillType } from "@/ledger/type";
 import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
@@ -31,17 +29,17 @@ function RangeInput({
 	return (
 		<Clearable
 			visible
-			className="relative rounded-full shadow px-2 truncate py-2 cursor-pointer hover:text-accent-foreground group range-input"
+			className="relative rounded-md shadow px-4 py-2 border border-input truncate cursor-pointer hover:text-accent-foreground group range-input"
 			onClear={() => onChange?.(undefined)}
 		>
 			{value === undefined && (
-				<span className="absolute pointer-events-none group-[.range-input:focus-within]:hidden">
+				<span className="absolute pointer-events-none group-[.range-input:focus-within]:hidden pr-4">
 					Unlimited
 				</span>
 			)}
 			<input
 				type="number"
-				className="max-w-[50px] h-[20px] bg-transparent outline-none text-right py-1"
+				className="max-w-[64px] h-[20px] bg-transparent outline-none text-right py-1"
 				value={value ?? ""}
 				onChange={(e) => {
 					onChange?.(Number(e.target.value));
@@ -66,7 +64,7 @@ function DateInput({
 	return (
 		<Clearable
 			visible
-			className="rounded-full shadow px-2 truncate py-2 cursor-pointer hover:text-accent-foreground"
+			className="rounded-md shadow px-4 border border-input truncate py-2 cursor-pointer hover:text-accent-foreground"
 			onClear={() => onChange?.(undefined)}
 		>
 			<DatePicker
@@ -87,6 +85,10 @@ function DateInput({
 
 export default function Page() {
 	const [form, setForm] = useState<BillFilter>({});
+
+	const toReset = () => {
+		setForm({})
+	}
 
 	const setTime = (v: number | undefined, type: "start" | "end") => {
 		setForm((prev) => {
@@ -116,8 +118,8 @@ export default function Page() {
 		([id, { info }]) => ({ id, name: info.name }),
 	);
 	const { infos } = useLedgerStore();
-	const allCategories = infos?.categories ?? BillCategories;
-	const categories = BillCategories.filter((cate) =>
+	const allCategories = infos?.categories ?? [];
+	const categories = allCategories.filter((cate) =>
 		form.type === undefined ? true : cate.type === form.type,
 	).reduce(
 		(p, c) => {
@@ -142,6 +144,26 @@ export default function Page() {
 		setList(result);
 	};
 
+	const formatCategories = (ids?: string[]) => {
+		if (ids === undefined) {
+			return 'All'
+		}
+		if (ids.length === categories.reduce((p, c) => p + c.list.length, 0)) {
+			return 'All'
+		}
+		return ids.map(id => allCategories.find(v => v.id === id)?.name ?? id).join(',')
+	}
+
+	const formatCreators = (ids?: (number | string)[]) => {
+		if (ids === undefined) {
+			return 'All'
+		}
+		if (ids.length === allCreators.length) {
+			return 'All'
+		}
+		return ids.map(id => allCreators.find(v => v.id === id)?.name ?? id).join(',')
+	}
+
 	return (
 		<div className="w-full h-full p-2 flex justify-center overflow-hidden">
 			<div className="h-full w-full mx-2 max-w-[600px] flex flex-col">
@@ -165,16 +187,16 @@ export default function Page() {
 						</div>
 						<Button
 							variant="ghost"
-							className="p-3 rounded-full"
+							className="p-3 rounded-md"
 							onClick={toSearch}
 						>
 							<i className="icon-[mdi--search]"></i>
 						</Button>
 					</div>
 				</div>
-				<Collapsible.Root className="flex flex-col group pt-2 text-xs sm:text-sm">
+				<Collapsible.Root className="flex flex-col group pt-2 text-sm font-medium">
 					<Collapsible.Content asChild>
-						<div className="flex flex-col gap-2 overflow-hidden data-[state=open]:animate-collapse-open data-[state=closed]:animate-collapse-close">
+						<div className="flex flex-col gap-3 overflow-hidden data-[state=open]:animate-collapse-open data-[state=closed]:animate-collapse-close">
 							<div className="w-full flex justify-between items-center">
 								<DateInput
 									value={form.start}
@@ -194,10 +216,10 @@ export default function Page() {
 									<i></i>
 									Type:
 								</div>
-								<div className="flex rounded-full shadow overflow-hidden">
+								<div className="flex rounded-md shadow border border-input overflow-hidden divide-x">
 									<button
 										type="button"
-										className={`w-20 text-center py-1 buttoned cursor-pointer transition-colors duration-200 ${form.type === "income" ? "!bg-stone-700 !text-white" : ""
+										className={`w-20 text-center pl-4 py-2 buttoned cursor-pointer transition-colors duration-200 ${form.type === "income" ? "!bg-stone-700 !text-white" : ""
 											}`}
 										onClick={() => setForm((v) => ({ ...v, type: "income" }))}
 									>
@@ -205,7 +227,7 @@ export default function Page() {
 									</button>
 									<button
 										type="button"
-										className={`w-20 text-center py-1 buttoned cursor-pointer transition-colors duration-200 ${form.type === "expense" ? "!bg-stone-700 !text-white" : ""
+										className={`w-20 text-center py-2 buttoned cursor-pointer transition-colors duration-200 ${form.type === "expense" ? "!bg-stone-700 !text-white" : ""
 											}`}
 										onClick={() => setForm((v) => ({ ...v, type: "expense" }))}
 									>
@@ -213,7 +235,7 @@ export default function Page() {
 									</button>
 									<button
 										type="button"
-										className={`w-20 text-center py-1 buttoned cursor-pointer transition-colors duration-200 ${form.type === undefined ? "!bg-stone-700 !text-white" : ""
+										className={`w-20 text-center pr-4 py-2 buttoned cursor-pointer transition-colors duration-200 ${form.type === undefined ? "!bg-stone-700 !text-white" : ""
 											}`}
 										onClick={() => setForm((v) => ({ ...v, type: undefined }))}
 									>
@@ -251,7 +273,9 @@ export default function Page() {
 								</div>
 								<DropdownMenu>
 									<DropdownMenuTrigger asChild>
-										<Button variant="outline">Open</Button>
+										<Button variant="outline" > <div className="max-w-[120px] truncate">{
+											formatCategories(form.categories)
+										}</div></Button>
 									</DropdownMenuTrigger>
 									<DropdownMenuContent className="w-56">
 										{categories.map((folder) => {
@@ -277,7 +301,9 @@ export default function Page() {
 																	} else {
 																		set.delete(item.id);
 																	}
-																	const newCategories = Array.from(set);
+																	const newCategories = set.size === 0
+																		? prev.categories
+																		: Array.from(set);
 																	return {
 																		...prev,
 																		categories: newCategories,
@@ -302,11 +328,15 @@ export default function Page() {
 
 								<DropdownMenu>
 									<DropdownMenuTrigger asChild>
-										<Button variant="outline">Open</Button>
+										<Button variant="outline">
+											<div className="max-w-[120px] truncate">{
+												formatCreators(form.creators)
+											}</div>
+										</Button>
 									</DropdownMenuTrigger>
 									<DropdownMenuContent className="w-56">
-										<DropdownMenuLabel>Appearance</DropdownMenuLabel>
-										<DropdownMenuSeparator />
+										{/* <DropdownMenuLabel>Appearance</DropdownMenuLabel>
+										<DropdownMenuSeparator /> */}
 										{allCreators.map((item) => (
 											<DropdownMenuCheckboxItem
 												key={item.id}
@@ -323,7 +353,9 @@ export default function Page() {
 														} else {
 															set.delete(item.id);
 														}
-														const newCreators = Array.from(set);
+														const newCreators = set.size === 0
+															? prev.creators
+															: Array.from(set);
 														return {
 															...prev,
 															creators: newCreators,
@@ -341,7 +373,7 @@ export default function Page() {
 						</div>
 					</Collapsible.Content>
 					<div className="w-full flex justify-between px-2">
-						<Button variant="ghost">Reset</Button>
+						<Button variant="ghost" onClick={toReset}>Reset</Button>
 						<Collapsible.Trigger asChild>
 							<Button variant="ghost">
 								<i className="group-[[data-state=open]]:icon-[mdi--filter-variant-minus] group-[[data-state=closed]]:icon-[mdi--filter-variant-plus]"></i>
