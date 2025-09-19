@@ -20,6 +20,7 @@ import { applyStash, GitrayDB } from "./db";
 import { diff } from "./diff";
 import { Scheduler } from "./scheduler";
 import { computeGitBlobSha1 } from "./sha";
+import { asyncSingleton } from "./singleton";
 import { omitAssets } from "./transform";
 import type {
 	Action,
@@ -126,7 +127,7 @@ export class Gitray<
 	/**
 	 * 获取store中所有的collection name
 	 */
-	private async fetchStoreStructure(
+	private async _fetchStoreStructure(
 		storeFullName: string,
 	): Promise<StoreStructure> {
 		const octokit = await this.getOctokit();
@@ -225,7 +226,9 @@ export class Gitray<
 		return structure;
 	}
 
-	private async fetchStoreDetail(
+	private fetchStoreStructure = asyncSingleton(this._fetchStoreStructure.bind(this));
+
+	private async _fetchStoreDetail(
 		storeFullName: string,
 		_structure?: StoreStructure,
 	) {
@@ -267,6 +270,7 @@ export class Gitray<
 		);
 		return structure as StoreDetail<Full<Item>>;
 	}
+	private fetchStoreDetail = asyncSingleton(this._fetchStoreDetail.bind(this))
 
 	// public methods
 
@@ -324,12 +328,12 @@ export class Gitray<
 				params:
 					action.type === "add"
 						? {
-								...action.params,
-								__created_at: now,
-								__updated_at: now,
-								__collection: action.collection,
-								__store: action.store,
-							}
+							...action.params,
+							__created_at: now,
+							__updated_at: now,
+							__collection: action.collection,
+							__store: action.store,
+						}
 						: action.type === "update"
 							? { ...action.params, __updated_at: now }
 							: action.type === "meta"
@@ -340,7 +344,7 @@ export class Gitray<
 			await store.put(finalAction);
 		}
 		db.close();
-		this.scheduleSync();
+		this.toSync();
 		Array.from(new Set(actions.map((ac) => ac.store))).forEach((store) => {
 			this.notifyChange(store);
 		});
@@ -611,15 +615,15 @@ export class Gitray<
 			this.syncProcessors.splice(i, 1);
 		};
 	}
-	private toSync() {
+	private syncHandler() {
 		const finished = this.syncImmediate();
 		this.syncProcessors.forEach((p) => {
 			p(finished);
 		});
 	}
 
-	private scheduler = new Scheduler(() => this.toSync());
-	private async scheduleSync() {
+	private scheduler = new Scheduler(() => this.syncHandler());
+	async toSync() {
 		this.scheduler.scheduleSync();
 	}
 

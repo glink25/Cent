@@ -41,6 +41,10 @@ input * {
   user-select: text;
 }
 
+button {
+  touch-action: manipulation;
+}
+
 ::-webkit-scrollbar {
 	width: 4px;
 	height: 4px;
