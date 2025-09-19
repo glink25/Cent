@@ -1,9 +1,12 @@
 import { Collapsible } from "radix-ui";
-import { useState } from "react";
-import { StorageDeferredAPI } from "@/api/storage";
+import { type ReactNode, useState } from "react";
+import { useNavigate } from "react-router";
+import { v4 } from "uuid";
+import { type GlobalMeta, StorageAPI, StorageDeferredAPI } from "@/api/storage";
 import Clearable from "@/components/clearable";
 import { DatePicker } from "@/components/date-picker";
 import Ledger from "@/components/ledger";
+import Tag from "@/components/tag";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -12,83 +15,24 @@ import {
 	DropdownMenuLabel,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { useCreators } from "@/hooks/use-creator";
 import type { Bill, BillCategory, BillFilter, BillType } from "@/ledger/type";
 import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
 
-function RangeInput({
-	value,
-	onChange,
-	onBlur,
-}: {
-	value: number | undefined;
-	onChange?: (v?: number) => void;
-	onBlur?: () => void;
-}) {
-	return (
-		<Clearable
-			visible
-			className="relative rounded-md shadow px-4 py-2 border border-input truncate cursor-pointer hover:text-accent-foreground group range-input"
-			onClear={() => onChange?.(undefined)}
-		>
-			{value === undefined && (
-				<span className="absolute pointer-events-none group-[.range-input:focus-within]:hidden pr-4">
-					Unlimited
-				</span>
-			)}
-			<input
-				type="number"
-				className="max-w-[64px] h-[20px] bg-transparent outline-none text-right py-1"
-				value={value ?? ""}
-				onChange={(e) => {
-					onChange?.(Number(e.target.value));
-				}}
-				onBlur={onBlur}
-			></input>
-		</Clearable>
-	);
-}
-
-function DateInput({
-	value,
-	onChange,
-	onBlur,
-	type,
-}: {
-	value: number | undefined;
-	onChange?: (v?: number) => void;
-	onBlur?: () => void;
-	type: "start" | "end";
-}) {
-	return (
-		<Clearable
-			visible
-			className="rounded-md shadow px-4 border border-input truncate py-2 cursor-pointer hover:text-accent-foreground"
-			onClear={() => onChange?.(undefined)}
-		>
-			<DatePicker
-				value={value}
-				displayFormatter={(v) =>
-					v === undefined
-						? type === "start"
-							? "From: oldest"
-							: "To: newest"
-						: `${type === "start" ? "From" : "To"}: ${v.format("YYYY/MM/DD")}`
-				}
-				onChange={(e) => onChange?.(e)}
-				onBlur={onBlur}
-			/>
-		</Clearable>
-	);
-}
-
 export default function Page() {
 	const [form, setForm] = useState<BillFilter>({});
 
 	const toReset = () => {
-		setForm({})
-	}
+		setForm({});
+	};
 
 	const setTime = (v: number | undefined, type: "start" | "end") => {
 		setForm((prev) => {
@@ -111,7 +55,7 @@ export default function Page() {
 		});
 	};
 
-	const formatForm = () => { };
+	const formatForm = () => {};
 
 	const creators = useCreators();
 	const allCreators = Array.from(Object.entries(creators)).map(
@@ -119,24 +63,28 @@ export default function Page() {
 	);
 	const { infos } = useLedgerStore();
 	const allCategories = infos?.categories ?? [];
-	const categories = allCategories.filter((cate) =>
-		form.type === undefined ? true : cate.type === form.type,
-	).reduce(
-		(p, c) => {
-			const found = p.find((v) => v.type === c.type);
-			if (found) {
-				found.list.push(c);
+	const categories = allCategories
+		.filter((cate) =>
+			form.type === undefined ? true : cate.type === form.type,
+		)
+		.reduce(
+			(p, c) => {
+				const found = p.find((v) => v.type === c.type);
+				if (found) {
+					found.list.push(c);
+					return p;
+				}
+				p.push({ type: c.type, list: [c] });
 				return p;
-			}
-			p.push({ type: c.type, list: [c] });
-			return p;
-		},
-		[] as { type: BillType; list: BillCategory[] }[],
-	);
+			},
+			[] as { type: BillType; list: BillCategory[] }[],
+		);
 
 	const [list, setList] = useState<Bill[]>([]);
+	const [searched, setSearched] = useState(false);
 	const toSearch = async () => {
 		const book = useBookStore.getState().currentBookId;
+		setSearched(true);
 		if (!book) {
 			return;
 		}
@@ -146,27 +94,57 @@ export default function Page() {
 
 	const formatCategories = (ids?: string[]) => {
 		if (ids === undefined) {
-			return 'All'
+			return "All";
 		}
 		if (ids.length === categories.reduce((p, c) => p + c.list.length, 0)) {
-			return 'All'
+			return "All";
 		}
-		return ids.map(id => allCategories.find(v => v.id === id)?.name ?? id).join(',')
-	}
+		return ids
+			.map((id) => allCategories.find((v) => v.id === id)?.name ?? id)
+			.join(",");
+	};
 
 	const formatCreators = (ids?: (number | string)[]) => {
 		if (ids === undefined) {
-			return 'All'
+			return "All";
 		}
 		if (ids.length === allCreators.length) {
-			return 'All'
+			return "All";
 		}
-		return ids.map(id => allCreators.find(v => v.id === id)?.name ?? id).join(',')
-	}
+		return ids
+			.map((id) => allCreators.find((v) => v.id === id)?.name ?? id)
+			.join(",");
+	};
 
+	const dateType = form.recent === undefined ? "date" : "recent";
+
+	const navigate = useNavigate();
+	const toSaveFilter = async () => {
+		const name = prompt("Please enter a name for current filter");
+		if (!name) {
+			return;
+		}
+		const book = useBookStore.getState().currentBookId;
+		if (!book) {
+			return;
+		}
+		const id = v4();
+		await useLedgerStore.getState().updateGlobalMeta((prev) => {
+			if (prev.customFilters === undefined) {
+				prev.customFilters = [];
+			}
+			prev.customFilters.push({
+				id,
+				filter: form,
+				name,
+			});
+			return prev;
+		});
+		navigate(`/stat/${id}`);
+	};
 	return (
 		<div className="w-full h-full p-2 flex justify-center overflow-hidden">
-			<div className="h-full w-full mx-2 max-w-[600px] flex flex-col">
+			<div className="h-full w-full px-2 max-w-[600px] flex flex-col">
 				<div className="search w-full flex justify-center pt-4">
 					<div className="w-full h-10 shadow-md rounded-sm flex items-center px-4 focus-within:(shadow-lg)">
 						<div className="flex-1">
@@ -194,23 +172,93 @@ export default function Page() {
 						</Button>
 					</div>
 				</div>
-				<Collapsible.Root className="flex flex-col group pt-2 text-sm font-medium">
+				<Collapsible.Root className="flex flex-col group pt-3 text-xs md:text-sm font-medium">
 					<Collapsible.Content asChild>
-						<div className="flex flex-col gap-3 overflow-hidden data-[state=open]:animate-collapse-open data-[state=closed]:animate-collapse-close">
-							<div className="w-full flex justify-between items-center">
-								<DateInput
-									value={form.start}
-									type="start"
-									onChange={(v) => setForm((prev) => ({ ...prev, start: v }))}
-									onBlur={formatForm}
-								/>
-								<DateInput
-									value={form.end}
-									type="end"
-									onChange={(v) => setForm((prev) => ({ ...prev, end: v }))}
-									onBlur={formatForm}
-								/>
+						<div className="flex flex-col gap-3 border-b data-[state=open]:animate-collapse-open data-[state=closed]:animate-collapse-close data-[state=closed]:overflow-hidden">
+							{/* time selector */}
+							<div className="flex justify-between items-center gap-4">
+								<Select
+									value={dateType}
+									onValueChange={(v) => {
+										if (v === "recent") {
+											setForm((prev) => ({
+												...prev,
+												recent: { value: 1, unit: "month" },
+											}));
+											return;
+										}
+										setForm((prev) => ({ ...prev, recent: undefined }));
+									}}
+								>
+									<SelectTrigger className="w-20 px-2 py-2 md:px-4 text-xs md:text-sm">
+										<SelectValue></SelectValue>
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="date">Date</SelectItem>
+										<SelectItem value="recent">Recent</SelectItem>
+									</SelectContent>
+								</Select>
+								{dateType === "date" ? (
+									<div className="flex justify-between items-center">
+										<DateInput
+											value={form.start}
+											type="start"
+											onChange={(v) =>
+												setForm((prev) => ({ ...prev, start: v }))
+											}
+											onBlur={formatForm}
+										/>
+										<div className="px-4"> - </div>
+										<DateInput
+											value={form.end}
+											type="end"
+											onChange={(v) => setForm((prev) => ({ ...prev, end: v }))}
+											onBlur={formatForm}
+										/>
+									</div>
+								) : (
+									<div className="flex justify-between items-center gap-2">
+										<RangeInput
+											value={form.recent?.value}
+											onChange={(v) => {
+												if (v === undefined) {
+													return;
+												}
+												setForm((prev) => ({
+													...prev,
+													recent: {
+														unit: prev.recent?.unit ?? "week",
+														value: v,
+													},
+												}));
+											}}
+										/>
+										<Select
+											value={form.recent?.unit ?? "day"}
+											onValueChange={(v) => {
+												setForm((prev) => ({
+													...prev,
+													recent: {
+														value: prev.recent?.value ?? 1,
+														unit: v as any,
+													},
+												}));
+											}}
+										>
+											<SelectTrigger className="w-20 px-2 py-2 md:px-4 text-xs md:text-sm">
+												<SelectValue></SelectValue>
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="day">Day</SelectItem>
+												<SelectItem value="week">Week</SelectItem>
+												<SelectItem value="month">Month</SelectItem>
+												<SelectItem value="year">Year</SelectItem>
+											</SelectContent>
+										</Select>
+									</div>
+								)}
 							</div>
+							{/* type selector */}
 							<div className="w-full flex justify-between items-center">
 								<div>
 									<i></i>
@@ -219,30 +267,34 @@ export default function Page() {
 								<div className="flex rounded-md shadow border border-input overflow-hidden divide-x">
 									<button
 										type="button"
-										className={`w-20 text-center pl-4 py-2 buttoned cursor-pointer transition-colors duration-200 ${form.type === "income" ? "!bg-stone-700 !text-white" : ""
-											}`}
+										className={`w-20 text-center pr-2 md:pl-4 py-2 text-xs h-[34px] buttoned cursor-pointer transition-colors duration-200 ${
+											form.type === "income" ? "!bg-stone-700 !text-white" : ""
+										}`}
 										onClick={() => setForm((v) => ({ ...v, type: "income" }))}
 									>
 										{"income"}
 									</button>
 									<button
 										type="button"
-										className={`w-20 text-center py-2 buttoned cursor-pointer transition-colors duration-200 ${form.type === "expense" ? "!bg-stone-700 !text-white" : ""
-											}`}
+										className={`w-20 text-center py-2 h-[34px] buttoned cursor-pointer transition-colors duration-200 ${
+											form.type === "expense" ? "!bg-stone-700 !text-white" : ""
+										}`}
 										onClick={() => setForm((v) => ({ ...v, type: "expense" }))}
 									>
 										{"expenses"}
 									</button>
 									<button
 										type="button"
-										className={`w-20 text-center pr-4 py-2 buttoned cursor-pointer transition-colors duration-200 ${form.type === undefined ? "!bg-stone-700 !text-white" : ""
-											}`}
+										className={`w-20 text-center pr-2 md:pr-4 py-2 h-[34px] buttoned cursor-pointer transition-colors duration-200 ${
+											form.type === undefined ? "!bg-stone-700 !text-white" : ""
+										}`}
 										onClick={() => setForm((v) => ({ ...v, type: undefined }))}
 									>
 										{"all"}
 									</button>
 								</div>
 							</div>
+							{/* amount range */}
 							<div className="w-full flex justify-between items-center">
 								<div>
 									<i></i>
@@ -252,7 +304,7 @@ export default function Page() {
 									<RangeInput
 										value={form.minAmount}
 										onChange={(v) =>
-											setForm((prev) => ({ ...prev, minMoney: v }))
+											setForm((prev) => ({ ...prev, minAmount: v }))
 										}
 										onBlur={formatForm}
 									/>
@@ -260,12 +312,13 @@ export default function Page() {
 									<RangeInput
 										value={form.maxAmount}
 										onChange={(v) =>
-											setForm((prev) => ({ ...prev, maxMoney: v }))
+											setForm((prev) => ({ ...prev, maxAmount: v }))
 										}
 										onBlur={formatForm}
 									/>
 								</div>
 							</div>
+							{/* category selector */}
 							<div className="w-full flex justify-between items-center">
 								<div>
 									<i></i>
@@ -273,9 +326,14 @@ export default function Page() {
 								</div>
 								<DropdownMenu>
 									<DropdownMenuTrigger asChild>
-										<Button variant="outline" > <div className="max-w-[120px] truncate">{
-											formatCategories(form.categories)
-										}</div></Button>
+										<Button
+											variant="outline"
+											className="px-2 md:px-4 py-2 text-xs md:text-sm"
+										>
+											<div className="max-w-[120px] truncate">
+												{formatCategories(form.categories)}
+											</div>
+										</Button>
 									</DropdownMenuTrigger>
 									<DropdownMenuContent className="w-56">
 										{categories.map((folder) => {
@@ -294,16 +352,17 @@ export default function Page() {
 																setForm((prev) => {
 																	const set = new Set(
 																		prev.categories ??
-																		allCategories.map((c) => c.id),
+																			allCategories.map((c) => c.id),
 																	);
 																	if (v) {
 																		set.add(item.id);
 																	} else {
 																		set.delete(item.id);
 																	}
-																	const newCategories = set.size === 0
-																		? prev.categories
-																		: Array.from(set);
+																	const newCategories =
+																		set.size === 0
+																			? prev.categories
+																			: Array.from(set);
 																	return {
 																		...prev,
 																		categories: newCategories,
@@ -320,6 +379,7 @@ export default function Page() {
 									</DropdownMenuContent>
 								</DropdownMenu>
 							</div>
+							{/* user selector */}
 							<div className="w-full flex justify-between items-center">
 								<div>
 									<i></i>
@@ -328,10 +388,13 @@ export default function Page() {
 
 								<DropdownMenu>
 									<DropdownMenuTrigger asChild>
-										<Button variant="outline">
-											<div className="max-w-[120px] truncate">{
-												formatCreators(form.creators)
-											}</div>
+										<Button
+											variant="outline"
+											className="px-2 md:px-4 py-2 text-xs md:text-sm"
+										>
+											<div className="max-w-[120px] truncate">
+												{formatCreators(form.creators)}
+											</div>
 										</Button>
 									</DropdownMenuTrigger>
 									<DropdownMenuContent className="w-56">
@@ -353,9 +416,8 @@ export default function Page() {
 														} else {
 															set.delete(item.id);
 														}
-														const newCreators = set.size === 0
-															? prev.creators
-															: Array.from(set);
+														const newCreators =
+															set.size === 0 ? prev.creators : Array.from(set);
 														return {
 															...prev,
 															creators: newCreators,
@@ -369,11 +431,39 @@ export default function Page() {
 									</DropdownMenuContent>
 								</DropdownMenu>
 							</div>
+							{/* other checkboxes */}
+							<div className="w-full flex justify-between items-center">
+								<div>Other:</div>
+								<div className="flex-1 flex justify-end overflow-y-scroll gap-3">
+									<Tag
+										checked={form.assets}
+										onCheckedChange={(v) => {
+											setForm((prev) => ({ ...prev, assets: v }));
+										}}
+										className="text-xs bg-transparent shadow-md"
+									>
+										with assets
+									</Tag>
+								</div>
+							</div>
+							{/* placeholder */}
 							<div className="h-2"></div>
 						</div>
 					</Collapsible.Content>
 					<div className="w-full flex justify-between px-2">
-						<Button variant="ghost" onClick={toReset}>Reset</Button>
+						<Button variant="ghost" onClick={toReset}>
+							Reset
+						</Button>
+						{searched && (
+							<Button
+								className="text-xs underline animate-content-show"
+								variant="ghost"
+								onClick={toSaveFilter}
+							>
+								<i className="icon-[mdi--coffee-to-go-outline]" />
+								Save for analyze
+							</Button>
+						)}
 						<Collapsible.Trigger asChild>
 							<Button variant="ghost">
 								<i className="group-[[data-state=open]]:icon-[mdi--filter-variant-minus] group-[[data-state=closed]]:icon-[mdi--filter-variant-plus]"></i>
@@ -384,7 +474,72 @@ export default function Page() {
 				</Collapsible.Root>
 				<Ledger bills={list} />
 			</div>
-
 		</div>
+	);
+}
+
+function RangeInput({
+	value,
+	onChange,
+	onBlur,
+}: {
+	value: number | undefined;
+	onChange?: (v?: number) => void;
+	onBlur?: () => void;
+}) {
+	return (
+		<Clearable
+			visible
+			className="relative rounded-md shadow px-2 py-2 md:px-4 border border-input truncate cursor-pointer hover:text-accent-foreground group range-input"
+			onClear={() => onChange?.(undefined)}
+		>
+			{value === undefined && (
+				<span className="absolute pointer-events-none group-[.range-input:focus-within]:hidden pr-4">
+					Unlimited
+				</span>
+			)}
+			<input
+				type="number"
+				className="max-w-[64px] h-[18px] bg-transparent outline-none text-right"
+				value={value ?? ""}
+				onChange={(e) => {
+					onChange?.(Number(e.target.value));
+				}}
+				onBlur={onBlur}
+			></input>
+		</Clearable>
+	);
+}
+
+function DateInput({
+	value,
+	onChange,
+	onBlur,
+	type,
+}: {
+	value: number | undefined;
+	onChange?: (v?: number) => void;
+	onBlur?: () => void;
+	type: "start" | "end";
+}) {
+	return (
+		<Clearable
+			visible
+			className="rounded-md shadow px-2 py-2 md:px-4 border border-input truncate cursor-pointer hover:text-accent-foreground"
+			onClear={() => onChange?.(undefined)}
+		>
+			<DatePicker
+				value={value}
+				displayFormatter={(v) =>
+					v === undefined
+						? type === "start"
+							? "From: oldest"
+							: "To: newest"
+						: `${v.format("YYYY/MM/DD")}`
+				}
+				onChange={(e) => onChange?.(e)}
+				onBlur={onBlur}
+			/>
+		</Clearable>
 	);
 }

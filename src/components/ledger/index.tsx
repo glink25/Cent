@@ -45,7 +45,7 @@ export default function Ledger({
 			<div
 				className={cn(
 					enableDivideAsOrdered &&
-					"translate-x-0 before:block before:fixed before:top-0 before:left-9 before:w-[1px] before:h-[calc(100%-15px)] before:bg-black",
+						"translate-x-0 before:block before:fixed before:top-0 before:left-9 before:w-[1px] before:h-[calc(100%-15px)] before:bg-black",
 				)}
 				style={{
 					height: `${rowVirtualizer.getTotalSize()}px`,
@@ -59,16 +59,16 @@ export default function Ledger({
 					const isDivider = !enableDivideAsOrdered
 						? undefined
 						: (() => {
-							const lastBill = bills[virtualRow.index + 1];
-							if (!lastBill) {
-								return undefined;
-							}
-							const lastDate = dayjs.unix(lastBill.time / 1000);
-							const isSameDay = lastDate.isSame(curDate, "days");
-							if (!isSameDay) {
-								return lastDate;
-							}
-						})();
+								const lastBill = bills[virtualRow.index + 1];
+								if (!lastBill) {
+									return undefined;
+								}
+								const lastDate = dayjs.unix(lastBill.time / 1000);
+								const isSameDay = lastDate.isSame(curDate, "days");
+								if (!isSameDay) {
+									return lastDate;
+								}
+							})();
 					return (
 						<div
 							key={virtualRow.key}
@@ -85,14 +85,17 @@ export default function Ledger({
 								transform: `translateY(${virtualRow.start}px)`,
 							}}
 						>
-							{virtualRow.index === 0 && <Divider date={curDate} />}
+							{virtualRow.index === 0 && enableDivideAsOrdered && (
+								<Divider date={curDate} />
+							)}
 							<BillItem bill={bill} onClick={() => showBillInfo(bill)} />
 							{isDivider && <Divider date={isDivider} />}
-							{enableDivideAsOrdered && virtualRow.index === bills.length - 1 &&
-								<div className="flex items-center py-1 pl-12 text-xs before:absolute before:-translate-x-[15px] before:block before:size-2 before:rounded-full before:border">
-									The end
-								</div>
-							}
+							{enableDivideAsOrdered &&
+								virtualRow.index === bills.length - 1 && (
+									<div className="flex items-center py-1 pl-12 text-xs before:absolute before:-translate-x-[15px] before:block before:size-2 before:rounded-full before:border">
+										The end
+									</div>
+								)}
 						</div>
 					);
 				})}

@@ -60,6 +60,15 @@ export const getToken = async () => {
 	return token;
 };
 
+export const manuallySetToken = (token: string) => {
+	localStorage.setItem(
+		LOCAL_TOKEN_KEY,
+		JSON.stringify({
+			accessToken: token,
+		}),
+	);
+};
+
 export const getLocalToken = () => {
 	const item = localStorage.getItem(LOCAL_TOKEN_KEY);
 	if (!item) {

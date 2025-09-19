@@ -29,11 +29,16 @@ export type Bill = {
 
 export type BillFilter = Partial<{
 	comment: string;
+	recent?: {
+		value: number;
+		unit: "year" | "month" | "week" | "day";
+	};
 	start: number;
 	end: number;
 	type: BillType | undefined;
 	creators: (string | number)[];
-	categories: string[]
+	categories: string[];
 	minAmount: number;
 	maxAmount: number;
-}>
+	assets?: boolean;
+}>;

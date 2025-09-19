@@ -1,13 +1,14 @@
 import { wrap } from "comlink";
 import { Gitray } from "@/gitray";
 
-import type { Bill, BillCategory } from "@/ledger/type";
+import type { Bill, BillCategory, BillFilter } from "@/ledger/type";
 import { getToken } from "../login";
 import type { Exposed } from "./woker";
 import DeferredWorker from "./woker?worker";
 
 export type GlobalMeta = {
 	customCategories?: BillCategory[];
+	customFilters?: { id: string; filter: BillFilter; name: string }[];
 };
 
 export type PersonalMeta = any;
@@ -29,10 +30,9 @@ export const StorageAPI = repo;
 
 const workerInstance = new DeferredWorker({
 	/* normal Worker options*/
-},
-);
-const StorageDeferredAPI = wrap<Exposed>(workerInstance)
+});
+const StorageDeferredAPI = wrap<Exposed>(workerInstance);
 
-export { StorageDeferredAPI }
+export { StorageDeferredAPI };
 
 StorageDeferredAPI.init(config);
