@@ -25,6 +25,7 @@ import type {
 	Action,
 	BaseItem,
 	BaseItemAction,
+	BaseMetaAction,
 	FileLike,
 	IndexKeys,
 	StoreDetail,
@@ -307,7 +308,9 @@ export class Gitray<
 	 * 批量操作指定的 collection （增删改）
 	 * 如果collection不存在则会创建对应的collection
 	 */
-	async batch(actions: BaseItemAction<Item>[]): Promise<void> {
+	async batch(
+		actions: (BaseItemAction<Item> | BaseMetaAction)[],
+	): Promise<void> {
 		const db = await this.getDB();
 		const now = Date.now();
 		const store = db
@@ -321,15 +324,17 @@ export class Gitray<
 				params:
 					action.type === "add"
 						? {
-							...action.params,
-							__created_at: now,
-							__updated_at: now,
-							__collection: action.collection,
-							__store: action.store,
-						}
+								...action.params,
+								__created_at: now,
+								__updated_at: now,
+								__collection: action.collection,
+								__store: action.store,
+							}
 						: action.type === "update"
 							? { ...action.params, __updated_at: now }
-							: action.params,
+							: action.type === "meta"
+								? action.params
+								: action.params,
 				id: genId(),
 			} as Action<Full<Item>>;
 			await store.put(finalAction);
@@ -388,7 +393,7 @@ export class Gitray<
 			const [owner, repo] = store.split("/");
 			const octokit = await this.getOctokit();
 			const actions = stashed.filter((ac) => ac.store === store);
-			const remoteStructure = await this.fetchStoreStructure(store);
+			const remoteStructure = await this.fetchStoreDetail(store);
 
 			const localItems = await this.getAllItems(store, false, [
 				"__created_at",
@@ -635,7 +640,6 @@ export class Gitray<
 			this.changeListeners.splice(i, 1);
 		};
 	}
-
 }
 
 // utils
@@ -671,6 +675,4 @@ async function blobToBase64(blob: Blob): Promise<string> {
 
 export type * from "./type";
 
-export {
-	GitrayDB
-}
+export { GitrayDB };

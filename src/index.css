@@ -24,6 +24,22 @@ body {
 	overflow: hidden;
 }
 
+::-webkit-scrollbar {
+	width: 4px;
+	height: 4px;
+}
+::-webkit-scrollbar-thumb {
+	background-color: #0003;
+	border-radius: 4px;
+	transition: all 0.2s ease-in-out;
+}
+::-webkit-scrollbar-track {
+	border-radius: 4px;
+}
+.scrollbar-hidden::-webkit-scrollbar {
+	display: none;
+}
+
 @theme inline {
 	--radius-sm: calc(var(--radius) - 4px);
 	--radius-md: calc(var(--radius) - 2px);

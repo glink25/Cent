@@ -10,7 +10,6 @@ import { Button } from "../ui/button";
 import { Checkbox } from "../ui/checkbox";
 import { Label } from "../ui/label";
 
-
 export default function BookGuide() {
 	const isLogin = useUserStore(
 		useShallow((state) => Boolean(state.login) && state.id > 0),
@@ -31,14 +30,14 @@ export default function BookGuide() {
 	};
 	return (
 		<Dialog.Root
-			open={visible}
-
+			open={visible || currentBookId === undefined}
 			onOpenChange={(v) => {
-				console.log('v', v)
+				console.log("v", v);
 				if (!v) {
-					useBookStore.setState(v => ({ ...v, visible: false }))
+					useBookStore.setState((v) => ({ ...v, visible: false }));
 				}
-			}}>
+			}}
+		>
 			<Dialog.Portal>
 				<Dialog.Overlay className="fixed inset-0 bg-black/50 data-[state=open]:animate-overlay-show"></Dialog.Overlay>
 				<Dialog.Content>
@@ -47,10 +46,14 @@ export default function BookGuide() {
 						<Dialog.Description>Select a book</Dialog.Description>
 					</VisuallyHidden.Root>
 					<div className="fixed top-0 left-0 w-full h-full flex justify-center items-center pointer-events-none">
-						<Dialog.Content className={cn('bg-white max-h-[55vh] w-fit max-w-[500px] rounded-md data-[state=open]:animate-content-show')}>
+						<Dialog.Content
+							className={cn(
+								"bg-white max-h-[55vh] w-fit max-w-[500px] rounded-md data-[state=open]:animate-content-show",
+							)}
+						>
 							<VisuallyHidden.Root>
-								<Dialog.Title>{'Select a book'}</Dialog.Title>
-								<Dialog.Description>{'Select a book'}</Dialog.Description>
+								<Dialog.Title>{"Select a book"}</Dialog.Title>
+								<Dialog.Description>{"Select a book"}</Dialog.Description>
 							</VisuallyHidden.Root>
 							<div className="w-fit h-full flex justify-center items-center pointer-events-auto">
 								<div className="bg-[white] w-[350px] h-[450px] py-4 flex flex-col justify-center items-center rounded">
@@ -64,12 +67,13 @@ export default function BookGuide() {
 													return (
 														<Label
 															key={book.id}
-															className="cursor-pointer hover:bg-accent/50 flex items-center gap-3 rounded-lg border p-3 has-[[aria-checked=true]]:border-blue-600 has-[[aria-checked=true]]:bg-blue-50 dark:has-[[aria-checked=true]]:border-blue-900 dark:has-[[aria-checked=true]]:bg-blue-950">
+															className="cursor-pointer hover:bg-accent/50 flex items-center gap-3 rounded-lg border p-3 has-[[aria-checked=true]]:border-blue-600 has-[[aria-checked=true]]:bg-blue-50 dark:has-[[aria-checked=true]]:border-blue-900 dark:has-[[aria-checked=true]]:bg-blue-950"
+														>
 															<Checkbox
 																checked={book.id === currentBookId}
 																onCheckedChange={(v) => {
-																	console.log(book.id)
-																	toSwitchBook(book.id)
+																	console.log(book.id);
+																	toSwitchBook(book.id);
 																}}
 																className="inline-flex items-center data-[state=checked]:border-blue-600 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white dark:data-[state=checked]:border-blue-700 dark:data-[state=checked]:bg-blue-700"
 															/>

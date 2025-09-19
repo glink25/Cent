@@ -1,9 +1,14 @@
 import { produce } from "immer";
+import { merge } from "lodash-es";
 import { v4 } from "uuid";
 import { create } from "zustand";
 import type { Action, BaseItemAction, OutputType } from "@/gitray";
 import type { Bill, BillCategory } from "@/ledger/type";
-import { type GlobalMeta, StorageAPI, StorageDeferredAPI } from "../api/storage";
+import {
+	type GlobalMeta,
+	StorageAPI,
+	StorageDeferredAPI,
+} from "../api/storage";
 import { useBookStore } from "./book";
 import { useUserStore } from "./user";
 
@@ -26,13 +31,13 @@ type LedgerStoreState = {
 
 	loading: boolean;
 	sync: /** 等待同步 */
-	| "wait"
-	/** 正在同步*/
-	| "syncing"
-	/** 同步成功*/
-	| "success"
-	/** 同步失败*/
-	| "failed";
+		| "wait"
+		/** 正在同步*/
+		| "syncing"
+		/** 同步成功*/
+		| "success"
+		/** 同步失败*/
+		| "failed";
 };
 
 type LedgerStoreActions = {
@@ -48,6 +53,10 @@ type LedgerStoreActions = {
 	) => Promise<void>;
 
 	refreshBillList: () => Promise<void>;
+
+	updateGlobalMeta: (
+		v: Partial<GlobalMeta> | ((prev: GlobalMeta) => GlobalMeta),
+	) => Promise<void>;
 };
 
 type LedgerStore = LedgerStoreState & LedgerStoreActions;
@@ -63,12 +72,15 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
 	const updateBillList = async () => {
 		await Promise.resolve();
 		const repo = getCurrentFullRepoName();
-		const [bills, infos] = await Promise.all([StorageAPI.getAllItems(repo, true, ["time", "desc"]), StorageDeferredAPI.getInfo(repo)]);
+		const [bills, infos] = await Promise.all([
+			StorageAPI.getAllItems(repo, true, ["time", "desc"]),
+			StorageDeferredAPI.getInfo(repo),
+		]);
 
 		set(
 			produce((state: LedgerStore) => {
 				state.bills = bills;
-				state.infos = infos
+				state.infos = infos;
 			}),
 		);
 	};
@@ -204,6 +216,21 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
 					params: { id, changes: { ...v } },
 				},
 			]);
+		},
+		updateGlobalMeta: async (v) => {
+			const repo = getCurrentFullRepoName();
+			const prevMeta = await StorageAPI.getMeta(repo, undefined, true);
+			const newMeta =
+				typeof v === "function" ? v(prevMeta) : merge(prevMeta, v);
+			await StorageAPI.batch([
+				{
+					type: "meta",
+					params: newMeta,
+					store: repo,
+					collection: undefined,
+				},
+			]);
+			await updateBillList();
 		},
 		batchImport: async (
 			data: Omit<Bill, "id" | "creatorId">[],

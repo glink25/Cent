@@ -9,8 +9,8 @@ export default function RootRoute() {
 		<Routes>
 			<Route element={<MainLayout />}>
 				<Route index element={<Home />} />
-				<Route path="search" element={<Search />} />
-				<Route path="stat" element={<Stat />} />
+				<Route path="/search" element={<Search />} />
+				<Route path="/stat/:id?" element={<Stat />} />
 			</Route>
 		</Routes>
 	);
