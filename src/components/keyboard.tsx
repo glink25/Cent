@@ -138,7 +138,6 @@ const createFormula = (_value: string | number, _prev?: Formula) => {
 };
 
 const toText = (form: Formula) => {
-	console.log(form, "form");
 	const [leftNum, op, rightNum] = form;
 	return `${leftNum.join("")}${op ?? ""}${rightNum?.join("") ?? ""}`;
 };
@@ -196,7 +195,7 @@ export const CalculatorKeyboard = ({ className }: { className?: string }) => {
 					variant="ghost"
 					key={row.label}
 					data-label={row.label}
-					onClick={() => handleButtonClick(row.label)}
+					onPointerDown={() => handleButtonClick(row.label)}
 					className={cn(
 						(row.cols ?? 1) > 1 && "col-span-2",
 						"h-full text-lg font-semibold bg-background/10 active:bg-background/50 transition-all",

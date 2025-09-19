@@ -31,13 +31,13 @@ type LedgerStoreState = {
 
 	loading: boolean;
 	sync: /** 等待同步 */
-		| "wait"
-		/** 正在同步*/
-		| "syncing"
-		/** 同步成功*/
-		| "success"
-		/** 同步失败*/
-		| "failed";
+	| "wait"
+	/** 正在同步*/
+	| "syncing"
+	/** 同步成功*/
+	| "success"
+	/** 同步失败*/
+	| "failed";
 };
 
 type LedgerStoreActions = {
@@ -92,12 +92,13 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
 				state.loading = true;
 			}),
 		);
-		updateBillList();
-		const currentBookId = useBookStore.getState().currentBookId;
-		if (!currentBookId) {
-			return;
-		}
 		try {
+			updateBillList();
+			StorageAPI.toSync()
+			const currentBookId = useBookStore.getState().currentBookId;
+			if (!currentBookId) {
+				return;
+			}
 			await StorageAPI.initStore(currentBookId);
 			await updateBillList();
 		} finally {
