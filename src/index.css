@@ -24,6 +24,23 @@ body {
 	overflow: hidden;
 }
 
+* {
+  -webkit-touch-callout: none; /* iOS Safari */
+  -webkit-user-select: none; /* Chrome, Safari, Opera */
+  -moz-user-select: none; /* Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+  user-select: none; /* Non-prefixed version, currently supported by all modern browsers */
+}
+
+input,
+input * {
+  -webkit-touch-callout: default;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
 ::-webkit-scrollbar {
 	width: 4px;
 	height: 4px;
