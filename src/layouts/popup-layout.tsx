@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useIntl } from "@/locale";
 import { cn } from "@/utils";
 
 export default function PopupLayout({
@@ -12,6 +13,7 @@ export default function PopupLayout({
 	onBack?: () => void;
 	className?: string;
 }) {
+	const t = useIntl();
 	return (
 		<div
 			className={cn(
@@ -30,7 +32,7 @@ export default function PopupLayout({
 					<div className="flex items-center justify-center">
 						<i className="icon-[mdi--chevron-left] size-5"></i>
 					</div>
-					{"back"}
+					{t("back")}
 				</button>
 				<div className="min-h-4 w-full flex justify-center items-center">
 					{title}

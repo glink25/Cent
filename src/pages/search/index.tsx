@@ -24,10 +24,12 @@ import {
 } from "@/components/ui/select";
 import { useCreators } from "@/hooks/use-creator";
 import type { Bill, BillCategory, BillFilter, BillType } from "@/ledger/type";
+import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
 
 export default function Page() {
+	const t = useIntl();
 	const [form, setForm] = useState<BillFilter>({});
 
 	const toReset = () => {
@@ -94,22 +96,22 @@ export default function Page() {
 
 	const formatCategories = (ids?: string[]) => {
 		if (ids === undefined) {
-			return "All";
+			return t("all");
 		}
 		if (ids.length === categories.reduce((p, c) => p + c.list.length, 0)) {
-			return "All";
+			return t("all");
 		}
 		return ids
-			.map((id) => allCategories.find((v) => v.id === id)?.name ?? id)
+			.map((id) => t(allCategories.find((v) => v.id === id)?.name ?? id))
 			.join(",");
 	};
 
 	const formatCreators = (ids?: (number | string)[]) => {
 		if (ids === undefined) {
-			return "All";
+			return t("all");
 		}
 		if (ids.length === allCreators.length) {
-			return "All";
+			return t("all");
 		}
 		return ids
 			.map((id) => allCreators.find((v) => v.id === id)?.name ?? id)
@@ -120,7 +122,7 @@ export default function Page() {
 
 	const navigate = useNavigate();
 	const toSaveFilter = async () => {
-		const name = prompt("Please enter a name for current filter");
+		const name = prompt(t("please-enter-a-name-for-current-filter"));
 		if (!name) {
 			return;
 		}
@@ -190,12 +192,12 @@ export default function Page() {
 										setForm((prev) => ({ ...prev, recent: undefined }));
 									}}
 								>
-									<SelectTrigger className="w-20 px-2 py-2 md:px-4 text-xs md:text-sm">
+									<SelectTrigger className="w-fit px-2 py-2 md:px-4 text-xs md:text-sm">
 										<SelectValue></SelectValue>
 									</SelectTrigger>
 									<SelectContent>
-										<SelectItem value="date">Date</SelectItem>
-										<SelectItem value="recent">Recent</SelectItem>
+										<SelectItem value="date">{t("as-date")}</SelectItem>
+										<SelectItem value="recent">{t("recent")}</SelectItem>
 									</SelectContent>
 								</Select>
 								{dateType === "date" ? (
@@ -249,10 +251,10 @@ export default function Page() {
 												<SelectValue></SelectValue>
 											</SelectTrigger>
 											<SelectContent>
-												<SelectItem value="day">Day</SelectItem>
-												<SelectItem value="week">Week</SelectItem>
-												<SelectItem value="month">Month</SelectItem>
-												<SelectItem value="year">Year</SelectItem>
+												<SelectItem value="day">{t("unit-day")}</SelectItem>
+												<SelectItem value="week">{t("unit-week")}</SelectItem>
+												<SelectItem value="month">{t("month")}</SelectItem>
+												<SelectItem value="year">{t("year")}</SelectItem>
 											</SelectContent>
 										</Select>
 									</div>
@@ -260,9 +262,9 @@ export default function Page() {
 							</div>
 							{/* type selector */}
 							<div className="w-full flex justify-between items-center">
-								<div>
-									<i></i>
-									Type:
+								<div className="flex items-center gap-1">
+									<i className="icon-[mdi--arrow-collapse]"></i>
+									{t("type")}:
 								</div>
 								<div className="flex rounded-md shadow border border-input overflow-hidden divide-x">
 									<button
@@ -272,7 +274,7 @@ export default function Page() {
 										}`}
 										onClick={() => setForm((v) => ({ ...v, type: "income" }))}
 									>
-										{"income"}
+										{t("income")}
 									</button>
 									<button
 										type="button"
@@ -281,7 +283,7 @@ export default function Page() {
 										}`}
 										onClick={() => setForm((v) => ({ ...v, type: "expense" }))}
 									>
-										{"expenses"}
+										{t("expense")}
 									</button>
 									<button
 										type="button"
@@ -290,15 +292,15 @@ export default function Page() {
 										}`}
 										onClick={() => setForm((v) => ({ ...v, type: undefined }))}
 									>
-										{"all"}
+										{t("all")}
 									</button>
 								</div>
 							</div>
 							{/* amount range */}
 							<div className="w-full flex justify-between items-center">
-								<div>
-									<i></i>
-									Range:
+								<div className="flex items-center gap-1">
+									<i className="icon-[mdi--scale-unbalanced]"></i>
+									{t("range")}:
 								</div>
 								<div className="flex items-center gap-4">
 									<RangeInput
@@ -320,9 +322,9 @@ export default function Page() {
 							</div>
 							{/* category selector */}
 							<div className="w-full flex justify-between items-center">
-								<div>
-									<i></i>
-									Categories:
+								<div className="flex items-center gap-1">
+									<i className="icon-[mdi--category-plus-outline]"></i>
+									{t("categories")}:
 								</div>
 								<DropdownMenu>
 									<DropdownMenuTrigger asChild>
@@ -339,7 +341,9 @@ export default function Page() {
 										{categories.map((folder) => {
 											return (
 												<>
-													<DropdownMenuLabel>{folder.type}</DropdownMenuLabel>
+													<DropdownMenuLabel>
+														{t(folder.type)}
+													</DropdownMenuLabel>
 													{folder.list.map((item) => (
 														<DropdownMenuCheckboxItem
 															key={item.id}
@@ -370,7 +374,7 @@ export default function Page() {
 																});
 															}}
 														>
-															{item.name}
+															{t(item.name)}
 														</DropdownMenuCheckboxItem>
 													))}
 												</>
@@ -381,9 +385,9 @@ export default function Page() {
 							</div>
 							{/* user selector */}
 							<div className="w-full flex justify-between items-center">
-								<div>
-									<i></i>
-									Users:
+								<div className="flex items-center gap-1">
+									<i className="icon-[mdi--user-details-outline]"></i>
+									{t("users")}:
 								</div>
 
 								<DropdownMenu>
@@ -433,7 +437,7 @@ export default function Page() {
 							</div>
 							{/* other checkboxes */}
 							<div className="w-full flex justify-between items-center">
-								<div>Other:</div>
+								<div>{t("others")}:</div>
 								<div className="flex-1 flex justify-end overflow-y-scroll gap-3">
 									<Tag
 										checked={form.assets}
@@ -442,7 +446,7 @@ export default function Page() {
 										}}
 										className="text-xs bg-transparent shadow-md"
 									>
-										with assets
+										{t("with-assets")}
 									</Tag>
 								</div>
 							</div>
@@ -450,24 +454,25 @@ export default function Page() {
 							<div className="h-2"></div>
 						</div>
 					</Collapsible.Content>
-					<div className="w-full flex justify-between px-2">
+					<div className="w-full flex justify-between px-2 pt-1">
 						<Button variant="ghost" onClick={toReset}>
-							Reset
+							{t("reset")}
 						</Button>
 						{searched && (
 							<Button
 								className="text-xs underline animate-content-show"
 								variant="ghost"
+								size="sm"
 								onClick={toSaveFilter}
 							>
 								<i className="icon-[mdi--coffee-to-go-outline]" />
-								Save for analyze
+								{t("save-for-analyze")}
 							</Button>
 						)}
 						<Collapsible.Trigger asChild>
 							<Button variant="ghost">
 								<i className="group-[[data-state=open]]:icon-[mdi--filter-variant-minus] group-[[data-state=closed]]:icon-[mdi--filter-variant-plus]"></i>
-								Filter
+								{t("filter")}
 							</Button>
 						</Collapsible.Trigger>
 					</div>
@@ -487,6 +492,7 @@ function RangeInput({
 	onChange?: (v?: number) => void;
 	onBlur?: () => void;
 }) {
+	const t = useIntl();
 	return (
 		<Clearable
 			visible
@@ -495,7 +501,7 @@ function RangeInput({
 		>
 			{value === undefined && (
 				<span className="absolute pointer-events-none group-[.range-input:focus-within]:hidden pr-4">
-					Unlimited
+					{t("unlimited")}
 				</span>
 			)}
 			<input
@@ -522,6 +528,7 @@ function DateInput({
 	onBlur?: () => void;
 	type: "start" | "end";
 }) {
+	const t = useIntl();
 	return (
 		<Clearable
 			visible
@@ -533,8 +540,8 @@ function DateInput({
 				displayFormatter={(v) =>
 					v === undefined
 						? type === "start"
-							? "From: oldest"
-							: "To: newest"
+							? t("from-oldest")
+							: t("to-newest")
 						: `${v.format("YYYY/MM/DD")}`
 				}
 				onChange={(e) => onChange?.(e)}

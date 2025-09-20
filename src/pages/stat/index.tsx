@@ -7,6 +7,7 @@ import Chart from "@/components/chart";
 import { DatePicker } from "@/components/date-picker";
 import { Button } from "@/components/ui/button";
 import type { BillFilter } from "@/ledger/type";
+import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
 import { cn } from "@/utils";
@@ -27,6 +28,7 @@ type Views = {
 };
 
 export default function Page() {
+	const t = useIntl();
 	const { id } = useParams();
 	const { bills } = useLedgerStore();
 	const endTime = bills[0]?.time ?? dayjs();
@@ -39,10 +41,10 @@ export default function Page() {
 	);
 	const views: Views[] = useMemo(() => {
 		return [
-			...StaticViews,
+			...StaticViews.map((v) => ({ ...v, label: t(v.label) })),
 			...(customFilters?.map((v) => ({ ...v, label: v.name })) ?? []),
 		];
-	}, [customFilters]);
+	}, [customFilters, t]);
 	const [selectedViewId, setSelectedViewId] = useState(id ?? "monthly");
 
 	const slices = useMemo(() => {
@@ -50,8 +52,8 @@ export default function Page() {
 			if (selectedViewId === "weekly") {
 				return {
 					unit: "week",
-					labelThis: "This Week",
-					labelLast: "Last Week",
+					labelThis: t("this-week"),
+					labelLast: t("last-week"),
 					format: "MM-DD",
 					max: 4,
 				} as const;
@@ -59,16 +61,16 @@ export default function Page() {
 			if (selectedViewId === "monthly") {
 				return {
 					unit: "month",
-					labelThis: "This Month",
-					labelLast: "Last Month",
+					labelThis: t("this-month"),
+					labelLast: t("last-month"),
 					format: "YYYY-MM",
 				} as const;
 			}
 			if (selectedViewId === "yearly") {
 				return {
 					unit: "year",
-					labelThis: "This Year",
-					labelLast: "Last Year",
+					labelThis: t("this-year"),
+					labelLast: t("last-year"),
 					format: "YYYY",
 				} as const;
 			}
@@ -102,7 +104,7 @@ export default function Page() {
 			}
 		}
 		return s;
-	}, [selectedViewId, END, START]);
+	}, [selectedViewId, END, START, t]);
 
 	const [selectedSlice, setSelectedSlice] = useState(slices[0]?.label);
 
@@ -221,7 +223,7 @@ export default function Page() {
 					)}
 				</div>
 				<div className="w-full h-[300px]">
-					<Chart option={chart1} className="w-full h-full" />
+					<Chart option={chart1 as any} className="w-full h-full" />
 				</div>
 			</div>
 		</div>

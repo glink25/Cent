@@ -1,6 +1,5 @@
 import {
 	SelectContent,
-	SelectItemText,
 	SelectPortal,
 	SelectViewport,
 } from "@radix-ui/react-select";
@@ -17,6 +16,7 @@ import {
 import { numberToAmount } from "@/ledger/bill";
 import { BillCategories } from "@/ledger/category";
 import type { Bill } from "@/ledger/type";
+import { useIntl } from "@/locale";
 import { useLedgerStore } from "@/store/ledger";
 import createConfirmProvider from "../confirm";
 import Loading from "../loading";
@@ -97,6 +97,7 @@ function OncentImportForm({
 	onCancel?: () => void;
 	onConfirm?: (v: any) => void;
 }) {
+	const t = useIntl();
 	const [selectedUserId, setSelectedUserId] = useState<string>();
 	const [importStrategy, setImportStrategy] = useState<"add" | "overlap">(
 		"add",
@@ -135,11 +136,11 @@ function OncentImportForm({
 					selected.data?.map((v) => transferToBill(v as BillRow)) ?? [],
 					importStrategy === "overlap",
 				);
-			toast.success("Import success");
+			toast.success(t("import-success"));
 			onConfirm?.(true);
 			setLoading(false);
 		} catch (error) {
-			toast.error(`Import Failed: ${error}`);
+			toast.error(`${t("import-failed")}: ${error}`);
 			onConfirm?.(false);
 		}
 	};
@@ -152,7 +153,7 @@ function OncentImportForm({
 					onValueChange={(v) => setSelectedUserId(v)}
 				>
 					<SelectTrigger className="SelectTrigger" aria-label="Food">
-						<SelectValue placeholder="Select a user" />
+						<SelectValue placeholder={t("select-a-user")} />
 					</SelectTrigger>
 					<SelectPortal>
 						<SelectContent className="bg-white shadow">
@@ -169,14 +170,13 @@ function OncentImportForm({
 					</SelectPortal>
 				</Select>
 				<div className="flex flex-col gap-4">
-					Import Strategy:
+					{t("import-strategy")}:
 					<RadioGroup.Root
 						className="flex items-center gap-4"
 						defaultValue={importStrategy}
 						onValueChange={(v) => {
 							setImportStrategy(v as any);
 						}}
-						aria-label="View density"
 					>
 						<div className="flex gap-2 items-center">
 							<RadioGroup.Item
@@ -186,7 +186,7 @@ function OncentImportForm({
 								<RadioGroup.Indicator className="block w-4 h-4 rounded-full bg-stone-900" />
 							</RadioGroup.Item>
 							<label className="Label" htmlFor="r1">
-								Add
+								{t("strategy-add")}
 							</label>
 						</div>
 						<div className="flex gap-2 items-center">
@@ -197,7 +197,7 @@ function OncentImportForm({
 								<RadioGroup.Indicator className="block w-4 h-4 rounded-full bg-stone-900" />
 							</RadioGroup.Item>
 							<label className="Label" htmlFor="r2">
-								Overlap
+								{t("strategy-overlap")}
 							</label>
 						</div>
 					</RadioGroup.Root>
@@ -205,18 +205,25 @@ function OncentImportForm({
 			</div>
 			<div className="flex justify-end gap-2 items-center">
 				<Button variant="ghost" onClick={() => onCancel?.()}>
-					Cancel
+					{t("cancel")}
 				</Button>
-				<Button disabled={loading} onClick={toConfirm}>{loading && <Loading />} Confirm</Button>
+				<Button disabled={loading} onClick={toConfirm}>
+					{loading && <Loading />} {t("confirm")}
+				</Button>
 			</div>
 		</div>
 	);
 }
 
+function Title() {
+	const t = useIntl();
+	return t("import-from-oncent");
+}
+
 export const [OncentImport, showOncentImport] = createConfirmProvider(
 	OncentImportForm,
 	{
-		dialogTitle: "import from oncent",
+		dialogTitle: <Title />,
 		dialogModalClose: false,
 		contentClassName:
 			"h-full w-full max-h-full max-w-full rounded-none sm:rounded-md data-[state=open]:animate-slide-from-right sm:max-h-[55vh] sm:w-[90vw] sm:max-w-[500px] sm:data-[state=open]:animate-content-show",

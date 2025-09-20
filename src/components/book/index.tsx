@@ -2,6 +2,7 @@ import { Dialog, VisuallyHidden } from "radix-ui";
 import { useState } from "react";
 import { useShallow } from "zustand/shallow";
 import { StorageAPI } from "@/api/storage";
+import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
 import { useUserStore } from "@/store/user";
 import { cn } from "@/utils";
@@ -11,6 +12,7 @@ import { Checkbox } from "../ui/checkbox";
 import { Label } from "../ui/label";
 
 export default function BookGuide() {
+	const t = useIntl();
 	const isLogin = useUserStore(
 		useShallow((state) => Boolean(state.login) && state.id > 0),
 	);
@@ -42,8 +44,8 @@ export default function BookGuide() {
 				<Dialog.Overlay className="fixed inset-0 bg-black/50 data-[state=open]:animate-overlay-show"></Dialog.Overlay>
 				<Dialog.Content>
 					<VisuallyHidden.Root>
-						<Dialog.Title>Select a book"</Dialog.Title>
-						<Dialog.Description>Select a book</Dialog.Description>
+						<Dialog.Title>{t("select-a-book")}</Dialog.Title>
+						<Dialog.Description>{t("select-a-book")}</Dialog.Description>
 					</VisuallyHidden.Root>
 					<div className="fixed top-0 left-0 w-full h-full flex justify-center items-center pointer-events-none">
 						<Dialog.Content
@@ -52,15 +54,16 @@ export default function BookGuide() {
 							)}
 						>
 							<VisuallyHidden.Root>
-								<Dialog.Title>{"Select a book"}</Dialog.Title>
-								<Dialog.Description>{"Select a book"}</Dialog.Description>
+								<Dialog.Title>{t("select-a-book")}</Dialog.Title>
+								<Dialog.Description>{t("select-a-book")}</Dialog.Description>
 							</VisuallyHidden.Root>
 							<div className="w-fit h-full flex justify-center items-center pointer-events-auto">
 								<div className="bg-[white] w-[350px] h-[450px] py-4 flex flex-col justify-center items-center rounded">
 									{books.length > 0 ? (
 										<div className="flex-1 flex flex-col w-full gap-2 h-full overflow-hidden">
 											<div className="flex gap-2 px-4">
-												Select a book {loading && <Loading></Loading>}
+												{t("select-a-book")}
+												{loading && <Loading></Loading>}
 											</div>
 											<div className="flex flex-col gap-2 px-4 overflow-y-auto">
 												{books.map((book) => {
@@ -88,9 +91,9 @@ export default function BookGuide() {
 											</div>
 										</div>
 									) : loading ? (
-										<Loading>Loading Books...</Loading>
+										<Loading>{t("loading-books")}</Loading>
 									) : (
-										<div className="flex-1">No books, go create one</div>
+										<div className="flex-1">{t("no-books-go-create-one")}</div>
 									)}
 									<Button
 										disabled={creating}
@@ -108,7 +111,8 @@ export default function BookGuide() {
 											}
 										}}
 									>
-										{creating && <Loading />}Create new book
+										{creating && <Loading />}
+										{t("create-new-book")}
 									</Button>
 								</div>
 							</div>
@@ -121,6 +125,7 @@ export default function BookGuide() {
 }
 
 export function Book() {
+	const t = useIntl();
 	return (
 		<div className="backup">
 			<Button
@@ -133,7 +138,7 @@ export function Book() {
 				<div className="w-full px-4 flex justify-between items-center">
 					<div className="flex items-center gap-2">
 						<i className="icon-[mdi--book-cog-outline] size-5"></i>
-						Ledger Books
+						{t("ledger-books")}
 					</div>
 					<i className="icon-[mdi--chevron-right] size-5"></i>
 				</div>

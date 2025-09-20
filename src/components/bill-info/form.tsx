@@ -1,13 +1,12 @@
 import { useCreator } from "@/hooks/use-creator";
 import { amountToNumber } from "@/ledger/bill";
 import { getDefaultCategoryById } from "@/ledger/category";
+import { useIntl } from "@/locale";
 import { type EditBill, useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
 import { formatTime } from "@/utils/time";
 import { showBillEditor } from "../bill-editor";
 import SmartImage from "../image";
-
-const t = (v: any) => v;
 
 export default function BillInfo({
 	edit,
@@ -18,6 +17,7 @@ export default function BillInfo({
 	onConfirm?: (isEdit: boolean) => void;
 	onCancel?: () => void;
 }) {
+	const t = useIntl();
 	const { id: curUserId } = useUserStore();
 	const { name, login } = useCreator(edit?.creatorId ?? "");
 	const { login: selfLogin, id: selfId } = useUserStore();
@@ -51,16 +51,17 @@ export default function BillInfo({
 					{/* header */}
 					<div className="flex items-center justify-between">
 						<div className="flex items-center">
-							<div className="rounded-full bg-white border p-4">
+							<div className="w-12 h-12 flex-shrink-0 rounded-full bg-white border p-4 flex items-center justify-center">
 								<i className={`icon-md ${categoryInfo?.icon ?? ""}`}></i>
 							</div>
-							<div className="flex text-md font-semibold mx-2">
-								<div>{t(categoryInfo?.name)}</div>
+							<div className="flex text-md font-semibold px-2">
+								<div>{t(categoryInfo?.name ?? "")}</div>
 							</div>
 						</div>
 						<div
-							className={`text-2xl font-bold flex overflow-x-auto ${edit.type === "expense" ? "text-red-700" : "text-green-900"
-								}`}
+							className={`text-2xl font-bold flex overflow-x-auto ${
+								edit.type === "expense" ? "text-red-700" : "text-green-900"
+							}`}
 						>
 							<div>{edit.type === "expense" ? "-" : "+"}</div>
 							<div>{amountToNumber(edit.amount)}</div>
@@ -79,7 +80,7 @@ export default function BillInfo({
 						</div>
 						<div className="flex justify-between items-center my-1">
 							<div>{t("creator")}:</div>
-							<div>{isMe ? "me" : name}</div>
+							<div>{isMe ? t("me") : name}</div>
 						</div>
 						<div className="flex justify-between items-center my-1">
 							<div>{t("time")}:</div>

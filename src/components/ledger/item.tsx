@@ -3,6 +3,7 @@ import { useCreator } from "@/hooks/use-creator";
 import { amountToNumber } from "@/ledger/bill";
 import { getDefaultCategoryById } from "@/ledger/category";
 import type { Bill } from "@/ledger/type";
+import { useIntl } from "@/locale";
 import { useUserStore } from "@/store/user";
 import { cn } from "@/utils";
 
@@ -13,6 +14,7 @@ interface BillItemProps {
 }
 
 export default function BillItem({ bill, className, onClick }: BillItemProps) {
+	const t = useIntl();
 	const category = useMemo(
 		() => getDefaultCategoryById(bill.categoryId),
 		[bill.categoryId],
@@ -38,10 +40,10 @@ export default function BillItem({ bill, className, onClick }: BillItemProps) {
 				</div>
 				<div className="flex-1 flex flex-col px-4 overflow-hidden">
 					<div className="flex text-md font-semibold">
-						<div>{category ? category.name : ""}</div>
+						<div>{category ? t(category.name) : ""}</div>
 					</div>
 					<div className="flex text-xs">
-						<div>{isMe ? "me" : (name ?? "unknown-user")}</div>
+						<div>{isMe ? t("me") : (name ?? "unknown-user")}</div>
 						{bill.comment && (
 							<>
 								<div className="px-1">|</div>
@@ -54,12 +56,13 @@ export default function BillItem({ bill, className, onClick }: BillItemProps) {
 
 			{/* 金额 */}
 			<div
-				className={`text-lg font-bold truncate flex-shrink-0 text-right ${bill.type === "expense"
+				className={`text-lg font-bold truncate flex-shrink-0 text-right ${
+					bill.type === "expense"
 						? "text-red-700"
 						: bill.type === "income"
 							? "text-green-900"
 							: ""
-					}`}
+				}`}
 			>
 				{amountToNumber(bill.amount)}
 			</div>

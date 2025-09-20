@@ -1,19 +1,20 @@
 import { LoginAPI } from "@/api/login";
 import { StorageAPI } from "@/api/storage";
 import PopupLayout from "@/layouts/popup-layout";
+import { useIntl } from "@/locale";
 import { useUserStore } from "@/store/user";
 import Backup from "../backup";
 import { Book } from "../book";
 import Budget from "../budget";
 import CategoryManerger from "../category";
 import { Button } from "../ui/button";
+import Launguage from "./language";
 
 function UserInfo() {
+	const t = useIntl();
 	const { login, avatar_url, name, expired } = useUserStore();
 	const toLogOut = async () => {
-		const ok = confirm(
-			"Are you sure to log out? changes not synced will be discard",
-		);
+		const ok = confirm(t("logout-warning"));
 		if (!ok) {
 			return;
 		}
@@ -47,11 +48,12 @@ function UserInfo() {
 							LoginAPI.login();
 						}}
 					>
-						<i className="icon-[mdi--reload]"></i>Re-Login
+						<i className="icon-[mdi--reload]"></i>
+						{t("re-login")}
 					</Button>
 				)}
 				<Button variant="destructive" onClick={toLogOut}>
-					logout
+					{t("logout")}
 				</Button>
 			</div>
 		</div>
@@ -65,14 +67,16 @@ export default function SettingsForm({
 	onConfirm?: (isEdit: boolean) => void;
 	onCancel?: () => void;
 }) {
+	const t = useIntl();
 	return (
-		<PopupLayout onBack={onCancel} title="Setting">
+		<PopupLayout onBack={onCancel} title={t("settings")}>
 			<div className="divide-y divide-solid flex flex-col">
 				<UserInfo />
 				<Book />
 				<CategoryManerger />
 				<Budget />
 				<Backup />
+				<Launguage />
 			</div>
 		</PopupLayout>
 	);
