@@ -1,7 +1,10 @@
 // 文件名: chartUtils.ts
 
+import type { ECOption } from "@/components/chart";
 import { amountToNumber } from "@/ledger/bill";
+import { getDefaultCategoryById } from "@/ledger/category";
 import type { Bill } from "@/ledger/type";
+import { t } from "@/locale";
 
 // --- 1. 数据类型定义 ---
 type DisplayType = "income" | "expense" | "balance";
@@ -27,10 +30,10 @@ export function createChartOption(
 	// 数据筛选
 	const filteredBills = params.timeRange
 		? bills.filter(
-				(bill) =>
-					bill.time >= params.timeRange![0] &&
-					bill.time <= params.timeRange![1],
-			)
+			(bill) =>
+				bill.time >= params.timeRange![0] &&
+				bill.time <= params.timeRange![1],
+		)
 		: bills;
 
 	// 根据图表类型调用对应的数据处理和option生成函数
@@ -109,9 +112,9 @@ function processMultiUserSummary(bills: Bill[], displayType: DisplayType) {
 		}
 
 		const data = dailyData.get(date)![creatorId];
-		if (bill.type === "income") data.income += bill.amount;
-		else data.expense += bill.amount;
-		data.balance = data.income - data.expense;
+		if (bill.type === "income") data.income += bill.amount / 1000;
+		else data.expense += bill.amount / 1000;
+		data.balance = (data.income - data.expense) / 1000;
 	});
 
 	const creatorArray = Array.from(creators).sort();
@@ -156,8 +159,8 @@ function createLineChartOption(sourceData: any[]) {
 		title: { text: "收支与结余走势图" },
 		tooltip: { trigger: "axis" },
 		legend: { orient: "horizontal", bottom: 10 },
-		xAxis: { type: "category" },
-		yAxis: { type: "value", axisLabel: { formatter: "{value} 元" } },
+		xAxis: { type: "category", axisLabel: { fontSize: 8 } },
+		yAxis: { type: "value", axisLabel: { formatter: "{value}", fontSize: 8 } },
 		series: [
 			{
 				name: "收入",
@@ -178,7 +181,7 @@ function createLineChartOption(sourceData: any[]) {
 				smooth: true,
 			},
 		],
-	};
+	} as ECOption;
 }
 
 function createMultiUserChartOption(
@@ -208,29 +211,53 @@ function createMultiUserChartOption(
 		title: { text: titleMap[displayType] },
 		tooltip: { trigger: "axis" },
 		legend: { orient: "horizontal", bottom: 10 },
-		xAxis: { type: "category" },
+		xAxis: { type: "category", axisLabel: { fontSize: 8 } },
 		yAxis: {
 			type: "value",
-			axisLabel: { formatter: `{value} 元 (${nameMap[displayType]})` },
+			axisLabel: { formatter: `{value}`, fontSize: 8 },
 		},
 		series: series,
-	};
+	} as ECOption;
 }
 
 function createPieChartOption(sourceData: any[]) {
 	return {
 		dataset: { source: sourceData },
 		title: { text: "支出类别占比图", left: "center" },
-		tooltip: { trigger: "item", formatter: "{b}: {c} 元 ({d}%)" },
-		legend: { orient: "vertical", right: 10, top: "center" },
+		tooltip: {
+			trigger: "item",
+			fontSize: 8,
+			formatter: (_c) => {
+				const [categoryId, value] = (_c as any).value
+				const category = getDefaultCategoryById(categoryId)
+				return `${category ? t(category?.name) : categoryId}: ${value}`
+			}
+		},
+		legend: {
+			orient: "vertical",
+			right: 10,
+			top: "center",
+			fontSize: 8,
+			formatter: (c: string) => {
+				const category = getDefaultCategoryById(c)
+				return category ? t(category?.name) : c
+			}
+		},
 		series: [
 			{
 				type: "pie",
 				radius: "60%",
 				encode: { itemName: "category", value: "totalAmount" },
-				label: { show: true, formatter: "{b}: {d}%" },
+				label: {
+					show: true,
+					fontSize: 8,
+					formatter: (c) => {
+						const category = getDefaultCategoryById(c.name)
+						return category ? t(category?.name) : c.name
+					}
+				},
 				labelLine: { show: true },
 			},
 		],
-	};
+	} as ECOption;
 }
