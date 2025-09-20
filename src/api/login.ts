@@ -9,7 +9,7 @@ const { promise: loginFinished, resolve: resolveLoginFinished } =
 const create = () => {
 	const login = () => {
 		window.open(
-			`${LOGIN_API_HOST}/api/oauth/authorize?redirect_uri=${encodeURIComponent(`${window.origin}/after-login.html`)}`,
+			`${LOGIN_API_HOST}/api/oauth/authorize?redirect_uri=${encodeURIComponent(`${window.origin}`)}`,
 			"_self",
 		);
 	};
