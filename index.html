@@ -41,6 +41,14 @@
 
       gtag('config', 'G-7QYVSWQW46');
     </script> -->
+    <script>
+      if (!location.href.includes("error") && location.href.includes('accessSession')) {
+      localStorage.setItem("_oauth_res", location.href);
+        setTimeout(() => {
+          location.replace(window.origin);
+        }, 1);
+      }
+    </script>
   </head>
   <body tabindex="1">
     <div id="root"></div>
