@@ -34,7 +34,6 @@ export default function BookGuide() {
 		<Dialog.Root
 			open={visible || currentBookId === undefined}
 			onOpenChange={(v) => {
-				console.log("v", v);
 				if (!v) {
 					useBookStore.setState((v) => ({ ...v, visible: false }));
 				}
@@ -75,8 +74,9 @@ export default function BookGuide() {
 															<Checkbox
 																checked={book.id === currentBookId}
 																onCheckedChange={(v) => {
-																	console.log(book.id);
-																	toSwitchBook(book.id);
+																	if (v) {
+																		toSwitchBook(book.id);
+																	}
 																}}
 																className="inline-flex items-center data-[state=checked]:border-blue-600 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white dark:data-[state=checked]:border-blue-700 dark:data-[state=checked]:bg-blue-700"
 															/>

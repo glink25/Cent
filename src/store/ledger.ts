@@ -2,7 +2,8 @@ import { produce } from "immer";
 import { merge } from "lodash-es";
 import { v4 } from "uuid";
 import { create } from "zustand";
-import type { Action, BaseItemAction, OutputType } from "@/gitray";
+import type { OutputType } from "@/gitray";
+import type { Action, MetaUpdate, Update } from "@/gitray/stash";
 import type { Bill, BillCategory } from "@/ledger/type";
 import {
 	type GlobalMeta,
@@ -21,10 +22,9 @@ type LedgerStoreState = {
 	bills: OutputType<Bill>[];
 	actions: Action<Bill>[];
 	infos?: {
-		globalMeta: GlobalMeta;
+		meta: GlobalMeta;
 		creators: {
 			id: string | number;
-			meta: any;
 		}[];
 		categories: BillCategory[];
 	};
@@ -73,7 +73,7 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
 		await Promise.resolve();
 		const repo = getCurrentFullRepoName();
 		const [bills, infos] = await Promise.all([
-			StorageAPI.getAllItems(repo, true, ["time", "desc"]),
+			StorageAPI.getAllItems(repo),
 			StorageDeferredAPI.getInfo(repo),
 		]);
 
@@ -94,7 +94,7 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
 		);
 		try {
 			updateBillList();
-			StorageAPI.toSync()
+			StorageAPI.toSync();
 			const currentBookId = useBookStore.getState().currentBookId;
 			if (!currentBookId) {
 				return;
@@ -184,51 +184,43 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
 		removeBill: async (id) => {
 			const repo = getCurrentFullRepoName();
 			const collection = `${useUserStore.getState().id}`;
-			StorageAPI.batch([
+			StorageAPI.batch(repo, [
 				{
-					type: "remove",
-					store: repo,
-					params: id,
-					collection,
+					type: "delete",
+					value: id,
 				},
 			]);
 		},
 		addBill: async (v) => {
 			const repo = getCurrentFullRepoName();
 			const creatorId = useUserStore.getState().id;
-			StorageAPI.batch([
+			StorageAPI.batch(repo, [
 				{
-					type: "add",
-					store: repo,
-					collection: `${creatorId}`,
-					params: { ...v, creatorId, id: v4() },
+					type: "update",
+					value: { ...v, creatorId, id: v4() },
 				},
 			]);
 		},
 		updateBill: async (id, v) => {
 			const repo = getCurrentFullRepoName();
 			const collection = `${useUserStore.getState().id}`;
-
-			StorageAPI.batch([
+			const creatorId = useUserStore.getState().id;
+			StorageAPI.batch(repo, [
 				{
 					type: "update",
-					store: repo,
-					collection,
-					params: { id, changes: { ...v } },
+					value: { id, ...v, creatorId },
 				},
 			]);
 		},
 		updateGlobalMeta: async (v) => {
 			const repo = getCurrentFullRepoName();
-			const prevMeta = await StorageAPI.getMeta(repo, undefined, true);
+			const prevMeta = await StorageAPI.getMeta(repo);
 			const newMeta =
 				typeof v === "function" ? v(prevMeta) : merge(prevMeta, v);
-			await StorageAPI.batch([
+			await StorageAPI.batch(repo, [
 				{
 					type: "meta",
-					params: newMeta,
-					store: repo,
-					collection: undefined,
+					metaValue: newMeta,
 				},
 			]);
 			await updateBillList();
@@ -242,29 +234,27 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
 			}
 			const repo = getCurrentFullRepoName();
 			const creatorId = useUserStore.getState().id;
-			const actions: BaseItemAction<Bill>[] = data.map((v) => {
+			const actions = data.map((v) => {
 				return {
-					type: "add",
-					store: repo,
-					collection: `${creatorId}`,
-					params: { ...v, creatorId, id: v4() },
-				};
+					type: "update",
+					value: { ...v, creatorId, id: v4() },
+				} as Update<Bill>;
 			});
-			if (overlap) {
-				const current = get().bills.filter((v) => v.creatorId === creatorId);
-				actions.push(
-					...current.map(
-						(v) =>
-							({
-								type: "remove",
-								store: repo,
-								params: v.id,
-								collection: `${creatorId}`,
-							}) as BaseItemAction<Bill>,
-					),
-				);
-			}
-			StorageAPI.batch(actions);
+			StorageAPI.batch(repo, actions);
+			// if (overlap) {
+			// 	const current = get().bills.filter((v) => v.creatorId === creatorId);
+			// 	actions.push(
+			// 		...current.map(
+			// 			(v) =>
+			// 				({
+			// 					type: "remove",
+			// 					store: repo,
+			// 					params: v.id,
+			// 					collection: `${creatorId}`,
+			// 				}) as BaseItemAction<Bill>,
+			// 		),
+			// 	);
+			// }
 		},
 	};
 });

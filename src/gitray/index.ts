@@ -1,682 +1,540 @@
-/**
- * 这是一个用于将Github作为持久化存储数据库存储数据的 browser-based lib
- * 它通过本地indexedDB进行实时的数据修改操作，然后记录所有的更改，并将修改延迟同步到指定的github仓库
- * 基础概念：
- * Gitray中一个 Store 代表一个Github仓库，通过Github仓库名来判断是否是一个Store
- * 一个Store可以包含多条Collection
- * Collection为可以被indexedDB存储的数据，包括File对象
- * 一个Store的Github仓库文件结构如下：
- * user/gitray-store    仓库名称/store名称
- * -- meta.json         存储全局元数据信息
- * -- /collection-a     collection名称
- * ---- entry-001.json  分块存储collection数据
- * ---- meta.json       collection元数据信息
- * -- assets/           二进制文件存储目录
- * ---- uid-a.jpg       collection中携带的二进制文件
- */
 import { decode, encode } from "js-base64";
+import { sortBy } from "lodash-es";
 import { Octokit } from "octokit";
-import { applyStash, GitrayDB } from "./db";
-import { diff } from "./diff";
+import { transformAssets } from "./assets";
+import { shortId } from "./id";
 import { Scheduler } from "./scheduler";
-import { computeGitBlobSha1 } from "./sha";
 import { asyncSingleton } from "./singleton";
-import { omitAssets } from "./transform";
-import type {
-	Action,
-	BaseItem,
-	BaseItemAction,
-	BaseMetaAction,
-	FileLike,
-	IndexKeys,
-	StoreDetail,
-	StoreStructure,
-} from "./type";
+import {
+    type Action,
+    type BaseItem,
+    StashBucket,
+    type StashStorage,
+} from "./stash";
 
-export interface GitrayConfig {
-	/**
-	 * Dynamically provides authentication tokens. It's called before each API request.
-	 * 必须具备读写仓库的权限 (repo scope).
-	 */
-	auth: () => Promise<{ accessToken: string; refreshToken?: string }>;
-	/** 本地indexedDB实例名称
-	 * @default 'local-gitray'
-	 */
-	dbName?: string;
-	/**
-	 * (可选) 用于识别和筛选本 lib 所管理的仓库的统一前缀
-	 * @default 'gitray-db'
-	 */
-	repoPrefix?: string;
-
-	/**
-	 * 要操作的集合的名称 (e.g., 'entries', 'posts').
-	 * 一个客户端实例将专门操作此名称的集合。
-	 *  @default 'entry'
-	 */
-	entryName?: string;
-	itemsPerChunk?: number;
-	deletionStrategy?: "hard" | "soft";
-	orderKeys?: string[];
-}
+export type OutputType<T> = T;
 
 export type Processor = (finished: Promise<void>) => void;
 
-export type ChangeListener = (args: {
-	store: string;
-	collection?: string;
-}) => void;
+export type ChangeListener = (args: { store: string }) => void;
 
-const STASH_STORE_NAME = "__stash";
-const META_STORE_NAME = "__meta";
-const ITEM_STORE_NAME = "__item";
+export type GitrayConfig = {
+    /**
+     * Dynamically provides authentication tokens. It's called before each API request.
+     * 必须具备读写仓库的权限 (repo scope).
+     */
+    auth: () => Promise<{ accessToken: string; refreshToken?: string }>;
+    /**
+     * (可选) 用于识别和筛选本 lib 所管理的仓库的统一前缀
+     * @default 'gitray-db'
+     */
+    repoPrefix?: string;
 
-type Full<T extends BaseItem> = T & {
-	__store: string;
-	__collection: string;
-	__updated_at: number;
-	__created_at: number;
-	__deleted_at?: string;
+    /**
+     * 要操作的集合的名称 (e.g., 'entries', 'posts').
+     * 一个客户端实例将专门操作此名称的集合。
+     *  @default 'entry'
+     */
+    entryName?: string;
+    itemsPerChunk?: number;
+    storage: (storeFullBame: string) => StashStorage;
+};
+
+export type FileLike = { path: string; sha: string };
+
+export type FileWithConentLike = { path: string; sha: string; content: any };
+
+export type Meta = { [key: string]: any };
+
+export type StoreStructure = {
+    chunks: (FileLike & { startIndex: number })[];
+    meta: FileLike;
+    assets: FileLike[];
+};
+
+export type StoreDetail = {
+    chunks: (FileWithConentLike & { startIndex: number; endIndex: number })[];
+    meta: FileWithConentLike;
+    assets: FileLike[];
 };
 
 type GitTreeItem = {
-	path?: string;
-	mode?: "100644" | "100755" | "040000" | "160000" | "120000";
-	type?: "blob" | "tree" | "commit";
-	sha?: string | null;
-	content?: string;
+    path?: string;
+    mode?: "100644" | "100755" | "040000" | "160000" | "120000";
+    type?: "blob" | "tree" | "commit";
+    sha?: string | null;
+    content?: string;
 };
 
-const genId = () => `${Date.now()}-${Math.random().toString(36).substring(2)}`;
+export class Gitray<Item extends BaseItem> {
+    protected readonly config: Required<GitrayConfig>;
+    private userInfo?: { id: number; login: string };
 
-export class Gitray<
-	Item extends BaseItem,
-	ItemIndexes extends IndexKeys,
-> extends GitrayDB<Item, ItemIndexes> {
-	protected readonly config: Required<GitrayConfig>;
-	private userInfo?: { id: number; login: string };
+    constructor(config: GitrayConfig) {
+        this.config = {
+            repoPrefix: "gitray-db",
+            entryName: "entry",
+            itemsPerChunk: 1000,
+            ...config,
+        };
+    }
 
-	constructor(config: GitrayConfig) {
-		super(config);
-		this.config = {
-			dbName: "local-gitray",
-			repoPrefix: "gitray-db",
-			entryName: "entry",
-			itemsPerChunk: 1000,
-			deletionStrategy: "hard",
-			orderKeys: [],
-			...config,
-		};
-		this.getDB().then((db) => db.close());
-	}
+    private async getOctokit(): Promise<Octokit> {
+        const { accessToken } = await this.config.auth();
+        return new Octokit({ auth: accessToken });
+    }
 
-	private async getOctokit(): Promise<Octokit> {
-		const { accessToken } = await this.config.auth();
-		return new Octokit({ auth: accessToken });
-	}
+    private async getUserInfo(): Promise<{ id: number; login: string }> {
+        if (!this.userInfo) {
+            const octokit = await this.getOctokit();
+            const { data } = await octokit.request("GET /user");
+            this.userInfo = { id: data.id, login: data.login };
+        }
+        return this.userInfo;
+    }
 
-	private async getUserInfo(): Promise<{ id: number; login: string }> {
-		if (!this.userInfo) {
-			const octokit = await this.getOctokit();
-			const { data } = await octokit.request("GET /user");
-			this.userInfo = { id: data.id, login: data.login };
-		}
-		return this.userInfo;
-	}
+    /**
+     * 获取store中所有的collection name
+     */
+    private async _fetchStoreStructure(
+        storeFullName: string,
+    ): Promise<StoreStructure> {
+        const octokit = await this.getOctokit();
+        const [owner, repo] = storeFullName.split("/");
+        if ([owner, repo].some((v) => v.length === 0))
+            throw new Error(`invalid store name: ${storeFullName}`);
+        const { entryName } = this.config;
 
-	/**
-	 * 获取store中所有的collection name
-	 */
-	private async _fetchStoreStructure(
-		storeFullName: string,
-	): Promise<StoreStructure> {
-		const octokit = await this.getOctokit();
-		const [owner, repo] = storeFullName.split("/");
-		if ([owner, repo].some((v) => v.length === 0))
-			throw new Error(`invalid store name: ${storeFullName}`);
-		const { entryName } = this.config;
+        // Step 1: Get ref to the latest commit on the default branch
+        const { data: repoData } = await octokit.request(
+            "GET /repos/{owner}/{repo}",
+            { owner, repo },
+        );
+        const { data: refData } = await octokit.request(
+            "GET /repos/{owner}/{repo}/git/ref/{ref}",
+            { owner, repo, ref: `heads/${repoData.default_branch}` },
+        );
+        const latestCommitSha = refData.object.sha;
 
-		// Step 1: Get ref to the latest commit on the default branch
-		const { data: repoData } = await octokit.request(
-			"GET /repos/{owner}/{repo}",
-			{ owner, repo },
-		);
-		const { data: refData } = await octokit.request(
-			"GET /repos/{owner}/{repo}/git/ref/{ref}",
-			{ owner, repo, ref: `heads/${repoData.default_branch}` },
-		);
-		const latestCommitSha = refData.object.sha;
+        // Step 2: Get the commit to find the root tree SHA
+        const { data: commitData } = await octokit.request(
+            "GET /repos/{owner}/{repo}/git/commits/{commit_sha}",
+            { owner, repo, commit_sha: latestCommitSha },
+        );
+        const treeSha = commitData.tree.sha;
 
-		// Step 2: Get the commit to find the root tree SHA
-		const { data: commitData } = await octokit.request(
-			"GET /repos/{owner}/{repo}/git/commits/{commit_sha}",
-			{ owner, repo, commit_sha: latestCommitSha },
-		);
-		const treeSha = commitData.tree.sha;
+        // Step 3: Get the repo's file tree recursively. This avoids CORS issues with non-existent /contents/ paths.
+        const { data: treeData } = await octokit.request(
+            "GET /repos/{owner}/{repo}/git/trees/{tree_sha}",
+            {
+                owner,
+                repo,
+                tree_sha: treeSha,
+                recursive: "true",
+            },
+        );
 
-		// Step 3: Get the repo's file tree recursively. This avoids CORS issues with non-existent /contents/ paths.
-		const { data: treeData } = await octokit.request(
-			"GET /repos/{owner}/{repo}/git/trees/{tree_sha}",
-			{
-				owner,
-				repo,
-				tree_sha: treeSha,
-				recursive: "true",
-			},
-		);
+        const structure = treeData.tree.reduce(
+            (p, c) => {
+                if (c.path === "meta.json") {
+                    p.meta = c;
+                } else if (c.path.startsWith("assets/")) {
+                    p.assets.push(c);
+                }
+                // entry-0.json
+                else if (
+                    c.path.startsWith(`${entryName}-`) &&
+                    c.path.endsWith(`.json`)
+                ) {
+                    const startIndex = Number(
+                        c.path.replace(`${entryName}-`, "").replace(".json", ""),
+                    );
+                    p.chunks.push({ ...c, startIndex });
+                }
+                return p;
+            },
+            {
+                chunks: [],
+                assets: [],
+                meta: { path: "", sha: "", size: 0 },
+            } as StoreStructure,
+        );
 
-		// Step 4: Filter the tree to find our specific chunk files
-		const chunkFiles = treeData.tree.filter(
-			(file) =>
-				!!file.path && file.type === "blob" && file.path.endsWith(".json"),
-		);
-		// Convert chunkFiles to StoreStructure
-		const structure: StoreStructure = {
-			collections: [],
-			meta: { path: "meta.json", sha: "" },
-		};
+        return structure;
+    }
+    private fetchStoreStructure = asyncSingleton(
+        this._fetchStoreStructure.bind(this),
+    );
 
-		const metaFile = chunkFiles.find((f) => f.path === "meta.json");
-		if (metaFile) {
-			structure.meta = { path: metaFile.path, sha: metaFile.sha };
-		}
+    private async fetchContentJSON(storeFullName: string, shas: string[]) {
+        const [owner, repo] = storeFullName.split("/");
+        if ([owner, repo].some((v) => v.length === 0))
+            throw new Error(`invalid store name: ${storeFullName}`);
+        const octokit = await this.getOctokit();
+        return Promise.all(
+            shas.map(async (sha) => {
+                const { data: content } = await octokit.request(
+                    "GET /repos/{owner}/{repo}/git/blobs/{file_sha}",
+                    { owner, repo, file_sha: sha },
+                );
+                return { sha, content: JSON.parse(decode(content.content)) };
+            }),
+        );
+    }
 
-		// Group files by collection
-		const collections = new Map<
-			string,
-			{
-				meta: FileLike;
-				chunks: FileLike[];
-			}
-		>();
+    private async _fetchStoreDetail(
+        storeFullName: string,
+        _structure?: StoreStructure,
+    ) {
+        const structure =
+            _structure === undefined
+                ? await this.fetchStoreStructure(storeFullName)
+                : _structure;
 
-		chunkFiles.forEach((file) => {
-			const pathParts = file.path.split("/");
-			if (pathParts.length === 1) return; // Skip root level files
+        const results = await this.fetchContentJSON(
+            storeFullName,
+            Array.from(
+                new Set([structure.meta, ...structure.chunks].map((v) => v.sha)),
+            ),
+        );
+        const detail = Object.fromEntries(
+            Array.from(Object.entries(structure)).map(([k, v]) => {
+                if (Array.isArray(v)) {
+                    const withContens = v.map((f) => ({
+                        ...f,
+                        content: results.find((c) => c.sha === f.sha)?.content,
+                    }));
+                    return [k, withContens];
+                }
+                const value = v as FileLike;
+                (value as FileWithConentLike).content = results.find(
+                    (c) => c.sha === value.sha,
+                )?.content;
+                return [k, value];
+            }),
+        ) as StoreDetail;
+        return detail;
+    }
+    private fetchStoreDetail = asyncSingleton(this._fetchStoreDetail.bind(this));
 
-			const collectionName = pathParts[0];
-			if (!collections.has(collectionName)) {
-				collections.set(collectionName, {
-					meta: { path: `${collectionName}/meta.json`, sha: "" },
-					chunks: [],
-				});
-			}
+    /**
+     * 获取所有符合repoPrefix的仓库名称
+     */
+    async fetchAllStore() {
+        const octokit = await this.getOctokit();
+        const repos = await octokit.paginate("GET /user/repos", { type: "all" });
+        return repos
+            .filter((repo) => repo.name.startsWith(this.config.repoPrefix))
+            .map((repo) => repo.full_name);
+    }
 
-			const collection = collections.get(collectionName)!;
-			if (pathParts[1] === "meta.json") {
-				collection.meta = { path: file.path, sha: file.sha };
-			} else if (pathParts[1].startsWith(entryName)) {
-				collection.chunks.push({ path: file.path, sha: file.sha });
-			}
-		});
+    /** 根据名字创建一个store
+     * 根据repoPrefix确定store的名称
+     * 在本地indexedDB 中创建一个对应名称的
+     * 同步在github上创建一个对应名称的repo，并新建一个README.md文件进行仓库初始化
+     */
+    async createStore(name: string): Promise<{ fullName: string; name: string }> {
+        const { login: owner } = await this.getUserInfo();
+        const storeName = `${this.config.repoPrefix}-${name}`;
+        const octokit = await this.getOctokit();
+        await octokit.request("POST /user/repos", {
+            name: storeName,
+            private: true,
+        });
+        await octokit.request("PUT /repos/{owner}/{repo}/contents/{path}", {
+            owner,
+            repo: storeName,
+            path: "meta.json",
+            message: "Initial commit by Gitray",
+            content: encode(JSON.stringify({})),
+        });
+        return { fullName: `${owner}/${storeName}`, name: storeName };
+    }
 
-		structure.collections = Array.from(collections.entries()).map(
-			([name, data]) => ({
-				name,
-				meta: data.meta,
-				chunks: data.chunks.sort((a, b) => a.path.localeCompare(b.path)),
-				assets: treeData.tree
-					.filter(
-						(v) => v.type === "blob" && v.path.startsWith(`${name}/assets`),
-					)
-					.map((v) => ({ path: v.path, sha: v.sha })),
-			}),
-		);
+    private storeMap = new Map<
+        string,
+        { storage: StashStorage; itemBucket: StashBucket<Item> }
+    >();
 
-		return structure;
-	}
+    private getStore(storeFullName: string) {
+        const storage =
+            this.storeMap.get(storeFullName)?.storage ??
+            this.config.storage(storeFullName);
+        const itemBucket =
+            this.storeMap.get(storeFullName)?.itemBucket ??
+            new StashBucket(storage.createArrayableStorage, storage.createStorage);
 
-	private fetchStoreStructure = asyncSingleton(this._fetchStoreStructure.bind(this));
+        this.storeMap.set(storeFullName, { storage, itemBucket });
+        return { itemBucket };
+    }
+    async initStore(storeFullName: string) {
+        const detail = await this.fetchStoreDetail(storeFullName);
+        const { itemBucket } = this.getStore(storeFullName);
+        const remoteItems = detail.chunks.flatMap((v) => v.content);
+        await itemBucket.init(remoteItems, detail.meta.content);
+        this.notifyChange(storeFullName);
+        return detail;
+    }
 
-	private async _fetchStoreDetail(
-		storeFullName: string,
-		_structure?: StoreStructure,
-	) {
-		const [owner, repo] = storeFullName.split("/");
-		if ([owner, repo].some((v) => v.length === 0))
-			throw new Error(`invalid store name: ${storeFullName}`);
-		const octokit = await this.getOctokit();
-		const structure =
-			_structure === undefined
-				? await this.fetchStoreStructure(storeFullName)
-				: _structure;
-		// const results =
-		await Promise.all(
-			[
-				structure.meta,
-				...structure.collections.flatMap((c) => [c.meta, c.chunks]),
-			]
-				.flat()
-				.map(async (file) => {
-					if (!file.path || !file.sha) {
-						return;
-					}
-					const { data: content } = await octokit.request(
-						"GET /repos/{owner}/{repo}/git/blobs/{file_sha}",
-						{ owner, repo, file_sha: file.sha },
-					);
-					const collection = file.path.split("/")[0];
-					const chunkData = JSON.parse(decode(content.content)) as any[];
-					if (Array.isArray(chunkData)) {
-						chunkData?.forEach((item) => {
-							item.__collection = collection;
-							item.__store = storeFullName;
-						});
-					}
-					(file as any).content = chunkData;
+    async batch(storeFullName: string, actions: Action<Item>[]) {
+        const { itemBucket } = this.getStore(storeFullName);
+        await itemBucket.batch(actions);
+        this.notifyChange(storeFullName);
+        this.toSync();
+    }
 
-					return { content: chunkData, path: file.path };
-				}),
-		);
-		return structure as StoreDetail<Full<Item>>;
-	}
-	private fetchStoreDetail = asyncSingleton(this._fetchStoreDetail.bind(this))
+    async getAllItems(storeFullName: string) {
+        const { itemBucket } = this.getStore(storeFullName);
+        const res = await itemBucket.getItems();
+        return res ?? [];
+    }
 
-	// public methods
+    async getMeta(storeFullName: string) {
+        const { itemBucket } = this.getStore(storeFullName);
+        const res = (await itemBucket.getMeta()) ?? {};
+        return res;
+    }
 
-	/** 根据名字创建一个store
-	 * 根据repoPrefix确定store的名称
-	 * 在本地indexedDB 中创建一个对应名称的
-	 * 同步在github上创建一个对应名称的repo，并新建一个README.md文件进行仓库初始化
-	 */
-	async createStore(name: string): Promise<{ fullName: string; name: string }> {
-		const { login: owner } = await this.getUserInfo();
-		const storeName = `${this.config.repoPrefix}-${name}`;
-		const octokit = await this.getOctokit();
-		await octokit.request("POST /user/repos", {
-			name: storeName,
-			private: true,
-		});
-		await octokit.request("PUT /repos/{owner}/{repo}/contents/{path}", {
-			owner,
-			repo: storeName,
-			path: "meta.json",
-			message: "Initial commit by Gitray",
-			content: encode(JSON.stringify({})),
-		});
-		return { fullName: `${owner}/${storeName}`, name: storeName };
-	}
+    async getIsNeedSync() {
+        const somes = await Promise.all(
+            Array.from(this.storeMap.values()).map(async ({ itemBucket }) => {
+                const items = await itemBucket.stashStorage.toArray();
+                return items.length > 0;
+            }),
+        );
+        return somes.some((v) => v);
+    }
+    dangerousClearAll() {
+        Array.from(this.storeMap.values()).forEach((c) => {
+            c.storage.dangerousClearAll();
+        });
+    }
 
-	/**
-	 * 获取所有符合repoPrefix的仓库名称
-	 */
-	async fetchAllStore() {
-		const octokit = await this.getOctokit();
-		const repos = await octokit.paginate("GET /user/repos", { type: "all" });
-		return repos
-			.filter((repo) => repo.name.startsWith(this.config.repoPrefix))
-			.map((repo) => repo.full_name);
-	}
+    private async syncImmediate() {
+        return Promise.all(
+            Array.from(this.storeMap.entries()).map(
+                async ([storeFullName, { itemBucket }]) => {
+                    const stashes = await itemBucket.stashStorage.toArray();
+                    if (stashes.length === 0) {
+                        return;
+                    }
+                    const octokit = await this.getOctokit();
+                    const [owner, repo] = storeFullName.split("/");
+                    if ([owner, repo].some((v) => v.length === 0))
+                        throw new Error(`invalid store name: ${storeFullName}`);
+                    const metaStashes = stashes.filter((v) => v.type === "meta");
+                    const itemStashes = stashes.filter((v) => v.type !== "meta");
+                    //handle meta
+                    const runMetaStashesHandler = async () => {
+                        if (metaStashes.length === 0) {
+                            return [];
+                        }
+                        const content = metaStashes[0].metaValue;
+                        const file = new File(
+                            [new Blob([JSON.stringify(content, null, 2)])],
+                            "meta.json",
+                        );
+                        return [
+                            {
+                                path: "meta.json",
+                                file,
+                            },
+                        ];
+                    };
 
-	/**
-	 * 批量操作指定的 collection （增删改）
-	 * 如果collection不存在则会创建对应的collection
-	 */
-	async batch(
-		actions: (BaseItemAction<Item> | BaseMetaAction)[],
-	): Promise<void> {
-		const db = await this.getDB();
-		const now = Date.now();
-		const store = db
-			.transaction(STASH_STORE_NAME, "readwrite")
-			.objectStore(STASH_STORE_NAME);
+                    // handle items
+                    const runItemStashesHandler = async () => {
+                        if (itemStashes.length === 0) {
+                            return { chunks: [], assets: [] };
+                        }
+                        const structure = await this.fetchStoreStructure(storeFullName);
+                        const sortedChunk = sortBy(structure.chunks, (v) => v.startIndex);
+                        const latestChunk = sortedChunk[sortedChunk.length - 1];
+                        const [chunkDetail] =
+                            latestChunk === undefined
+                                ? [undefined]
+                                : await this.fetchContentJSON(storeFullName, [latestChunk.sha]);
+                        const [transformed, assets] = transformAssets(
+                            itemStashes,
+                            (file) => {
+                                return `https://raw.githubusercontent.com/${owner}/${repo}/main/assets/${shortId()}-${file.name}`;
+                            },
+                        );
+                        const newContent = [
+                            ...(chunkDetail?.content ?? []),
+                            ...transformed,
+                        ];
 
-		for (const action of actions) {
-			// Store in stash for later sync
-			const finalAction = {
-				...action,
-				params:
-					action.type === "add"
-						? {
-							...action.params,
-							__created_at: now,
-							__updated_at: now,
-							__collection: action.collection,
-							__store: action.store,
-						}
-						: action.type === "update"
-							? { ...action.params, __updated_at: now }
-							: action.type === "meta"
-								? action.params
-								: action.params,
-				id: genId(),
-			} as Action<Full<Item>>;
-			await store.put(finalAction);
-		}
-		db.close();
-		this.toSync();
-		Array.from(new Set(actions.map((ac) => ac.store))).forEach((store) => {
-			this.notifyChange(store);
-		});
-	}
+                        const startIndex = latestChunk?.startIndex ?? 0;
+                        const chunks: { file: File; path: string; content: any[] }[] = [];
+                        for (
+                            let i = 0;
+                            i < newContent.length;
+                            i += this.config.itemsPerChunk
+                        ) {
+                            const con = newContent.slice(i, i + this.config.itemsPerChunk);
 
-	async initStore(storeFullName: string) {
-		const detail = await this.fetchStoreDetail(storeFullName);
-		const db = await this.getDB();
-		// 创建一个事务，包含所有需要操作的 object store
-		const transaction = db.transaction(
-			[META_STORE_NAME, ITEM_STORE_NAME],
-			"readwrite",
-		);
+                            const path = `${this.config.entryName}-${i + startIndex}.json`;
+                            const file = new File(
+                                [new Blob([JSON.stringify(con, null, 2)])],
+                                pathToName(path),
+                            );
+                            chunks.push({
+                                file,
+                                content: con,
+                                path,
+                            });
+                        }
+                        return {
+                            chunks,
+                            assets,
+                        };
+                    };
+                    const [{ chunks, assets }, metas] = await Promise.all([
+                        runItemStashesHandler(),
+                        runMetaStashesHandler(),
+                    ]);
 
-		const metaStore = transaction.objectStore(META_STORE_NAME);
-		const itemStore = transaction.objectStore(ITEM_STORE_NAME);
+                    const treePayload: GitTreeItem[] = await Promise.all([
+                        ...[
+                            ...assets.map((v) => {
+                                return {
+                                    path: v.formattedValue.replace(
+                                        `https://raw.githubusercontent.com/${owner}/${repo}/main/`,
+                                        "",
+                                    ),
+                                    file: v.file,
+                                };
+                            }),
+                            ...chunks,
+                            ...metas,
+                        ].map(async ({ file, path }) => {
+                            const base64Content = await blobToBase64(file);
+                            const { data: blob } = await octokit.request(
+                                "POST /repos/{owner}/{repo}/git/blobs",
+                                { owner, repo, content: base64Content, encoding: "base64" },
+                            );
+                            return {
+                                path,
+                                mode: "100644" as const,
+                                type: "blob" as const,
+                                sha: blob.sha,
+                            };
+                        }),
+                        // TODO: remove unused assets
+                        // ...deletedPaths.map((path) => {
+                        //     return {
+                        //         path,
+                        //         mode: "100644" as const,
+                        //         type: "blob" as const,
+                        //         sha: null,
+                        //     };
+                        // }),
+                    ]);
+                    const { data: repoData } = await octokit.request(
+                        "GET /repos/{owner}/{repo}",
+                        { owner, repo },
+                    );
+                    const { data: refData } = await octokit.request(
+                        "GET /repos/{owner}/{repo}/git/ref/{ref}",
+                        { owner, repo, ref: `heads/${repoData.default_branch}` },
+                    );
+                    const { data: commitData } = await octokit.request(
+                        "GET /repos/{owner}/{repo}/git/commits/{commit_sha}",
+                        { owner, repo, commit_sha: refData.object.sha },
+                    );
+                    const baseTreeSha = commitData.tree.sha;
+                    const latestCommitSha = refData.object.sha;
+                    const { data: newTree } = await octokit.request(
+                        "POST /repos/{owner}/{repo}/git/trees",
+                        { owner, repo, tree: treePayload, base_tree: baseTreeSha },
+                    );
+                    const { data: newCommit } = await octokit.request(
+                        "POST /repos/{owner}/{repo}/git/commits",
+                        {
+                            owner,
+                            repo,
+                            message: `[Gitray] Batch update for ${storeFullName}`,
+                            tree: newTree.sha,
+                            parents: [latestCommitSha],
+                        },
+                    );
+                    await octokit.request("PATCH /repos/{owner}/{repo}/git/refs/{ref}", {
+                        owner,
+                        repo,
+                        ref: `heads/${repoData.default_branch}`,
+                        sha: newCommit.sha,
+                    });
+                    await itemBucket.deleteStashes(...stashes.map((s) => s.id));
+                },
+            ),
+        );
+    }
 
-		await metaStore.put({
-			path: storeFullName,
-			value: detail.meta.content,
-		});
+    private syncProcessors: Processor[] = [];
+    /**
+     * 同步状态处理
+     * 当batch被调用后，更新首先会被写入本地
+     * 一段时间后，Gitray会自动调用
+     * @param processor
+     */
+    onSync(processor: (finished: Promise<void>) => void) {
+        this.syncProcessors.push(processor);
+        return () => {
+            const i = this.syncProcessors.indexOf(processor);
+            this.syncProcessors.splice(i, 1);
+        };
+    }
+    private syncHandler() {
+        const finished = this.syncImmediate();
+        this.syncProcessors.forEach((p) => {
+            p(finished.then());
+        });
+    }
 
-		// Store collections
-		for (const collection of detail.collections) {
-			const key = `${storeFullName}/${collection.name}`;
-			await metaStore.put({
-				path: key,
-				value: collection.meta.content,
-			});
-			// Store items
-			for (const chunk of collection.chunks) {
-				for (const item of chunk.content) {
-					await itemStore.put(item);
-				}
-			}
-		}
+    private scheduler = new Scheduler(() => this.syncHandler());
+    async toSync() {
+        this.scheduler.scheduleSync();
+    }
 
-		db.close();
-		this.notifyChange(storeFullName);
-		return detail;
-	}
-
-	private async syncImmediate() {
-		const stashed = await this.getStash();
-		if (stashed.length === 0) return;
-
-		const stores = Array.from(new Set(stashed.map((a) => a.store)));
-
-		for (const store of stores) {
-			const [owner, repo] = store.split("/");
-			const octokit = await this.getOctokit();
-			const actions = stashed.filter((ac) => ac.store === store);
-			const remoteStructure = await this.fetchStoreDetail(store);
-
-			const localItems = await this.getAllItems(store, false, [
-				"__created_at",
-				"desc",
-			]);
-
-			const newItems = applyStash(
-				localItems,
-				actions.filter((ac) => ac.type !== "meta"),
-			);
-			const collections = newItems.reduce(
-				(p, c) => {
-					if (p[c.__collection] === undefined) {
-						p[c.__collection] = [];
-					}
-					p[c.__collection].push({
-						...c,
-						__collection: undefined,
-						__store: undefined,
-					});
-					return p;
-				},
-				{} as Record<string, Item[]>,
-			);
-
-			const localDetail: StoreDetail<Item> = {
-				collections: await Promise.all(
-					Array.from(Object.entries(collections)).map(
-						async ([collection, _items]) => {
-							const { items, assets } = omitAssets(_items, (file) => {
-								const id = genId();
-								return [
-									`https://raw.githubusercontent.com/${owner}/${repo}/main/${collection}/assets/${id}-${file.name}`,
-									`${collection}/assets/${id}-${file.name}`,
-								];
-							});
-							const chunks: StoreDetail<Item>["collections"][number]["chunks"] =
-								[];
-
-							for (
-								let i = 0;
-								i < items.length;
-								i += this.config.itemsPerChunk
-							) {
-								const con = items.slice(i, i + this.config.itemsPerChunk);
-								const path = `${collection}/${this.config.entryName}-${i}.json`;
-								const file = new File(
-									[new Blob([JSON.stringify(con, null, 2)])],
-									pathToName(path),
-								);
-								chunks.push({
-									file,
-									content: con,
-									sha: await computeGitBlobSha1(file),
-									path,
-								});
-							}
-							const metaPath = `${collection}/meta.json`;
-							const metaContent =
-								(await this.getMeta(store, collection, true)) || {};
-							const metaFile = new File(
-								[new Blob([JSON.stringify(metaContent, null, 2)])],
-								pathToName(metaPath),
-							);
-							return {
-								chunks: chunks,
-								meta: {
-									path: metaPath,
-									sha: await computeGitBlobSha1(metaFile),
-									content: metaContent,
-									file: metaFile,
-								},
-								name: collection,
-								assets: await Promise.all(
-									assets.map(async ({ path, file }) => {
-										return {
-											path,
-											file,
-											sha: await computeGitBlobSha1(file),
-										};
-									}),
-								),
-							};
-						},
-					),
-				),
-				meta: await (async () => {
-					const content = (await this.getMeta(store, undefined, true)) || {};
-					const metaPath = `meta.json`;
-					const metaFile = new File(
-						[new Blob([JSON.stringify(content, null, 2)])],
-						pathToName(metaPath),
-					);
-					return {
-						path: metaPath,
-						sha: await computeGitBlobSha1(metaFile),
-						content,
-					};
-				})(),
-			};
-
-			const [changedPaths, deletedPaths] = diff(remoteStructure, localDetail);
-			const allFiles = toFiles(localDetail);
-			const treePayload: GitTreeItem[] = await Promise.all([
-				...changedPaths.map(async (path) => {
-					const content = allFiles[path];
-					const file =
-						content.file ??
-						new File(
-							[new Blob([JSON.stringify(content.content, null, 2)])],
-							pathToName(path),
-						);
-					const base64Content = await blobToBase64(file);
-					const { data: blob } = await octokit.request(
-						"POST /repos/{owner}/{repo}/git/blobs",
-						{ owner, repo, content: base64Content, encoding: "base64" },
-					);
-					return {
-						path,
-						mode: "100644" as const,
-						type: "blob" as const,
-						sha: blob.sha,
-					};
-				}),
-				...deletedPaths.map((path) => {
-					return {
-						path,
-						mode: "100644" as const,
-						type: "blob" as const,
-						sha: null,
-					};
-				}),
-			]);
-			const { data: repoData } = await octokit.request(
-				"GET /repos/{owner}/{repo}",
-				{ owner, repo },
-			);
-			const { data: refData } = await octokit.request(
-				"GET /repos/{owner}/{repo}/git/ref/{ref}",
-				{ owner, repo, ref: `heads/${repoData.default_branch}` },
-			);
-			const { data: commitData } = await octokit.request(
-				"GET /repos/{owner}/{repo}/git/commits/{commit_sha}",
-				{ owner, repo, commit_sha: refData.object.sha },
-			);
-			const baseTreeSha = commitData.tree.sha;
-			const latestCommitSha = refData.object.sha;
-			const { data: newTree } = await octokit.request(
-				"POST /repos/{owner}/{repo}/git/trees",
-				{ owner, repo, tree: treePayload, base_tree: baseTreeSha },
-			);
-			const { data: newCommit } = await octokit.request(
-				"POST /repos/{owner}/{repo}/git/commits",
-				{
-					owner,
-					repo,
-					message: `[Gitray] Batch update for ${store}`,
-					tree: newTree.sha,
-					parents: [latestCommitSha],
-				},
-			);
-			await octokit.request("PATCH /repos/{owner}/{repo}/git/refs/{ref}", {
-				owner,
-				repo,
-				ref: `heads/${repoData.default_branch}`,
-				sha: newCommit.sha,
-			});
-			for (let i = 0; i < actions.length; i++) {
-				const action = actions[i];
-				const storeName = `${action.store}/${action.collection}`;
-				const db = await this.getDB();
-				const transaction = db.transaction(
-					[META_STORE_NAME, ITEM_STORE_NAME, STASH_STORE_NAME],
-					"readwrite",
-				);
-				const itemStore = transaction.objectStore(ITEM_STORE_NAME);
-				const metaStore = transaction.objectStore(META_STORE_NAME);
-				const stashStore = transaction.objectStore(STASH_STORE_NAME);
-
-				// TODO: 在写回stash的时候，将File对象替换成在线地址
-				if (action.type === "add") {
-					await itemStore.put(action.params);
-				} else if (action.type === "remove") {
-					await itemStore.delete(action.params);
-				} else if (action.type === "update") {
-					const old = await itemStore.get(action.params.id);
-					if (old) {
-						await itemStore.put({
-							...old,
-							...action.params.changes,
-							id: action.params.id,
-						});
-					}
-				} else if (action.type === "meta") {
-					const key = `${action.store}${action.collection ? `${action.collection}/` : "/"}meta.json`;
-					await metaStore.put({ path: key, value: action.params });
-				}
-				await stashStore.delete(action.id);
-				db.close();
-			}
-		}
-	}
-
-	private syncProcessors: Processor[] = [];
-	/**
-	 * 同步状态处理
-	 * 当batch被调用后，更新首先会被写入本地
-	 * 一段时间后，Gitray会自动调用
-	 * @param processor
-	 */
-	onSync(processor: (finished: Promise<void>) => void) {
-		this.syncProcessors.push(processor);
-		return () => {
-			const i = this.syncProcessors.indexOf(processor);
-			this.syncProcessors.splice(i, 1);
-		};
-	}
-	private syncHandler() {
-		const finished = this.syncImmediate();
-		this.syncProcessors.forEach((p) => {
-			p(finished);
-		});
-	}
-
-	private scheduler = new Scheduler(() => this.syncHandler());
-	async toSync() {
-		this.scheduler.scheduleSync();
-	}
-
-	// onChange
-	private changeListeners: ChangeListener[] = [];
-	private notifyChange(storeFullName: string, collectionName?: string) {
-		this.changeListeners.forEach((p) => {
-			p({ store: storeFullName, collection: collectionName });
-		});
-	}
-	/**
-	 * 监听数据是否发生变化
-	 */
-	onChange(listener: ChangeListener) {
-		this.changeListeners.push(listener);
-		return () => {
-			const i = this.changeListeners.indexOf(listener);
-			this.changeListeners.splice(i, 1);
-		};
-	}
+    // onChange
+    private changeListeners: ChangeListener[] = [];
+    private notifyChange(storeFullName: string) {
+        this.changeListeners.forEach((p) => {
+            p({ store: storeFullName });
+        });
+    }
+    /**
+     * 监听数据是否发生变化
+     */
+    onChange(listener: ChangeListener) {
+        this.changeListeners.push(listener);
+        return () => {
+            const i = this.changeListeners.indexOf(listener);
+            this.changeListeners.splice(i, 1);
+        };
+    }
 }
 
-// utils
 const pathToName = (path: string) => {
-	const splitted = path.split("/");
-	return splitted[splitted.length - 1];
-};
-
-const toFiles = <Item extends BaseItem>(a: StoreDetail<Item>) => {
-	return Object.fromEntries([
-		[a.meta.path, a.meta] as const,
-		...a.collections.flatMap((v) => [
-			[v.meta.path, v.meta] as const,
-			...v.chunks.map((c) => [c.path, c] as const),
-			...v.assets.map((c) => [c.path, c] as const),
-		]),
-	]);
+    const splitted = path.split("/");
+    return splitted[splitted.length - 1];
 };
 
 // Helper function to convert File/Blob to Base64, required for GitHub API
 async function blobToBase64(blob: Blob): Promise<string> {
-	return new Promise((resolve, reject) => {
-		const reader = new FileReader();
-		reader.onload = () => {
-			const dataUrl = reader.result as string;
-			const base64 = dataUrl.split(",")[1];
-			resolve(base64);
-		};
-		reader.onerror = (error) => reject(error);
-		reader.readAsDataURL(blob);
-	});
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            const dataUrl = reader.result as string;
+            const base64 = dataUrl.split(",")[1];
+            resolve(base64);
+        };
+        reader.onerror = (error) => reject(error);
+        reader.readAsDataURL(blob);
+    });
 }
 
-export type * from "./type";
+export type * from "./stash";
 
-export { GitrayDB };
+export * from "./storage";

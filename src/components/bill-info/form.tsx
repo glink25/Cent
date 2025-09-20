@@ -93,7 +93,7 @@ export default function BillInfo({
 							<SmartImage
 								source={edit.image}
 								alt=""
-								className="max-h-200px object-contain rounded"
+								className="max-h-[200px] object-contain rounded"
 							/>
 						</div>
 					)}

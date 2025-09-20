@@ -1,5 +1,5 @@
 import { wrap } from "comlink";
-import { Gitray } from "@/gitray";
+import { BillIndexeBDStorage, Gitray } from "@/gitray";
 
 import type { Bill, BillCategory, BillFilter } from "@/ledger/type";
 import { getToken } from "../login";
@@ -11,17 +11,16 @@ export type GlobalMeta = {
 	customFilters?: { id: string; filter: BillFilter; name: string }[];
 };
 
-export type PersonalMeta = any;
-
 const config = {
 	repoPrefix: "oncent-journal",
 	entryName: "ledger",
 	orderKeys: ["time"],
 };
 
-const repo = new Gitray<Bill, { time: number }>({
+const repo = new Gitray<Bill>({
 	...config,
 	auth: getToken,
+	storage: (name) => new BillIndexeBDStorage(`book-${name}`)
 });
 
 export const StorageAPI = repo;

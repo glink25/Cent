@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import type { PersonalMeta } from "@/api/storage";
 import type { UserInfo } from "@/api/user";
 import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
@@ -28,15 +27,16 @@ export function useCreator(login: string | number) {
 
 export function useCreators() {
 	const { infos } = useLedgerStore();
-	const [creators, setCreators] =
-		useState<Record<string | number, { meta: PersonalMeta; info: UserInfo }>>({});
+	const [creators, setCreators] = useState<
+		Record<string | number, { info: UserInfo }>
+	>({});
 	useEffect(() => {
 		infos?.creators?.forEach((c) => {
 			fetchUser(c.id).then((u) => {
-				setCreators((v) => ({ ...v, [c.id]: { meta: c.meta, info: u } }));
+				setCreators((v) => ({ ...v, [c.id]: { info: u } }));
 			});
 		});
 	}, [infos?.creators?.forEach]);
 
-	return creators
+	return creators;
 }

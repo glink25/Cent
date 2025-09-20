@@ -37,7 +37,7 @@ export default function Page() {
 	const END = useMemo(() => dayjs.unix(endTime / 1000), [endTime]);
 
 	const customFilters = useLedgerStore(
-		useShallow((state) => state.infos?.globalMeta.customFilters),
+		useShallow((state) => state.infos?.meta.customFilters),
 	);
 	const views: Views[] = useMemo(() => {
 		return [
