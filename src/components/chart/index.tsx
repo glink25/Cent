@@ -1,25 +1,25 @@
 import type {
-    // 系列类型的定义后缀都为 SeriesOption
-    BarSeriesOption,
-    LineSeriesOption,
+	// 系列类型的定义后缀都为 SeriesOption
+	BarSeriesOption,
+	LineSeriesOption,
 } from "echarts/charts";
-import { BarChart, LineChart } from "echarts/charts";
+import { BarChart, LineChart, PieChart } from "echarts/charts";
 import type {
-    DatasetComponentOption,
-    GridComponentOption,
-    // 组件类型的定义后缀都为 ComponentOption
-    TitleComponentOption,
-    TooltipComponentOption,
+	DatasetComponentOption,
+	GridComponentOption,
+	// 组件类型的定义后缀都为 ComponentOption
+	TitleComponentOption,
+	TooltipComponentOption,
 } from "echarts/components";
 import {
-    // 数据集组件
-    DatasetComponent,
-    GridComponent,
-    LegendComponent,
-    TitleComponent,
-    TooltipComponent,
-    // 内置数据转换器组件 (filter, sort)
-    TransformComponent,
+	// 数据集组件
+	DatasetComponent,
+	GridComponent,
+	LegendComponent,
+	TitleComponent,
+	TooltipComponent,
+	// 内置数据转换器组件 (filter, sort)
+	TransformComponent,
 } from "echarts/components";
 import type { ComposeOption } from "echarts/core";
 import * as echarts from "echarts/core";
@@ -30,64 +30,65 @@ import useResize from "@/hooks/use-resize";
 import { cn } from "@/utils";
 
 // 通过 ComposeOption 来组合出一个只有必须组件和图表的 Option 类型
-type ECOption = ComposeOption<
-    | BarSeriesOption
-    | LineSeriesOption
-    | TitleComponentOption
-    | TooltipComponentOption
-    | GridComponentOption
-    | DatasetComponentOption
+export type ECOption = ComposeOption<
+	| BarSeriesOption
+	| LineSeriesOption
+	| TitleComponentOption
+	| TooltipComponentOption
+	| GridComponentOption
+	| DatasetComponentOption
 >;
 
 // 注册必须的组件
 echarts.use([
-    TitleComponent,
-    TooltipComponent,
-    GridComponent,
-    DatasetComponent,
-    TransformComponent,
-    BarChart,
-    LineChart,
-    LabelLayout,
-    UniversalTransition,
-    CanvasRenderer,
-    LegendComponent,
+	TitleComponent,
+	TooltipComponent,
+	GridComponent,
+	DatasetComponent,
+	TransformComponent,
+	BarChart,
+	LineChart,
+	LabelLayout,
+	UniversalTransition,
+	CanvasRenderer,
+	LegendComponent,
+	PieChart,
 ]);
 
 const option: ECOption = {
-    // ...
+	// ...
 };
 
 export default function Chart({
-    className,
-    option,
+	className,
+	option,
 }: {
-    className?: string;
-    option: ECOption;
+	className?: string;
+	option: ECOption;
 }) {
-    const rootRef = useRef<HTMLDivElement>(null);
-    const chartRef = useRef<echarts.ECharts>(undefined);
-    useEffect(() => {
-        const el = rootRef.current;
-        if (!el) {
-            return;
-        }
-        const chart = echarts.init(el);
-        chartRef.current = chart;
-        return () => {
-            chart.dispose();
-        };
-    }, []);
+	const rootRef = useRef<HTMLDivElement>(null);
+	const chartRef = useRef<echarts.ECharts>(undefined);
+	useEffect(() => {
+		const el = rootRef.current;
+		if (!el) {
+			return;
+		}
+		const chart = echarts.init(el);
+		chartRef.current = chart;
+		return () => {
+			chart.dispose();
+		};
+	}, []);
 
-    useResize(rootRef.current, (sizer) => {
-        chartRef?.current?.resize(sizer());
-    });
+	useResize(rootRef.current, (sizer) => {
+		chartRef?.current?.resize(sizer());
+	});
 
-    useEffect(() => {
-        if (!chartRef.current) {
-            return;
-        }
-        chartRef.current.setOption(option);
-    }, [option]);
-    return <div ref={rootRef} className={cn(className)}></div>;
+	useEffect(() => {
+		if (!chartRef.current) {
+			return;
+		}
+		chartRef.current.setOption(option);
+	}, [option]);
+	return <div ref={rootRef} className={cn(className)}></div>;
 }

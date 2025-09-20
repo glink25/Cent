@@ -158,31 +158,48 @@ export default function Page() {
 		views.find,
 	]);
 
-	const chart1 = useMemo(() => {
-		return createChartOption(filtered, {
+	const [chart1, chart2, chart3] = useMemo(() => {
+		const chart1 = createChartOption(filtered, {
 			chartType: "line",
 		});
+		const chart2 = createChartOption(filtered, {
+			chartType: "multiUserLine",
+			displayType: "expense",
+		});
+		const chart3 = createChartOption(filtered, {
+			chartType: "pie",
+		});
+		return [chart1, chart2, chart3];
 	}, [filtered]);
 	return (
-		<div className="w-full h-full p-2 flex justify-center overflow-hidden">
-			<div className="h-full w-full mx-2 max-w-[600px] flex flex-col">
+		<div className="w-full h-full p-2 flex flex-col items-center justify-center gap-2 overflow-hidden">
+			<div className="w-full mx-2 max-w-[600px] flex flex-col">
 				<div className="w-full flex flex-col gap-2">
-					<div className="w-full flex gap-2 overflow-x-auto scrollbar-hidden">
-						{views.map((view) => (
-							<Button
-								key={view.id}
-								size={"sm"}
-								className={cn(selectedViewId !== view.id && "text-primary/50")}
-								variant={selectedViewId === view.id ? "default" : "ghost"}
-								onClick={() => {
-									setSelectedViewId(view.id);
-								}}
-							>
-								{view.label}
+					<div className="w-full flex">
+						<div className="flex-1 flex gap-2 overflow-x-auto scrollbar-hidden">
+							{views.map((view) => (
+								<Button
+									key={view.id}
+									size={"sm"}
+									className={cn(
+										selectedViewId !== view.id && "text-primary/50",
+									)}
+									variant={selectedViewId === view.id ? "default" : "ghost"}
+									onClick={() => {
+										setSelectedViewId(view.id);
+									}}
+								>
+									{view.label}
+								</Button>
+							))}
+						</div>
+						<div className="">
+							<Button variant="ghost">
+								<i className="icon-[mdi--menu-open] size-5"></i>
 							</Button>
-						))}
+						</div>
 					</div>
-					{slices.length > 0 && (
+					{slices.length > 0 ? (
 						<div className="w-full flex gap-2 overflow-x-auto scrollbar-hidden">
 							{slices.map((slice) => (
 								<Button
@@ -201,8 +218,7 @@ export default function Page() {
 								</Button>
 							))}
 						</div>
-					)}
-					{selectedViewId === "custom" && (
+					) : selectedViewId === "custom" ? (
 						<div className="w-full flex justify-center items-center gap-3 text-xs">
 							<Button variant="outline" size="sm">
 								<DatePicker
@@ -220,10 +236,37 @@ export default function Page() {
 								></DatePicker>
 							</Button>
 						</div>
+					) : (
+						<div className="w-full text-sm h-8 flex items-center justify-center">
+							<Button variant={"secondary"} size="sm">
+								自定义筛选条件
+								<i className="icon-[mdi--database-edit-outline]"></i>
+							</Button>
+						</div>
 					)}
 				</div>
-				<div className="w-full h-[300px]">
-					<Chart option={chart1 as any} className="w-full h-full" />
+			</div>
+			<div className="w-full flex-1 flex justify-center overflow-y-auto">
+				<div className="w-full mx-2 max-w-[600px] flex flex-col items-center gap-2">
+					<div className="flex-shrink-0 w-full h-[300px]">
+						<Chart
+							option={chart1 as any}
+							className="w-full h-full border rounded-md"
+						/>
+					</div>
+					<div className="flex-shrink-0 w-full h-[300px]">
+						<Chart
+							option={chart2 as any}
+							className="w-full h-full border rounded-md"
+						/>
+					</div>
+					<div className="flex-shrink-0 w-full h-[300px]">
+						<Chart
+							option={chart3 as any}
+							className="w-full h-full border rounded-md"
+						/>
+					</div>
+					<div className="h-20 flex-shrink-0"></div>
 				</div>
 			</div>
 		</div>
