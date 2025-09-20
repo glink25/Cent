@@ -4,7 +4,8 @@ import type { StateCreator } from "zustand";
 import { create } from "zustand";
 import type { PersistOptions } from "zustand/middleware";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { getLocalToken } from "@/api/login";
+import { getLocalToken, LoginAPI } from "@/api/login";
+import { t } from "@/locale";
 import { UserAPI, type UserInfo } from "../api/user";
 
 type UserStoreState = {
@@ -13,7 +14,7 @@ type UserStoreState = {
 	name: string;
 	id: number;
 	loading: boolean;
-	expired?: boolean
+	expired?: boolean;
 	cachedUsers: Record<string, UserInfo>;
 };
 
@@ -49,16 +50,23 @@ export const useUserStore = create<UserStore>()(
 							state.login = res.login;
 							state.name = res.name;
 							state.id = res.id;
-							state.expired = undefined
+							state.expired = undefined;
 						}),
 					);
 				} catch (error) {
 					if ((error as any)?.status === "401") {
-						toast.error("Token expired, Please re-login to Github from setting page.");
+						toast.error(t("token-expired-please-re-login-to-github-from-setting-page"), {
+							position: "top-center",
+							action: {
+								label: t("re-login"), onClick: () => {
+									LoginAPI.login();
+								}
+							},
+						});
 					}
 					set(
 						produce((state: UserStore) => {
-							state.expired = true
+							state.expired = true;
 						}),
 					);
 					throw error;

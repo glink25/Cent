@@ -5,12 +5,18 @@ import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router";
 import "./index.css";
 
+import { getBrowserLang, initIntl, LocaleProvider } from "./locale/index.tsx";
 import RootRoute from "./route.tsx";
 
-createRoot(document.getElementById("root")!).render(
-	<StrictMode>
-		<MemoryRouter>
-			<RootRoute />
-		</MemoryRouter>
-	</StrictMode>,
-);
+const lang = getBrowserLang();
+initIntl(lang).then(() => {
+	createRoot(document.getElementById("root")!).render(
+		<StrictMode>
+			<LocaleProvider>
+				<MemoryRouter>
+					<RootRoute />
+				</MemoryRouter>
+			</LocaleProvider>
+		</StrictMode>,
+	);
+});

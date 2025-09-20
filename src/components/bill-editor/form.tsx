@@ -8,6 +8,7 @@ import {
 } from "@/ledger/bill";
 import { ExpenseBillCategories, IncomeBillCategories } from "@/ledger/category";
 import type { Bill } from "@/ledger/type";
+import { useIntl } from "@/locale";
 import type { EditBill } from "@/store/ledger";
 import { cn } from "@/utils";
 import { DatePicker } from "../date-picker";
@@ -32,6 +33,7 @@ export default function EditorForm({
 	onConfirm?: (v: Omit<Bill, "id" | "creatorId">) => void;
 	onCancel?: () => void;
 }) {
+	const t = useIntl();
 	const goBack = () => {
 		onCancel?.();
 	};
@@ -92,7 +94,7 @@ export default function EditorForm({
 							>
 								<Switch.Thumb className="w-1/2 h-full flex justify-center items-center transition-all rounded-md bg-red-700 -translate-x-[22px] data-[state=checked]:bg-green-700 data-[state=checked]:translate-x-[21px]">
 									<span className="text-[8px]">
-										{billState.type === "expense" ? "expense" : "income"}
+										{billState.type === "expense" ? t("expense") : t("income")}
 									</span>
 								</Switch.Thumb>
 							</Switch.Root>
@@ -121,7 +123,7 @@ export default function EditorForm({
 								}
 							>
 								<i className={`icon-xs ${item.icon}`}></i>
-								<div className="mx-2">{item.name}</div>
+								<div className="mx-2">{t(item.name)}</div>
 							</button>
 						))}
 					</div>
@@ -163,7 +165,7 @@ export default function EditorForm({
 								}}
 								type="text"
 								className="w-full bg-transparent text-white text-right placeholder-opacity-50 outline-none"
-								placeholder={"comment"}
+								placeholder={t("comment")}
 								enterKeyHint="done"
 							/>
 						</div>

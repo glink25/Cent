@@ -16,8 +16,8 @@ export default function createConfirmProvider<Value, Returned = Value>(
 		dialogModalClose,
 		contentClassName,
 	}: {
-		dialogTitle: string;
-		dialogDescription?: string;
+		dialogTitle: string | ReactNode;
+		dialogDescription?: string | ReactNode;
 		dialogModalClose?: boolean;
 		contentClassName?: string;
 	},
@@ -53,7 +53,12 @@ export default function createConfirmProvider<Value, Returned = Value>(
 				<Dialog.Portal>
 					<Dialog.Overlay className="fixed inset-0 bg-black/50 data-[state=open]:animate-overlay-show" />
 					<div className="fixed top-0 left-0 w-full h-full flex justify-center items-center pointer-events-none">
-						<Dialog.Content className={cn('pointer-events-auto bg-white max-h-[55vh] w-[90vw] max-w-[500px] rounded-md data-[state=open]:animate-content-show', contentClassName)}>
+						<Dialog.Content
+							className={cn(
+								"pointer-events-auto bg-white max-h-[55vh] w-[90vw] max-w-[500px] rounded-md data-[state=open]:animate-content-show",
+								contentClassName,
+							)}
+						>
 							<VisuallyHidden.Root>
 								<Dialog.Title>{dialogTitle}</Dialog.Title>
 								<Dialog.Description>{dialogDescription}</Dialog.Description>
