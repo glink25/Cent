@@ -5,7 +5,7 @@
 	"type": "module",
 	"scripts": {
 		"dev": "vite --host",
-		"build": "vite build",
+		"build": "pnpm run lint && vite build",
 		"lint": "biome lint",
 		"preview": "vite preview"
 	},

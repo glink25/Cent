@@ -2,36 +2,39 @@
 declare const self: DedicatedWorkerGlobalScope;
 
 import { expose } from "comlink";
-import { GitrayDB } from "@/gitray";
-import type { GitrayDBConfig } from "@/gitray/db";
+import { BillIndexeBDStorage } from "@/gitray";
+import { StashBucket } from "@/gitray/stash";
 import { getDefaultCategoryById } from "@/ledger/category";
 import type { Bill, BillFilter } from "@/ledger/type";
 import { isBillMatched } from "@/ledger/utils";
-import type { GlobalMeta, PersonalMeta } from ".";
+import type { GlobalMeta } from ".";
 
-let gitrayDB: GitrayDB<Bill, { time: number }> | undefined;
-
-const init = (config: GitrayDBConfig) => {
-	gitrayDB = new GitrayDB(config);
-};
-
-const getDB = () => {
-	if (!gitrayDB) {
-		throw new Error("gitrayDB not initialized");
-	}
-	return gitrayDB;
+const storeMap = new Map<
+	string,
+	{ itemStorage: BillIndexeBDStorage; itemBucket: StashBucket<Bill> }
+>();
+const getDB = (storeFullName: string) => {
+	const itemStorage =
+		storeMap.get(storeFullName)?.itemStorage ??
+		new BillIndexeBDStorage(`book-${storeFullName}`);
+	const itemBucket =
+		storeMap.get(storeFullName)?.itemBucket ??
+		new StashBucket(
+			itemStorage.createArrayableStorage,
+			itemStorage.createStorage
+		);
+	storeMap.set(storeFullName, { itemStorage, itemBucket });
+	return { itemBucket }
 };
 
 const filter = async (storeFullName: string, rule: BillFilter) => {
-	const items = await getDB().getAllItems(storeFullName, true, [
-		"time",
-		"desc",
-	]);
+	const items = await getDB(storeFullName).itemBucket.getItems()
 	return items.filter((v) => isBillMatched(v, rule));
 };
 
 const getInfo = async (storeFullName: string) => {
-	const items = await getDB().getAllItems(storeFullName);
+	const bucket = getDB(storeFullName).itemBucket
+	const items = await bucket.getItems()
 	const creatorsSet = new Set<Bill["creatorId"]>();
 	const categoryIdsSet = new Set<Bill["categoryId"]>();
 	items.forEach((item) => {
@@ -40,17 +43,15 @@ const getInfo = async (storeFullName: string) => {
 	});
 	const creators = Array.from(creatorsSet);
 
-	const globalMeta: GlobalMeta = await getDB().getMeta(
-		storeFullName,
-		undefined,
-		true,
-	);
-	const creatorMetas: PersonalMeta[] = await Promise.all(
-		creators.map((c) => getDB().getMeta(storeFullName, c, true)),
-	);
+	// const globalMeta: GlobalMeta = await getDB().getMeta(
+	// 	storeFullName,
+	// 	undefined,
+	// 	true,
+	// );
+	const globalMeta: GlobalMeta = await bucket.getMeta() ?? {}
 	return {
-		globalMeta,
-		creators: creatorMetas.map((meta, i) => ({ id: creators[i], meta })),
+		meta: globalMeta,
+		creators: creators.map(v => ({ id: v })),
 		categories: [
 			...Array.from(categoryIdsSet)
 				.map((id) => getDefaultCategoryById(id))
@@ -61,7 +62,7 @@ const getInfo = async (storeFullName: string) => {
 };
 
 const exposed = {
-	init,
+	init: (v: any) => { },
 	getInfo,
 	filter,
 };
