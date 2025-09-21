@@ -164,11 +164,10 @@ export const CalculatorRoot = ({
 		if (value === "r") {
 			return;
 		}
-		setCurrentFormula((prev) => {
-			const newFormula = createFormula(value, prev);
-			onValueChange?.(formulaToNumber(newFormula));
-			return newFormula;
-		});
+		const newFormula = createFormula(value, currentFormula);
+		onValueChange?.(formulaToNumber(newFormula));
+
+		setCurrentFormula(newFormula);
 	};
 
 	return (
