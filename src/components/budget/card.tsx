@@ -5,7 +5,6 @@ import useCategory from "@/hooks/use-category";
 import type { Bill } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import { cn } from "@/utils";
-import { Button } from "../ui/button";
 import type { Budget } from "./type";
 import { budgetEncountered, budgetRange, budgetTotal } from "./util";
 
@@ -60,12 +59,15 @@ export default function BudgetCard({
 	}
 	return (
 		<div
-			className={cn("rounded-lg border flex flex-col w-full p-2", className)}
+			className={cn(
+				"rounded-lg border flex flex-col w-full px-4 py-2",
+				className,
+			)}
 		>
-			<Collapsible.Root>
+			<Collapsible.Root className="group">
 				<div className="w-full flex items-center justify-between">
-					<div>{budget.title}</div>
-					<div>
+					<div className="font-semibold">{budget.title}</div>
+					<div className="text-sm">
 						{todayEncountered && time && (
 							<>
 								今日可用:
@@ -76,7 +78,7 @@ export default function BudgetCard({
 						)}
 					</div>
 				</div>
-				<div className="flex flex-col gap-1">
+				<div className="flex flex-col">
 					<BudgetBar
 						total={total}
 						used={encountered.totalUsed}
@@ -84,11 +86,11 @@ export default function BudgetCard({
 						time={time}
 					/>
 					<div>
-						<Collapsible.Trigger className="h-4 flex justify-end w-full">
-							<i className="icon-[mdi--chevron-down]" />
+						<Collapsible.Trigger className="h-4 flex justify-end w-full group">
+							<i className=" group-[[data-state=open]]:icon-[mdi--chevron-down] group-[[data-state=closed]]:icon-[mdi--chevron-up]" />
 						</Collapsible.Trigger>
 					</div>
-					<Collapsible.Content>
+					<Collapsible.Content className="data-[state=open]:animate-collapse-open data-[state=closed]:animate-collapse-close data-[state=closed]:overflow-hidden">
 						{encountered?.categoriesUsed?.map((v) => {
 							const category = categories.find((c) => c.id === v.id)!;
 							const cb = budget.categoriesBudget!.find((c) => c.id === v.id)!;
@@ -98,13 +100,6 @@ export default function BudgetCard({
 							return (
 								<div key={v.id}>
 									{t(category?.name)}
-									{/* <BudgetProgress
-										total={cb.budget}
-										used={v.used}
-										todayUsed={td.used}
-										timePercent={time?.percent ?? 1}
-									/>
-									{v.used}/{cb?.budget}-{td?.used} */}
 									<BudgetBar
 										total={cb.budget}
 										used={v.used}
@@ -136,23 +131,23 @@ function BudgetProgress({
 	const tp = (todayUsed ?? 0) / total;
 	return (
 		<div className="w-full flex items-center h-4 relative">
-			<div className="relative w-full h-2 rounded-full outer bg-gray-600 flex items-center overflow-hidden">
+			<div className="relative w-full h-2 rounded-full outer bg-gray-300 flex items-center overflow-hidden">
 				<div
-					className="inner h-2 rounded-full bg-red-500 absolute top-0"
+					className="inner h-2 rounded-full bg-amber-500 absolute top-0"
 					style={{
 						left: `calc(${p * 100}% - 16px)`,
 						width: `${tp * 100}%`,
 					}}
 				></div>
 				<div
-					className="inner h-2 rounded-full bg-green-500 absolute left-0 top-0"
+					className="inner h-2 rounded-full bg-green-600 absolute left-0 top-0"
 					style={{
 						width: `${p * 100}%`,
 					}}
 				></div>
 			</div>
 			<div
-				className="absolute top-0 h-4 bg-pink-400 w-[2px]"
+				className="absolute top-0 h-4 bg-slate-500 w-[2px]"
 				style={{
 					left: `${timePercent * 100}%`,
 				}}
@@ -182,7 +177,7 @@ function BudgetBar({
 			/>
 			<div className="flex justify-between items-center text-xs gap-1">
 				<div className="flex flex-col">
-					<div>已支出:{used}</div>
+					<div>已支出:{used.toFixed(2)}</div>
 					{todayUsed && <div>今日支出:{todayUsed}</div>}
 				</div>
 				<div className="text-end">
