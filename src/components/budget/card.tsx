@@ -165,7 +165,7 @@ function BudgetBar({
 	total: number;
 	used: number;
 	todayUsed?: number;
-	time?: { percent: number; leftDays: number };
+	time?: { percent: number; leftDays: number; totalDays: number };
 }) {
 	return (
 		<>
@@ -178,10 +178,16 @@ function BudgetBar({
 			<div className="flex justify-between items-center text-xs gap-1">
 				<div className="flex flex-col">
 					<div>已支出:{used.toFixed(2)}</div>
-					{todayUsed && <div>今日支出:{todayUsed}</div>}
+					{todayUsed !== undefined && <div>今日支出:{todayUsed}</div>}
+					{time && (
+						<div>
+							日均支出:{(used / (time.totalDays - time?.leftDays)).toFixed(2)}
+						</div>
+					)}
 				</div>
 				<div className="text-end">
 					<div>总预算: {total}</div>
+					<div>总剩余: {(total - used).toFixed(2)}</div>
 					{time && (
 						<>
 							日均剩余预算:
