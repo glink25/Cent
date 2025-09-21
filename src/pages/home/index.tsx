@@ -26,7 +26,7 @@ export default function Page() {
 				<div className="w-full h-full">
 					<Ledger
 						bills={bills}
-						className={cn(bills.length > 0 && "relative ")}
+						className={cn(bills.length > 0 && "relative")}
 						enableDivideAsOrdered
 					/>
 				</div>

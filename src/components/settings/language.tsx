@@ -1,5 +1,4 @@
-import { getBrowserLang, locales, useIntl, useLocale } from "@/locale";
-import { Button } from "../ui/button";
+import { locales, useIntl, useLocale } from "@/locale";
 import {
 	Select,
 	SelectContent,
@@ -15,7 +14,7 @@ export default function Launguage() {
 		<div className="w-full px-4 py-1 text-sm">
 			<div className="w-full px-4 flex justify-between items-center text-sm font-medium">
 				<div className="flex items-center gap-2">
-					<i className="icon-[mdi--calculator] size-5"></i>
+					<i className="icon-[mdi--language] size-5"></i>
 					{t("language")}
 				</div>
 				<Select

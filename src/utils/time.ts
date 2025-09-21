@@ -24,3 +24,5 @@ export const denseTime = (time: Dayjs) => {
 	}
 	return time.format("YYYY-MM-DD");
 };
+
+export const shorTime = (t: number) => dayjs.unix(t / 1000).format("YY/MM/DD HH:mm");

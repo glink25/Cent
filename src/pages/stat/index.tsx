@@ -1,11 +1,13 @@
 import dayjs, { type Dayjs } from "dayjs";
-import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router";
 import { useShallow } from "zustand/shallow";
 import { StorageDeferredAPI } from "@/api/storage";
+import { BillFilterProvider, showBillFilter } from "@/components/bill-filter";
 import Chart from "@/components/chart";
 import { DatePicker } from "@/components/date-picker";
 import { Button } from "@/components/ui/button";
+import { useCustomFilters } from "@/hooks/use-custom-filters";
 import type { BillFilter } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
@@ -119,44 +121,53 @@ export default function Page() {
 		() => dayjs().subtract(1, "month").unix() * 1000,
 	);
 
+	const { updateFilter } = useCustomFilters();
+
+	const view = views.find((v) => v.id === selectedViewId);
+	const { filter, viewName } = useMemo(() => {
+		if (selectedViewId === "custom") {
+			return {
+				filter: {
+					start: customStart,
+					end: customEnd,
+				} as BillFilter,
+			};
+		}
+		if (["weekly", "monthly", "yearly"].includes(selectedViewId)) {
+			const slice = slices.find((s) => s.label === selectedSlice);
+			if (!slice) {
+				return { filter: undefined };
+			}
+			return {
+				filter: {
+					start: slice.start.unix() * 1000,
+					end: slice.end.unix() * 1000,
+				} as BillFilter,
+			};
+		}
+		return { filter: view?.filter, viewName: view?.label };
+	}, [
+		customEnd,
+		customStart,
+		selectedSlice,
+		selectedViewId,
+		slices.find,
+		view?.filter,
+		view?.label,
+	]);
+
 	useEffect(() => {
 		const book = useBookStore.getState().currentBookId;
 		if (!book) {
 			return;
 		}
-		const filter = (() => {
-			if (selectedViewId === "custom") {
-				return {
-					start: customStart,
-					end: customEnd,
-				} as BillFilter;
-			}
-			if (["weekly", "monthly", "yearly"].includes(selectedViewId)) {
-				const slice = slices.find((s) => s.label === selectedSlice);
-				if (!slice) {
-					return;
-				}
-				return {
-					start: slice.start.unix() * 1000,
-					end: slice.end.unix() * 1000,
-				} as BillFilter;
-			}
-			return views.find((v) => v.id === selectedViewId)?.filter;
-		})();
 		if (!filter) {
 			return;
 		}
 		StorageDeferredAPI.filter(book, filter).then((result) => {
 			setFiltered(result);
 		});
-	}, [
-		slices.find,
-		selectedSlice,
-		selectedViewId,
-		customEnd,
-		customStart,
-		views.find,
-	]);
+	}, [filter]);
 
 	const [chart1, chart2, chart3] = useMemo(() => {
 		const chart1 = createChartOption(filtered, {
@@ -171,6 +182,11 @@ export default function Page() {
 		});
 		return [chart1, chart2, chart3];
 	}, [filtered]);
+
+	const navigate = useNavigate();
+	const seeDetails = () => {
+		navigate("/search", { state: { filter } });
+	};
 	return (
 		<div className="w-full h-full p-2 flex flex-col items-center justify-center gap-2 overflow-hidden">
 			<div className="w-full mx-2 max-w-[600px] flex flex-col">
@@ -238,8 +254,30 @@ export default function Page() {
 						</div>
 					) : (
 						<div className="w-full text-sm h-8 flex items-center justify-center">
-							<Button variant={"secondary"} size="sm">
-								自定义筛选条件
+							<Button
+								variant={"secondary"}
+								size="sm"
+								onClick={async () => {
+									if (!filter) {
+										return;
+									}
+									const id = selectedViewId;
+									const action = await showBillFilter({
+										filter,
+										name: viewName,
+									});
+									if (action === "delete") {
+										await updateFilter(id);
+										setSelectedViewId("monthly");
+										return;
+									}
+									await updateFilter(id, {
+										filter: action.filter,
+										name: action.name,
+									});
+								}}
+							>
+								{t("custom-filter")}
 								<i className="icon-[mdi--database-edit-outline]"></i>
 							</Button>
 						</div>
@@ -266,9 +304,16 @@ export default function Page() {
 							className="w-full h-full border rounded-md"
 						/>
 					</div>
-					<div className="h-20 flex-shrink-0"></div>
+					<div>
+						<Button variant="ghost" onClick={() => seeDetails()}>
+							{t("see-all-ledgers")}
+							<i className="icon-[mdi--arrow-up-right]"></i>
+						</Button>
+					</div>
+					<div className="w-full h-20 flex-shrink-0"></div>
 				</div>
 			</div>
+			<BillFilterProvider />
 		</div>
 	);
 }

@@ -4,7 +4,7 @@ import PopupLayout from "@/layouts/popup-layout";
 import { useIntl } from "@/locale";
 import { useUserStore } from "@/store/user";
 import Backup from "../backup";
-import { Book } from "../book";
+import { BookItem } from "../book";
 import Budget from "../budget";
 import CategoryManerger from "../category";
 import { Button } from "../ui/button";
@@ -72,7 +72,7 @@ export default function SettingsForm({
 		<PopupLayout onBack={onCancel} title={t("settings")}>
 			<div className="divide-y divide-solid flex flex-col">
 				<UserInfo />
-				<Book />
+				<BookItem />
 				<CategoryManerger />
 				<Budget />
 				<Backup />

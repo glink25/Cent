@@ -7,6 +7,7 @@ import type { Exposed } from "./woker";
 import DeferredWorker from "./woker?worker";
 
 export type GlobalMeta = {
+	prev: any;
 	customCategories?: BillCategory[];
 	customFilters?: { id: string; filter: BillFilter; name: string }[];
 };

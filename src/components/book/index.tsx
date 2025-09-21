@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useShallow } from "zustand/shallow";
 import { StorageAPI } from "@/api/storage";
 import { useIntl } from "@/locale";
-import { useBookStore } from "@/store/book";
+import { type Book, useBookStore } from "@/store/book";
 import { useUserStore } from "@/store/user";
 import { cn } from "@/utils";
 import Loading from "../loading";
@@ -30,6 +30,24 @@ export default function BookGuide() {
 	const toSwitchBook = (bookId: string) => {
 		useBookStore.getState().switchToBook(bookId);
 	};
+	const toInvite = (book: Book) => {
+		const ok = confirm(
+			"Share your git repository to your friends, Collaborators can create and edit together!",
+		);
+		if (!ok) {
+			return;
+		}
+		window.open(`https://github.com/${book.repo}/settings/access`, "_blank");
+	};
+
+	const toDelete = (book: Book) => {
+		const ok = confirm("You need to delete this repo by yourself");
+		if (!ok) {
+			return;
+		}
+		window.open(`https://github.com/${book.repo}/settings`, "_blank");
+	};
+
 	return (
 		<Dialog.Root
 			open={visible || currentBookId === undefined}
@@ -80,10 +98,25 @@ export default function BookGuide() {
 																}}
 																className="inline-flex items-center data-[state=checked]:border-blue-600 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white dark:data-[state=checked]:border-blue-700 dark:data-[state=checked]:bg-blue-700"
 															/>
-															<div className="grid gap-1.5 font-normal py-2">
-																<p className="text-sm leading-none font-medium">
+															<div className="flex justify-between gap-1.5 font-normal py-2">
+																<div className="text-sm leading-none font-medium">
 																	{book.repo}
-																</p>
+																</div>
+																<div className="flex gap-1 items-center">
+																	<Button
+																		size="sm"
+																		onClick={() => toInvite(book)}
+																	>
+																		{t("invite")}
+																	</Button>
+																	<Button
+																		size="sm"
+																		variant="destructive"
+																		onClick={() => toDelete(book)}
+																	>
+																		{t("delete")}
+																	</Button>
+																</div>
 															</div>
 														</Label>
 													);
@@ -124,7 +157,7 @@ export default function BookGuide() {
 	);
 }
 
-export function Book() {
+export function BookItem() {
 	const t = useIntl();
 	return (
 		<div className="backup">

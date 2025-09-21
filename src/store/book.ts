@@ -5,7 +5,7 @@ import type { PersistOptions } from "zustand/middleware";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { StorageAPI } from "../api/storage";
 
-type Book = { id: string; repo: any };
+export type Book = { id: string; repo: any };
 type BookStoreState = {
 	currentBookId: string | undefined;
 	books: Book[];

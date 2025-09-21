@@ -38,7 +38,7 @@ export type BillFilter = Partial<{
 	type: BillType | undefined;
 	creators: (string | number)[];
 	categories: string[];
-	minAmount: number;
-	maxAmount: number;
+	minAmountNumber: number;
+	maxAmountNumber: number;
 	assets?: boolean;
 }>;
