@@ -1,4 +1,5 @@
 import dayjs, { type Dayjs } from "dayjs";
+import { numberToAmount } from "./bill";
 import type { Bill, BillFilter, BillType } from "./type";
 
 const isTypeMatched = (bill: Bill, type?: BillType) => {
@@ -47,7 +48,13 @@ export const isTimeMatched = (
 	return true;
 };
 
-const isMoneyMatched = (bill: Bill, _min = -Infinity, _max = Infinity) => {
+const isMoneyMatched = (
+	bill: Bill,
+	_minNumber = -Infinity,
+	_maxNumber = Infinity,
+) => {
+	const _min = numberToAmount(_minNumber);
+	const _max = numberToAmount(_maxNumber);
 	const [min, max] = _min < _max ? [_min, _max] : [_max, _min];
 	return bill.amount <= max && bill.amount >= min;
 };
@@ -73,7 +80,7 @@ export const isBillMatched = (bill: Bill, filter: BillFilter) => {
 		isTypeMatched(bill, filter.type) &&
 		isUserMatched(bill, filter.creators) &&
 		isCateMatched(bill, filter.categories) &&
-		isMoneyMatched(bill, filter.minAmount, filter.maxAmount) &&
+		isMoneyMatched(bill, filter.minAmountNumber, filter.maxAmountNumber) &&
 		isTimeMatched(bill, filter.start, filter.end, filter.recent) &&
 		isAssetsMatched(bill, filter.assets) &&
 		isCommentMatched(bill, filter.comment)

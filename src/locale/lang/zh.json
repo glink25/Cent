@@ -119,5 +119,12 @@
   "last-year": "去年",
   "this-week": "本周",
   "this-year": "今年",
-  "expense": "支出"
+  "expense": "支出",
+  "custom-filter": "自定义筛选条件",
+  "see-all-ledgers": "查看所有账单",
+  "highest-amount": "最高金额",
+  "lowest-amount": "最低金额",
+  "newest": "最新",
+  "oldest": "最旧",
+  "invite": "邀请"
 }

@@ -6,14 +6,21 @@ import type { Bill } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import { useUserStore } from "@/store/user";
 import { cn } from "@/utils";
+import { shorTime } from "@/utils/time";
 
 interface BillItemProps {
 	bill: Bill;
 	onClick?: () => void;
 	className?: string;
+	showTime?: boolean;
 }
 
-export default function BillItem({ bill, className, onClick }: BillItemProps) {
+export default function BillItem({
+	bill,
+	className,
+	onClick,
+	showTime,
+}: BillItemProps) {
 	const t = useIntl();
 	const category = useMemo(
 		() => getDefaultCategoryById(bill.categoryId),
@@ -55,16 +62,23 @@ export default function BillItem({ bill, className, onClick }: BillItemProps) {
 			</div>
 
 			{/* 金额 */}
-			<div
-				className={`text-lg font-bold truncate flex-shrink-0 text-right ${
-					bill.type === "expense"
-						? "text-red-700"
-						: bill.type === "income"
-							? "text-green-900"
-							: ""
-				}`}
-			>
-				{amountToNumber(bill.amount)}
+			<div>
+				<div
+					className={`text-lg font-bold truncate flex-shrink-0 text-right ${
+						bill.type === "expense"
+							? "text-red-700"
+							: bill.type === "income"
+								? "text-green-900"
+								: ""
+					}`}
+				>
+					{amountToNumber(bill.amount)}
+				</div>
+				{showTime && (
+					<div className="text-[8px] text-foreground/60">
+						{shorTime(bill.time)}
+					</div>
+				)}
 			</div>
 		</button>
 	);

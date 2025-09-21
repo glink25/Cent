@@ -119,5 +119,12 @@
   "last-month": "Last Month",
   "this-year": "This Year",
   "last-year": "Last Year",
-  "expense": "Expenses"
+  "expense": "Expenses",
+  "custom-filter": "customize filter",
+  "see-all-ledgers": "See All Ledgers",
+  "newest": "Newest",
+  "oldest": "Oldest",
+  "highest-amount": "Highest Amount",
+  "lowest-amount": "Lowest Amount",
+  "invite": "invite"
 }

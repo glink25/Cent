@@ -16,11 +16,13 @@ export default function Ledger({
 	bills,
 	enableDivideAsOrdered,
 	className,
+	showTime,
 }: {
 	bills: OutputType<Bill>[];
 	/** 如果传入的列表已按时间降序，则尝试按照日期分隔 */
 	enableDivideAsOrdered?: boolean;
 	className?: string;
+	showTime?: boolean;
 }) {
 	const parentRef = useRef<HTMLDivElement>(null);
 
@@ -31,6 +33,7 @@ export default function Ledger({
 		// 它不必须非常精确，但越接近实际平均值，用户体验越好
 		estimateSize: () => 60, // 假设一个合理的平均高度
 		overscan: 5,
+		paddingEnd: 80,
 	});
 
 	return (
@@ -45,7 +48,7 @@ export default function Ledger({
 			<div
 				className={cn(
 					enableDivideAsOrdered &&
-						"translate-x-0 before:block before:fixed before:top-0 before:left-9 before:w-[1px] before:h-[calc(100%-15px)] before:bg-black",
+						"translate-x-0 before:block before:fixed before:top-0 before:left-9 before:w-[1px] before:h-[calc(100%-95px)] before:bg-black",
 				)}
 				style={{
 					height: `${rowVirtualizer.getTotalSize()}px`,
@@ -88,7 +91,11 @@ export default function Ledger({
 							{virtualRow.index === 0 && enableDivideAsOrdered && (
 								<Divider date={curDate} />
 							)}
-							<BillItem bill={bill} onClick={() => showBillInfo(bill)} />
+							<BillItem
+								bill={bill}
+								onClick={() => showBillInfo(bill)}
+								showTime={showTime}
+							/>
 							{isDivider && <Divider date={isDivider} />}
 							{enableDivideAsOrdered &&
 								virtualRow.index === bills.length - 1 && (
