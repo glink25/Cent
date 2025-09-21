@@ -5,7 +5,7 @@ export type UserInfo = {
 	avatar_url: string;
 	name: string;
 	login: string;
-	id: number;
+	id: string;
 };
 
 const create = (tokenGetter: tokenGetter) => {

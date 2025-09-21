@@ -46,6 +46,8 @@
   "edit": "编辑",
   "year": "年",
   "month": "月",
+  "day": "日",
+  "week": "周",
   "custom": "自定",
   "shared-users": "已分享的好友",
   "your-code": "邀请码：",
@@ -126,5 +128,6 @@
   "lowest-amount": "最低金额",
   "newest": "最新",
   "oldest": "最旧",
-  "invite": "邀请"
+  "invite": "邀请",
+  "repeat-by-value-unit": "每隔 {value} {unit}"
 }

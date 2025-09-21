@@ -43,6 +43,7 @@ function UserInfo() {
 			<div className="flex items-center gap-2">
 				{expired && (
 					<Button
+						size="sm"
 						variant="outline"
 						onClick={() => {
 							LoginAPI.login();
@@ -52,7 +53,7 @@ function UserInfo() {
 						{t("re-login")}
 					</Button>
 				)}
-				<Button variant="destructive" onClick={toLogOut}>
+				<Button size="sm" variant="destructive" onClick={toLogOut}>
 					{t("logout")}
 				</Button>
 			</div>

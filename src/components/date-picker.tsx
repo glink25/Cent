@@ -8,7 +8,8 @@ type Props = {
 	displayFormatter?: string | ((time?: Dayjs) => string);
 	onChange?: (value: number) => void;
 	children?: React.ReactNode;
-	onBlur?: () => void
+	onBlur?: () => void;
+	type?: "datetime-local" | "date";
 };
 
 export function DatePicker({
@@ -17,6 +18,7 @@ export function DatePicker({
 	onChange,
 	children,
 	onBlur,
+	type = "datetime-local",
 }: Props) {
 	const inputRef = useRef<HTMLInputElement>(null);
 
@@ -42,12 +44,12 @@ export function DatePicker({
 
 	const onTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const value = e.target.value;
-		const time = Date.parse(value)
+		const time = Date.parse(value);
 		// const formatted = formatter?.(time) ?? time;
 		onChange?.(time);
 	};
 
-	const current = value ? dayjs(value as any) : undefined
+	const current = value ? dayjs(value as any) : undefined;
 
 	return (
 		<label className="flex items-center relative cursor-pointer">
@@ -55,7 +57,7 @@ export function DatePicker({
 			<div className="mx-2">{display(current)}</div>
 			<input
 				ref={inputRef}
-				type="datetime-local"
+				type={type}
 				className="absolute top-0 left-0 w-2 h-full opacity-0"
 				onClick={onClickInput}
 				onChange={onTimeChange}

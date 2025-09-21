@@ -126,5 +126,8 @@
   "oldest": "Oldest",
   "highest-amount": "Highest Amount",
   "lowest-amount": "Lowest Amount",
-  "invite": "invite"
+  "invite": "invite",
+  "repeat-by-value-unit": "Every {value} {unit}",
+  "day": "day",
+  "week": "week"
 }

@@ -1,6 +1,6 @@
 import { wrap } from "comlink";
+import type { Budget } from "@/components/budget/type";
 import { BillIndexeBDStorage, Gitray } from "@/gitray";
-
 import type { Bill, BillCategory, BillFilter } from "@/ledger/type";
 import { getToken } from "../login";
 import type { Exposed } from "./woker";
@@ -10,6 +10,7 @@ export type GlobalMeta = {
 	prev: any;
 	customCategories?: BillCategory[];
 	customFilters?: { id: string; filter: BillFilter; name: string }[];
+	budgets?: Budget[];
 };
 
 const config = {
@@ -21,7 +22,7 @@ const config = {
 const repo = new Gitray<Bill>({
 	...config,
 	auth: getToken,
-	storage: (name) => new BillIndexeBDStorage(`book-${name}`)
+	storage: (name) => new BillIndexeBDStorage(`book-${name}`),
 });
 
 export const StorageAPI = repo;

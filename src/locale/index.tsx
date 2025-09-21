@@ -122,13 +122,16 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
 
 export function useIntl() {
 	const { $t } = useOriginalIntl();
-	return useCallback((key: string) => $t({ id: key }), [$t]);
+	return useCallback(
+		(key: string, p?: Record<string, any>) => $t({ id: key }, p),
+		[$t],
+	);
 }
 
-export const t = (key: string) => {
+export const t = (key: string, p?: Record<string, any>) => {
 	if (!intl) {
 		console.warn("intl not initialized");
 		return key;
 	}
-	return intl.formatMessage({ id: key });
+	return intl.formatMessage({ id: key }, p);
 };
