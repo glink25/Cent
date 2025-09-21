@@ -25,8 +25,9 @@ export default function PopupLayout({
 				<button
 					type="button"
 					className="absolute left-0 flex buttoned rounded-full py-1 pl-1 pr-3 cursor-pointer"
-					onClick={() => {
+					onClick={(e) => {
 						onBack?.();
+						e.stopPropagation();
 					}}
 				>
 					<div className="flex items-center justify-center">
