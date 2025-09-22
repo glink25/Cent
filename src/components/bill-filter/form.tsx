@@ -1,8 +1,7 @@
-import type { Dispatch, SetStateAction } from "react";
+import { useMemo, type Dispatch, type SetStateAction } from "react";
 import { useCreators } from "@/hooks/use-creator";
 import type { BillCategory, BillFilter, BillType } from "@/ledger/type";
 import { useIntl } from "@/locale";
-import { useLedgerStore } from "@/store/ledger";
 import { cn } from "@/utils";
 import Clearable from "../clearable";
 import { DatePicker } from "../date-picker";
@@ -12,7 +11,6 @@ import {
 	DropdownMenu,
 	DropdownMenuCheckboxItem,
 	DropdownMenuContent,
-	DropdownMenuLabel,
 	DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import {
@@ -22,6 +20,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "../ui/select";
+import useCategory from "@/hooks/use-category";
+import { CascadeMultipleSelect } from "../cascade";
 
 export default function BillFilterForm({
 	form,
@@ -58,12 +58,42 @@ export default function BillFilterForm({
 
 	const formatForm = () => {};
 
-	const creators = useCreators();
-	const allCreators = Array.from(Object.entries(creators)).map(
-		([id, { info }]) => ({ id, name: info.name }),
+	const allCreators = useCreators();
+	const { incomes, expenses, categories: allCategories } = useCategory();
+	const options = useMemo(
+		() => [
+			{
+				id: "ExpensesLabel",
+				asGroupLabel: t("expense"),
+				name: "",
+			},
+			...expenses.map((c) => ({
+				...c,
+				name: c.custom ? c.name : t(c.name),
+				children: c.children.map((v) => ({
+					...v,
+					name: v.custom ? v.name : t(v.name),
+				})),
+			})),
+			{
+				id: "IncomesLabel",
+				asGroupLabel: t("income"),
+				name: "",
+			},
+			...incomes.map((c) => ({
+				...c,
+				name: c.custom ? c.name : t(c.name),
+				children: c.children.map((v) => ({
+					...v,
+					name: v.custom ? v.name : t(v.name),
+				})),
+			})),
+
+			// { id: "EXPENSE_SELECT", name: "expense", children: expenses },
+			// { id: "INCOME_SELECT", name: "income", children: incomes },
+		],
+		[expenses, incomes, t],
 	);
-	const { infos } = useLedgerStore();
-	const allCategories = infos?.categories ?? [];
 	const categories = allCategories
 		.filter((cate) =>
 			form.type === undefined ? true : cate.type === form.type,
@@ -253,57 +283,24 @@ export default function BillFilterForm({
 					<i className="icon-[mdi--category-plus-outline]"></i>
 					{t("categories")}:
 				</div>
-				<DropdownMenu>
-					<DropdownMenuTrigger asChild>
-						<Button
-							variant="outline"
-							className="px-2 md:px-4 py-2 text-xs md:text-sm"
-						>
-							<div className="max-w-[120px] truncate">
-								{formatCategories(form.categories)}
-							</div>
+				<CascadeMultipleSelect
+					value={form.categories ?? allCategories.map((c) => c.id)}
+					list={options}
+					align="end"
+					trigger={
+						<Button variant="outline">
+							{formatCategories(form.categories)}
 						</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent className="w-56">
-						{categories.map((folder) => {
-							return (
-								<>
-									<DropdownMenuLabel>{t(folder.type)}</DropdownMenuLabel>
-									{folder.list.map((item) => (
-										<DropdownMenuCheckboxItem
-											key={item.id}
-											checked={
-												form.categories
-													? form.categories.includes(item.id)
-													: true
-											}
-											onCheckedChange={(v) => {
-												setForm((prev) => {
-													const set = new Set(
-														prev.categories ?? allCategories.map((c) => c.id),
-													);
-													if (v) {
-														set.add(item.id);
-													} else {
-														set.delete(item.id);
-													}
-													const newCategories =
-														set.size === 0 ? prev.categories : Array.from(set);
-													return {
-														...prev,
-														categories: newCategories,
-													};
-												});
-											}}
-										>
-											{t(item.name)}
-										</DropdownMenuCheckboxItem>
-									))}
-								</>
-							);
-						})}
-					</DropdownMenuContent>
-				</DropdownMenu>
+					}
+					onValueChange={(value) => {
+						setForm((prev) => {
+							return {
+								...prev,
+								categories: value,
+							};
+						});
+					}}
+				></CascadeMultipleSelect>
 			</div>
 			{/* user selector */}
 			<div className="w-full flex justify-between items-center">
@@ -323,7 +320,7 @@ export default function BillFilterForm({
 							</div>
 						</Button>
 					</DropdownMenuTrigger>
-					<DropdownMenuContent className="w-56">
+					<DropdownMenuContent className="w-56" align="end">
 						{/* <DropdownMenuLabel>Appearance</DropdownMenuLabel>
 										<DropdownMenuSeparator /> */}
 						{allCreators.map((item) => (

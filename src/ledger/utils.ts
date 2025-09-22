@@ -1,6 +1,6 @@
 import dayjs, { type Dayjs } from "dayjs";
 import { numberToAmount } from "./bill";
-import type { Bill, BillFilter, BillType } from "./type";
+import type { Bill, BillCategory, BillFilter, BillType } from "./type";
 
 const isTypeMatched = (bill: Bill, type?: BillType) => {
 	if (type === undefined) return true;
@@ -84,5 +84,23 @@ export const isBillMatched = (bill: Bill, filter: BillFilter) => {
 		isTimeMatched(bill, filter.start, filter.end, filter.recent) &&
 		isAssetsMatched(bill, filter.assets) &&
 		isCommentMatched(bill, filter.comment)
+	);
+};
+
+export const treeCategories = (categories: BillCategory[]) => {
+	return categories.reduce(
+		(p, c) => {
+			if (!c.parent) {
+				p.push({ ...c, children: [] });
+				return p;
+			}
+			const parent = p.find((x) => x.id === c.parent);
+			if (!parent) {
+				return p;
+			}
+			parent.children.push(c);
+			return p;
+		},
+		[] as (BillCategory & { children: BillCategory[] })[],
 	);
 };

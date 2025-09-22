@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import PopupLayout from "@/layouts/popup-layout";
 import { Button } from "../ui/button";
 import type { Budget } from "./type";
@@ -38,6 +38,7 @@ import useCategory from "@/hooks/use-category";
 import { useCreators } from "@/hooks/use-creator";
 import { useIntl } from "@/locale";
 import { cn } from "@/utils";
+import { CascadeSelect } from "../cascade";
 
 // 表单结构验证
 const formSchema = z.object({
@@ -86,12 +87,20 @@ export default function BudgetEditForm({
 	onCancel?: () => void;
 }) {
 	const t = useIntl();
-	const creators = useCreators();
-	const joiners = Object.entries(creators).map(([k, v]) => ({
-		...v.info,
-	}));
-	const { categories: allCategories } = useCategory();
-	const categories = allCategories.filter((c) => c.type === "expense");
+	const joiners = useCreators();
+	const { expenses } = useCategory();
+	const categoryOption = useMemo(
+		() =>
+			expenses.map((v) => ({
+				...v,
+				name: v.custom ? v.name : t(v.name),
+				children: v.children.map((c) => ({
+					...c,
+					name: c.custom ? c.name : t(c.name),
+				})),
+			})),
+		[expenses, t],
+	);
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema) as any,
 		defaultValues: edit
@@ -382,26 +391,12 @@ export default function BudgetEditForm({
 											render={({ field: categoryField }) => (
 												<FormItem className="space-y-0">
 													<FormLabel>类别</FormLabel>
-													<Select
+													<CascadeSelect
+														align="end"
+														value={categoryField.value}
 														onValueChange={categoryField.onChange}
-														defaultValue={categoryField.value}
-													>
-														<FormControl>
-															<SelectTrigger>
-																<SelectValue placeholder="请选择一个类别" />
-															</SelectTrigger>
-														</FormControl>
-														<SelectContent>
-															{categories.map((category) => (
-																<SelectItem
-																	key={category.id}
-																	value={category.id}
-																>
-																	{t(category.name)}
-																</SelectItem>
-															))}
-														</SelectContent>
-													</Select>
+														list={categoryOption}
+													></CascadeSelect>
 													<FormMessage />
 												</FormItem>
 											)}

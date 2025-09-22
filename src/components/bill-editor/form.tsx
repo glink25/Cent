@@ -1,5 +1,5 @@
 import { Switch } from "radix-ui";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import PopupLayout from "@/layouts/popup-layout";
 import {
 	amountToNumber,
@@ -7,7 +7,7 @@ import {
 	numberToAmount,
 } from "@/ledger/bill";
 import { ExpenseBillCategories, IncomeBillCategories } from "@/ledger/category";
-import type { Bill } from "@/ledger/type";
+import type { Bill, BillCategory } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import type { EditBill } from "@/store/ledger";
 import { cn } from "@/utils";
@@ -16,6 +16,7 @@ import { FORMAT_IMAGE_SUPPORTED, showFilePicker } from "../file-picker";
 import SmartImage from "../image";
 import IOSUnscrolledInput from "../input";
 import Caculator from "../keyboard";
+import useCategory from "@/hooks/use-category";
 
 const defaultBill = {
 	type: "expense" as Bill["type"],
@@ -47,9 +48,21 @@ export default function EditorForm({
 	// useEffect(() => {
 	// 	setBillState({ ...defaultBill, ...edit });
 	// }, [edit]);
+	const { incomes, expenses } = useCategory();
 
-	const categories =
-		billState.type === "expense" ? ExpenseBillCategories : IncomeBillCategories;
+	const categories = billState.type === "expense" ? expenses : incomes;
+
+	const subCategories = useMemo(() => {
+		const selected = categories.find(
+			(c) =>
+				c.id === billState.categoryId ||
+				c.children.some((s) => s.id === billState.categoryId),
+		);
+		if (selected?.children) {
+			return selected.children;
+		}
+		return categories.find((c) => c.id === selected?.parent)?.children;
+	}, [billState.categoryId, categories]);
 
 	const toConfirm = () => {
 		onConfirm?.({
@@ -106,31 +119,42 @@ export default function EditorForm({
 				}
 			>
 				{/* categories */}
-				<div className="sm:flex-1 flex-shrink-0 min-h-[220px] overflow-y-auto my-2 px-2 text-sm font-medium">
+				<div className="flex-1 flex flex-col overflow-y-auto my-2 px-2 text-sm font-medium">
 					<div className="flex flex-wrap justify-between">
 						{categories.map((item) => (
-							<button
-								type="button"
+							<CategoryItem
 								key={item.id}
-								className={cn(
-									`rounded-lg border  flex-1 py-1 px-2 my-1 mr-1 h-8 flex items-center justify-center whitespace-nowrap cursor-pointer`,
-									billState.categoryId === item.id
-										? "bg-slate-700 text-white "
-										: "bg-stone-200  text-light-900",
-								)}
-								onMouseDown={() =>
-									setBillState((v) => ({ ...v, categoryId: item.id }))
-								}
-							>
-								<i className={`icon-xs ${item.icon}`}></i>
-								<div className="mx-2">{t(item.name)}</div>
-							</button>
+								category={item}
+								selected={billState.categoryId === item.id}
+								onClick={() => {
+									setBillState((v) => ({ ...v, categoryId: item.id }));
+								}}
+							/>
 						))}
 					</div>
+					{(subCategories?.length ?? 0) > 0 && (
+						<div className="flex-1 rounded-md border flex flex-wrap p-2">
+							{subCategories?.map((subCategory) => {
+								return (
+									<CategoryItem
+										key={subCategory.id}
+										category={subCategory}
+										selected={billState.categoryId === subCategory.id}
+										onClick={() => {
+											setBillState((v) => ({
+												...v,
+												categoryId: subCategory.id,
+											}));
+										}}
+									/>
+								);
+							})}
+						</div>
+					)}
 				</div>
 
 				{/* keyboard area */}
-				<div className="keyboard-field flex-shrink-0 flex-1 flex gap-2 flex-col justify-start bg-stone-900 sm:rounded-b-md text-[white] p-2 pb-[max(env(safe-area-inset-bottom),8px)]">
+				<div className="keyboard-field h-[480px] sm:h-[380px] flex-shrink-0 flex gap-2 flex-col justify-start bg-stone-900 sm:rounded-b-md text-[white] p-2 pb-[max(env(safe-area-inset-bottom),8px)]">
 					<div className="flex justify-between items-center">
 						<div className="flex items-center">
 							<button
@@ -182,5 +206,30 @@ export default function EditorForm({
 				</div>
 			</PopupLayout>
 		</Caculator.Root>
+	);
+}
+
+export function CategoryItem({
+	category,
+	selected,
+	onClick,
+}: {
+	category: BillCategory;
+	selected?: boolean;
+	onClick: () => void;
+}) {
+	const t = useIntl();
+	return (
+		<button
+			type="button"
+			className={cn(
+				`rounded-lg border  flex-1 py-1 px-2 my-1 mr-1 h-8 flex items-center justify-center whitespace-nowrap cursor-pointer`,
+				selected ? "bg-slate-700 text-white " : "bg-stone-200  text-light-900",
+			)}
+			onMouseDown={onClick}
+		>
+			<i className={`icon-xs ${category.icon}`}></i>
+			<div className="mx-2">{t(category.name)}</div>
+		</button>
 	);
 }

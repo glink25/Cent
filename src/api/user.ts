@@ -16,10 +16,20 @@ const create = (tokenGetter: tokenGetter) => {
 		if (!res.ok || res.status === 401) {
 			throw json;
 		}
-		return json as UserInfo;
+		return { ...json, name: json.login } as UserInfo;
 	};
 
-	return { getUserInfo };
+	const getCollaborators = async (repoFullName: string) => {
+		const [owner, repo] = repoFullName.split("/");
+		const res = await fetcher(`/repos/${owner}/${repo}/collaborators`);
+		const json = await res.json();
+		if (!res.ok || res.status === 401) {
+			throw json;
+		}
+		return json.map((v: UserInfo) => ({ ...v, name: v.login })) as UserInfo[];
+	};
+
+	return { getUserInfo, getCollaborators };
 };
 
 export const UserAPI = create(getToken);
