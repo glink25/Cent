@@ -4,7 +4,7 @@ import { getToken } from "./login";
 const create = (tokenGetter: tokenGetter) => {
 	const fetcher = createGithubFetcher(tokenGetter);
 	const getImage = async (url: string) => {
-		// url: https://raw.githubusercontent.com/glink25/oncent-journal-shz/HEAD/49364151/assets/1757506115944-tclgazq07t-tip_2_as.png
+		// url: https://raw.githubusercontent.com/glink25/cent-journal-shz/HEAD/49364151/assets/1757506115944-tclgazq07t-tip_2_as.png
 		const [owner, repo, ref, ...paths] = url
 			.replace("https://raw.githubusercontent.com/", "")
 			.replace("HEAD/", "")

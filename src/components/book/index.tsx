@@ -14,7 +14,7 @@ import { Label } from "../ui/label";
 export default function BookGuide() {
 	const t = useIntl();
 	const isLogin = useUserStore(
-		useShallow((state) => Boolean(state.login) && state.id > 0),
+		useShallow((state) => Boolean(state.login) && `${state.id}`),
 	);
 	const { books, visible, currentBookId, loading } = useBookStore();
 	// const bookNum = books.length;
@@ -157,7 +157,7 @@ export default function BookGuide() {
 	);
 }
 
-export function BookItem() {
+export function BookSettings() {
 	const t = useIntl();
 	return (
 		<div className="backup">

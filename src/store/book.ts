@@ -81,8 +81,8 @@ export const useBookStore = create<BookStore>()(
 							state.currentBookId = id;
 							state.visible = false;
 							Promise.resolve().then(() => {
-								location.reload()
-							})
+								location.reload();
+							});
 						}),
 					);
 				},
@@ -95,8 +95,8 @@ export const useBookStore = create<BookStore>()(
 			partialize(state) {
 				return {
 					books: state.books,
-					currentBookId: state.currentBookId
-				} as any
+					currentBookId: state.currentBookId,
+				} as any;
 			},
 		},
 	),

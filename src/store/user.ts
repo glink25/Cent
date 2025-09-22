@@ -12,7 +12,7 @@ type UserStoreState = {
 	avatar_url: string;
 	login: string;
 	name: string;
-	id: number;
+	id: number | string;
 	loading: boolean;
 	expired?: boolean;
 	cachedUsers: Record<string, UserInfo>;
@@ -55,14 +55,18 @@ export const useUserStore = create<UserStore>()(
 					);
 				} catch (error) {
 					if ((error as any)?.status === "401") {
-						toast.error(t("token-expired-please-re-login-to-github-from-setting-page"), {
-							position: "top-center",
-							action: {
-								label: t("re-login"), onClick: () => {
-									LoginAPI.login();
-								}
+						toast.error(
+							t("token-expired-please-re-login-to-github-from-setting-page"),
+							{
+								position: "top-center",
+								action: {
+									label: t("re-login"),
+									onClick: () => {
+										LoginAPI.login();
+									},
+								},
 							},
-						});
+						);
 					}
 					set(
 						produce((state: UserStore) => {
