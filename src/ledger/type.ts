@@ -8,7 +8,8 @@ export type BillCategory = {
 	id: string;
 	icon: string;
 	color: string;
-	pieColor: string;
+	custom?: boolean;
+	parent?: string;
 };
 
 export type Bill = {

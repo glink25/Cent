@@ -14,6 +14,7 @@ import { useBookStore } from "./book";
 import { useUserStore } from "./user";
 import { toast } from "sonner";
 import { t } from "@/locale";
+import { UserAPI, type UserInfo } from "@/api/user";
 
 export type EditBill = Omit<OutputType<Bill>, "id"> & {
 	id?: Bill["id"];
@@ -25,10 +26,7 @@ type LedgerStoreState = {
 	actions: Action<Bill>[];
 	infos?: {
 		meta: GlobalMeta;
-		creators: {
-			id: string | number;
-		}[];
-		categories: BillCategory[];
+		creators?: UserInfo[];
 	};
 
 	loading: boolean;
@@ -74,15 +72,17 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
 	const updateBillList = async () => {
 		await Promise.resolve();
 		const repo = getCurrentFullRepoName();
-		const [bills, infos] = await Promise.all([
+
+		const [bills, deferredInfo, creators] = await Promise.all([
 			StorageAPI.getAllItems(repo),
 			StorageDeferredAPI.getInfo(repo),
+			UserAPI.getCollaborators(repo),
 		]);
 
 		set(
 			produce((state: LedgerStore) => {
 				state.bills = bills;
-				state.infos = infos;
+				state.infos = { ...deferredInfo, creators };
 			}),
 		);
 	};

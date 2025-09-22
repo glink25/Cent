@@ -23,8 +23,8 @@
 		"enabled": true,
 		"rules": {
 			"recommended": true,
-			"correctness": {
-				"noNestedComponentDefinitions": "warn"
+			"suspicious": {
+				"useIterableCallbackReturn": "warn"
 			}
 		}
 	},

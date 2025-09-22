@@ -14,6 +14,7 @@ import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
 import { cn } from "@/utils";
 import { createChartOption } from "@/utils/chart";
+import { Switch } from "radix-ui";
 
 const StaticViews = [
 	// { id: "daily", label: "stat-view-daily" },
@@ -169,18 +170,23 @@ export default function Page() {
 		});
 	}, [filter]);
 
-	const [chart1, chart2, chart3] = useMemo(() => {
-		const chart1 = createChartOption(filtered, {
+	const [dimension, setDimension] = useState<"category" | "user">("category");
+	const charts = useMemo(() => {
+		const categoryTrend = createChartOption(filtered, {
 			chartType: "line",
 		});
-		const chart2 = createChartOption(filtered, {
+		const userTrend = createChartOption(filtered, {
 			chartType: "multiUserLine",
 			displayType: "expense",
 		});
-		const chart3 = createChartOption(filtered, {
+		const categoryProportion = createChartOption(filtered, {
 			chartType: "pie",
 		});
-		return [chart1, chart2, chart3];
+		const userPortion = createChartOption(filtered, {
+			chartType: "multiUserLine",
+			displayType: "balance",
+		});
+		return { categoryTrend, userTrend, categoryProportion, userPortion };
 	}, [filtered]);
 
 	const navigate = useNavigate();
@@ -215,94 +221,121 @@ export default function Page() {
 							</Button>
 						</div>
 					</div>
-					{slices.length > 0 ? (
-						<div className="w-full flex gap-2 overflow-x-auto scrollbar-hidden">
-							{slices.map((slice) => (
+					<div className="flex gap-2 items-center">
+						{slices.length > 0 ? (
+							<div className="flex-1 flex gap-2 overflow-x-auto scrollbar-hidden">
+								{slices.map((slice) => (
+									<Button
+										key={slice.label}
+										variant="ghost"
+										size="sm"
+										className={cn(
+											"text-primary/40",
+											selectedSlice === slice.label && "text-primary",
+										)}
+										onClick={() => {
+											setSelectedSlice(slice.label);
+										}}
+									>
+										{slice.label}
+									</Button>
+								))}
+							</div>
+						) : selectedViewId === "custom" ? (
+							<div className="flex-1 flex items-center gap-3 text-xs">
+								<Button variant="outline" size="sm">
+									<DatePicker
+										value={customStart}
+										onChange={setCustomStart}
+										displayFormatter={"YYYY/MM/DD"}
+									></DatePicker>
+								</Button>
+								<div>-</div>
+								<Button variant="outline" size="sm">
+									<DatePicker
+										value={customEnd}
+										onChange={setCustomEnd}
+										displayFormatter={"YYYY/MM/DD"}
+									></DatePicker>
+								</Button>
+							</div>
+						) : (
+							<div className="flex-1 text-sm h-8 flex items-center">
 								<Button
-									key={slice.label}
-									variant="ghost"
+									variant={"secondary"}
 									size="sm"
-									className={cn(
-										"text-primary/40",
-										selectedSlice === slice.label && "text-primary",
-									)}
-									onClick={() => {
-										setSelectedSlice(slice.label);
+									onClick={async () => {
+										if (!filter) {
+											return;
+										}
+										const id = selectedViewId;
+										const action = await showBillFilter({
+											filter,
+											name: viewName,
+										});
+										if (action === "delete") {
+											await updateFilter(id);
+											setSelectedViewId("monthly");
+											return;
+										}
+										await updateFilter(id, {
+											filter: action.filter,
+											name: action.name,
+										});
 									}}
 								>
-									{slice.label}
+									{t("custom-filter")}
+									<i className="icon-[mdi--database-edit-outline]"></i>
 								</Button>
-							))}
-						</div>
-					) : selectedViewId === "custom" ? (
-						<div className="w-full flex justify-center items-center gap-3 text-xs">
-							<Button variant="outline" size="sm">
-								<DatePicker
-									value={customStart}
-									onChange={setCustomStart}
-									displayFormatter={"YYYY/MM/DD"}
-								></DatePicker>
-							</Button>
-							<div>-</div>
-							<Button variant="outline" size="sm">
-								<DatePicker
-									value={customEnd}
-									onChange={setCustomEnd}
-									displayFormatter={"YYYY/MM/DD"}
-								></DatePicker>
-							</Button>
-						</div>
-					) : (
-						<div className="w-full text-sm h-8 flex items-center justify-center">
-							<Button
-								variant={"secondary"}
-								size="sm"
-								onClick={async () => {
-									if (!filter) {
-										return;
-									}
-									const id = selectedViewId;
-									const action = await showBillFilter({
-										filter,
-										name: viewName,
-									});
-									if (action === "delete") {
-										await updateFilter(id);
-										setSelectedViewId("monthly");
-										return;
-									}
-									await updateFilter(id, {
-										filter: action.filter,
-										name: action.name,
+							</div>
+						)}
+						<div className="flex items-center pr-2 relative">
+							<Switch.Root
+								checked={dimension === "user"}
+								onCheckedChange={() => {
+									setDimension((v) => {
+										return v === "category" ? "user" : "category";
 									});
 								}}
+								className="relative z-[0] h-[29px] w-[54px] cursor-default rounded-sm bg-blackA6 outline-none bg-stone-300 group"
 							>
-								{t("custom-filter")}
-								<i className="icon-[mdi--database-edit-outline]"></i>
-							</Button>
+								<div className="absolute top-0 left-0 w-full h-full flex items-center justify-center gap-2 z-[1]">
+									<i className="icon-[mdi--category-outline] group-[data-[state=checked]]:text-white"></i>
+									<i className="icon-[mdi--account-outline]"></i>
+								</div>
+								<Switch.Thumb className="block size-[22px] translate-x-[4px] rounded-sm bg-white  transition-transform duration-100 will-change-transform data-[state=checked]:translate-x-[28px]" />
+							</Switch.Root>
 						</div>
-					)}
+					</div>
 				</div>
 			</div>
 			<div className="w-full flex-1 flex justify-center overflow-y-auto">
 				<div className="w-full mx-2 max-w-[600px] flex flex-col items-center gap-2">
 					<div className="flex-shrink-0 w-full h-[300px]">
-						<Chart
-							option={chart1 as any}
-							className="w-full h-full border rounded-md"
-						/>
+						{dimension === "category" ? (
+							<Chart
+								option={charts.categoryTrend}
+								className="w-full h-full border rounded-md"
+							/>
+						) : (
+							<Chart
+								option={charts.userTrend}
+								className="w-full h-full border rounded-md"
+							/>
+						)}
 					</div>
 					<div className="flex-shrink-0 w-full h-[300px]">
-						<Chart
-							option={chart2 as any}
-							className="w-full h-full border rounded-md"
-						/>
-					</div>
-					<div className="flex-shrink-0 w-full h-[300px]">
-						<Chart
-							option={chart3 as any}
-							className="w-full h-full border rounded-md"
-						/>
+						{dimension === "category" ? (
+							<Chart
+								option={charts.categoryProportion}
+								className="w-full h-full border rounded-md"
+							/>
+						) : (
+							<Chart
+								option={charts.userPortion}
+								className="w-full h-full border rounded-md"
+							/>
+						)}
 					</div>
 					<div>
 						<Button variant="ghost" onClick={() => seeDetails()}>

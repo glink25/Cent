@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { UserInfo } from "@/api/user";
 import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
+import { useShallow } from "zustand/shallow";
 
 const cache = new Map<string | number, Promise<UserInfo>>();
 
@@ -26,17 +27,8 @@ export function useCreator(login: string | number) {
 }
 
 export function useCreators() {
-	const { infos } = useLedgerStore();
-	const [creators, setCreators] = useState<
-		Record<string | number, { info: UserInfo }>
-	>({});
-	useEffect(() => {
-		infos?.creators?.forEach((c) => {
-			fetchUser(c.id).then((u) => {
-				setCreators((v) => ({ ...v, [c.id]: { info: u } }));
-			});
-		});
-	}, [infos?.creators?.forEach]);
-
+	const creators = useLedgerStore(
+		useShallow((state) => state.infos?.creators ?? []),
+	);
 	return creators;
 }
