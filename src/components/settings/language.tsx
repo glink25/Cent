@@ -7,7 +7,7 @@ import {
 	SelectValue,
 } from "../ui/select";
 
-export default function Launguage() {
+export default function Language() {
 	const t = useIntl();
 	const { locale, setLocale } = useLocale();
 	return (

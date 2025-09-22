@@ -4,11 +4,11 @@ import PopupLayout from "@/layouts/popup-layout";
 import { useIntl } from "@/locale";
 import { useUserStore } from "@/store/user";
 import Backup from "../backup";
-import { BookItem } from "../book";
+import { BookSettings } from "../book";
 import Budget from "../budget";
 import CategoryManerger from "../category";
 import { Button } from "../ui/button";
-import Launguage from "./language";
+import Language from "./language";
 
 function UserInfo() {
 	const t = useIntl();
@@ -73,11 +73,11 @@ export default function SettingsForm({
 		<PopupLayout onBack={onCancel} title={t("settings")}>
 			<div className="divide-y divide-solid flex flex-col">
 				<UserInfo />
-				<BookItem />
+				<BookSettings />
 				<CategoryManerger />
 				<Budget />
 				<Backup />
-				<Launguage />
+				<Language />
 			</div>
 		</PopupLayout>
 	);

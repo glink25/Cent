@@ -14,7 +14,7 @@ export type GlobalMeta = {
 };
 
 const config = {
-	repoPrefix: "oncent-journal",
+	repoPrefix: "cent-journal",
 	entryName: "ledger",
 	orderKeys: ["time"],
 };

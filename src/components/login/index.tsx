@@ -1,5 +1,4 @@
 import { createPortal } from "react-dom";
-import { toast } from "sonner";
 import { useShallow } from "zustand/shallow";
 import { LoginAPI, manuallySetToken } from "@/api/login";
 import { t, useIntl } from "@/locale";
@@ -9,7 +8,7 @@ export default function Login() {
 	const t = useIntl();
 	const [isLogin, loading] = useUserStore(
 		useShallow((state) => {
-			return [Boolean(state.login) && state.id > 0, state.loading];
+			return [Boolean(state.login) && state.id, state.loading];
 		}),
 	);
 	if (isLogin) {

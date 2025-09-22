@@ -131,9 +131,9 @@ export default function BudgetEditForm({
 	}
 	return (
 		<Form {...form}>
-			<form onSubmit={form.handleSubmit(onSubmit)}>
+			<form className="h-full w-full" onSubmit={form.handleSubmit(onSubmit)}>
 				<PopupLayout
-					className="sm:h-[55vh]"
+					className="h-full sm:h-[55vh] gap-2"
 					onBack={onCancel}
 					title={
 						<FormField
@@ -456,7 +456,9 @@ export default function BudgetEditForm({
 						</div>
 					</div>
 					<div className="p-2 w-full flex justify-end">
-						<Button type="submit">{t("confirm")}</Button>
+						<Button type="submit" className="sm:w-fit w-full">
+							{t("confirm")}
+						</Button>
 					</div>
 				</PopupLayout>
 			</form>

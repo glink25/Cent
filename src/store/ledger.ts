@@ -12,6 +12,8 @@ import {
 } from "../api/storage";
 import { useBookStore } from "./book";
 import { useUserStore } from "./user";
+import { toast } from "sonner";
+import { t } from "@/locale";
 
 export type EditBill = Omit<OutputType<Bill>, "id"> & {
 	id?: Bill["id"];
@@ -31,13 +33,13 @@ type LedgerStoreState = {
 
 	loading: boolean;
 	sync: /** 等待同步 */
-	| "wait"
-	/** 正在同步*/
-	| "syncing"
-	/** 同步成功*/
-	| "success"
-	/** 同步失败*/
-	| "failed";
+		| "wait"
+		/** 正在同步*/
+		| "syncing"
+		/** 同步成功*/
+		| "success"
+		/** 同步失败*/
+		| "failed";
 };
 
 type LedgerStoreActions = {
@@ -101,6 +103,21 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
 			}
 			await StorageAPI.initStore(currentBookId);
 			await updateBillList();
+		} catch (err) {
+			if ((err as any)?.status === 404) {
+				toast.error(
+					t("Repo not found, maybe it was deleted, please select another book"),
+					{
+						position: "top-center",
+						action: {
+							label: t("Go"),
+							onClick: () => {
+								useBookStore.setState((prev) => ({ ...prev, visible: true }));
+							},
+						},
+					},
+				);
+			}
 		} finally {
 			set(
 				produce((state: LedgerStoreState) => {

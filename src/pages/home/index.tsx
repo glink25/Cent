@@ -58,11 +58,17 @@ export default function Page() {
 			</div>
 			<div className="flex-1 translate-0 pb-[10px] overflow-hidden">
 				<div className="w-full h-full">
-					<Ledger
-						bills={bills}
-						className={cn(bills.length > 0 && "relative")}
-						enableDivideAsOrdered
-					/>
+					{bills.length > 0 ? (
+						<Ledger
+							bills={bills}
+							className={cn(bills.length > 0 && "relative")}
+							enableDivideAsOrdered
+						/>
+					) : (
+						<div className="text-xs p-4 text-center">
+							{t("nothing-here-add-one-bill")}
+						</div>
+					)}
 				</div>
 			</div>
 		</div>
