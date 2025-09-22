@@ -1,20 +1,25 @@
 import dayjs, { type Dayjs } from "dayjs";
+import { merge } from "lodash-es";
+import { Switch } from "radix-ui";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useShallow } from "zustand/shallow";
 import { StorageDeferredAPI } from "@/api/storage";
 import { BillFilterProvider, showBillFilter } from "@/components/bill-filter";
-import Chart from "@/components/chart";
+import Chart, { type ECOption } from "@/components/chart";
 import { DatePicker } from "@/components/date-picker";
+import BillItem from "@/components/ledger/item";
 import { Button } from "@/components/ui/button";
+import useCategory from "@/hooks/use-category";
+import { useCreator, useCreators } from "@/hooks/use-creator";
 import { useCustomFilters } from "@/hooks/use-custom-filters";
-import type { BillFilter } from "@/ledger/type";
+import type { BillCategory, BillFilter } from "@/ledger/type";
+import { intlCategory } from "@/ledger/utils";
 import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
 import { cn } from "@/utils";
-import { createChartOption } from "@/utils/chart";
-import { Switch } from "radix-ui";
+import { processBillDataForCharts } from "@/utils/charts";
 
 const StaticViews = [
 	// { id: "daily", label: "stat-view-daily" },
@@ -29,6 +34,113 @@ type Views = {
 	label: string;
 	filter?: BillFilter;
 };
+
+const overallTrendOption = (dataset: { source: any[] }, options?: ECOption) =>
+	merge(
+		{
+			title: {
+				text: "总体收支趋势",
+			},
+			// 提示框，'axis' 表示鼠标悬浮在x轴上时触发
+			tooltip: {
+				trigger: "axis",
+			},
+			// 图例，用于筛选系列
+			legend: {
+				// ECharts 会自动从 dataset.source 的第一行读取图例名称
+				// ['date', '收入', '支出', '结余'] -> '收入', '支出', '结余'
+			},
+			// ECharts 的数据核心
+			dataset: dataset,
+			// x轴配置，type: 'category' 表示类目轴
+			// ECharts 会自动将 dataset 的第一列 ('date') 映射到 x 轴
+			xAxis: {
+				type: "category",
+				boundaryGap: false, // 折线图建议设为 false，让线贴近y轴
+			},
+			// y轴配置，type: 'value' 表示数值轴
+			yAxis: {
+				type: "value",
+			},
+			// 系列列表，定义了图表中的每一条线（或其他图形）
+			series: [
+				// ECharts 会自动将 dataset 的第二列('收入')映射到第一个系列
+				{ type: "line", smooth: true },
+				// 第三列('支出')映射到第二个系列
+				{ type: "line", smooth: true },
+				// 第四列('结余')映射到第三个系列
+				{ type: "line", smooth: true },
+			],
+		},
+		options,
+	);
+
+const userTrendOption = (dataset: { source: any[] }, options?: ECOption) =>
+	merge(
+		{
+			title: {
+				text: "各用户支出趋势",
+			},
+			tooltip: {
+				trigger: "axis",
+			},
+			legend: {}, // 同样，图例会自动从 source 第一行读取用户名
+			// dataset: dataset,
+			xAxis: {
+				type: "category",
+				boundaryGap: false,
+			},
+			yAxis: {
+				type: "value",
+			},
+			// 这里的 series 数量需要和用户数量匹配
+			// chartData.userExpenseTrend.source[0].length 返回列数 (date + user1 + user2 + ...)
+			// 所以系列的数量是 列数 - 1
+			series: Array(dataset.source[0].length - 1).fill({
+				type: "line",
+				smooth: true,
+			}),
+		},
+		options,
+	);
+
+const structureOption = (dataset: any[], options?: ECOption) =>
+	merge(
+		{
+			title: {
+				text: "支出结构",
+				left: "center", // 标题居中
+			},
+			// 提示框，'item' 表示鼠标悬浮在数据项（扇区）上时触发
+			tooltip: {
+				trigger: "item",
+				// 格式化提示内容：a(系列名), b(数据项名), c(数值), d(百分比)
+				formatter: "{b}: {c} ({d}%)",
+			},
+			legend: {
+				orient: "vertical", // 图例垂直排列
+				left: "left", // 靠左放置
+			},
+			series: [
+				{
+					name: "支出类型", // 系列名称，会在 tooltip 中显示
+					type: "pie",
+					radius: "60%", // 饼图半径
+					// 直接使用我们生成的 { name, value } 格式的数据
+					data: dataset,
+					emphasis: {
+						// 高亮状态下的样式
+						itemStyle: {
+							shadowBlur: 10,
+							shadowOffsetX: 0,
+							shadowColor: "rgba(0, 0, 0, 0.5)",
+						},
+					},
+				},
+			],
+		},
+		options,
+	);
 
 export default function Page() {
 	const t = useIntl();
@@ -170,31 +282,78 @@ export default function Page() {
 		});
 	}, [filter]);
 
-	const [dimension, setDimension] = useState<"category" | "user">("category");
-	const charts = useMemo(() => {
-		const categoryTrend = createChartOption(filtered, {
-			chartType: "line",
-		});
-		const userTrend = createChartOption(filtered, {
-			chartType: "multiUserLine",
-			displayType: "expense",
-		});
-		const categoryProportion = createChartOption(filtered, {
-			chartType: "pie",
-		});
-		const userPortion = createChartOption(filtered, {
-			chartType: "multiUserLine",
-			displayType: "balance",
-		});
-		return { categoryTrend, userTrend, categoryProportion, userPortion };
-	}, [filtered]);
-
 	const navigate = useNavigate();
 	const seeDetails = () => {
 		navigate("/search", { state: { filter } });
 	};
+
+	const { categories } = useCategory();
+	const creators = useCreators();
+
+	const [dimension, setDimension] = useState<"category" | "user">("category");
+	const [focusType, setFocusType] = useState<FocusType>("expense");
+
+	const dataSources = useMemo(
+		() =>
+			processBillDataForCharts({
+				bills: filtered,
+				getMajorCategory: (id) => {
+					const cate = categories.find((c) => c.id === id);
+					if (!cate?.parent) {
+						return intlCategory(cate, t) ?? { id, name: id };
+					}
+					const parent = categories.find((c) => c.id === cate.parent)!;
+					return intlCategory(parent, t);
+				},
+				getUserInfo: (id) => {
+					return {
+						id,
+						name: creators.find((u) => `${u.id}` === id)?.name ?? `${id}`,
+					};
+				},
+			}),
+		[filtered, categories.find, creators, t],
+	);
+
+	const charts = useMemo(() => {
+		if (dimension === "category") {
+			return [
+				overallTrendOption(dataSources.overallTrend),
+				focusType === "expense"
+					? structureOption(dataSources.expenseStructure)
+					: focusType === "income"
+						? structureOption(dataSources.incomeStructure)
+						: structureOption(dataSources.expenseStructure),
+			];
+		}
+		return [
+			focusType === "expense"
+				? userTrendOption(dataSources.userExpenseTrend)
+				: focusType === "income"
+					? userTrendOption(dataSources.userIncomeTrend)
+					: userTrendOption(dataSources.userBalanceTrend),
+			focusType === "expense"
+				? structureOption(dataSources.userExpenseStructure)
+				: focusType === "income"
+					? structureOption(dataSources.userIncomeStructure)
+					: structureOption(dataSources.userBalanceStructure),
+		];
+	}, [
+		dimension,
+		focusType,
+		dataSources.overallTrend,
+		dataSources.incomeStructure,
+		dataSources.expenseStructure,
+		dataSources.userIncomeStructure,
+		dataSources.userExpenseStructure,
+		dataSources.userBalanceStructure,
+		dataSources.userBalanceTrend,
+		dataSources.userExpenseTrend,
+		dataSources.userIncomeTrend,
+	]);
+
 	return (
-		<div className="w-full h-full p-2 flex flex-col items-center justify-center gap-2 overflow-hidden">
+		<div className="w-full h-full p-2 flex flex-col items-center justify-center gap-4 overflow-hidden">
 			<div className="w-full mx-2 max-w-[600px] flex flex-col">
 				<div className="w-full flex flex-col gap-2">
 					<div className="w-full flex">
@@ -230,7 +389,7 @@ export default function Page() {
 										variant="ghost"
 										size="sm"
 										className={cn(
-											"text-primary/40",
+											"text-primary/40 px-2",
 											selectedSlice === slice.label && "text-primary",
 										)}
 										onClick={() => {
@@ -309,33 +468,20 @@ export default function Page() {
 					</div>
 				</div>
 			</div>
+			<FocusTypeSelector value={focusType} onValueChange={setFocusType} />
 			<div className="w-full flex-1 flex justify-center overflow-y-auto">
-				<div className="w-full mx-2 max-w-[600px] flex flex-col items-center gap-2">
+				<div className="w-full mx-2 max-w-[600px] flex flex-col items-center gap-4">
 					<div className="flex-shrink-0 w-full h-[300px]">
-						{dimension === "category" ? (
-							<Chart
-								option={charts.categoryTrend}
-								className="w-full h-full border rounded-md"
-							/>
-						) : (
-							<Chart
-								option={charts.userTrend}
-								className="w-full h-full border rounded-md"
-							/>
-						)}
+						<Chart
+							option={charts[0]}
+							className="w-full h-full border rounded-md"
+						/>
 					</div>
 					<div className="flex-shrink-0 w-full h-[300px]">
-						{dimension === "category" ? (
-							<Chart
-								option={charts.categoryProportion}
-								className="w-full h-full border rounded-md"
-							/>
-						) : (
-							<Chart
-								option={charts.userPortion}
-								className="w-full h-full border rounded-md"
-							/>
-						)}
+						<Chart
+							option={charts[1]}
+							className="w-full h-full border rounded-md"
+						/>
 					</div>
 					<div>
 						<Button variant="ghost" onClick={() => seeDetails()}>
@@ -343,10 +489,70 @@ export default function Page() {
 							<i className="icon-[mdi--arrow-up-right]"></i>
 						</Button>
 					</div>
+					<div className="w-full flex flex-col gap-4">
+						{dataSources.highestExpenseBill && (
+							<div className="rounded-md border p-2">
+								最高支出：
+								<BillItem bill={dataSources.highestExpenseBill} showTime />
+							</div>
+						)}
+						{dataSources.highestIncomeBill && (
+							<div className="rounded-md border p-2">
+								最高收入：
+								<BillItem bill={dataSources.highestIncomeBill} showTime />
+							</div>
+						)}
+					</div>
 					<div className="w-full h-20 flex-shrink-0"></div>
 				</div>
 			</div>
 			<BillFilterProvider />
+		</div>
+	);
+}
+type FocusType = "income" | "expense" | "balance";
+
+function FocusTypeSelector({
+	value: focusType,
+	onValueChange: setFocusType,
+}: {
+	value: FocusType;
+	onValueChange: (v: FocusType) => void;
+}) {
+	const t = useIntl();
+	const btnClass = `w-[80px] text-xs h-[24px] flex items-center justify-center  cursor-pointer transition-all duration-200`;
+	return (
+		<div className="flex items-center rounded-md shadow border border-input overflow-hidden divide-x">
+			<button
+				type="button"
+				className={cn(
+					btnClass,
+					focusType === "income" && "!bg-stone-700 !text-white",
+				)}
+				onClick={() => setFocusType("income")}
+			>
+				{t("income")}
+			</button>
+			<button
+				type="button"
+				className={cn(
+					btnClass,
+					focusType === "expense" && "!bg-stone-700 !text-white",
+				)}
+				onClick={() => setFocusType("expense")}
+			>
+				{t("expense")}
+			</button>
+			<button
+				type="button"
+				className={cn(
+					btnClass,
+					focusType === "balance" && "!bg-stone-700 !text-white",
+				)}
+				onClick={() => setFocusType("balance")}
+			>
+				{t("Balance")}
+			</button>
 		</div>
 	);
 }

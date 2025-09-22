@@ -104,3 +104,10 @@ export const treeCategories = (categories: BillCategory[]) => {
 		[] as (BillCategory & { children: BillCategory[] })[],
 	);
 };
+
+export const intlCategory = <T extends BillCategory | undefined>(c: T, t: any): T => {
+	if (c === undefined) {
+		return c
+	}
+	return { ...c, name: c.custom ? c.name : t(c.name) };
+};
