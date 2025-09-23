@@ -3,7 +3,7 @@ import { useBudget } from "@/hooks/use-budget";
 import PopupLayout from "@/layouts/popup-layout";
 import { useIntl } from "@/locale";
 import { Button } from "../ui/button";
-import { showBudgetEDit } from ".";
+import { showBudgetEdit } from ".";
 
 const toDay = (v: number) => dayjs.unix(v / 1000).format("YYYY-MM-DD");
 
@@ -22,7 +22,7 @@ export default function BudgetListForm({
 				<Button
 					variant="outline"
 					onClick={async () => {
-						const newBudget = await showBudgetEDit();
+						const newBudget = await showBudgetEdit();
 						if (!newBudget) {
 							return;
 						}
@@ -80,7 +80,7 @@ export default function BudgetListForm({
 												className="w-[24px] h-[24px] text-xs p-0"
 												onClick={async () => {
 													const id = budget.id;
-													const newBudget = await showBudgetEDit(budget);
+													const newBudget = await showBudgetEdit(budget);
 													if (!newBudget) {
 														return;
 													}

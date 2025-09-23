@@ -1,12 +1,34 @@
 import { useIntl } from "@/locale";
+import createConfirmProvider from "../confirm";
 import { Button } from "../ui/button";
+import CategoryEditForm from "./form";
+import CategoryList from "./list";
 
-export default function CategoryManerger() {
+export const [CategoryListProvider, showCategoryList] = createConfirmProvider(
+	CategoryList,
+	{
+		dialogTitle: "Category",
+		dialogModalClose: true,
+		contentClassName:
+			"h-full w-full max-h-full max-w-full data-[state=open]:animate-slide-from-right rounded-none sm:rounded-md sm:max-h-[55vh] sm:w-[90vw] sm:max-w-[500px] sm:data-[state=open]:animate-content-show",
+	},
+);
+
+export const [CategoryEditFormProvider, showCategoryEdit] =
+	createConfirmProvider(CategoryEditForm, {
+		dialogTitle: "Category Edit",
+		contentClassName:
+			"h-full w-full max-h-full max-w-full data-[state=open]:animate-slide-from-right rounded-none sm:rounded-md sm:max-h-[55vh] sm:w-[90vw] sm:max-w-[500px] sm:data-[state=open]:animate-content-show",
+	});
+
+export default function CategorySettingsItem() {
 	const t = useIntl();
 	return (
 		<div className="backup">
 			<Button
-				onClick={() => {}}
+				onClick={() => {
+					showCategoryList();
+				}}
 				variant="ghost"
 				className="w-full py-4 rounded-none h-auto"
 			>
