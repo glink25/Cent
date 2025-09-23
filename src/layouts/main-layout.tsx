@@ -3,6 +3,10 @@ import { BillEditorProvider } from "@/components/bill-editor";
 import { BillInfoProvider } from "@/components/bill-info";
 import BookGuide from "@/components/book";
 import { BudgetEditProvider, BudgetProvider } from "@/components/budget";
+import {
+	CategoryEditFormProvider,
+	CategoryListProvider,
+} from "@/components/category";
 import Login from "@/components/login";
 import Navigation from "@/components/navigation";
 import { Settings } from "@/components/settings";
@@ -21,6 +25,8 @@ export default function MainLayout() {
 			<BookGuide />
 			<BudgetProvider />
 			<BudgetEditProvider />
+			<CategoryListProvider />
+			<CategoryEditFormProvider />
 			<Login />
 			<Toaster />
 		</>

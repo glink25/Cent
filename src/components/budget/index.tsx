@@ -14,7 +14,7 @@ export const [BudgetProvider, showBudget] = createConfirmProvider(
 	},
 );
 
-export const [BudgetEditProvider, showBudgetEDit] = createConfirmProvider(
+export const [BudgetEditProvider, showBudgetEdit] = createConfirmProvider(
 	BudgetEditForm,
 	{
 		dialogTitle: "Budget Edit",

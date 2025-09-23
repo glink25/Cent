@@ -1,22 +1,19 @@
 import { Switch } from "radix-ui";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
+import useCategory from "@/hooks/use-category";
 import PopupLayout from "@/layouts/popup-layout";
-import {
-	amountToNumber,
-	isValidNumberForAmount,
-	numberToAmount,
-} from "@/ledger/bill";
+import { amountToNumber, numberToAmount } from "@/ledger/bill";
 import { ExpenseBillCategories, IncomeBillCategories } from "@/ledger/category";
 import type { Bill, BillCategory } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import type { EditBill } from "@/store/ledger";
 import { cn } from "@/utils";
+import { showCategoryList } from "../category";
 import { DatePicker } from "../date-picker";
 import { FORMAT_IMAGE_SUPPORTED, showFilePicker } from "../file-picker";
 import SmartImage from "../image";
 import IOSUnscrolledInput from "../input";
 import Caculator from "../keyboard";
-import useCategory from "@/hooks/use-category";
 
 const defaultBill = {
 	type: "expense" as Bill["type"],
@@ -120,7 +117,7 @@ export default function EditorForm({
 			>
 				{/* categories */}
 				<div className="flex-1 flex flex-col overflow-y-auto my-2 px-2 text-sm font-medium">
-					<div className="flex flex-wrap justify-between">
+					<div className="grid grid-cols-[repeat(auto-fill,minmax(80px,1fr))]">
 						{categories.map((item) => (
 							<CategoryItem
 								key={item.id}
@@ -131,24 +128,38 @@ export default function EditorForm({
 								}}
 							/>
 						))}
+						<button
+							type="button"
+							className={cn(
+								`rounded-lg border flex-1 py-1 px-2 my-1 mr-1 h-8 flex gap-2 items-center justify-center whitespace-nowrap cursor-pointer`,
+							)}
+							onClick={() => {
+								showCategoryList();
+							}}
+						>
+							<i className="icon-[mdi--settings]"></i>
+							编辑
+						</button>
 					</div>
 					{(subCategories?.length ?? 0) > 0 && (
-						<div className="flex-1 rounded-md border flex flex-wrap p-2">
-							{subCategories?.map((subCategory) => {
-								return (
-									<CategoryItem
-										key={subCategory.id}
-										category={subCategory}
-										selected={billState.categoryId === subCategory.id}
-										onClick={() => {
-											setBillState((v) => ({
-												...v,
-												categoryId: subCategory.id,
-											}));
-										}}
-									/>
-								);
-							})}
+						<div className="flex-1 rounded-md border p-2 shadow">
+							<div className="grid grid-cols-[repeat(auto-fill,minmax(80px,1fr))]">
+								{subCategories?.map((subCategory) => {
+									return (
+										<CategoryItem
+											key={subCategory.id}
+											category={subCategory}
+											selected={billState.categoryId === subCategory.id}
+											onClick={() => {
+												setBillState((v) => ({
+													...v,
+													categoryId: subCategory.id,
+												}));
+											}}
+										/>
+									);
+								})}
+							</div>
 						</div>
 					)}
 				</div>
@@ -213,18 +224,21 @@ export function CategoryItem({
 	category,
 	selected,
 	onClick,
+	className,
 }: {
 	category: BillCategory;
 	selected?: boolean;
 	onClick: () => void;
+	className?: string;
 }) {
 	const t = useIntl();
 	return (
 		<button
 			type="button"
 			className={cn(
-				`rounded-lg border  flex-1 py-1 px-2 my-1 mr-1 h-8 flex items-center justify-center whitespace-nowrap cursor-pointer`,
+				`rounded-lg border flex-1 py-1 px-2 my-1 mr-1 h-8 flex items-center justify-center whitespace-nowrap cursor-pointer`,
 				selected ? "bg-slate-700 text-white " : "bg-stone-200  text-light-900",
+				className,
 			)}
 			onMouseDown={onClick}
 		>

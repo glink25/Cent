@@ -6,7 +6,7 @@ import { useUserStore } from "@/store/user";
 import Backup from "../backup";
 import { BookSettings } from "../book";
 import Budget from "../budget";
-import CategoryManerger from "../category";
+import CategorySettingsItem from "../category";
 import { Button } from "../ui/button";
 import Language from "./language";
 
@@ -74,7 +74,7 @@ export default function SettingsForm({
 			<div className="divide-y divide-solid flex flex-col">
 				<UserInfo />
 				<BookSettings />
-				<CategoryManerger />
+				<CategorySettingsItem />
 				<Budget />
 				<Backup />
 				<Language />
