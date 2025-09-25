@@ -10,7 +10,7 @@ import {
 	DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu";
 import { ChevronRight, Check } from "lucide-react"; // 引入 Check 图标
-import { type ReactNode } from "react";
+import type { ReactNode } from "react";
 
 // 类型定义 (基本不变)
 type Align = "start" | "center" | "end";
