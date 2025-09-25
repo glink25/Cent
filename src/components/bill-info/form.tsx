@@ -1,4 +1,4 @@
-import { useCreator } from "@/hooks/use-creator";
+import { useCreators } from "@/hooks/use-creator";
 import { amountToNumber } from "@/ledger/bill";
 import { getDefaultCategoryById } from "@/ledger/category";
 import { useIntl } from "@/locale";
@@ -19,7 +19,9 @@ export default function BillInfo({
 }) {
 	const t = useIntl();
 	const { id: curUserId } = useUserStore();
-	const { name, login } = useCreator(edit?.creatorId ?? "");
+	const creators = useCreators();
+	const creator = creators.find((c) => c.id === edit?.creatorId);
+	const { name, login } = creator ?? { name: undefined, login: undefined };
 	const { login: selfLogin, id: selfId } = useUserStore();
 	const isMe = login === selfLogin || login === selfId;
 
