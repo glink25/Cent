@@ -10,7 +10,7 @@ export const FORMAT_IMAGE = "image/*";
 export const FORMAT_IMAGE_SUPPORTED =
 	"image/png,image/jpeg,image/gif,image/webp";
 
-export const FORMAT_BACKUP = "file/json";
+export const FORMAT_BACKUP = ".json,application/json";
 
 export const showFilePicker = ({ accept, multiple }: Partial<PickerParam>) => {
 	const picker = document.createElement("input");

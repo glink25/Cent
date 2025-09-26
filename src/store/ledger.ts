@@ -3,8 +3,8 @@ import { merge } from "lodash-es";
 import { v4 } from "uuid";
 import { create } from "zustand";
 import type { OutputType } from "@/gitray";
-import type { Action, MetaUpdate, Update } from "@/gitray/stash";
-import type { Bill, BillCategory } from "@/ledger/type";
+import type { Action, Full, Update } from "@/gitray/stash";
+import type { Bill } from "@/ledger/type";
 import {
 	type GlobalMeta,
 	StorageAPI,
@@ -52,7 +52,7 @@ type LedgerStoreActions = {
 		overlap?: boolean,
 	) => Promise<void>;
 
-	refreshBillList: () => Promise<void>;
+	refreshBillList: () => Promise<Full<Bill>[]>;
 
 	updateGlobalMeta: (
 		v: Partial<GlobalMeta> | ((prev: GlobalMeta) => GlobalMeta),
@@ -76,7 +76,7 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
 		const [bills, deferredInfo, creators] = await Promise.all([
 			StorageAPI.getAllItems(repo),
 			StorageDeferredAPI.getInfo(repo),
-			UserAPI.getCollaborators(repo),
+			UserAPI.getCollaborators(repo).catch((err) => []),
 		]);
 
 		set(
@@ -85,6 +85,7 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
 				state.infos = { ...deferredInfo, creators };
 			}),
 		);
+		return bills;
 	};
 
 	const init = async () => {
@@ -247,11 +248,36 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
 			overlap = false,
 		) => {
 			if (data.length === 0) {
-				return;
+				throw new Error("没有可导入的项目");
+			}
+			// check if repeated
+			const allItems = await updateBillList();
+
+			const { repeated, valid } = data.reduce(
+				(p, c) => {
+					if (allItems.some((b) => b.time === c.time)) {
+						p.repeated.push(c);
+					} else {
+						p.valid.push(c);
+					}
+					return p;
+				},
+				{
+					repeated: [] as typeof data,
+					valid: [] as typeof data,
+				},
+			);
+			if (repeated.length > 0) {
+				const ok = confirm(
+					`包含${repeated.length}条重复项目，是否去除后继续导入？`,
+				);
+				if (!ok) {
+					throw new Error("导入取消");
+				}
 			}
 			const repo = getCurrentFullRepoName();
 			const creatorId = useUserStore.getState().id;
-			const actions = data.map((v) => {
+			const actions = valid.map((v) => {
 				return {
 					type: "update",
 					value: { ...v, creatorId, id: v4() },

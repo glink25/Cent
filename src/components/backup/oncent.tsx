@@ -189,7 +189,7 @@ function OncentImportForm({
 								{t("strategy-add")}
 							</label>
 						</div>
-						<div className="flex gap-2 items-center">
+						{/* <div className="flex gap-2 items-center">
 							<RadioGroup.Item
 								className="w-6 h-6 rounded-full border flex justify-center items-center"
 								value="overlap"
@@ -199,7 +199,7 @@ function OncentImportForm({
 							<label className="Label" htmlFor="r2">
 								{t("strategy-overlap")}
 							</label>
-						</div>
+						</div> */}
 					</RadioGroup.Root>
 				</div>
 			</div>
