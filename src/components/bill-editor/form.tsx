@@ -1,5 +1,5 @@
 import { Switch } from "radix-ui";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type MouseEventHandler } from "react";
 import useCategory from "@/hooks/use-category";
 import PopupLayout from "@/layouts/popup-layout";
 import { amountToNumber, numberToAmount } from "@/ledger/bill";
@@ -121,14 +121,14 @@ export default function EditorForm({
 				}
 			>
 				{/* categories */}
-				<div className="flex-1 overflow-hidden flex flex-col px-2 text-sm font-medium">
-					<div className="grid grid-cols-[repeat(auto-fill,minmax(80px,1fr))]">
+				<div className="flex-1 overflow-hidden flex flex-col px-2 text-sm font-medium gap-2">
+					<div className="grid grid-cols-[repeat(auto-fill,minmax(80px,1fr))] gap-1">
 						{categories.map((item) => (
 							<CategoryItem
 								key={item.id}
 								category={item}
 								selected={billState.categoryId === item.id}
-								onClick={() => {
+								onMouseDown={() => {
 									setBillState((v) => ({ ...v, categoryId: item.id }));
 								}}
 							/>
@@ -136,7 +136,7 @@ export default function EditorForm({
 						<button
 							type="button"
 							className={cn(
-								`rounded-lg border flex-1 py-1 px-2 my-1 mr-1 h-8 flex gap-2 items-center justify-center whitespace-nowrap cursor-pointer`,
+								`rounded-lg border flex-1 py-1 px-2 h-8 flex gap-2 items-center justify-center whitespace-nowrap cursor-pointer`,
 							)}
 							onClick={() => {
 								showCategoryList();
@@ -148,14 +148,14 @@ export default function EditorForm({
 					</div>
 					{(subCategories?.length ?? 0) > 0 && (
 						<div className="flex-1 overflow-y-auto rounded-md border p-2 shadow scrollbar-hidden">
-							<div className="grid grid-cols-[repeat(auto-fill,minmax(80px,1fr))]">
+							<div className="grid grid-cols-[repeat(auto-fill,minmax(80px,1fr))] gap-1">
 								{subCategories?.map((subCategory) => {
 									return (
 										<CategoryItem
 											key={subCategory.id}
 											category={subCategory}
 											selected={billState.categoryId === subCategory.id}
-											onClick={() => {
+											onMouseDown={() => {
 												setBillState((v) => ({
 													...v,
 													categoryId: subCategory.id,
@@ -272,12 +272,14 @@ export default function EditorForm({
 export function CategoryItem({
 	category,
 	selected,
+	onMouseDown,
 	onClick,
 	className,
 }: {
 	category: BillCategory;
 	selected?: boolean;
-	onClick: () => void;
+	onMouseDown?: MouseEventHandler<HTMLButtonElement>;
+	onClick?: MouseEventHandler<HTMLButtonElement>;
 	className?: string;
 }) {
 	const t = useIntl();
@@ -285,11 +287,12 @@ export function CategoryItem({
 		<button
 			type="button"
 			className={cn(
-				`rounded-lg border flex-1 py-1 px-2 my-1 mr-1 h-8 flex items-center justify-center whitespace-nowrap cursor-pointer`,
+				`rounded-lg border flex-1 py-1 px-2 h-8 flex items-center justify-center whitespace-nowrap cursor-pointer`,
 				selected ? "bg-slate-700 text-white " : "bg-stone-200  text-light-900",
 				className,
 			)}
-			onMouseDown={onClick}
+			onMouseDown={onMouseDown}
+			onClick={onClick}
 		>
 			<i className={`icon-xs ${category.icon}`}></i>
 			<div className="mx-2">{t(category.name)}</div>

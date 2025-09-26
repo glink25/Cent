@@ -119,7 +119,7 @@
   "last-month": "Last Month",
   "this-year": "This Year",
   "last-year": "Last Year",
-  "expense": "Expenses",
+  "expense": "Expense",
   "custom-filter": "customize filter",
   "see-all-ledgers": "See All Ledgers",
   "newest": "Newest",
@@ -182,5 +182,10 @@
   "add-tag": "add Tag",
   "sure-to-delete-this-tag": "Sure to delete this tag?",
   "input-new-tag-name": "input new tag name",
-  "tags": "tags"
+  "tags": "tags",
+  "click-category-to-edit": "click a category to edit",
+  "add-new-category-group": "Add new Category Group",
+  "add": "Add",
+  "edit-category-details": "Category Details",
+  "category-name": "Category Name"
 }
