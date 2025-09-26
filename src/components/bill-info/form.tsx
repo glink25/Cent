@@ -7,6 +7,7 @@ import { useUserStore } from "@/store/user";
 import { formatTime } from "@/utils/time";
 import { showBillEditor } from "../bill-editor";
 import SmartImage from "../image";
+import { useTag } from "@/hooks/use-tag";
 
 export default function BillInfo({
 	edit,
@@ -21,6 +22,10 @@ export default function BillInfo({
 	const { id: curUserId } = useUserStore();
 	const creators = useCreators();
 	const creator = creators.find((c) => c.id === edit?.creatorId);
+	const { tags: allTags } = useTag();
+	const tags = edit?.tagIds
+		?.map((id) => allTags.find((t) => t.id === id))
+		.filter((v) => v !== undefined);
 	const { name, login } = creator ?? { name: undefined, login: undefined };
 	const { login: selfLogin, id: selfId } = useUserStore();
 	const isMe = login === selfLogin || login === selfId;
@@ -48,7 +53,7 @@ export default function BillInfo({
 	};
 	return (
 		<div>
-			<div className="min-h-[300px] p-4 flex flex-col w-full h-full">
+			<div className="min-h-[320px] p-4 flex flex-col w-full h-full">
 				<div className="flex-1 flex flex-col">
 					{/* header */}
 					<div className="flex items-center justify-between">
@@ -88,6 +93,16 @@ export default function BillInfo({
 							<div>{t("time")}:</div>
 							<div>{formatTime(edit.time)}</div>
 						</div>
+						{tags?.length && (
+							<div className="flex justify-between items-start my-1">
+								<div>{t("tags")}:</div>
+								<div className="flex flex-wrap gap-1 justify-end max-w-[80%]">
+									{tags?.map((t) => (
+										<span key={t.id}>#{t.name}</span>
+									))}
+								</div>
+							</div>
+						)}
 					</div>
 
 					{edit.image && (

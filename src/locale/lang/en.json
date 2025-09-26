@@ -177,5 +177,10 @@
   "fees-and-charges": "Fees & Charges",
   "charity": "Charity",
   "reconciliation": "Reconciliation",
-  "Balance": "Balance"
+  "Balance": "Balance",
+  "edit-tags": "Edit Tags",
+  "add-tag": "add Tag",
+  "sure-to-delete-this-tag": "Sure to delete this tag?",
+  "input-new-tag-name": "input new tag name",
+  "tags": "tags"
 }

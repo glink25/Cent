@@ -5,11 +5,13 @@ import type { Bill, BillCategory, BillFilter } from "@/ledger/type";
 import { getToken } from "../login";
 import type { Exposed } from "./woker";
 import DeferredWorker from "./woker?worker";
+import type { BillTag } from "@/components/bill-tag/type";
 
 export type GlobalMeta = {
 	customFilters?: { id: string; filter: BillFilter; name: string }[];
 	budgets?: Budget[];
 	categories?: BillCategory[];
+	tags: BillTag[];
 };
 
 const config = {

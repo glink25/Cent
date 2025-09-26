@@ -72,19 +72,33 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
 	const updateBillList = async () => {
 		await Promise.resolve();
 		const repo = getCurrentFullRepoName();
-
-		const [bills, deferredInfo, creators] = await Promise.all([
-			StorageAPI.getAllItems(repo),
-			StorageDeferredAPI.getInfo(repo),
-			UserAPI.getCollaborators(repo).catch((err) => []),
-		]);
-
-		set(
-			produce((state: LedgerStore) => {
-				state.bills = bills;
-				state.infos = { ...deferredInfo, creators };
+		const [bills] = await Promise.all([
+			StorageAPI.getAllItems(repo).then((bills) => {
+				set(
+					produce((state: LedgerStore) => {
+						state.bills = bills;
+						// state.infos = { ...deferredInfo, creators };
+					}),
+				);
+				return bills;
 			}),
-		);
+			StorageDeferredAPI.getInfo(repo).then((deferredInfo) => {
+				set(
+					produce((state: LedgerStore) => {
+						state.infos = { ...state.infos, ...deferredInfo };
+					}),
+				);
+			}),
+		]);
+		UserAPI.getCollaborators(repo)
+			.then((creators) => {
+				set(
+					produce((state: LedgerStore) => {
+						state.infos = { ...state.infos!, creators };
+					}),
+				);
+			})
+			.catch((err) => []);
 		return bills;
 	};
 

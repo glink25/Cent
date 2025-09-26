@@ -11,6 +11,7 @@ import Login from "@/components/login";
 import Navigation from "@/components/navigation";
 import { Settings } from "@/components/settings";
 import { Toaster } from "@/components/ui/sonner";
+import { TagListProvider } from "@/components/bill-tag";
 
 export default function MainLayout() {
 	return (
@@ -25,6 +26,7 @@ export default function MainLayout() {
 			<BookGuide />
 			<BudgetProvider />
 			<BudgetEditProvider />
+			<TagListProvider />
 			<CategoryListProvider />
 			<CategoryEditFormProvider />
 			<Login />

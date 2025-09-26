@@ -14,6 +14,9 @@ import { FORMAT_IMAGE_SUPPORTED, showFilePicker } from "../file-picker";
 import SmartImage from "../image";
 import IOSUnscrolledInput from "../input";
 import Caculator from "../keyboard";
+import { useTag } from "@/hooks/use-tag";
+import { toast } from "sonner";
+import Tag from "../tag";
 
 const defaultBill = {
 	type: "expense" as Bill["type"],
@@ -46,6 +49,8 @@ export default function EditorForm({
 	// 	setBillState({ ...defaultBill, ...edit });
 	// }, [edit]);
 	const { incomes, expenses } = useCategory();
+
+	const { tags, add: addTag } = useTag();
 
 	const categories = billState.type === "expense" ? expenses : incomes;
 
@@ -83,7 +88,7 @@ export default function EditorForm({
 			}}
 		>
 			<PopupLayout
-				className="h-full"
+				className="h-full gap-2"
 				onBack={goBack}
 				title={
 					<div className="pl-[54px] w-full min-h-12 rounded-lg flex pt-2 pb-0">
@@ -116,7 +121,7 @@ export default function EditorForm({
 				}
 			>
 				{/* categories */}
-				<div className="flex-1 flex flex-col overflow-y-auto my-2 px-2 text-sm font-medium">
+				<div className="flex-1 overflow-hidden flex flex-col px-2 text-sm font-medium">
 					<div className="grid grid-cols-[repeat(auto-fill,minmax(80px,1fr))]">
 						{categories.map((item) => (
 							<CategoryItem
@@ -142,7 +147,7 @@ export default function EditorForm({
 						</button>
 					</div>
 					{(subCategories?.length ?? 0) > 0 && (
-						<div className="flex-1 rounded-md border p-2 shadow">
+						<div className="flex-1 overflow-y-auto rounded-md border p-2 shadow scrollbar-hidden">
 							<div className="grid grid-cols-[repeat(auto-fill,minmax(80px,1fr))]">
 								{subCategories?.map((subCategory) => {
 									return (
@@ -162,6 +167,50 @@ export default function EditorForm({
 							</div>
 						</div>
 					)}
+				</div>
+				{/* tags */}
+				<div className="w-full h-[40px] flex-shrink-0 flex-grow-0 flex gap-1 py-1 items-center overflow-x-auto px-2 text-sm font-medium scrollbar-hidden">
+					{tags.map((tag) => (
+						<Tag
+							key={tag.id}
+							checked={billState.tagIds?.includes(tag.id)}
+							onCheckedChange={(checked) => {
+								setBillState((prev) => {
+									const newV = { ...prev };
+									if (checked) {
+										newV.tagIds = Array.from(
+											new Set([...(newV.tagIds ?? []), tag.id]),
+										);
+									} else {
+										newV.tagIds = newV.tagIds?.filter((t) => t !== tag.id);
+									}
+									return newV;
+								});
+							}}
+						>
+							#{tag.name}
+						</Tag>
+					))}
+					<button
+						type="button"
+						className={cn(
+							`rounded-lg border py-1 px-2 my-1 mr-1 h-8 flex gap-2 items-center justify-center whitespace-nowrap cursor-pointer`,
+						)}
+						onClick={async () => {
+							try {
+								const tagName = prompt(t("input-new-tag-name"));
+								if (tagName === null || tagName === undefined) {
+									return;
+								}
+								await addTag({ name: tagName });
+							} catch (error) {
+								toast.error((error as any).message);
+							}
+						}}
+					>
+						<i className="icon-[mdi--tag-plus-outline]"></i>
+						{t("add-tag")}
+					</button>
 				</div>
 
 				{/* keyboard area */}

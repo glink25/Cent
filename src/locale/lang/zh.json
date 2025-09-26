@@ -177,5 +177,10 @@
   "tuition": "学费",
   "water": "水费",
   "wellness": "放松",
-  "Balance": "结余"
+  "Balance": "结余",
+  "edit-tags": "标签管理",
+  "add-tag": "新增标签",
+  "sure-to-delete-this-tag": "确定要删除该标签吗？",
+  "input-new-tag-name": "输入新的标签名称",
+  "tags": "标签"
 }
