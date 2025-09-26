@@ -25,7 +25,7 @@ export type Bill = {
 	// _updated_at: number;
 	image?: File | string;
 	location?: string;
-	tags?: string[];
+	tagIds?: string[];
 };
 
 export type BillFilter = Partial<{

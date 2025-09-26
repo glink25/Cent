@@ -9,6 +9,7 @@ import Budget from "../budget";
 import CategorySettingsItem from "../category";
 import { Button } from "../ui/button";
 import Language from "./language";
+import TagSettingsItem from "../bill-tag";
 
 function UserInfo() {
 	const t = useIntl();
@@ -75,6 +76,7 @@ export default function SettingsForm({
 				<UserInfo />
 				<BookSettings />
 				<CategorySettingsItem />
+				<TagSettingsItem />
 				<Budget />
 				<Backup />
 				<Language />
