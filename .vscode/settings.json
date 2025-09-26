@@ -1,6 +1,5 @@
 {
-    "i18n-ally.localesPaths": [
-        "src/locale/lang"
-    ],
-    "i18n-ally.keystyle": "flat"
+  "i18n-ally.localesPaths": ["src/locale/lang"],
+  "i18n-ally.keystyle": "flat",
+  "editor.defaultFormatter": "biomejs.biome"
 }
