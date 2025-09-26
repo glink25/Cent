@@ -182,5 +182,10 @@
   "add-tag": "新增标签",
   "sure-to-delete-this-tag": "确定要删除该标签吗？",
   "input-new-tag-name": "输入新的标签名称",
-  "tags": "标签"
+  "tags": "标签",
+  "click-category-to-edit": "点击类别进行编辑",
+  "add-new-category-group": "新增大类",
+  "add": "新增",
+  "edit-category-details": "分类详情",
+  "category-name": "分类名称"
 }
