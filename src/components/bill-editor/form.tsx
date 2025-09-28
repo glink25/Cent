@@ -89,7 +89,7 @@ export default function EditorForm({
 			}}
 		>
 			<PopupLayout
-				className="h-full gap-2"
+				className="h-full gap-2 pb-0"
 				onBack={goBack}
 				title={
 					<div className="pl-[54px] w-full min-h-12 rounded-lg flex pt-2 pb-0">
