@@ -187,5 +187,6 @@
   "add-new-category-group": "新增大类",
   "add": "新增",
   "edit-category-details": "分类详情",
-  "category-name": "分类名称"
+  "category-name": "分类名称",
+  "category-parent": "大类"
 }

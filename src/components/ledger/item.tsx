@@ -1,12 +1,14 @@
 import { useMemo } from "react";
 import { useCreators } from "@/hooks/use-creator";
 import { amountToNumber } from "@/ledger/bill";
-import { getDefaultCategoryById } from "@/ledger/category";
 import type { Bill } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import { useUserStore } from "@/store/user";
 import { cn } from "@/utils";
-import { shorTime } from "@/utils/time";
+import { shortTime } from "@/utils/time";
+import useCategory from "@/hooks/use-category";
+import CategoryIcon from "../category/icon";
+import { intlCategory } from "@/ledger/utils";
 
 interface BillItemProps {
 	bill: Bill;
@@ -22,9 +24,14 @@ export default function BillItem({
 	showTime,
 }: BillItemProps) {
 	const t = useIntl();
+	const { categories } = useCategory();
 	const category = useMemo(
-		() => getDefaultCategoryById(bill.categoryId),
-		[bill.categoryId],
+		() =>
+			intlCategory(
+				categories.find((c) => c.id === bill.categoryId),
+				t,
+			),
+		[bill.categoryId, categories, t],
 	);
 
 	const { login: selfLogin, id: selfId } = useUserStore();
@@ -44,11 +51,11 @@ export default function BillItem({
 			{/* 左侧图标 + 信息 */}
 			<div className="flex items-center overflow-hidden">
 				<div className="rounded-full bg-white border w-10 h-10 flex items-center justify-center">
-					<i className={category?.icon}></i>
+					{category?.icon && <CategoryIcon icon={category.icon} />}
 				</div>
 				<div className="flex-1 flex flex-col px-4 overflow-hidden">
 					<div className="flex text-md font-semibold">
-						<div>{category ? t(category.name) : ""}</div>
+						<div>{category ? category.name : ""}</div>
 					</div>
 					<div className="flex text-xs">
 						<div>{isMe ? t("me") : (creator?.name ?? "unknown-user")}</div>
@@ -77,7 +84,7 @@ export default function BillItem({
 				</div>
 				{showTime && (
 					<div className="text-[8px] text-foreground/60">
-						{shorTime(bill.time)}
+						{shortTime(bill.time)}
 					</div>
 				)}
 			</div>

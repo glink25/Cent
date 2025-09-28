@@ -16,12 +16,14 @@ type UserStoreState = {
 	loading: boolean;
 	expired?: boolean;
 	cachedUsers: Record<string, UserInfo>;
+	cachedCollaborators: Record<string, UserInfo[]>;
 };
 
 type UserStoreActions = {
 	updateUserInfo: () => Promise<void>;
 
 	getUserInfo: (login: string | number) => Promise<UserInfo>;
+	getCollaborators: (repo: string) => Promise<UserInfo[]>;
 };
 
 type UserStore = UserStoreState & UserStoreActions;
@@ -82,26 +84,50 @@ export const useUserStore = create<UserStore>()(
 					);
 				}
 			};
+
 			updateUserInfo();
 
 			const getUserInfo = async (login: string | number) => {
+				const run = async () => {
+					const res = await UserAPI.getUserInfo(login);
+					const info = {
+						avatar_url: res.avatar_url,
+						login: res.login,
+						name: res.name,
+						id: res.id,
+					};
+					set(
+						produce((state: UserStore) => {
+							state.cachedUsers[login] = info;
+						}),
+					);
+					return res;
+				};
 				const cachedUsers = get().cachedUsers;
 				if (cachedUsers[login]) {
+					run();
 					return cachedUsers[login];
 				}
-				const res = await UserAPI.getUserInfo(login);
-				const info = {
-					avatar_url: res.avatar_url,
-					login: res.login,
-					name: res.name,
-					id: res.id,
+
+				return run();
+			};
+
+			const getCollaborators = async (repo: string) => {
+				const run = async () => {
+					const res = await UserAPI.getCollaborators(repo);
+					set(
+						produce((state: UserStore) => {
+							state.cachedCollaborators[repo] = res;
+						}),
+					);
+					return res;
 				};
-				set(
-					produce((state: UserStore) => {
-						state.cachedUsers[login] = info;
-					}),
-				);
-				return info;
+				const cachedCollaborators = get().cachedCollaborators;
+				if (cachedCollaborators[repo]) {
+					run();
+					return cachedCollaborators[repo];
+				}
+				return run();
 			};
 			return {
 				loading,
@@ -111,7 +137,9 @@ export const useUserStore = create<UserStore>()(
 				id: -1,
 				updateUserInfo,
 				getUserInfo,
+				getCollaborators,
 				cachedUsers: {},
+				cachedCollaborators: {},
 			};
 		},
 		{

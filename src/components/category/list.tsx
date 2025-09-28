@@ -5,10 +5,10 @@ import { Button } from "../ui/button";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { treeCategories } from "@/ledger/utils";
-import { CategoryItem } from "../bill-editor/form";
 import { Collapsible } from "radix-ui";
 import type { BillCategory } from "@/ledger/type";
 import { CategoryEditFormProvider, showCategoryEdit } from "./form";
+import { CategoryItem } from "./item";
 
 export default function CategoryList({
 	onCancel,
@@ -29,7 +29,11 @@ export default function CategoryList({
 		{ label: "income", value: incomes },
 	];
 	const toAddChildCategory = (parentId: string) => {
-		showCategoryEdit({ parent: parentId });
+		showCategoryEdit({
+			id: undefined,
+			parent: parentId,
+			type: categories.find((c) => c.id === parentId)!.type,
+		});
 	};
 
 	const toAddCategory = async () => {

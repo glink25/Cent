@@ -39,6 +39,7 @@ import { useCreators } from "@/hooks/use-creator";
 import { useIntl } from "@/locale";
 import { cn } from "@/utils";
 import { CascadeSelect } from "../cascade";
+import { intlCategory } from "@/ledger/utils";
 
 // 表单结构验证
 const formSchema = z.object({
@@ -92,11 +93,9 @@ export default function BudgetEditForm({
 	const categoryOption = useMemo(
 		() =>
 			expenses.map((v) => ({
-				...v,
-				name: v.custom ? v.name : t(v.name),
+				...intlCategory(v, t),
 				children: v.children.map((c) => ({
-					...c,
-					name: c.custom ? c.name : t(c.name),
+					...intlCategory(c, t),
 				})),
 			})),
 		[expenses, t],

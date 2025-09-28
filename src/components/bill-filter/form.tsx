@@ -22,6 +22,7 @@ import {
 } from "../ui/select";
 import useCategory from "@/hooks/use-category";
 import { CascadeMultipleSelect } from "../cascade";
+import { intlCategory } from "@/ledger/utils";
 
 export default function BillFilterForm({
 	form,
@@ -68,11 +69,9 @@ export default function BillFilterForm({
 				name: "",
 			},
 			...expenses.map((c) => ({
-				...c,
-				name: c.custom ? c.name : t(c.name),
+				...intlCategory(c, t),
 				children: c.children.map((v) => ({
-					...v,
-					name: v.custom ? v.name : t(v.name),
+					...intlCategory(v, t),
 				})),
 			})),
 			{
@@ -81,11 +80,9 @@ export default function BillFilterForm({
 				name: "",
 			},
 			...incomes.map((c) => ({
-				...c,
-				name: c.custom ? c.name : t(c.name),
+				...intlCategory(c, t),
 				children: c.children.map((v) => ({
-					...v,
-					name: v.custom ? v.name : t(v.name),
+					...intlCategory(v, t),
 				})),
 			})),
 

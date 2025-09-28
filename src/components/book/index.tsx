@@ -1,7 +1,7 @@
 import { Dialog, VisuallyHidden } from "radix-ui";
 import { useState } from "react";
 import { useShallow } from "zustand/shallow";
-import { StorageAPI } from "@/api/storage";
+import { StorageAPI, toBookName } from "@/api/storage";
 import { useIntl } from "@/locale";
 import { type Book, useBookStore } from "@/store/book";
 import { useUserStore } from "@/store/user";
@@ -87,7 +87,7 @@ export default function BookGuide() {
 													return (
 														<Label
 															key={book.id}
-															className="cursor-pointer hover:bg-accent/50 flex items-center gap-3 rounded-lg border p-3 has-[[aria-checked=true]]:border-blue-600 has-[[aria-checked=true]]:bg-blue-50 dark:has-[[aria-checked=true]]:border-blue-900 dark:has-[[aria-checked=true]]:bg-blue-950"
+															className="cursor-pointer hover:bg-accent/50 overflow-hidden flex items-center gap-3 rounded-lg border p-3 has-[[aria-checked=true]]:border-blue-600 has-[[aria-checked=true]]:bg-blue-50 dark:has-[[aria-checked=true]]:border-blue-900 dark:has-[[aria-checked=true]]:bg-blue-950"
 														>
 															<Checkbox
 																checked={book.id === currentBookId}
@@ -98,9 +98,12 @@ export default function BookGuide() {
 																}}
 																className="inline-flex items-center data-[state=checked]:border-blue-600 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white dark:data-[state=checked]:border-blue-700 dark:data-[state=checked]:bg-blue-700"
 															/>
-															<div className="flex justify-between gap-1.5 font-normal py-2">
-																<div className="text-sm leading-none font-medium">
-																	{book.repo}
+															<div className="flex-1 flex justify-between gap-1.5 font-normal overflow-hidden">
+																<div className="flex-1 text-sm leading-none font-medium flex flex-col gap-1 overflow-hidden">
+																	<p>{toBookName(book.repo)}</p>
+																	<span className="text-xs opacity-60 truncate">
+																		{book.repo}
+																	</span>
 																</div>
 																<div className="flex gap-1 items-center">
 																	<Button

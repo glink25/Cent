@@ -10,9 +10,12 @@ import { useIntl } from "@/locale";
 import { useLedgerStore } from "@/store/ledger";
 import { cn } from "@/utils";
 import { filterOrderedBillListByTimeRange } from "@/utils/filter";
+import { useBookStore } from "@/store/book";
+import { StorageAPI, toBookName } from "@/api/storage";
 
 export default function Page() {
 	const { bills, loading, sync } = useLedgerStore();
+	const { currentBookId } = useBookStore();
 	const t = useIntl();
 	const syncIcon =
 		sync === "wait"
@@ -45,6 +48,18 @@ export default function Page() {
 				<div className="bg-stone-800 text-background relative h-20 w-full flex justify-end rounded-lg sm:flex-1 p-4">
 					<span className="absolute top-2 left-4">{t("Today")}</span>
 					<AnimatedNumber value={todayAmount} className="font-bold text-4xl " />
+					{currentBookId && (
+						<button
+							type="button"
+							className="absolute bottom-2 left-4 text-xs opacity-60 flex items-center gap-1 cursor-pointer"
+							onClick={() => {
+								useBookStore.setState((prev) => ({ ...prev, visible: true }));
+							}}
+						>
+							<i className="icon-[mdi--book]"></i>
+							{toBookName(currentBookId)}
+						</button>
+					)}
 				</div>
 				<div className="w-full">
 					{budgets.map((budget) => {
@@ -52,10 +67,16 @@ export default function Page() {
 					})}
 				</div>
 			</div>
-			<div className="flex justify-between items-cente pl-7 pr-5 py-2">
+			<button
+				type="button"
+				className="flex justify-between items-center pl-7 pr-5 py-2 cursor-pointer"
+				onClick={() => {
+					StorageAPI.toSync();
+				}}
+			>
 				<div>{loading && <Loading />}</div>
 				{<i className={cn(syncIcon)} />}
-			</div>
+			</button>
 			<div className="flex-1 translate-0 pb-[10px] overflow-hidden">
 				<div className="w-full h-full">
 					{bills.length > 0 ? (

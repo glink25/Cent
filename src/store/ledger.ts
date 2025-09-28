@@ -90,7 +90,9 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
 				);
 			}),
 		]);
-		UserAPI.getCollaborators(repo)
+		useUserStore
+			.getState()
+			.getCollaborators(repo)
 			.then((creators) => {
 				set(
 					produce((state: LedgerStore) => {

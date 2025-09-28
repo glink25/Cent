@@ -17,6 +17,7 @@ import Caculator from "../keyboard";
 import { useTag } from "@/hooks/use-tag";
 import { toast } from "sonner";
 import Tag from "../tag";
+import { CategoryItem } from "../category/item";
 
 const defaultBill = {
 	type: "expense" as Bill["type"],
@@ -266,36 +267,5 @@ export default function EditorForm({
 				</div>
 			</PopupLayout>
 		</Caculator.Root>
-	);
-}
-
-export function CategoryItem({
-	category,
-	selected,
-	onMouseDown,
-	onClick,
-	className,
-}: {
-	category: BillCategory;
-	selected?: boolean;
-	onMouseDown?: MouseEventHandler<HTMLButtonElement>;
-	onClick?: MouseEventHandler<HTMLButtonElement>;
-	className?: string;
-}) {
-	const t = useIntl();
-	return (
-		<button
-			type="button"
-			className={cn(
-				`rounded-lg border flex-1 py-1 px-2 h-8 flex items-center justify-center whitespace-nowrap cursor-pointer`,
-				selected ? "bg-slate-700 text-white " : "bg-stone-200  text-light-900",
-				className,
-			)}
-			onMouseDown={onMouseDown}
-			onClick={onClick}
-		>
-			<i className={`icon-xs ${category.icon}`}></i>
-			<div className="mx-2">{t(category.name)}</div>
-		</button>
 	);
 }
