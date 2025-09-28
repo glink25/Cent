@@ -187,5 +187,6 @@
   "add-new-category-group": "Add new Category Group",
   "add": "Add",
   "edit-category-details": "Category Details",
-  "category-name": "Category Name"
+  "category-name": "Category Name",
+  "category-parent": "Parent Category"
 }

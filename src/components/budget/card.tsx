@@ -7,6 +7,7 @@ import { useIntl } from "@/locale";
 import { cn } from "@/utils";
 import type { Budget } from "./type";
 import { budgetEncountered, budgetRange, budgetTotal } from "./util";
+import { intlCategory } from "@/ledger/utils";
 
 export default function BudgetCard({
 	className,
@@ -92,14 +93,17 @@ export default function BudgetCard({
 					</div>
 					<Collapsible.Content className="data-[state=open]:animate-collapse-open data-[state=closed]:animate-collapse-close data-[state=closed]:overflow-hidden">
 						{encountered?.categoriesUsed?.map((v) => {
-							const category = categories.find((c) => c.id === v.id)!;
+							const category = intlCategory(
+								categories.find((c) => c.id === v.id)!,
+								t,
+							);
 							const cb = budget.categoriesBudget!.find((c) => c.id === v.id)!;
 							const td = todayEncountered!.categoriesUsed!.find(
 								(c) => c.id === v.id,
 							)!;
 							return (
 								<div key={v.id}>
-									{t(category?.name)}
+									{category?.name}
 									<BudgetBar
 										total={cb.budget}
 										used={v.used}

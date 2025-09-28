@@ -1,21 +1,41 @@
-import PopupLayout from "@/layouts/popup-layout";
-import createConfirmProvider from "../confirm";
-import { useIntl } from "@/locale";
-import type { BillCategory } from "@/ledger/type";
-import { useState } from "react";
-import { cn } from "@/utils";
-import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem } from "../ui/form";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "../ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+
+import PopupLayout from "@/layouts/popup-layout";
+import createConfirmProvider from "@/components/confirm";
+import { useIntl } from "@/locale";
+import type { BillCategory, BillType } from "@/ledger/type";
+import { cn } from "@/utils";
+import { Input } from "@/components/ui/input";
+import {
+	Form,
+	FormControl,
+	FormField,
+	FormItem,
+	FormLabel,
+} from "@/components/ui/form";
+
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import useCategory from "@/hooks/use-category";
+import { intlCategory } from "@/ledger/utils";
 import { ICONS } from "./icons";
 import CategoryIcon from "./icon";
+import { useBookStore } from "@/store/book";
+import { StorageDeferredAPI } from "@/api/storage";
 
 const formSchema = z.object({
 	name: z.string().max(50),
+	parent: z.string().optional(),
 });
 
 const allIcons = Array.from(Object.entries(ICONS)).map(([key, value]) => ({
@@ -28,29 +48,127 @@ const validSvgText = (text: string) =>
 
 export default function CategoryEditForm({
 	onCancel,
+	onConfirm,
 	edit,
 }: {
-	edit?: BillCategory | (Partial<BillCategory> & { parent: string });
+	edit?: BillCategory | { id: undefined; parent?: string; type: BillType };
 	onCancel?: () => void;
 	onConfirm?: (v: any) => void;
 }) {
 	const t = useIntl();
-	const [category, setCategory] = useState(edit);
+	const [category, setCategory] = useState<Omit<BillCategory, "id">>(() => {
+		if (edit === undefined || edit.id === undefined) {
+			return {
+				name: "",
+				customName: true,
+				type: "expense",
+				color: "#fff",
+				icon: "",
+				...edit,
+			};
+		}
+		return {
+			...edit,
+		};
+	});
 
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema) as any,
 		defaultValues: category
 			? {
-					name: category.custom
+					name: category.customName
 						? (category.name ?? "")
 						: category?.name
 							? t(category?.name)
 							: "",
+					parent: category.parent,
 				}
 			: {
 					name: "",
 				},
 	});
+	const {
+		expenses: allExpenses,
+		incomes: allIncomes,
+		categories: allCategories,
+		update,
+		add,
+		reorder,
+	} = useCategory();
+	const expenses = useMemo(
+		() => allExpenses.map((v) => intlCategory(v, t)),
+		[allExpenses.map, t],
+	);
+	const incomes = useMemo(
+		() => allIncomes.map((v) => intlCategory(v, t)),
+		[allIncomes.map, t],
+	);
+
+	const onSubmit = async (data: z.infer<typeof formSchema>) => {
+		if (edit === undefined || edit.id === undefined) {
+			// add category
+			const newCategory = {
+				...category,
+				...data,
+			};
+			console.log("add category:", newCategory);
+			const newId = await add(newCategory);
+			onConfirm?.(newId);
+			return;
+		}
+		const originCate = {
+			icon: edit.icon,
+			name: edit.customName ? edit.name : t(edit.name),
+			parent: edit.parent,
+		};
+		const formattedData = {
+			...data,
+			icon: category?.icon,
+			customName:
+				edit.customName === true
+					? true
+					: originCate.name !== data.name
+						? true
+						: undefined,
+		};
+		if (
+			originCate.icon === formattedData.icon &&
+			originCate.name === formattedData.name &&
+			originCate.parent === formattedData.parent
+		) {
+			console.log("nothing changed");
+			return;
+		}
+
+		console.log("update category:", formattedData);
+		await update(edit.id, formattedData);
+		onConfirm?.(edit.id);
+	};
+
+	const toDelete = async () => {
+		if (!edit?.id) {
+			return;
+		}
+		const book = useBookStore.getState().currentBookId;
+		if (!book) {
+			return;
+		}
+		const cates = allCategories.filter(
+			(c) => c.id === edit.id || c.parent === edit.id,
+		);
+		const exist = await StorageDeferredAPI.filter(book, {
+			categories: cates.map((c) => c.id),
+		});
+		if (exist.length > 0) {
+			alert(
+				`Cannot delete,category, ${exist.length} records founded, please transfer them to another category first`,
+			);
+			return;
+		}
+		// 删除类别
+		await update(edit.id, undefined);
+		onConfirm?.(undefined);
+	};
 	return (
 		<Form {...form}>
 			<PopupLayout
@@ -59,42 +177,87 @@ export default function CategoryEditForm({
 				title={t("edit-category-details")}
 				right={
 					<div className="flex items-center gap-2 pr-2">
-						<Button variant="destructive" size="sm">
-							<i className="icon-[mdi--trash-can-outline]" />
+						{edit?.id && (
+							<Button variant="destructive" size="sm" onClick={toDelete}>
+								<i className="icon-[mdi--trash-can-outline]" />
+							</Button>
+						)}
+						<Button
+							size="sm"
+							type="submit"
+							onClick={() => {
+								form.handleSubmit(onSubmit)();
+							}}
+						>
+							{t("confirm")}
 						</Button>
-						<Button size="sm">{t("confirm")}</Button>
 					</div>
 				}
 			>
-				<div className="p-4 size-16 aspect-square rounded-full overflow-hidden border flex justify-center items-center">
-					{category?.icon && (
-						<CategoryIcon
-							icon={category?.icon}
-							className={cn("w-full h-full")}
-						/>
-					)}
+				<div className="flex justify-center items-center gap-2">
+					<div className="p-4 size-16 aspect-square rounded-full overflow-hidden border flex justify-center items-center">
+						{category?.icon && (
+							<CategoryIcon
+								icon={category?.icon}
+								className={cn("w-full h-full")}
+							/>
+						)}
+					</div>
+					<div className="flex flex-col gap-2">
+						<FormField
+							control={form.control}
+							name="name"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>{t("category-name")}</FormLabel>
+									<FormControl>
+										<Input type="text" maxLength={50} {...field} />
+									</FormControl>
+								</FormItem>
+							)}
+						></FormField>
+						{category?.parent && (
+							<FormField
+								control={form.control}
+								name="parent"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>{t("category-parent")}</FormLabel>
+										<FormControl>
+											<Select
+												onValueChange={field.onChange}
+												defaultValue={field.value}
+											>
+												<FormControl>
+													<SelectTrigger>
+														<SelectValue placeholder="父类" />
+													</SelectTrigger>
+												</FormControl>
+												<SelectContent align="end">
+													{(category.type === "expense"
+														? expenses
+														: incomes
+													).map((parent) => (
+														<SelectItem key={parent.id} value={parent.id}>
+															{parent.name}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+										</FormControl>
+									</FormItem>
+								)}
+							></FormField>
+						)}
+					</div>
 				</div>
-				<FormField
-					control={form.control}
-					name="name"
-					render={({ field }) => (
-						<FormItem className="flex space-y-0 items-center gap-2">
-							<div className="text-sm opacity-80 whitespace-nowrap">
-								{t("category-name")}
-							</div>
-							<FormControl>
-								<Input type="text" maxLength={50} {...field} />
-							</FormControl>
-						</FormItem>
-					)}
-				></FormField>
+
 				<Tabs
 					defaultValue="icons"
 					className="w-full flex flex-col flex-1 overflow-hidden p-2 gap-2"
 				>
 					<div className="w-full flex justify-center">
 						<div className="flex items-center gap-2">
-							<div className="text-sm opacity-80">Change Icon</div>
 							<TabsList>
 								<TabsTrigger value="icons">Icons</TabsTrigger>
 								<TabsTrigger value="custom">Custom</TabsTrigger>

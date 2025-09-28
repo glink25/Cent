@@ -14,9 +14,18 @@ export default function CategoryIcon({
 		// 用 data-uri 转换成 <img> 的 src
 		const svgSrc = "data:image/svg+xml;utf8," + encodeURIComponent(icon);
 		return (
-			<i className={cn("inline-flex items-center justify-center", className)}>
-				<img src={svgSrc} alt="icon" className="w-1em h-1em" />
-			</i>
+			<i
+				className={cn(
+					"flex items-center justify-center min-w-4 min-h-4",
+					className,
+				)}
+				style={{
+					backgroundImage: `url(${svgSrc})`,
+					backgroundSize: "contain",
+					backgroundPosition: "center",
+					backgroundRepeat: "no-repeat",
+				}}
+			></i>
 		);
 	}
 

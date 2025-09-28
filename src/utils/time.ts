@@ -32,7 +32,7 @@ export const denseTime = (time: Dayjs) => {
 	return time.format("YYYY-MM-DD");
 };
 
-export const shorTime = (t: number) =>
+export const shortTime = (t: number) =>
 	dayjs.unix(t / 1000).format("YY/MM/DD HH:mm");
 
 export const toDayjs = (v: number | dayjs.Dayjs | Date) => {

@@ -26,6 +26,11 @@ const repo = new Gitray<Bill>({
 	storage: (name) => new BillIndexeBDStorage(`book-${name}`),
 });
 
+export const toBookName = (bookId: string) => {
+	const [owner, repo] = bookId.split("/");
+	return repo.replace(`${config.repoPrefix}-`, "");
+};
+
 export const StorageAPI = repo;
 
 // ComlinkSharedWorker

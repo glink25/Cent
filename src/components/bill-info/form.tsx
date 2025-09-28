@@ -1,6 +1,5 @@
 import { useCreators } from "@/hooks/use-creator";
 import { amountToNumber } from "@/ledger/bill";
-import { getDefaultCategoryById } from "@/ledger/category";
 import { useIntl } from "@/locale";
 import { type EditBill, useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
@@ -8,6 +7,9 @@ import { formatTime } from "@/utils/time";
 import { showBillEditor } from "../bill-editor";
 import SmartImage from "../image";
 import { useTag } from "@/hooks/use-tag";
+import useCategory from "@/hooks/use-category";
+import CategoryIcon from "../category/icon";
+import { intlCategory } from "@/ledger/utils";
 
 export default function BillInfo({
 	edit,
@@ -20,6 +22,8 @@ export default function BillInfo({
 }) {
 	const t = useIntl();
 	const { id: curUserId } = useUserStore();
+	const { categories } = useCategory();
+
 	const creators = useCreators();
 	const creator = creators.find((c) => c.id === edit?.creatorId);
 	const { tags: allTags } = useTag();
@@ -33,7 +37,10 @@ export default function BillInfo({
 	if (!edit) {
 		return null;
 	}
-	const categoryInfo = getDefaultCategoryById(edit.categoryId);
+	const categoryInfo = intlCategory(
+		categories.find((c) => c.id === edit.categoryId),
+		t,
+	);
 
 	const toEdit = async () => {
 		if (edit?.id) {
@@ -59,10 +66,12 @@ export default function BillInfo({
 					<div className="flex items-center justify-between">
 						<div className="flex items-center">
 							<div className="w-12 h-12 flex-shrink-0 rounded-full bg-white border p-4 flex items-center justify-center">
-								<i className={`icon-md ${categoryInfo?.icon ?? ""}`}></i>
+								{categoryInfo?.icon && (
+									<CategoryIcon icon={categoryInfo?.icon} />
+								)}
 							</div>
 							<div className="flex text-md font-semibold px-2">
-								<div>{t(categoryInfo?.name ?? "")}</div>
+								<div>{categoryInfo?.name ?? ""}</div>
 							</div>
 						</div>
 						<div
