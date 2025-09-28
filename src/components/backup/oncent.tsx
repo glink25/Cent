@@ -21,6 +21,7 @@ import { useLedgerStore } from "@/store/ledger";
 import createConfirmProvider from "../confirm";
 import Loading from "../loading";
 import { Button } from "../ui/button";
+import PopupLayout from "@/layouts/popup-layout";
 
 // 单条用户行
 export interface UserRow {
@@ -145,51 +146,51 @@ function OncentImportForm({
 		}
 	};
 	return (
-		<div className="flex flex-col p-4 gap-4 h-full">
-			<div>Oncent </div>
-			<div className="flex-1 flex flex-col gap-4">
-				<Select
-					value={selectedUserId}
-					onValueChange={(v) => setSelectedUserId(v)}
-				>
-					<SelectTrigger className="SelectTrigger" aria-label="Food">
-						<SelectValue placeholder={t("select-a-user")} />
-					</SelectTrigger>
-					<SelectPortal>
-						<SelectContent className="bg-white shadow">
-							<SelectViewport className="SelectViewport">
-								{data?.map((item) => {
-									return (
-										<SelectItem key={item.user.id} value={item.user.id}>
-											{`${item.user.nickname}(${item.data?.length})`}
-										</SelectItem>
-									);
-								})}
-							</SelectViewport>
-						</SelectContent>
-					</SelectPortal>
-				</Select>
-				<div className="flex flex-col gap-4">
-					{t("import-strategy")}:
-					<RadioGroup.Root
-						className="flex items-center gap-4"
-						defaultValue={importStrategy}
-						onValueChange={(v) => {
-							setImportStrategy(v as any);
-						}}
+		<PopupLayout onBack={onCancel} title="Oncent">
+			<div className="flex flex-col p-4 gap-4 h-full">
+				<div className="flex-1 flex flex-col gap-4">
+					<Select
+						value={selectedUserId}
+						onValueChange={(v) => setSelectedUserId(v)}
 					>
-						<div className="flex gap-2 items-center">
-							<RadioGroup.Item
-								className="w-6 h-6 rounded-full border flex justify-center items-center"
-								value="add"
-							>
-								<RadioGroup.Indicator className="block w-4 h-4 rounded-full bg-stone-900" />
-							</RadioGroup.Item>
-							<label className="Label" htmlFor="r1">
-								{t("strategy-add")}
-							</label>
-						</div>
-						{/* <div className="flex gap-2 items-center">
+						<SelectTrigger className="SelectTrigger" aria-label="Food">
+							<SelectValue placeholder={t("select-a-user")} />
+						</SelectTrigger>
+						<SelectPortal>
+							<SelectContent className="bg-white shadow">
+								<SelectViewport className="SelectViewport">
+									{data?.map((item) => {
+										return (
+											<SelectItem key={item.user.id} value={item.user.id}>
+												{`${item.user.nickname}(${item.data?.length})`}
+											</SelectItem>
+										);
+									})}
+								</SelectViewport>
+							</SelectContent>
+						</SelectPortal>
+					</Select>
+					<div className="flex flex-col gap-4">
+						{t("import-strategy")}:
+						<RadioGroup.Root
+							className="flex items-center gap-4"
+							defaultValue={importStrategy}
+							onValueChange={(v) => {
+								setImportStrategy(v as any);
+							}}
+						>
+							<div className="flex gap-2 items-center">
+								<RadioGroup.Item
+									className="w-6 h-6 rounded-full border flex justify-center items-center"
+									value="add"
+								>
+									<RadioGroup.Indicator className="block w-4 h-4 rounded-full bg-stone-900" />
+								</RadioGroup.Item>
+								<label className="Label" htmlFor="r1">
+									{t("strategy-add")}
+								</label>
+							</div>
+							{/* <div className="flex gap-2 items-center">
 							<RadioGroup.Item
 								className="w-6 h-6 rounded-full border flex justify-center items-center"
 								value="overlap"
@@ -200,18 +201,19 @@ function OncentImportForm({
 								{t("strategy-overlap")}
 							</label>
 						</div> */}
-					</RadioGroup.Root>
+						</RadioGroup.Root>
+					</div>
+				</div>
+				<div className="flex justify-end gap-2 items-center">
+					<Button variant="ghost" onClick={() => onCancel?.()}>
+						{t("cancel")}
+					</Button>
+					<Button disabled={loading} onClick={toConfirm}>
+						{loading && <Loading />} {t("confirm")}
+					</Button>
 				</div>
 			</div>
-			<div className="flex justify-end gap-2 items-center">
-				<Button variant="ghost" onClick={() => onCancel?.()}>
-					{t("cancel")}
-				</Button>
-				<Button disabled={loading} onClick={toConfirm}>
-					{loading && <Loading />} {t("confirm")}
-				</Button>
-			</div>
-		</div>
+		</PopupLayout>
 	);
 }
 
