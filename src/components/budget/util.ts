@@ -83,7 +83,19 @@ export const budgetEncountered = (
 		used: 0,
 	}));
 	filtered.forEach((bill) => {
+		// 排除收入
 		if (bill.type === "income") {
+			return;
+		}
+		// 排除 excludeTags
+		if (budget.excludeTags?.some((v) => bill.tagIds?.includes(v))) {
+			return;
+		}
+		// 排除 onlyTags
+		if (
+			(budget.onlyTags?.length ?? 0) > 0 &&
+			budget.onlyTags?.every((t) => !bill.tagIds?.includes(t))
+		) {
 			return;
 		}
 		totalUsed += bill.amount;

@@ -9,6 +9,7 @@ import { shortTime } from "@/utils/time";
 import useCategory from "@/hooks/use-category";
 import CategoryIcon from "../category/icon";
 import { intlCategory } from "@/ledger/utils";
+import { useTag } from "@/hooks/use-tag";
 
 interface BillItemProps {
 	bill: Bill;
@@ -25,6 +26,7 @@ export default function BillItem({
 }: BillItemProps) {
 	const t = useIntl();
 	const { categories } = useCategory();
+	const { tags: allTags } = useTag();
 	const category = useMemo(
 		() =>
 			intlCategory(
@@ -38,6 +40,9 @@ export default function BillItem({
 	const creators = useCreators();
 	const creator = creators.find((c) => c.id === bill.creatorId);
 	const isMe = creator?.login === selfLogin || creator?.login === selfId;
+	const tags = bill.tagIds
+		?.map((id) => allTags.find((t) => t.id === id))
+		.filter((v) => v !== undefined);
 
 	return (
 		<button
@@ -54,8 +59,20 @@ export default function BillItem({
 					{category?.icon && <CategoryIcon icon={category.icon} />}
 				</div>
 				<div className="flex-1 flex flex-col px-4 overflow-hidden">
-					<div className="flex text-md font-semibold">
-						<div>{category ? category.name : ""}</div>
+					<div className="flex text-md gap-1 h-6">
+						<div className="flex-shrink-0 font-semibold">
+							{category ? category.name : ""}
+						</div>
+						<div className="flex flex-wrap gap-x-2 gap-y-1">
+							{tags?.map((tag) => (
+								<div
+									key={tag.id}
+									className="text-[10px] rounded border flex items-center p-[2px] h-3"
+								>
+									{tag.name}
+								</div>
+							))}
+						</div>
 					</div>
 					<div className="flex text-xs">
 						<div>{isMe ? t("me") : (creator?.name ?? "unknown-user")}</div>
