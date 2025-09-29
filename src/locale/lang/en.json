@@ -188,5 +188,6 @@
   "add": "Add",
   "edit-category-details": "Category Details",
   "category-name": "Category Name",
-  "category-parent": "Parent Category"
+  "category-parent": "Parent Category",
+  "add-again": "Add again"
 }

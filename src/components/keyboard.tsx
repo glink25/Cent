@@ -3,9 +3,10 @@
 import { createContext, useContext, useState } from "react";
 import { cn } from "@/utils";
 import { Button } from "./ui/button";
+import { useIntl } from "@/locale";
 
 type Char = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "0";
-type Operator = "+" | "-" | "x" | "/";
+type Operator = "+" | "-" | "×" | "/";
 type Eraser = "c";
 type Point = ".";
 type Eq = "=";
@@ -39,7 +40,7 @@ const Layout = [
 	{ label: "7" },
 	{ label: "8" },
 	{ label: "9" },
-	{ label: "x" },
+	{ label: "×" },
 	{ label: "÷" },
 	{ label: "r" },
 	{ label: "0" },
@@ -47,7 +48,7 @@ const Layout = [
 	{ label: "=", cols: 2 },
 ];
 
-const operators = ["+", "-", "x", "/"];
+const operators = ["+", "-", "×", "/"];
 
 const isOperator = (v: string): v is Operator => operators.includes(v);
 
@@ -90,7 +91,7 @@ const formulaToNumber = (form: Formula) => {
 			return prec(left + right);
 		case "-":
 			return prec(left - right);
-		case "x":
+		case "×":
 			return prec(left * right);
 		case "/":
 			return prec(left / right);
@@ -184,9 +185,15 @@ export const CalculatorValue = ({ className }: { className?: string }) => {
 	return <div className={cn(className)}>{toText(formula)}</div>;
 };
 
-export const CalculatorKeyboard = ({ className }: { className?: string }) => {
+export const CalculatorKeyboard = ({
+	className,
+	onKey,
+}: {
+	className?: string;
+	onKey?: (v: string) => void;
+}) => {
+	const t = useIntl();
 	const { handleButtonClick } = useContext(CalculatorContext)!;
-
 	return (
 		<div className={cn("grid grid-cols-5 gap-2", className)}>
 			{Layout.map((row) => (
@@ -194,23 +201,36 @@ export const CalculatorKeyboard = ({ className }: { className?: string }) => {
 					variant="ghost"
 					key={row.label}
 					data-label={row.label}
-					onPointerDown={() => handleButtonClick(row.label)}
+					onPointerDown={() => {
+						handleButtonClick(row.label);
+						onKey?.(row.label);
+					}}
 					className={cn(
 						(row.cols ?? 1) > 1 && "col-span-2",
 						"h-full text-lg font-semibold bg-background/10 active:bg-background/50 transition-all",
+						row.label === "c" && "bg-destructive/60",
 					)}
 				>
-					{row.label}
+					{row.label === "c" ? (
+						<i className="icon-[mdi--clear-outline]"></i>
+					) : row.label === "r" ? (
+						<div className="flex gap-1 items-center">
+							<i className="icon-[mdi--reload]"></i>
+							<div className="text-xs">{t("add-again")}</div>
+						</div>
+					) : (
+						<span data-label>{row.label}</span>
+					)}
 				</Button>
 			))}
 		</div>
 	);
 };
 
-const Caculator = {
+const Calculator = {
 	Root: CalculatorRoot,
 	Value: CalculatorValue,
-	Keyborad: CalculatorKeyboard,
+	Keyboard: CalculatorKeyboard,
 };
 
-export default Caculator;
+export default Calculator;
