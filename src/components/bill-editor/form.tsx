@@ -1,10 +1,10 @@
 import { Switch } from "radix-ui";
-import { useMemo, useState, type MouseEventHandler } from "react";
+import { useMemo, useState } from "react";
 import useCategory from "@/hooks/use-category";
 import PopupLayout from "@/layouts/popup-layout";
 import { amountToNumber, numberToAmount } from "@/ledger/bill";
 import { ExpenseBillCategories, IncomeBillCategories } from "@/ledger/category";
-import type { Bill, BillCategory } from "@/ledger/type";
+import type { Bill } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import type { EditBill } from "@/store/ledger";
 import { cn } from "@/utils";
@@ -13,11 +13,12 @@ import { DatePicker } from "../date-picker";
 import { FORMAT_IMAGE_SUPPORTED, showFilePicker } from "../file-picker";
 import SmartImage from "../image";
 import IOSUnscrolledInput from "../input";
-import Caculator from "../keyboard";
+import Calculator from "../keyboard";
 import { useTag } from "@/hooks/use-tag";
 import { toast } from "sonner";
 import Tag from "../tag";
 import { CategoryItem } from "../category/item";
+import { goAddBill } from ".";
 
 const defaultBill = {
 	type: "expense" as Bill["type"],
@@ -79,7 +80,7 @@ export default function EditorForm({
 	};
 
 	return (
-		<Caculator.Root
+		<Calculator.Root
 			initialValue={edit?.amount ? amountToNumber(edit?.amount) : 0}
 			onValueChange={(n) => {
 				setBillState((v) => ({
@@ -116,7 +117,7 @@ export default function EditorForm({
 							</Switch.Root>
 						</div>
 						<div className="flex-1 flex flex-col justify-center items-end bg-stone-400 rounded-lg ml-2 px-2 overflow-x-scroll">
-							<Caculator.Value className="text-white text-3xl font-semibold focus:(border-none outline-none) text-right bg-transparent appearance-remove-all placeholder-white placeholder-opacity-50"></Caculator.Value>
+							<Calculator.Value className="text-white text-3xl font-semibold focus:(border-none outline-none) text-right bg-transparent appearance-remove-all placeholder-white placeholder-opacity-50"></Calculator.Value>
 						</div>
 					</div>
 				}
@@ -263,9 +264,19 @@ export default function EditorForm({
 					>
 						<i className="icon-[mdi--check] icon-md"></i>
 					</button>
-					<Caculator.Keyborad className="flex-1 grid-cols-[2fr_2fr_2fr_1fr_1fr]" />
+					<Calculator.Keyboard
+						className={cn("flex-1 grid-cols-[2fr_2fr_2fr_1fr_1fr]")}
+						onKey={(v) => {
+							if (v === "r") {
+								toConfirm();
+								setTimeout(() => {
+									goAddBill();
+								}, 10);
+							}
+						}}
+					/>
 				</div>
 			</PopupLayout>
-		</Caculator.Root>
+		</Calculator.Root>
 	);
 }
