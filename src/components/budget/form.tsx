@@ -40,6 +40,13 @@ import { useIntl } from "@/locale";
 import { cn } from "@/utils";
 import { CascadeSelect } from "../cascade";
 import { intlCategory } from "@/ledger/utils";
+import { useTag } from "@/hooks/use-tag";
+import {
+	DropdownMenu,
+	DropdownMenuCheckboxItem,
+	DropdownMenuContent,
+	DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 
 // 表单结构验证
 const formSchema = z.object({
@@ -74,6 +81,8 @@ const formSchema = z.object({
 			}),
 		)
 		.optional(),
+	onlyTags: z.array(z.string()).optional(),
+	excludeTags: z.array(z.string()).optional(),
 });
 
 type EditBudget = Omit<Budget, "id"> & { id?: string };
@@ -90,6 +99,7 @@ export default function BudgetEditForm({
 	const t = useIntl();
 	const joiners = useCreators();
 	const { expenses } = useCategory();
+	const { tags } = useTag();
 	const categoryOption = useMemo(
 		() =>
 			expenses.map((v) => ({
@@ -119,6 +129,8 @@ export default function BudgetEditForm({
 						value: 1,
 						unit: "month",
 					},
+					onlyTags: [],
+					excludeTags: [],
 				},
 	});
 
@@ -191,7 +203,10 @@ export default function BudgetEditForm({
 													</Button>
 												</PopoverTrigger>
 											</FormControl>
-											<PopoverContent className="w-auto p-0" align="start">
+											<PopoverContent
+												className="w-auto min-h-[265px] p-0"
+												align="start"
+											>
 												<Calendar
 													className="min-w-[240px]"
 													mode="single"
@@ -234,7 +249,10 @@ export default function BudgetEditForm({
 													</Button>
 												</FormControl>
 											</PopoverTrigger>
-											<PopoverContent className="w-auto p-0" align="end">
+											<PopoverContent
+												className="w-auto min-h-[265px] p-0"
+												align="end"
+											>
 												<Calendar
 													mode="single"
 													className="min-w-[240px]"
@@ -315,6 +333,130 @@ export default function BudgetEditForm({
 								</FormItem>
 							)}
 						/>
+						<div className="flex justify-between items-center gap-2">
+							<FormField
+								control={form.control}
+								name="onlyTags"
+								render={({ field }) => {
+									// 查找当前选中的tag对象，以便于在按钮上显示它们的名称
+									const selectedTags = tags.filter((tag) =>
+										field.value?.includes(tag.id),
+									);
+
+									return (
+										<FormItem>
+											<FormLabel>仅限标签</FormLabel>
+											<FormDescription>
+												只有包含下列标签的账单才会被记入预算
+											</FormDescription>
+											<DropdownMenu>
+												<DropdownMenuTrigger asChild>
+													<FormControl>
+														<Button
+															variant="outline"
+															role="combobox"
+															className="w-full justify-between"
+														>
+															{selectedTags.length > 0
+																? selectedTags.map((tag) => tag.name).join(", ")
+																: "无"}
+														</Button>
+													</FormControl>
+												</DropdownMenuTrigger>
+												<DropdownMenuContent align="end" className="w-full">
+													{tags.map((tag) => (
+														<DropdownMenuCheckboxItem
+															key={tag.id}
+															// 检查当前项的id是否在field.value数组中
+															checked={field.value?.includes(tag.id) ?? false}
+															// 当选中状态改变时，更新form的值
+															onCheckedChange={(checked) => {
+																const currentValue = field.value || [];
+																if (checked) {
+																	// 如果勾选，添加id到数组
+																	field.onChange([...currentValue, tag.id]);
+																} else {
+																	// 如果取消勾选，从数组中移除id
+																	field.onChange(
+																		currentValue.filter(
+																			(value) => value !== tag.id,
+																		),
+																	);
+																}
+															}}
+														>
+															{tag.name}
+														</DropdownMenuCheckboxItem>
+													))}
+												</DropdownMenuContent>
+											</DropdownMenu>
+											<FormMessage />
+										</FormItem>
+									);
+								}}
+							/>
+							<FormField
+								control={form.control}
+								name="excludeTags"
+								render={({ field }) => {
+									// 查找当前选中的tag对象，以便于在按钮上显示它们的名称
+									const selectedTags = tags.filter((tag) =>
+										field.value?.includes(tag.id),
+									);
+
+									return (
+										<FormItem>
+											<FormLabel>不计入标签</FormLabel>
+											<FormDescription>
+												包含标签的账单不会被记入预算
+											</FormDescription>
+											<DropdownMenu>
+												<DropdownMenuTrigger asChild>
+													<FormControl>
+														<Button
+															variant="outline"
+															role="combobox"
+															className="w-full justify-between"
+														>
+															{selectedTags.length > 0
+																? selectedTags.map((tag) => tag.name).join(", ")
+																: "无"}
+														</Button>
+													</FormControl>
+												</DropdownMenuTrigger>
+												<DropdownMenuContent align="end" className="w-full">
+													{tags.map((tag) => (
+														<DropdownMenuCheckboxItem
+															key={tag.id}
+															// 检查当前项的id是否在field.value数组中
+															checked={field.value?.includes(tag.id) ?? false}
+															// 当选中状态改变时，更新form的值
+															onCheckedChange={(checked) => {
+																const currentValue = field.value || [];
+																if (checked) {
+																	// 如果勾选，添加id到数组
+																	field.onChange([...currentValue, tag.id]);
+																} else {
+																	// 如果取消勾选，从数组中移除id
+																	field.onChange(
+																		currentValue.filter(
+																			(value) => value !== tag.id,
+																		),
+																	);
+																}
+															}}
+														>
+															{tag.name}
+														</DropdownMenuCheckboxItem>
+													))}
+												</DropdownMenuContent>
+											</DropdownMenu>
+											<FormMessage />
+										</FormItem>
+									);
+								}}
+							/>
+						</div>
 
 						<div className="flex flex-col gap-2 rounded-md border p-4">
 							<h3 className="text-lg font-medium">周期</h3>

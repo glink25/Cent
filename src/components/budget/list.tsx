@@ -31,7 +31,7 @@ export default function BudgetListForm({
 					}}
 				>
 					<i className="icon-[mdi--add]" />
-					Add a Budget
+					{t("add-a-budget")}
 				</Button>
 				{budgets.map((budget) => {
 					return (
