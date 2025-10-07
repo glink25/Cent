@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
-import z from "zod";
+import * as z from "zod/mini";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import PopupLayout from "@/layouts/popup-layout";
@@ -33,9 +33,13 @@ import CategoryIcon from "./icon";
 import { useBookStore } from "@/store/book";
 import { StorageDeferredAPI } from "@/api/storage";
 
-const formSchema = z.object({
-	name: z.string().max(50),
-	parent: z.string().optional(),
+export const formSchema = z.object({
+	name: z
+		.string()
+		.check(z.maxLength(50, { message: "名称不能超过 50 个字符" })),
+
+	// 可选字符串
+	parent: z.optional(z.string()),
 });
 
 const allIcons = Array.from(Object.entries(ICONS)).map(([key, value]) => ({

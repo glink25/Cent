@@ -12,6 +12,8 @@ import {
 	type StashStorage,
 } from "./stash";
 
+const loadOctokit = () => import("octokit").then((v) => v.Octokit);
+
 export type OutputType<T> = T;
 
 export type Processor = (finished: Promise<void>) => void;
@@ -81,6 +83,7 @@ export class Gitray<Item extends BaseItem> {
 
 	private async getOctokit(): Promise<Octokit> {
 		const { accessToken } = await this.config.auth();
+		const Octokit = await loadOctokit();
 		return new Octokit({ auth: accessToken });
 	}
 

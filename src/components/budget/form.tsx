@@ -1,15 +1,11 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import PopupLayout from "@/layouts/popup-layout";
 import { Button } from "../ui/button";
 import type { Budget } from "./type";
-
-("use client");
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import dayjs from "dayjs";
 import { CalendarIcon, Plus, X } from "lucide-react";
 import { useFieldArray, useForm } from "react-hook-form";
-import { z } from "zod";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -48,41 +44,47 @@ import {
 	DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 
-// 表单结构验证
-const formSchema = z.object({
+import * as z from "zod/mini";
+
+export const formSchema = z.object({
 	title: z.string(),
-	start: z.date({
-		error: "请选择开始日期",
-	}),
-	end: z.date().optional(),
+
+	// 保留自定义错误信息
+	start: z.date({ error: "请选择开始日期" }),
+	end: z.optional(z.date()),
+
 	repeat: z.object({
-		unit: z.enum(["week", "day", "month", "year"], {
-			error: "请选择重复单位",
-		}),
-		value: z.number().int().positive({
-			message: "重复值必须是正整数",
-		}),
+		unit: z.enum(["week", "day", "month", "year"], { error: "请选择重复单位" }),
+		// 用 check + 顶层检查函数替代链式 .int().positive()
+		value: z
+			.number()
+			.check(z.int(), z.positive({ message: "重复值必须是正整数" })),
 	}),
+
+	// 至少有 1 项参与者（用 minSize 更易 tree-shake）
 	joiners: z
 		.array(z.union([z.string(), z.number()]))
-		.refine((value) => value.some((item) => item), {
-			message: "至少选择一位参与者",
-		}),
-	totalBudget: z.coerce.number().min(0, {
-		message: "总预算不能为负数",
-	}),
-	categoriesBudget: z
-		.array(
+		.check(z.minLength(1, { message: "至少选择一位参与者" })),
+
+	// 使用 coerce 将字符串之类的转换为数值，再用 gte(0) 校验非负
+	totalBudget: z.coerce
+		.number()
+		.check(z.gte(0, { message: "总预算不能为负数" })),
+
+	categoriesBudget: z.optional(
+		z.array(
 			z.object({
-				id: z.string({ error: "请选择一个类别" }),
-				budget: z.coerce.number().min(0, {
-					message: "预算不能为负数",
-				}),
+				// 要求非空字符串作为 id
+				id: z.string().check(z.minLength(1, { message: "请选择一个类别" })),
+				budget: z.coerce
+					.number()
+					.check(z.gte(0, { message: "预算不能为负数" })),
 			}),
-		)
-		.optional(),
-	onlyTags: z.array(z.string()).optional(),
-	excludeTags: z.array(z.string()).optional(),
+		),
+	),
+
+	onlyTags: z.optional(z.array(z.string())),
+	excludeTags: z.optional(z.array(z.string())),
 });
 
 type EditBudget = Omit<Budget, "id"> & { id?: string };
