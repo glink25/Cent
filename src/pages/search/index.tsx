@@ -162,7 +162,7 @@ export default function Page() {
 					</div>
 				</Collapsible.Root>
 				<div className="flex items-center justify-between px-4 text-xs text-foreground/80">
-					<div>共计：{sorted.length}条</div>
+					<div>{t("total-records", { n: sorted.length })}</div>
 					<div>
 						<Button
 							size="sm"

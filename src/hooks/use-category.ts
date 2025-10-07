@@ -1,18 +1,23 @@
 import { useCallback, useMemo } from "react";
 import { useShallow } from "zustand/shallow";
 import { BillCategories } from "@/ledger/category";
-import { treeCategories } from "@/ledger/utils";
+import { intlCategory, treeCategories } from "@/ledger/utils";
 import { useLedgerStore } from "@/store/ledger";
 import type { BillCategory } from "@/ledger/type";
 import { v4 } from "uuid";
 import { useBookStore } from "@/store/book";
+import { useIntl } from "@/locale";
 
 export default function useCategory() {
+	const t = useIntl();
 	const savedCategories = useLedgerStore(
 		useShallow((state) => state.infos?.meta.categories),
 	);
 
-	const categories = savedCategories ?? BillCategories;
+	const categories = useMemo(
+		() => (savedCategories ?? BillCategories).map((v) => intlCategory(v, t)),
+		[savedCategories, t],
+	);
 
 	const incomes = useMemo(
 		() => treeCategories(categories.filter((v) => v.type === "income")),

@@ -69,7 +69,7 @@ export default function BudgetListForm({
 											</div>
 											<div>
 												{(budget.categoriesBudget?.length ?? 0) > 0 && (
-													<div>包含分类预算</div>
+													<div>{t("categories-budget-included")}</div>
 												)}
 											</div>
 										</div>

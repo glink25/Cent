@@ -5,8 +5,9 @@ import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router";
 import "./index.css";
 
-import { getBrowserLang, initIntl, LocaleProvider } from "./locale/index.tsx";
+import { initIntl, LocaleProvider } from "./locale/index.tsx";
 import RootRoute from "./route.tsx";
+import { getBrowserLang } from "./locale/utils.ts";
 
 const lang = getBrowserLang();
 initIntl(lang).then(() => {

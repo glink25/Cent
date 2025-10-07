@@ -8,7 +8,6 @@ import { cn } from "@/utils";
 import { shortTime } from "@/utils/time";
 import useCategory from "@/hooks/use-category";
 import CategoryIcon from "../category/icon";
-import { intlCategory } from "@/ledger/utils";
 import { useTag } from "@/hooks/use-tag";
 
 interface BillItemProps {
@@ -28,12 +27,8 @@ export default function BillItem({
 	const { categories } = useCategory();
 	const { tags: allTags } = useTag();
 	const category = useMemo(
-		() =>
-			intlCategory(
-				categories.find((c) => c.id === bill.categoryId),
-				t,
-			),
-		[bill.categoryId, categories, t],
+		() => categories.find((c) => c.id === bill.categoryId),
+		[bill.categoryId, categories],
 	);
 
 	const { login: selfLogin, id: selfId } = useUserStore();

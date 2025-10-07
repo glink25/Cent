@@ -27,20 +27,20 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import useCategory from "@/hooks/use-category";
-import { intlCategory } from "@/ledger/utils";
 import { ICONS } from "./icons";
 import CategoryIcon from "./icon";
 import { useBookStore } from "@/store/book";
 import { StorageDeferredAPI } from "@/api/storage";
 
-export const formSchema = z.object({
-	name: z
-		.string()
-		.check(z.maxLength(50, { message: "名称不能超过 50 个字符" })),
+export const createFormSchema = (t: any) =>
+	z.object({
+		name: z
+			.string()
+			.check(z.maxLength(50, { message: t("max-name-length-limit") })),
 
-	// 可选字符串
-	parent: z.optional(z.string()),
-});
+		// 可选字符串
+		parent: z.optional(z.string()),
+	});
 
 const allIcons = Array.from(Object.entries(ICONS)).map(([key, value]) => ({
 	label: key,
@@ -76,6 +76,7 @@ export default function CategoryEditForm({
 		};
 	});
 
+	const formSchema = useMemo(() => createFormSchema(t), [t]);
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema) as any,
 		defaultValues: category
@@ -99,14 +100,8 @@ export default function CategoryEditForm({
 		add,
 		reorder,
 	} = useCategory();
-	const expenses = useMemo(
-		() => allExpenses.map((v) => intlCategory(v, t)),
-		[allExpenses.map, t],
-	);
-	const incomes = useMemo(
-		() => allIncomes.map((v) => intlCategory(v, t)),
-		[allIncomes.map, t],
-	);
+	const expenses = allExpenses;
+	const incomes = allIncomes;
 
 	const onSubmit = async (data: z.infer<typeof formSchema>) => {
 		if (edit === undefined || edit.id === undefined) {
@@ -164,9 +159,7 @@ export default function CategoryEditForm({
 			categories: cates.map((c) => c.id),
 		});
 		if (exist.length > 0) {
-			alert(
-				`Cannot delete,category, ${exist.length} records founded, please transfer them to another category first`,
-			);
+			alert(t("category-delete-alert", { n: exist.length }));
 			return;
 		}
 		// 删除类别
@@ -263,8 +256,8 @@ export default function CategoryEditForm({
 					<div className="w-full flex justify-center">
 						<div className="flex items-center gap-2">
 							<TabsList>
-								<TabsTrigger value="icons">Icons</TabsTrigger>
-								<TabsTrigger value="custom">Custom</TabsTrigger>
+								<TabsTrigger value="icons">{t("icons-tab")}</TabsTrigger>
+								<TabsTrigger value="custom">{t("custom-tab")}</TabsTrigger>
 							</TabsList>
 						</div>
 					</div>
@@ -273,7 +266,11 @@ export default function CategoryEditForm({
 							{allIcons.map((iconSet) => (
 								<div key={iconSet.label} className="flex flex-col gap-2">
 									<div className="text-sm">{iconSet.label}</div>
-									<div className="grid grid-cols-[repeat(auto-fill,minmax(48px,1fr))] gap-2">
+									<div
+										className={
+											"grid grid-cols-[repeat(auto-fill,minmax(48px,1fr))] gap-2"
+										}
+									>
 										{iconSet.list.map((icon) => (
 											<button
 												key={icon.name}
@@ -298,8 +295,8 @@ export default function CategoryEditForm({
 						>
 							<div className="w-full h-full flex flex-col gap-2">
 								<div className="text-sm opacity-80 flex justify-between items-center px-2">
-									<div>Copy & paste SVG below:</div>
-									<Button size="sm">清空</Button>
+									<div>{t("copy-and-paste-svg-below")}:</div>
+									<Button size="sm">{t("clear")}</Button>
 								</div>
 								<textarea
 									className="w-full flex-1 border rounded-lg p-2"

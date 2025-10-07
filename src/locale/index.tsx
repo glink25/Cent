@@ -1,3 +1,4 @@
+import { usePreference } from "@/store/preference";
 import React, { type ReactNode, useCallback, useEffect, useState } from "react";
 import {
 	createIntl,
@@ -6,34 +7,12 @@ import {
 	type IntlShape,
 	useIntl as useOriginalIntl,
 } from "react-intl";
+import { locales, type LocaleName } from "./utils";
 
-export type LocaleName = "zh" | "en";
 // 在外部使用的 Intl 实例
 export let intl: IntlShape;
 
 const cache = createIntlCache();
-
-export const locales = [
-	{
-		name: "zh",
-		fetcher: () => import("./lang/zh.json"),
-		matcher: (_l: string) => _l.includes("zh-CN"),
-		label: "中文-简体",
-	},
-	{
-		name: "en",
-		fetcher: () => import("./lang/en.json"),
-		matcher: (_l: string) => true,
-		label: "English",
-	},
-] as const;
-
-export const getBrowserLang = (): LocaleName => {
-	const browserLang: string =
-		navigator.language || (navigator as any).browserLanguage;
-	const locale = locales.find((l) => l.matcher(browserLang));
-	return (locale?.name ?? locales[0].name) as LocaleName;
-};
 
 // 异步加载语言包并初始化全局 Intl 实例
 export async function initIntl(locale: LocaleName) {
@@ -79,23 +58,26 @@ export const useLocale = () => {
 };
 
 export function LocaleProvider({ children }: { children: ReactNode }) {
-	const [locale, setLocale] = useState<LocaleName>(getBrowserLang());
+	const [locale, setLocale] = usePreference("locale");
 	const [messages, setMessages] = useState<Record<string, string>>({});
 	const [isReady, setIsReady] = useState(false);
 
 	// 语言切换函数，负责懒加载语言包并更新状态
-	const switchLanguage = useCallback(async (newLocale: LocaleName) => {
-		try {
-			const currentLocale = locales.find((l) => l.name === newLocale);
-			if (currentLocale) {
-				const langModule = await currentLocale.fetcher();
-				setMessages(langModule.default);
-				setLocale(newLocale);
+	const switchLanguage = useCallback(
+		async (newLocale: LocaleName) => {
+			try {
+				const currentLocale = locales.find((l) => l.name === newLocale);
+				if (currentLocale) {
+					const langModule = await currentLocale.fetcher();
+					setMessages(langModule.default);
+					setLocale(newLocale);
+				}
+			} catch (error) {
+				console.error("Failed to load language:", error);
 			}
-		} catch (error) {
-			console.error("Failed to load language:", error);
-		}
-	}, []);
+		},
+		[setLocale],
+	);
 
 	useEffect(() => {
 		// 初始加载浏览器语言对应的语言包
