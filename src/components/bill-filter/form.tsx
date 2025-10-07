@@ -110,8 +110,8 @@ export default function BillFilterForm({
 		);
 
 	const formatCategories = (ids?: string[]) => {
-		if (ids === undefined) {
-			return t("all");
+		if (ids === undefined || ids.length === 0) {
+			return t("unlimited");
 		}
 		if (ids.length === categories.reduce((p, c) => p + c.list.length, 0)) {
 			return t("all");
@@ -122,8 +122,8 @@ export default function BillFilterForm({
 	};
 
 	const formatCreators = (ids?: (number | string)[]) => {
-		if (ids === undefined) {
-			return t("all");
+		if (ids === undefined || ids.length === 0) {
+			return t("unlimited");
 		}
 		if (ids.length === allCreators.length) {
 			return t("all");
@@ -136,7 +136,7 @@ export default function BillFilterForm({
 	const { tags: allTags } = useTag();
 	const formatTags = (ids?: (number | string)[]) => {
 		if (ids === undefined || ids.length === 0) {
-			return t("all");
+			return t("unlimited");
 		}
 		return ids
 			.map((id) => allTags.find((v) => v.id === id)?.name ?? id)
@@ -145,7 +145,7 @@ export default function BillFilterForm({
 	return (
 		<div className={cn("flex flex-col gap-3 border-b", className)}>
 			{/* time selector */}
-			<div className="flex justify-between items-center gap-4">
+			<div className="flex justify-between items-center gap-2">
 				<Select
 					value={dateType}
 					onValueChange={(v) => {
@@ -175,7 +175,7 @@ export default function BillFilterForm({
 							onChange={(v) => setForm((prev) => ({ ...prev, start: v }))}
 							onBlur={formatForm}
 						/>
-						<div className="px-4"> - </div>
+						<div className="px-1"> - </div>
 						<DateInput
 							value={form.end}
 							type="end"
@@ -296,7 +296,10 @@ export default function BillFilterForm({
 					list={options}
 					align="end"
 					trigger={
-						<Button variant="outline" className="text-xs md:text-sm">
+						<Button
+							variant="outline"
+							className="px-2 md:px-4 py-2 text-xs md:text-sm"
+						>
 							<div className="truncate max-w-[200px]">
 								{formatCategories(form.categories)}
 							</div>
@@ -490,7 +493,7 @@ function DateInput({
 						? type === "start"
 							? t("from-oldest")
 							: t("to-newest")
-						: `${v.format("YYYY/MM/DD")}`
+						: `${v.format("YY/MM/DD")}`
 				}
 				onChange={(e) => onChange?.(e)}
 				onBlur={onBlur}

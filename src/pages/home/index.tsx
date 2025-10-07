@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import AnimatedNumber from "@/components/animated-number";
 import BudgetCard from "@/components/budget/card";
 import Ledger from "@/components/ledger";
@@ -12,6 +12,8 @@ import { cn } from "@/utils";
 import { filterOrderedBillListByTimeRange } from "@/utils/filter";
 import { useBookStore } from "@/store/book";
 import { StorageAPI, toBookName } from "@/api/storage";
+import { useSnap } from "@/hooks/use-snap";
+import { PaginationIndicator } from "@/components/indicator";
 
 export default function Page() {
 	const { bills, loading, sync } = useLedgerStore();
@@ -44,6 +46,12 @@ export default function Page() {
 	}, [todayBills]);
 
 	const { budgets } = useBudget();
+
+	const budgetContainer = useRef<HTMLDivElement>(null);
+	const { count: budgetCount, index: curBudgetIndex } = useSnap(
+		budgetContainer,
+		0,
+	);
 	return (
 		<div className="w-full h-full p-2 flex flex-col overflow-hidden">
 			<div className="flex flex-wrap flex-col w-full gap-2">
@@ -63,10 +71,23 @@ export default function Page() {
 						</button>
 					)}
 				</div>
-				<div className="w-full">
-					{budgets.map((budget) => {
-						return <BudgetCard key={budget.id} budget={budget} bills={bills} />;
-					})}
+				<div className="w-full flex flex-col gap-1">
+					<div
+						ref={budgetContainer}
+						className="w-full flex overflow-x-auto gap-2 scrollbar-hidden snap-mandatory snap-x"
+					>
+						{budgets.map((budget) => {
+							return (
+								<BudgetCard
+									className="flex-shrink-0 snap-start"
+									key={budget.id}
+									budget={budget}
+									bills={bills}
+								/>
+							);
+						})}
+					</div>
+					<PaginationIndicator count={budgetCount} current={curBudgetIndex} />
 				</div>
 			</div>
 			<button

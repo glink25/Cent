@@ -394,7 +394,7 @@ export default function Page() {
 				type: "legendSelect",
 				name: legend[selectLegendIndex],
 			});
-			unselectLegendIndexes.map((i) => {
+			unselectLegendIndexes.forEach((i) => {
 				trendChart.current?.dispatchAction({
 					type: "legendUnSelect",
 					name: legend[i],

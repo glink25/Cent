@@ -31,7 +31,11 @@ function BillFilterFormed({
 				></input>
 				<i className="icon-[mdi--edit-outline]"></i>
 			</label>
-			<BillFilterForm form={form} setForm={setForm} />
+			<BillFilterForm
+				form={form}
+				setForm={setForm}
+				className="text-xs md:text-sm"
+			/>
 			<div className="w-full flex justify-between gap-2">
 				<Button
 					variant="destructive"

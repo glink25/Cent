@@ -58,6 +58,10 @@ export default function createConfirmProvider<Value, Returned = Value>(
 								"pointer-events-auto bg-white max-h-[55vh] w-[90vw] max-w-[500px] rounded-md data-[state=open]:animate-content-show",
 								contentClassName,
 							)}
+							onOpenAutoFocus={(e) => {
+								(document.activeElement as HTMLElement)?.blur?.();
+								e.preventDefault();
+							}}
 						>
 							<VisuallyHidden.Root>
 								<Dialog.Title>{dialogTitle}</Dialog.Title>

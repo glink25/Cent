@@ -12,10 +12,9 @@ export default function Loading({ children }: { children?: ReactNode }) {
 
 export const LoadingSkeleton = () => (
 	<div className="w-full p-4 flex flex-col gap-2">
+		<Skeleton className="h-8 w-full" />
 		<Skeleton className="w-full h-[200px] rounded" />
-		<div className="space-y-2">
-			<Skeleton className="h-4 w-[250px]" />
-			<Skeleton className="h-4 w-[200px]" />
-		</div>
+		<Skeleton className="h-8 w-full" />
+		<Skeleton className="h-8 w-full" />
 	</div>
 );
