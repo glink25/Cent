@@ -135,7 +135,19 @@ const structureOption = (dataset: any[], options?: ECOption) =>
 				{
 					name: "支出类型", // 系列名称，会在 tooltip 中显示
 					type: "pie",
-					radius: "60%", // 饼图半径
+					center: ["55%", "50%"],
+					radius: "55%", // 饼图半径
+					labelLine: {
+						show: true,
+						length: 10, // 第一段（直线段）长度 20px 或 20（单位取决于版本 / 语法上下文）
+						length2: 10, // 第二段（拐弯 / 水平延伸）长度 30px
+						lineStyle: {
+							width: 1,
+							type: "solid",
+							color: "#aaa",
+						},
+						smooth: 0.2, // 可选，让折线有点圆弧过渡
+					},
 					// 直接使用我们生成的 { name, value } 格式的数据
 					data: dataset,
 					emphasis: {
@@ -158,12 +170,14 @@ type FocusType = (typeof FocusTypes)[number];
 function FocusTypeSelector({
 	value: focusType,
 	onValueChange: setFocusType,
+	money,
 }: {
 	value: FocusType;
 	onValueChange: (v: FocusType) => void;
+	money: number[];
 }) {
 	const t = useIntl();
-	const btnClass = `w-[80px] text-xs h-[24px] flex items-center justify-center  cursor-pointer transition-all duration-200`;
+	const btnClass = `w-[90px] text-sm py-1 flex items-center justify-center  cursor-pointer transition-all duration-200`;
 	return (
 		<div className="flex items-center rounded-md shadow border border-input overflow-hidden divide-x">
 			<button
@@ -174,7 +188,10 @@ function FocusTypeSelector({
 				)}
 				onClick={() => setFocusType("income")}
 			>
-				{t("income")}
+				<div className="flex flex-col items-center justify-center">
+					{t("income")}
+					<span className="text-[10px] opacity-60">+{money[0]}</span>
+				</div>
 			</button>
 			<button
 				type="button"
@@ -184,7 +201,10 @@ function FocusTypeSelector({
 				)}
 				onClick={() => setFocusType("expense")}
 			>
-				{t("expense")}
+				<div className="flex flex-col items-center justify-center">
+					{t("expense")}
+					<span className="text-[10px] opacity-60">-{money[1]}</span>
+				</div>
 			</button>
 			<button
 				type="button"
@@ -194,7 +214,10 @@ function FocusTypeSelector({
 				)}
 				onClick={() => setFocusType("balance")}
 			>
-				{t("Balance")}
+				<div className="flex flex-col items-center justify-center">
+					{t("Balance")}
+					<span className="text-[10px] opacity-60">{money[2]}</span>
+				</div>
 			</button>
 		</div>
 	);
@@ -558,7 +581,11 @@ export default function Page() {
 					</div>
 				</div>
 			</div>
-			<FocusTypeSelector value={focusType} onValueChange={setFocusType} />
+			<FocusTypeSelector
+				value={focusType}
+				onValueChange={setFocusType}
+				money={FocusTypes.map((t) => dataSources.total[t])}
+			/>
 			<div className="w-full flex-1 flex justify-center overflow-y-auto">
 				<div className="w-full mx-2 max-w-[600px] flex flex-col items-center gap-4">
 					<div className="flex-shrink-0 w-full h-[300px]">
