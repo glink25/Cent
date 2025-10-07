@@ -1,12 +1,12 @@
 import dayjs, { type Dayjs } from "dayjs";
 import { merge } from "lodash-es";
 import { Switch } from "radix-ui";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useShallow } from "zustand/shallow";
 import { StorageDeferredAPI } from "@/api/storage";
 import { BillFilterProvider, showBillFilter } from "@/components/bill-filter";
-import Chart, { type ECOption } from "@/components/chart";
+import Chart, { type ChartInstance, type ECOption } from "@/components/chart";
 import { DatePicker } from "@/components/date-picker";
 import BillItem from "@/components/ledger/item";
 import { Button } from "@/components/ui/button";
@@ -151,6 +151,54 @@ const structureOption = (dataset: any[], options?: ECOption) =>
 		},
 		options,
 	);
+
+const FocusTypes = ["income", "expense", "balance"] as const;
+type FocusType = (typeof FocusTypes)[number];
+
+function FocusTypeSelector({
+	value: focusType,
+	onValueChange: setFocusType,
+}: {
+	value: FocusType;
+	onValueChange: (v: FocusType) => void;
+}) {
+	const t = useIntl();
+	const btnClass = `w-[80px] text-xs h-[24px] flex items-center justify-center  cursor-pointer transition-all duration-200`;
+	return (
+		<div className="flex items-center rounded-md shadow border border-input overflow-hidden divide-x">
+			<button
+				type="button"
+				className={cn(
+					btnClass,
+					focusType === "income" && "!bg-stone-700 !text-white",
+				)}
+				onClick={() => setFocusType("income")}
+			>
+				{t("income")}
+			</button>
+			<button
+				type="button"
+				className={cn(
+					btnClass,
+					focusType === "expense" && "!bg-stone-700 !text-white",
+				)}
+				onClick={() => setFocusType("expense")}
+			>
+				{t("expense")}
+			</button>
+			<button
+				type="button"
+				className={cn(
+					btnClass,
+					focusType === "balance" && "!bg-stone-700 !text-white",
+				)}
+				onClick={() => setFocusType("balance")}
+			>
+				{t("Balance")}
+			</button>
+		</div>
+	);
+}
 
 export default function Page() {
 	const t = useIntl();
@@ -303,8 +351,36 @@ export default function Page() {
 	const { categories } = useCategory();
 	const creators = useCreators();
 
+	const trendChart = useRef<ChartInstance>(undefined);
+
 	const [dimension, setDimension] = useState<"category" | "user">("category");
-	const [focusType, setFocusType] = useState<FocusType>("expense");
+	const [focusType, _setFocusType] = useState<FocusType>("expense");
+	const setFocusType: typeof _setFocusType = useCallback((v) => {
+		_setFocusType((prev) => {
+			const newV = typeof v === "function" ? v(prev) : v;
+			const opt = trendChart.current?.getOption();
+			const legend = (opt?.dataset as any)?.[0]?.source?.[0]?.slice(1);
+			const selectLegendIndex = FocusTypes.indexOf(newV);
+			const unselectLegendIndexes = FocusTypes.map((value, index) => ({
+				value,
+				index,
+			}))
+				.filter((v) => v.index !== selectLegendIndex)
+				.map((v) => v.index);
+			trendChart.current?.dispatchAction({
+				type: "legendSelect",
+				name: legend[selectLegendIndex],
+			});
+			unselectLegendIndexes.map((i) => {
+				trendChart.current?.dispatchAction({
+					type: "legendUnSelect",
+					name: legend[i],
+				});
+			});
+
+			return newV;
+		});
+	}, []);
 
 	const dataSources = useMemo(
 		() =>
@@ -324,8 +400,9 @@ export default function Page() {
 						name: creators.find((u) => `${u.id}` === id)?.name ?? `${id}`,
 					};
 				},
+				gap: selectedViewId === "yearly" ? "month" : undefined,
 			}),
-		[filtered, categories.find, creators, t],
+		[filtered, selectedViewId, categories, creators, t],
 	);
 
 	const charts = useMemo(() => {
@@ -486,6 +563,7 @@ export default function Page() {
 				<div className="w-full mx-2 max-w-[600px] flex flex-col items-center gap-4">
 					<div className="flex-shrink-0 w-full h-[300px]">
 						<Chart
+							ref={trendChart}
 							key={dimension}
 							option={charts[0]}
 							className="w-full h-full border rounded-md"
@@ -522,52 +600,6 @@ export default function Page() {
 				</div>
 			</div>
 			<BillFilterProvider />
-		</div>
-	);
-}
-type FocusType = "income" | "expense" | "balance";
-
-function FocusTypeSelector({
-	value: focusType,
-	onValueChange: setFocusType,
-}: {
-	value: FocusType;
-	onValueChange: (v: FocusType) => void;
-}) {
-	const t = useIntl();
-	const btnClass = `w-[80px] text-xs h-[24px] flex items-center justify-center  cursor-pointer transition-all duration-200`;
-	return (
-		<div className="flex items-center rounded-md shadow border border-input overflow-hidden divide-x">
-			<button
-				type="button"
-				className={cn(
-					btnClass,
-					focusType === "income" && "!bg-stone-700 !text-white",
-				)}
-				onClick={() => setFocusType("income")}
-			>
-				{t("income")}
-			</button>
-			<button
-				type="button"
-				className={cn(
-					btnClass,
-					focusType === "expense" && "!bg-stone-700 !text-white",
-				)}
-				onClick={() => setFocusType("expense")}
-			>
-				{t("expense")}
-			</button>
-			<button
-				type="button"
-				className={cn(
-					btnClass,
-					focusType === "balance" && "!bg-stone-700 !text-white",
-				)}
-				onClick={() => setFocusType("balance")}
-			>
-				{t("Balance")}
-			</button>
 		</div>
 	);
 }
