@@ -241,5 +241,11 @@
   "custom-tab": "Custom",
   "copy-and-paste-svg-below": "Copy & paste SVG below",
   "clear": "Clear",
-  "total-records": "total: {n}"
+  "total-records": "total: {n}",
+  "sort": "Sort",
+  "sure-to-reset-categories": "Are you sure to reset categories?",
+  "reset-success": "Reset success",
+  "reset-categories-failed-by-existing-custom-category-transcations": "Reset categories failed, because some transactions contains custom category",
+  "click-tag-to-edit": "click tag to edit",
+  "budget-description": "Manage you expenses"
 }

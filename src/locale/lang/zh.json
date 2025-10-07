@@ -241,5 +241,11 @@
   "copy-and-paste-svg-below": "将SVG粘贴到下方",
   "clear": "清空",
   "category-delete-alert": "无法删除分类，该分类包含{n}条记录，请先移动至其他分类",
-  "total-records": "共计 {n} 条"
+  "total-records": "共计 {n} 条",
+  "sort": "编辑排序",
+  "sure-to-reset-categories": "确定要重置分类吗？",
+  "reset-success": "重置成功",
+  "reset-categories-failed-by-existing-custom-category-transcations": "无法重置分类，因为已经有账单包含自定义分类",
+  "click-tag-to-edit": "点击标签进行编辑",
+  "budget-description": "管理预算和支出"
 }

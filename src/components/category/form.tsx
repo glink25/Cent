@@ -65,9 +65,9 @@ export default function CategoryEditForm({
 			return {
 				name: "",
 				customName: true,
-				type: "expense",
+				type: edit?.type ?? "expense",
 				color: "#fff",
-				icon: "",
+				icon: ICONS["Finance"][0].className,
 				...edit,
 			};
 		}
@@ -81,11 +81,7 @@ export default function CategoryEditForm({
 		resolver: zodResolver(formSchema) as any,
 		defaultValues: category
 			? {
-					name: category.customName
-						? (category.name ?? "")
-						: category?.name
-							? t(category?.name)
-							: "",
+					name: category.name,
 					parent: category.parent,
 				}
 			: {
