@@ -82,6 +82,11 @@ export interface ProcessedChartData {
 	// 额外数据
 	highestExpenseBill: Bill | null;
 	highestIncomeBill: Bill | null;
+	total: {
+		income: number;
+		expense: number;
+		balance: number;
+	};
 }
 
 /**
@@ -224,6 +229,12 @@ export function processBillDataForCharts(
 		userIds.map((id) => [id, 0]),
 	);
 
+	const total = {
+		expense: 0,
+		income: 0,
+		balance: 0,
+	};
+
 	for (const date of sortedDates) {
 		const dailyData = timeSeriesData.get(date)!;
 		const totalDaily = dailyData.get(TOTAL_KEY) || { income: 0, expense: 0 };
@@ -237,6 +248,8 @@ export function processBillDataForCharts(
 			amountToNumber(totalDaily.expense),
 			amountToNumber(cumulativeBalance),
 		]);
+		total.expense += totalDaily.expense;
+		total.income += totalDaily.income;
 
 		const expenseRow: (string | number)[] = [date];
 		const incomeRow: (string | number)[] = [date];
@@ -287,6 +300,12 @@ export function processBillDataForCharts(
 		});
 	}
 
+	//转换total
+	total.balance = total.income - total.expense;
+	total.expense = amountToNumber(total.expense);
+	total.income = amountToNumber(total.income);
+	total.balance = amountToNumber(total.balance);
+
 	// 4. 组装并返回最终结果
 	return {
 		overallTrend: { source: overallTrendSource },
@@ -300,5 +319,6 @@ export function processBillDataForCharts(
 		userBalanceStructure,
 		highestExpenseBill,
 		highestIncomeBill,
+		total,
 	};
 }
