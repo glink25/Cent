@@ -1,5 +1,6 @@
 import { amountToNumber } from "@/ledger/bill";
 import type { Bill } from "@/ledger/type";
+import dayjs, { type OpUnitType } from "dayjs";
 
 /**
  * 处理器函数的选项
@@ -24,6 +25,7 @@ export interface ProcessBillDataOptions {
 		id: string | number;
 		name: string;
 	};
+	gap?: OpUnitType;
 }
 
 // --- 定义我们函数的输出结构 ---
@@ -85,14 +87,17 @@ export interface ProcessedChartData {
 /**
  * 格式化日期为 YYYY-MM-DD
  * @param timestamp 时间戳
+ * @param gap 最小时间单位
  * @returns 格式化后的日期字符串
  */
-function formatDate(timestamp: number): string {
-	const date = new Date(timestamp);
-	const year = date.getFullYear();
-	const month = (date.getMonth() + 1).toString().padStart(2, "0");
-	const day = date.getDate().toString().padStart(2, "0");
-	return `${year}-${month}-${day}`;
+function formatDate(timestamp: number, gap: OpUnitType = "day"): string {
+	const date = dayjs.unix(timestamp / 1000).startOf(gap);
+	return date.format("YYYY-MM-DD");
+	// const date = new Date(timestamp);
+	// const year = date.getFullYear();
+	// const month = (date.getMonth() + 1).toString().padStart(2, "0");
+	// const day = date.getDate().toString().padStart(2, "0");
+	// return `${year}-${month}-${day}`;
 }
 
 /**
@@ -103,8 +108,15 @@ function formatDate(timestamp: number): string {
 export function processBillDataForCharts(
 	options: ProcessBillDataOptions,
 ): ProcessedChartData {
-	const { bills, getMajorCategory, getUserInfo } = options;
+	const { bills, getMajorCategory, getUserInfo, gap: _gap } = options;
 	const TOTAL_KEY = "__TOTAL__";
+	const gap =
+		_gap ??
+		(bills.length === 0
+			? "date"
+			: bills[0].time - bills[bills.length - 1].time > 90 * 24 * 60 * 60 * 1000 //账单天数大于90天时按月计算
+				? "month"
+				: "date");
 
 	// 1. 初始化中间聚合数据结构
 	// 所有金额都将以整数形式存储
@@ -129,7 +141,7 @@ export function processBillDataForCharts(
 	for (const bill of bills) {
 		// 【修正】直接使用整数 amount
 		const amount = bill.amount;
-		const dateStr = formatDate(bill.time);
+		const dateStr = formatDate(bill.time, gap);
 		const creatorId = String(bill.creatorId);
 
 		// --- a. 更新时间序列数据 ---

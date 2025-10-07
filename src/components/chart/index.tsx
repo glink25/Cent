@@ -25,7 +25,7 @@ import type { ComposeOption } from "echarts/core";
 import * as echarts from "echarts/core";
 import { LabelLayout, UniversalTransition } from "echarts/features";
 import { CanvasRenderer } from "echarts/renderers";
-import { useEffect, useRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import useResize from "@/hooks/use-resize";
 import { cn } from "@/utils";
 
@@ -55,19 +55,20 @@ echarts.use([
 	PieChart,
 ]);
 
-const option: ECOption = {
-	// ...
-};
-
-export default function Chart({
-	className,
-	option,
-}: {
+type ChartProps = {
 	className?: string;
 	option: ECOption;
-}) {
+};
+
+export type ChartInstance = echarts.ECharts;
+
+const Chart = forwardRef<ChartInstance | undefined, ChartProps>(function _Chart(
+	{ className, option }: ChartProps,
+	ref,
+) {
 	const rootRef = useRef<HTMLDivElement>(null);
-	const chartRef = useRef<echarts.ECharts>(undefined);
+	const chartRef = useRef<ChartInstance>(undefined);
+	useImperativeHandle(ref, () => chartRef.current);
 	useEffect(() => {
 		const el = rootRef.current;
 		if (!el) {
@@ -91,4 +92,6 @@ export default function Chart({
 		chartRef.current.setOption(option);
 	}, [option]);
 	return <div ref={rootRef} className={cn(className)}></div>;
-}
+});
+
+export default Chart;
