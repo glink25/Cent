@@ -135,7 +135,7 @@ export default function BillFilterForm({
 
 	const { tags: allTags } = useTag();
 	const formatTags = (ids?: (number | string)[]) => {
-		if (ids === undefined || ids.length === allCreators.length) {
+		if (ids === undefined || ids.length === 0) {
 			return t("all");
 		}
 		return ids
@@ -393,8 +393,7 @@ export default function BillFilterForm({
 										} else {
 											set.delete(item.id);
 										}
-										const newTags =
-											set.size === 0 ? prev.tags : Array.from(set);
+										const newTags = Array.from(set);
 										return {
 											...prev,
 											tags: newTags,
