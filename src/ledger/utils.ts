@@ -65,12 +65,10 @@ const isMoneyMatched = (
 	return bill.amount <= max && bill.amount >= min;
 };
 const isUserMatched = (bill: Bill, uids?: (string | number)[]) => {
-	return uids && uids.length ? uids.some((u) => bill.creatorId === u) : true;
+	return uids?.length ? uids.some((u) => bill.creatorId === u) : true;
 };
 const isCateMatched = (bill: Bill, cates?: string[]) => {
-	return cates && cates.length
-		? cates.some((c) => bill.categoryId === c)
-		: true;
+	return cates?.length ? cates.some((c) => bill.categoryId === c) : true;
 };
 
 const isCommentMatched = (bill: Bill, comment?: string) => {
@@ -81,6 +79,12 @@ const isAssetsMatched = (bill: Bill, assets?: boolean) => {
 	return assets === true ? Boolean(bill.image) : true;
 };
 
+const isTagsMatched = (bill: Bill, tagIds?: string[]) => {
+	return tagIds?.length
+		? tagIds.some((c) => bill.tagIds?.some((t) => t === c))
+		: true;
+};
+
 export const isBillMatched = (bill: Bill, filter: BillFilter) => {
 	return (
 		isTypeMatched(bill, filter.type) &&
@@ -89,7 +93,8 @@ export const isBillMatched = (bill: Bill, filter: BillFilter) => {
 		isMoneyMatched(bill, filter.minAmountNumber, filter.maxAmountNumber) &&
 		isTimeMatched(bill, filter.start, filter.end, filter.recent) &&
 		isAssetsMatched(bill, filter.assets) &&
-		isCommentMatched(bill, filter.comment)
+		isCommentMatched(bill, filter.comment) &&
+		isTagsMatched(bill, filter.tags)
 	);
 };
 

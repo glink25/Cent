@@ -42,4 +42,5 @@ export type BillFilter = Partial<{
 	minAmountNumber: number;
 	maxAmountNumber: number;
 	assets?: boolean;
+	tags?: string[];
 }>;
