@@ -35,7 +35,6 @@ import { useCreators } from "@/hooks/use-creator";
 import { useIntl } from "@/locale";
 import { cn } from "@/utils";
 import { CascadeSelect } from "../cascade";
-import { intlCategory } from "@/ledger/utils";
 import { useTag } from "@/hooks/use-tag";
 import {
 	DropdownMenu,
@@ -46,46 +45,54 @@ import {
 
 import * as z from "zod/mini";
 
-export const formSchema = z.object({
-	title: z.string(),
+export const createFormSchema = (t: any) =>
+	z.object({
+		title: z.string(),
 
-	// 保留自定义错误信息
-	start: z.date({ error: "请选择开始日期" }),
-	end: z.optional(z.date()),
+		// 保留自定义错误信息
+		start: z.date({ error: t("please-select-start-date") }),
+		end: z.optional(z.date()),
 
-	repeat: z.object({
-		unit: z.enum(["week", "day", "month", "year"], { error: "请选择重复单位" }),
-		// 用 check + 顶层检查函数替代链式 .int().positive()
-		value: z
-			.number()
-			.check(z.int(), z.positive({ message: "重复值必须是正整数" })),
-	}),
-
-	// 至少有 1 项参与者（用 minSize 更易 tree-shake）
-	joiners: z
-		.array(z.union([z.string(), z.number()]))
-		.check(z.minLength(1, { message: "至少选择一位参与者" })),
-
-	// 使用 coerce 将字符串之类的转换为数值，再用 gte(0) 校验非负
-	totalBudget: z.coerce
-		.number()
-		.check(z.gte(0, { message: "总预算不能为负数" })),
-
-	categoriesBudget: z.optional(
-		z.array(
-			z.object({
-				// 要求非空字符串作为 id
-				id: z.string().check(z.minLength(1, { message: "请选择一个类别" })),
-				budget: z.coerce
-					.number()
-					.check(z.gte(0, { message: "预算不能为负数" })),
+		repeat: z.object({
+			unit: z.enum(["week", "day", "month", "year"], {
+				error: t("please-select-period-unit"),
 			}),
-		),
-	),
+			// 用 check + 顶层检查函数替代链式 .int().positive()
+			value: z
+				.number()
+				.check(
+					z.int(),
+					z.positive({ message: t("period-must-be-positive-integer") }),
+				),
+		}),
 
-	onlyTags: z.optional(z.array(z.string())),
-	excludeTags: z.optional(z.array(z.string())),
-});
+		// 至少有 1 项参与者（用 minSize 更易 tree-shake）
+		joiners: z
+			.array(z.union([z.string(), z.number()]))
+			.check(z.minLength(1, { message: t("select-one-participant-at-least") })),
+
+		// 使用 coerce 将字符串之类的转换为数值，再用 gte(0) 校验非负
+		totalBudget: z.coerce
+			.number()
+			.check(z.gte(0, { message: t("budget-cannot-be-negative") })),
+
+		categoriesBudget: z.optional(
+			z.array(
+				z.object({
+					// 要求非空字符串作为 id
+					id: z
+						.string()
+						.check(z.minLength(1, { message: t("please-select-a-category") })),
+					budget: z.coerce
+						.number()
+						.check(z.gte(0, { message: t("budget-cannot-be-negative") })),
+				}),
+			),
+		),
+
+		onlyTags: z.optional(z.array(z.string())),
+		excludeTags: z.optional(z.array(z.string())),
+	});
 
 type EditBudget = Omit<Budget, "id"> & { id?: string };
 
@@ -102,16 +109,8 @@ export default function BudgetEditForm({
 	const joiners = useCreators();
 	const { expenses } = useCategory();
 	const { tags } = useTag();
-	const categoryOption = useMemo(
-		() =>
-			expenses.map((v) => ({
-				...intlCategory(v, t),
-				children: v.children.map((c) => ({
-					...intlCategory(c, t),
-				})),
-			})),
-		[expenses, t],
-	);
+	const categoryOption = expenses;
+	const formSchema = useMemo(() => createFormSchema(t), [t]);
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema) as any,
 		defaultValues: edit
@@ -123,7 +122,7 @@ export default function BudgetEditForm({
 					end: edit?.end ? dayjs.unix(edit.end / 1000).toDate() : undefined,
 				}
 			: {
-					title: "New Budget",
+					title: t("new-budget"),
 					start: new Date(),
 					joiners: [],
 					totalBudget: 0,
@@ -165,7 +164,7 @@ export default function BudgetEditForm({
 								<FormItem>
 									<FormControl>
 										<Input
-											placeholder="请输入预算标题"
+											placeholder={t("please-enter-budget-title")}
 											{...field}
 											maxLength={50}
 											className="text-center"
@@ -185,7 +184,7 @@ export default function BudgetEditForm({
 								name="start"
 								render={({ field }) => (
 									<FormItem className="flex flex-col flex-1">
-										<FormLabel>开始日期</FormLabel>
+										<FormLabel>{t("start-date")}</FormLabel>
 										<Popover>
 											<FormControl>
 												<PopoverTrigger asChild>
@@ -199,7 +198,7 @@ export default function BudgetEditForm({
 														{field.value ? (
 															field.value.toLocaleDateString()
 														) : (
-															<span>请选择开始日期</span>
+															<span>{t("please-select-start-date")}</span>
 														)}
 														<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
 													</Button>
@@ -231,7 +230,7 @@ export default function BudgetEditForm({
 								name="end"
 								render={({ field }) => (
 									<FormItem className="flex flex-col flex-1">
-										<FormLabel>结束日期 (可选)</FormLabel>
+										<FormLabel>{t("end-date-optional")}</FormLabel>
 										<Popover>
 											<PopoverTrigger asChild>
 												<FormControl>
@@ -245,7 +244,7 @@ export default function BudgetEditForm({
 														{field.value ? (
 															field.value.toLocaleDateString()
 														) : (
-															<span>请选择结束日期</span>
+															<span>{t("please-select-end-date")}</span>
 														)}
 														<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
 													</Button>
@@ -277,8 +276,10 @@ export default function BudgetEditForm({
 							name="joiners"
 							render={() => (
 								<FormItem>
-									<FormLabel>参与者</FormLabel>
-									<FormDescription>选择所有参与者。</FormDescription>
+									<FormLabel>{t("participants")}</FormLabel>
+									<FormDescription>
+										{t("select-all-participants")}
+									</FormDescription>
 									{joiners.map((item) => (
 										<FormField
 											key={item.id}
@@ -320,11 +321,11 @@ export default function BudgetEditForm({
 							name="totalBudget"
 							render={({ field }) => (
 								<FormItem>
-									<FormLabel>总预算</FormLabel>
+									<FormLabel>{t("total-budget")}</FormLabel>
 									<FormControl>
 										<Input
 											type="number"
-											placeholder="请输入总预算"
+											placeholder={t("please-enter-total-budget")}
 											{...field}
 											onChange={(event) => {
 												field.onChange(event.target.valueAsNumber);
@@ -347,9 +348,9 @@ export default function BudgetEditForm({
 
 									return (
 										<FormItem>
-											<FormLabel>仅限标签</FormLabel>
+											<FormLabel>{t("tags-only")}</FormLabel>
 											<FormDescription>
-												只有包含下列标签的账单才会被记入预算
+												{t("tags-only-description")}
 											</FormDescription>
 											<DropdownMenu>
 												<DropdownMenuTrigger asChild>
@@ -361,7 +362,7 @@ export default function BudgetEditForm({
 														>
 															{selectedTags.length > 0
 																? selectedTags.map((tag) => tag.name).join(", ")
-																: "无"}
+																: t("none")}
 														</Button>
 													</FormControl>
 												</DropdownMenuTrigger>
@@ -408,9 +409,9 @@ export default function BudgetEditForm({
 
 									return (
 										<FormItem>
-											<FormLabel>不计入标签</FormLabel>
+											<FormLabel>{t("tags-excluded")}</FormLabel>
 											<FormDescription>
-												包含标签的账单不会被记入预算
+												{t("tags-excluded-description")}
 											</FormDescription>
 											<DropdownMenu>
 												<DropdownMenuTrigger asChild>
@@ -422,7 +423,7 @@ export default function BudgetEditForm({
 														>
 															{selectedTags.length > 0
 																? selectedTags.map((tag) => tag.name).join(", ")
-																: "无"}
+																: t("none")}
 														</Button>
 													</FormControl>
 												</DropdownMenuTrigger>
@@ -461,10 +462,12 @@ export default function BudgetEditForm({
 						</div>
 
 						<div className="flex flex-col gap-2 rounded-md border p-4">
-							<h3 className="text-lg font-medium">周期</h3>
-							<p className="text-sm text-muted-foreground">设定预算周期</p>
+							<h3 className="text-lg font-medium">{t("period")}</h3>
+							<p className="text-sm text-muted-foreground">
+								{t("set-budget-period")}
+							</p>
 							<div className="flex items-center justify-between">
-								<div>每隔：</div>
+								<div>{t("every")}:</div>
 								<div className="flex items-center gap-2">
 									<FormField
 										control={form.control}
@@ -498,14 +501,16 @@ export default function BudgetEditForm({
 												>
 													<FormControl>
 														<SelectTrigger>
-															<SelectValue placeholder="单位" />
+															<SelectValue placeholder={t("period-unit")} />
 														</SelectTrigger>
 													</FormControl>
 													<SelectContent align="end">
-														<SelectItem value="day">天</SelectItem>
-														<SelectItem value="week">周</SelectItem>
-														<SelectItem value="month">月</SelectItem>
-														<SelectItem value="year">年</SelectItem>
+														<SelectItem value="day">{t("unit-day")}</SelectItem>
+														<SelectItem value="week">
+															{t("unit-week")}
+														</SelectItem>
+														<SelectItem value="month">{t("month")}</SelectItem>
+														<SelectItem value="year">{t("year")}</SelectItem>
 													</SelectContent>
 												</Select>
 												<FormMessage />
@@ -518,9 +523,9 @@ export default function BudgetEditForm({
 
 						{/* 分类预算列表 */}
 						<div className="flex flex-col gap-2 rounded-md border p-4">
-							<h3 className="text-lg font-medium">分类预算</h3>
+							<h3 className="text-lg font-medium">{t("categories-budget")}</h3>
 							<p className="text-sm text-muted-foreground">
-								可以为不同类别分配具体预算。
+								{t("categories-budget-description")}
 							</p>
 							{fields.map((field, index) => (
 								<div
@@ -533,7 +538,7 @@ export default function BudgetEditForm({
 											name={`categoriesBudget.${index}.id`}
 											render={({ field: categoryField }) => (
 												<FormItem className="space-y-0">
-													<FormLabel>类别</FormLabel>
+													<FormLabel>{t("categories")}</FormLabel>
 													<CascadeSelect
 														align="end"
 														value={categoryField.value}
@@ -552,11 +557,11 @@ export default function BudgetEditForm({
 											name={`categoriesBudget.${index}.budget`}
 											render={({ field: budgetField }) => (
 												<FormItem>
-													<FormLabel>预算金额</FormLabel>
+													<FormLabel>{t("budget-money")}</FormLabel>
 													<FormControl>
 														<Input
 															type="number"
-															placeholder="请输入预算金额"
+															placeholder={t("please-enter-budget-money")}
 															{...budgetField}
 															onChange={(event) => {
 																budgetField.onChange(
@@ -589,7 +594,7 @@ export default function BudgetEditForm({
 								onClick={() => append({ id: "", budget: 0 })}
 							>
 								<Plus className="h-4 w-4 mr-2" />
-								新增分类预算
+								{t("add-categories-budget")}
 							</Button>
 						</div>
 					</div>

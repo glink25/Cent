@@ -9,7 +9,6 @@ import SmartImage from "../image";
 import { useTag } from "@/hooks/use-tag";
 import useCategory from "@/hooks/use-category";
 import CategoryIcon from "../category/icon";
-import { intlCategory } from "@/ledger/utils";
 
 export default function BillInfo({
 	edit,
@@ -37,10 +36,7 @@ export default function BillInfo({
 	if (!edit) {
 		return null;
 	}
-	const categoryInfo = intlCategory(
-		categories.find((c) => c.id === edit.categoryId),
-		t,
-	);
+	const categoryInfo = categories.find((c) => c.id === edit.categoryId);
 
 	const toEdit = async () => {
 		if (edit?.id) {

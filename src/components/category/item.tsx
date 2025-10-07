@@ -1,12 +1,10 @@
 import type { BillCategory } from "@/ledger/type";
 import { cn } from "@/utils";
 import type { MouseEventHandler } from "react";
-import { useIntl } from "@/locale";
-import { intlCategory } from "@/ledger/utils";
 import CategoryIcon from "./icon";
 
 export function CategoryItem({
-	category: origin,
+	category,
 	selected,
 	onMouseDown,
 	onClick,
@@ -18,8 +16,6 @@ export function CategoryItem({
 	onClick?: MouseEventHandler<HTMLButtonElement>;
 	className?: string;
 }) {
-	const t = useIntl();
-	const category = intlCategory(origin, t);
 	return (
 		<button
 			type="button"
@@ -31,8 +27,8 @@ export function CategoryItem({
 			onMouseDown={onMouseDown}
 			onClick={onClick}
 		>
-			<CategoryIcon icon={category.icon} className="w-4 h-4" />
-			<div className="mx-2">{category.name}</div>
+			<CategoryIcon icon={category.icon} className="w-4 h-4 flex-shrink-0" />
+			<div className="mx-2 truncate">{category.name}</div>
 		</button>
 	);
 }

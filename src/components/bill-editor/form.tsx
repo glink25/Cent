@@ -4,8 +4,8 @@ import useCategory from "@/hooks/use-category";
 import PopupLayout from "@/layouts/popup-layout";
 import { amountToNumber, numberToAmount } from "@/ledger/bill";
 import { ExpenseBillCategories, IncomeBillCategories } from "@/ledger/category";
-import type { Bill } from "@/ledger/type";
-import { useIntl } from "@/locale";
+import type { Bill, BillCategory } from "@/ledger/type";
+import { useIntl, useLocale } from "@/locale";
 import type { EditBill } from "@/store/ledger";
 import { cn } from "@/utils";
 import { showCategoryList } from "../category";
@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import Tag from "../tag";
 import { CategoryItem } from "../category/item";
 import { goAddBill } from ".";
+import { categoriesGridClassName } from "@/ledger/utils";
 
 const defaultBill = {
 	type: "expense" as Bill["type"],
@@ -37,6 +38,7 @@ export default function EditorForm({
 	onCancel?: () => void;
 }) {
 	const t = useIntl();
+	const { locale } = useLocale();
 	const goBack = () => {
 		onCancel?.();
 	};
@@ -50,7 +52,7 @@ export default function EditorForm({
 	// useEffect(() => {
 	// 	setBillState({ ...defaultBill, ...edit });
 	// }, [edit]);
-	const { incomes, expenses } = useCategory();
+	const { incomes, expenses, categories: allCategories } = useCategory();
 
 	const { tags, add: addTag } = useTag();
 
@@ -124,7 +126,9 @@ export default function EditorForm({
 			>
 				{/* categories */}
 				<div className="flex-1 overflow-hidden flex flex-col px-2 text-sm font-medium gap-2">
-					<div className="grid grid-cols-[repeat(auto-fill,minmax(80px,1fr))] gap-1">
+					<div
+						className={cn("grid gap-1", categoriesGridClassName(categories))}
+					>
 						{categories.map((item) => (
 							<CategoryItem
 								key={item.id}
@@ -145,12 +149,17 @@ export default function EditorForm({
 							}}
 						>
 							<i className="icon-[mdi--settings]"></i>
-							编辑
+							{t("edit")}
 						</button>
 					</div>
 					{(subCategories?.length ?? 0) > 0 && (
 						<div className="flex-1 overflow-y-auto rounded-md border p-2 shadow scrollbar-hidden">
-							<div className="grid grid-cols-[repeat(auto-fill,minmax(80px,1fr))] gap-1">
+							<div
+								className={cn(
+									"grid gap-1",
+									categoriesGridClassName(subCategories),
+								)}
+							>
 								{subCategories?.map((subCategory) => {
 									return (
 										<CategoryItem

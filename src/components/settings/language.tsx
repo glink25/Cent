@@ -1,4 +1,4 @@
-import { locales, useIntl, useLocale } from "@/locale";
+import { useIntl, useLocale } from "@/locale";
 import {
 	Select,
 	SelectContent,
@@ -6,6 +6,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "../ui/select";
+import { locales } from "@/locale/utils";
 
 export default function Language() {
 	const t = useIntl();

@@ -112,6 +112,7 @@ function formatDate(timestamp: number, gap: OpUnitType = "day"): string {
  */
 export function processBillDataForCharts(
 	options: ProcessBillDataOptions,
+	t: any,
 ): ProcessedChartData {
 	const { bills, getMajorCategory, getUserInfo, gap: _gap } = options;
 	const TOTAL_KEY = "__TOTAL__";
@@ -218,7 +219,7 @@ export function processBillDataForCharts(
 	);
 
 	const overallTrendSource: EchartsDatasetSource = [
-		["date", "收入", "支出", "结余"],
+		["date", t("income"), t("expense"), t("Balance")],
 	];
 	const userExpenseSource: EchartsDatasetSource = [["date", ...userNames]];
 	const userIncomeSource: EchartsDatasetSource = [["date", ...userNames]];

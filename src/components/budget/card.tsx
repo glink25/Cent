@@ -7,7 +7,6 @@ import { useIntl } from "@/locale";
 import { cn } from "@/utils";
 import type { Budget } from "./type";
 import { budgetEncountered, budgetRange, budgetTotal } from "./util";
-import { intlCategory } from "@/ledger/utils";
 
 export default function BudgetCard({
 	className,
@@ -56,7 +55,7 @@ export default function BudgetCard({
 
 	const { categories } = useCategory();
 	if (!encountered) {
-		return <div>Budget Finished</div>;
+		return <div>{t("budget-finished")}</div>;
 	}
 	return (
 		<div
@@ -71,7 +70,7 @@ export default function BudgetCard({
 					<div className="text-sm">
 						{todayEncountered && time && (
 							<>
-								今日可用:
+								{t("today-left")}:
 								{(total / time.totalDays - todayEncountered.totalUsed).toFixed(
 									2,
 								)}
@@ -93,10 +92,7 @@ export default function BudgetCard({
 					</div>
 					<Collapsible.Content className="data-[state=open]:animate-collapse-open data-[state=closed]:animate-collapse-close data-[state=closed]:overflow-hidden">
 						{encountered?.categoriesUsed?.map((v) => {
-							const category = intlCategory(
-								categories.find((c) => c.id === v.id)!,
-								t,
-							);
+							const category = categories.find((c) => c.id === v.id);
 							const cb = budget.categoriesBudget!.find((c) => c.id === v.id)!;
 							const td = todayEncountered!.categoriesUsed!.find(
 								(c) => c.id === v.id,
@@ -171,6 +167,7 @@ function BudgetBar({
 	todayUsed?: number;
 	time?: { percent: number; leftDays: number; totalDays: number };
 }) {
+	const t = useIntl();
 	return (
 		<>
 			<BudgetProgress
@@ -181,21 +178,31 @@ function BudgetBar({
 			/>
 			<div className="flex justify-between items-center text-xs gap-1">
 				<div className="flex flex-col">
-					<div>已支出:{used.toFixed(2)}</div>
-					{todayUsed !== undefined && <div>今日支出:{todayUsed}</div>}
+					<div>
+						{t("expensed")}:{used.toFixed(2)}
+					</div>
+					{todayUsed !== undefined && (
+						<div>
+							{t("today-expense")}:{todayUsed}
+						</div>
+					)}
 					{time && (
 						<div>
-							日均支出:{(used / (time.totalDays - time?.leftDays)).toFixed(2)}
+							{t("daily-expense")}:
+							{(used / (time.totalDays - time?.leftDays)).toFixed(2)}
 						</div>
 					)}
 				</div>
 				<div className="text-end">
-					<div>总预算: {total}</div>
-					<div>总剩余: {(total - used).toFixed(2)}</div>
+					<div>
+						{t("total-budget")}: {total}
+					</div>
+					<div>
+						{t("total-left")}: {(total - used).toFixed(2)}
+					</div>
 					{time && (
 						<>
-							日均剩余预算:
-							{((total - used) / time.leftDays).toFixed(2)}
+							{t("daily-left")}:{((total - used) / time.leftDays).toFixed(2)}
 						</>
 					)}
 				</div>

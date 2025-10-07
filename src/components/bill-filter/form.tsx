@@ -22,7 +22,6 @@ import {
 } from "../ui/select";
 import useCategory from "@/hooks/use-category";
 import { CascadeMultipleSelect } from "../cascade";
-import { intlCategory } from "@/ledger/utils";
 import { useTag } from "@/hooks/use-tag";
 
 export default function BillFilterForm({
@@ -69,23 +68,13 @@ export default function BillFilterForm({
 				asGroupLabel: t("expense"),
 				name: "",
 			},
-			...expenses.map((c) => ({
-				...intlCategory(c, t),
-				children: c.children.map((v) => ({
-					...intlCategory(v, t),
-				})),
-			})),
+			...expenses,
 			{
 				id: "IncomesLabel",
 				asGroupLabel: t("income"),
 				name: "",
 			},
-			...incomes.map((c) => ({
-				...intlCategory(c, t),
-				children: c.children.map((v) => ({
-					...intlCategory(v, t),
-				})),
-			})),
+			...incomes,
 
 			// { id: "EXPENSE_SELECT", name: "expense", children: expenses },
 			// { id: "INCOME_SELECT", name: "income", children: incomes },

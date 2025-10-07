@@ -14,7 +14,6 @@ import useCategory from "@/hooks/use-category";
 import { useCreators } from "@/hooks/use-creator";
 import { useCustomFilters } from "@/hooks/use-custom-filters";
 import type { BillFilter } from "@/ledger/type";
-import { intlCategory } from "@/ledger/utils";
 import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
@@ -38,9 +37,6 @@ type Views = {
 const overallTrendOption = (dataset: { source: any[] }, options?: ECOption) =>
 	merge(
 		{
-			title: {
-				text: "总体收支趋势",
-			},
 			// 提示框，'axis' 表示鼠标悬浮在x轴上时触发
 			tooltip: {
 				trigger: "axis",
@@ -83,18 +79,12 @@ const overallTrendOption = (dataset: { source: any[] }, options?: ECOption) =>
  * @returns ECharts Option
  */
 const userTrendOption = (
-	title: string,
 	dataset: { source: (string | number)[][] },
 	options?: ECOption,
 ): ECOption => {
-	if (!dataset?.source || dataset.source.length < 2) {
-		return { title: { text: title, subtext: "暂无数据" } };
-	}
-
 	const seriesCount = dataset.source[0].length - 1;
 
 	const baseOption: ECOption = {
-		title: { text: title },
 		tooltip: { trigger: "axis" },
 		legend: {},
 		dataset: dataset,
@@ -383,6 +373,9 @@ export default function Page() {
 			const newV = typeof v === "function" ? v(prev) : v;
 			const opt = trendChart.current?.getOption();
 			const legend = (opt?.dataset as any)?.[0]?.source?.[0]?.slice(1);
+			if (!legend?.length) {
+				return newV;
+			}
 			const selectLegendIndex = FocusTypes.indexOf(newV);
 			const unselectLegendIndexes = FocusTypes.map((value, index) => ({
 				value,
@@ -407,49 +400,74 @@ export default function Page() {
 
 	const dataSources = useMemo(
 		() =>
-			processBillDataForCharts({
-				bills: filtered,
-				getMajorCategory: (id) => {
-					const cate = categories.find((c) => c.id === id);
-					if (!cate?.parent) {
-						return intlCategory(cate, t) ?? { id, name: id };
-					}
-					const parent = categories.find((c) => c.id === cate.parent)!;
-					return intlCategory(parent, t);
+			processBillDataForCharts(
+				{
+					bills: filtered,
+					getMajorCategory: (id) => {
+						const cate = categories.find((c) => c.id === id);
+						if (!cate?.parent) {
+							return cate ?? { id, name: id };
+						}
+						const parent = categories.find((c) => c.id === cate.parent)!;
+						return parent;
+					},
+					getUserInfo: (id) => {
+						return {
+							id,
+							name: creators.find((u) => `${u.id}` === id)?.name ?? `${id}`,
+						};
+					},
+					gap: selectedViewId === "yearly" ? "month" : undefined,
 				},
-				getUserInfo: (id) => {
-					return {
-						id,
-						name: creators.find((u) => `${u.id}` === id)?.name ?? `${id}`,
-					};
-				},
-				gap: selectedViewId === "yearly" ? "month" : undefined,
-			}),
+				t,
+			),
 		[filtered, selectedViewId, categories, creators, t],
 	);
 
 	const charts = useMemo(() => {
 		if (dimension === "category") {
 			return [
-				overallTrendOption(dataSources.overallTrend),
+				overallTrendOption(dataSources.overallTrend, {
+					title: {
+						text: t("overall-trend"),
+					},
+				}),
 				focusType === "expense"
-					? structureOption(dataSources.expenseStructure)
+					? structureOption(dataSources.expenseStructure, {
+							title: { text: t("expense-structure") },
+						})
 					: focusType === "income"
-						? structureOption(dataSources.incomeStructure)
-						: structureOption(dataSources.expenseStructure),
+						? structureOption(dataSources.incomeStructure, {
+								title: { text: t("income-structure") },
+							})
+						: structureOption(dataSources.expenseStructure, {
+								title: { text: t("expense-structure") },
+							}),
 			];
 		}
 		return [
 			focusType === "expense"
-				? userTrendOption("各用户支出趋势", dataSources.userExpenseTrend)
+				? userTrendOption(dataSources.userExpenseTrend, {
+						title: { text: t("users-expense-trend") },
+					})
 				: focusType === "income"
-					? userTrendOption("各用户收入趋势", dataSources.userIncomeTrend)
-					: userTrendOption("各用户结余趋势", dataSources.userBalanceTrend),
+					? userTrendOption(dataSources.userIncomeTrend, {
+							title: { text: t("users-income-trend") },
+						})
+					: userTrendOption(dataSources.userBalanceTrend, {
+							title: { text: t("users-balance-trend") },
+						}),
 			focusType === "expense"
-				? structureOption(dataSources.userExpenseStructure)
+				? structureOption(dataSources.userExpenseStructure, {
+						title: { text: t("expense-structure") },
+					})
 				: focusType === "income"
-					? structureOption(dataSources.userIncomeStructure)
-					: structureOption(dataSources.userBalanceStructure),
+					? structureOption(dataSources.userIncomeStructure, {
+							title: { text: t("income-structure") },
+						})
+					: structureOption(dataSources.userBalanceStructure, {
+							title: { text: t("expense-structure") },
+						}),
 		];
 	}, [
 		dimension,
@@ -463,6 +481,7 @@ export default function Page() {
 		dataSources.userBalanceTrend,
 		dataSources.userExpenseTrend,
 		dataSources.userIncomeTrend,
+		t,
 	]);
 
 	return (
@@ -612,13 +631,13 @@ export default function Page() {
 					<div className="w-full flex flex-col gap-4">
 						{dataSources.highestExpenseBill && (
 							<div className="rounded-md border p-2">
-								最高支出：
+								{t("highest-expense")}:
 								<BillItem bill={dataSources.highestExpenseBill} showTime />
 							</div>
 						)}
 						{dataSources.highestIncomeBill && (
 							<div className="rounded-md border p-2">
-								最高收入：
+								{t("highest-income")}:
 								<BillItem bill={dataSources.highestIncomeBill} showTime />
 							</div>
 						)}

@@ -4,11 +4,12 @@ import { useIntl } from "@/locale";
 import { Button } from "../ui/button";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { treeCategories } from "@/ledger/utils";
+import { categoriesGridClassName, treeCategories } from "@/ledger/utils";
 import { Collapsible } from "radix-ui";
 import type { BillCategory } from "@/ledger/type";
 import { CategoryEditFormProvider, showCategoryEdit } from "./form";
 import { CategoryItem } from "./item";
+import { cn } from "@/utils";
 
 export default function CategoryList({
 	onCancel,
@@ -100,7 +101,12 @@ export default function CategoryList({
 										</div>
 									</Collapsible.Trigger>
 									<Collapsible.Content className="border-t data-[state=open]:animate-collapse-open data-[state=closed]:animate-collapse-close data-[state=closed]:overflow-hidden">
-										<div className="p-4 grid grid-cols-[repeat(auto-fill,minmax(80px,1fr))] gap-1 text-sm">
+										<div
+											className={cn(
+												"p-4 grid gap-1 text-sm",
+												categoriesGridClassName(parent.children),
+											)}
+										>
 											{parent.children.map((child) => {
 												return (
 													<CategoryItem

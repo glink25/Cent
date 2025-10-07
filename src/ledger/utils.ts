@@ -127,3 +127,8 @@ export const intlCategory = <
 	}
 	return { ...c, name: c.customName ? c.name : t(c.name) };
 };
+
+export const categoriesGridClassName = (cs: BillCategory[] | undefined) =>
+	cs?.some((v) => v.name.length > 2)
+		? "grid-cols-[repeat(auto-fill,minmax(120px,1fr))]"
+		: "grid-cols-[repeat(auto-fill,minmax(80px,1fr))]";

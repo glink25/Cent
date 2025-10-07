@@ -214,7 +214,7 @@ export const CalculatorKeyboard = ({
 					{row.label === "c" ? (
 						<i className="icon-[mdi--clear-outline]"></i>
 					) : row.label === "r" ? (
-						<div className="flex gap-1 items-center">
+						<div className="flex flex-col gap-1 items-center">
 							<i className="icon-[mdi--reload]"></i>
 							<div className="text-xs">{t("add-again")}</div>
 						</div>
