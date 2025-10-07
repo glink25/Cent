@@ -7,13 +7,13 @@ Todo:
     样式改进  done
     大类占比图表 done
     二级类别占比
+    Tag统计
 4. 自定义类别
     类别增删改 done
     自定义类别图标 done
-    自定义排序
+    自定义排序 done
 5. 自定义Tag  done
     Tag增删改  done
-    Tag统计
 6. 自定义过滤器管理 done
 7. 预算系统  done
     预算详情页
