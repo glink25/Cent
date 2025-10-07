@@ -36,9 +36,11 @@ export default function Page() {
 	}, [bills]);
 
 	const todayAmount = useMemo(() => {
-		return todayBills.reduce((p, c) => {
-			return p + amountToNumber(c.amount) * (c.type === "income" ? 1 : -1);
-		}, 0);
+		return amountToNumber(
+			todayBills.reduce((p, c) => {
+				return p + c.amount * (c.type === "income" ? 1 : -1);
+			}, 0),
+		);
 	}, [todayBills]);
 
 	const { budgets } = useBudget();

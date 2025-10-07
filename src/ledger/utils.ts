@@ -1,5 +1,11 @@
 import dayjs, { type Dayjs } from "dayjs";
 import { numberToAmount } from "./bill";
+import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
+import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
+
+dayjs.extend(isSameOrBefore);
+dayjs.extend(isSameOrAfter);
+
 import type { Bill, BillCategory, BillFilter, BillType } from "./type";
 
 const isTypeMatched = (bill: Bill, type?: BillType) => {
@@ -38,12 +44,12 @@ export const isTimeMatched = (
 	})();
 	if (start) {
 		if (end) {
-			return d.isAfter(start) && d.isBefore(end);
+			return d.isSameOrAfter(start) && d.isSameOrBefore(end);
 		}
-		return d.isAfter(start);
+		return d.isSameOrAfter(start);
 	}
 	if (end) {
-		return d.isBefore(end);
+		return d.isSameOrBefore(end);
 	}
 	return true;
 };

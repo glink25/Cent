@@ -75,34 +75,44 @@ const overallTrendOption = (dataset: { source: any[] }, options?: ECOption) =>
 		options,
 	);
 
-const userTrendOption = (dataset: { source: any[] }, options?: ECOption) =>
-	merge(
-		{
-			title: {
-				text: "各用户支出趋势",
+/**
+ * 通用的趋势图 ECharts Option 生成器
+ * @param title - 图表标题
+ * @param dataset - 包含 source 的数据集
+ * @param options - 自定义配置
+ * @returns ECharts Option
+ */
+const userTrendOption = (
+	title: string,
+	dataset: { source: (string | number)[][] },
+	options?: ECOption,
+): ECOption => {
+	if (!dataset?.source || dataset.source.length < 2) {
+		return { title: { text: title, subtext: "暂无数据" } };
+	}
+
+	const seriesCount = dataset.source[0].length - 1;
+
+	const baseOption: ECOption = {
+		title: { text: title },
+		tooltip: { trigger: "axis" },
+		legend: {},
+		dataset: dataset,
+		xAxis: { type: "category", boundaryGap: false },
+		yAxis: { type: "value" },
+		series: Array.from({ length: seriesCount }, (_, i) => ({
+			type: "line",
+			smooth: true,
+			name: dataset.source[0][i + 1], // 系列名称，用于图例和 tooltip
+			encode: {
+				x: "date", // 映射到 dataset 中的 'date' 列
+				y: dataset.source[0][i + 1], // 映射到 dataset 中的 'glink25' 列
 			},
-			tooltip: {
-				trigger: "axis",
-			},
-			legend: {}, // 同样，图例会自动从 source 第一行读取用户名
-			// dataset: dataset,
-			xAxis: {
-				type: "category",
-				boundaryGap: false,
-			},
-			yAxis: {
-				type: "value",
-			},
-			// 这里的 series 数量需要和用户数量匹配
-			// chartData.userExpenseTrend.source[0].length 返回列数 (date + user1 + user2 + ...)
-			// 所以系列的数量是 列数 - 1
-			series: Array(dataset.source[0].length - 1).fill({
-				type: "line",
-				smooth: true,
-			}),
-		},
-		options,
-	);
+		})),
+	};
+
+	return merge(baseOption, options);
+};
 
 const structureOption = (dataset: any[], options?: ECOption) =>
 	merge(
@@ -146,10 +156,13 @@ export default function Page() {
 	const t = useIntl();
 	const { id } = useParams();
 	const { bills } = useLedgerStore();
-	const endTime = bills[0]?.time ?? dayjs();
+	const endTime = Date.now(); //bills[0]?.time ?? dayjs();
 	const startTime = bills[bills.length - 1]?.time ?? dayjs();
 	const START = useMemo(() => dayjs.unix(startTime / 1000), [startTime]);
-	const END = useMemo(() => dayjs.unix(endTime / 1000), [endTime]);
+	const END = useMemo(
+		() => dayjs.unix(endTime / 1000).endOf("date"),
+		[endTime],
+	);
 
 	const customFilters = useLedgerStore(
 		useShallow((state) => state.infos?.meta.customFilters),
@@ -328,10 +341,10 @@ export default function Page() {
 		}
 		return [
 			focusType === "expense"
-				? userTrendOption(dataSources.userExpenseTrend)
+				? userTrendOption("各用户支出趋势", dataSources.userExpenseTrend)
 				: focusType === "income"
-					? userTrendOption(dataSources.userIncomeTrend)
-					: userTrendOption(dataSources.userBalanceTrend),
+					? userTrendOption("各用户收入趋势", dataSources.userIncomeTrend)
+					: userTrendOption("各用户结余趋势", dataSources.userBalanceTrend),
 			focusType === "expense"
 				? structureOption(dataSources.userExpenseStructure)
 				: focusType === "income"
@@ -473,12 +486,14 @@ export default function Page() {
 				<div className="w-full mx-2 max-w-[600px] flex flex-col items-center gap-4">
 					<div className="flex-shrink-0 w-full h-[300px]">
 						<Chart
+							key={dimension}
 							option={charts[0]}
 							className="w-full h-full border rounded-md"
 						/>
 					</div>
 					<div className="flex-shrink-0 w-full h-[300px]">
 						<Chart
+							key={dimension}
 							option={charts[1]}
 							className="w-full h-full border rounded-md"
 						/>
