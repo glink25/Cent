@@ -62,6 +62,9 @@ export function useTag() {
 			const newTags = orderedTags
 				.map((t) => prev.tags.find((v) => v.id === t.id))
 				.filter((v) => v !== undefined);
+			if (newTags.length !== prev.tags.length) {
+				throw new Error("invalid tag length");
+			}
 			prev.tags = newTags;
 			return prev;
 		});

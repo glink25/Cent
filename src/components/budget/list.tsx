@@ -4,6 +4,7 @@ import PopupLayout from "@/layouts/popup-layout";
 import { useIntl } from "@/locale";
 import { Button } from "../ui/button";
 import { showBudgetEdit } from ".";
+import { showSortableList } from "../sortable";
 
 const toDay = (v: number) => dayjs.unix(v / 1000).format("YYYY-MM-DD");
 
@@ -15,9 +16,26 @@ export default function BudgetListForm({
 	onConfirm?: (v: any) => void;
 }) {
 	const t = useIntl();
-	const { budgets, add, update } = useBudget();
+	const { budgets, add, update, reorder } = useBudget();
 	return (
 		<PopupLayout onBack={onCancel} title={t("budget-manager")}>
+			<div className="flex items-center justify-between px-2">
+				<div className="px-2 text-xs text-foreground/80">
+					{t("budget-description")}
+				</div>
+				<Button
+					variant="ghost"
+					className="p-1 h-fit"
+					onClick={async () => {
+						const ordered = await showSortableList(
+							budgets.map((b) => ({ id: b.id, name: b.title })),
+						);
+						await reorder(ordered);
+					}}
+				>
+					<i className="icon-[mdi--reorder-horizontal]"></i>
+				</Button>
+			</div>
 			<div className="w-full flex-1 overflow-y-auto flex flex-col gap-2 p-2">
 				<Button
 					variant="outline"

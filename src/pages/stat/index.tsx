@@ -19,6 +19,7 @@ import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
 import { cn } from "@/utils";
 import { processBillDataForCharts } from "@/utils/charts";
+import { showSortableList } from "@/components/sortable";
 
 const StaticViews = [
 	// { id: "daily", label: "stat-view-daily" },
@@ -343,6 +344,19 @@ export default function Page() {
 		view?.label,
 	]);
 
+	const toReOrder = async () => {
+		if ((customFilters?.length ?? 0) === 0) {
+			return;
+		}
+		const ordered = await showSortableList(customFilters);
+		useLedgerStore.getState().updateGlobalMeta((prev) => {
+			prev.customFilters = ordered
+				.map((v) => prev.customFilters?.find((c) => c.id === v.id))
+				.filter((v) => v !== undefined);
+			return prev;
+		});
+	};
+
 	useEffect(() => {
 		const book = useBookStore.getState().currentBookId;
 		if (!book) {
@@ -507,7 +521,7 @@ export default function Page() {
 							))}
 						</div>
 						<div className="">
-							<Button variant="ghost">
+							<Button variant="ghost" onClick={toReOrder}>
 								<i className="icon-[mdi--menu-open] size-5"></i>
 							</Button>
 						</div>

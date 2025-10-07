@@ -9,6 +9,7 @@ import Navigation from "@/components/navigation";
 import { Settings } from "@/components/settings";
 import { Toaster } from "@/components/ui/sonner";
 import { TagListProvider } from "@/components/bill-tag";
+import { SortableListProvider } from "@/components/sortable";
 
 export default function MainLayout() {
 	return (
@@ -19,6 +20,7 @@ export default function MainLayout() {
 			</div>
 			<BillEditorProvider />
 			<BillInfoProvider />
+			<SortableListProvider />
 			<Settings />
 			<BookGuide />
 			<BudgetProvider />

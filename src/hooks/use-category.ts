@@ -76,10 +76,39 @@ export default function useCategory() {
 			if (prev.categories === undefined) {
 				prev.categories = BillCategories;
 			}
-			const newCategories = ordered
-				.map((t) => prev.categories!.find((v) => v.id === t.id))
-				.filter((v) => v !== undefined);
-			prev.categories = newCategories;
+			const newCategories = ordered.map((t) =>
+				prev.categories?.find((v) => v.id === t.id),
+			);
+			if (newCategories.some((v) => v === undefined)) {
+				console.error("category order mismatch", newCategories);
+				return prev;
+			}
+			prev.categories = prev.categories.filter((v) =>
+				ordered.every((o) => o.id !== v.id),
+			);
+			const index = newCategories[0]?.parent
+				? prev.categories.findIndex((c) => c.id === newCategories[0]?.parent)
+				: 0;
+
+			prev.categories.splice(
+				index + 1,
+				0,
+				...newCategories.filter((v) => v !== undefined),
+			);
+			return prev;
+		});
+	}, []);
+
+	const reset = useCallback(async () => {
+		const allBills = await useLedgerStore.getState().refreshBillList();
+		const safeToReset = allBills.every((b) =>
+			BillCategories.some((c) => c.id === b.categoryId),
+		);
+		if (!safeToReset) {
+			throw new Error("still has transactions with custom category");
+		}
+		await useLedgerStore.getState().updateGlobalMeta((prev) => {
+			prev.categories = undefined;
 			return prev;
 		});
 	}, []);
@@ -92,5 +121,6 @@ export default function useCategory() {
 		update,
 		add,
 		reorder,
+		reset,
 	};
 }

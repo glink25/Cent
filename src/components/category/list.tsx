@@ -2,7 +2,6 @@ import useCategory from "@/hooks/use-category";
 import PopupLayout from "@/layouts/popup-layout";
 import { useIntl } from "@/locale";
 import { Button } from "../ui/button";
-import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { categoriesGridClassName, treeCategories } from "@/ledger/utils";
 import { Collapsible } from "radix-ui";
@@ -10,6 +9,9 @@ import type { BillCategory } from "@/ledger/type";
 import { CategoryEditFormProvider, showCategoryEdit } from "./form";
 import { CategoryItem } from "./item";
 import { cn } from "@/utils";
+import { showSortableList } from "../sortable";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export default function CategoryList({
 	onCancel,
@@ -19,7 +21,7 @@ export default function CategoryList({
 	onConfirm?: (v: any) => void;
 }) {
 	const t = useIntl();
-	const { categories } = useCategory();
+	const { categories, reorder, reset } = useCategory();
 
 	const expenses = treeCategories(
 		categories.filter((v) => v.type === "expense"),
@@ -44,14 +46,42 @@ export default function CategoryList({
 	const toEditCategory = async (cate: BillCategory) => {
 		await showCategoryEdit(cate);
 	};
+	const [tab, setTab] = useState("expense");
 	return (
 		<PopupLayout
 			className="overflow-hidden h-full"
 			onBack={onCancel}
 			title={t("edit-categories")}
+			right={
+				<Button
+					onClick={async () => {
+						const ok = confirm(t("sure-to-reset-categories"));
+						if (!ok) {
+							return;
+						}
+						try {
+							await reset();
+							toast.success(t("reset-success"));
+						} catch (error) {
+							if (
+								(error as Error).message.startsWith("still has transactions")
+							) {
+								toast.error(
+									t(
+										"reset-categories-failed-by-existing-custom-category-transcations",
+									),
+								);
+							}
+						}
+					}}
+				>
+					{t("reset")}
+				</Button>
+			}
 		>
 			<Tabs
-				defaultValue="expense"
+				value={tab}
+				onValueChange={setTab}
 				className="px-2 pb-4 flex flex-col flex-1 overflow-hidden gap-2"
 			>
 				<div className="w-full flex justify-center">
@@ -65,16 +95,37 @@ export default function CategoryList({
 						</TabsList>
 					</div>
 				</div>
-				<p className="px-2 text-xs text-foreground/80">
-					{t("click-category-to-edit")}
-				</p>
+				<div className="flex items-center justify-between">
+					<div className="px-2 text-xs text-foreground/80">
+						{t("click-category-to-edit")}
+					</div>
+					<Button
+						variant="ghost"
+						className="p-1 h-fit"
+						onClick={async () => {
+							const curTab = tabs.find((t) => t.label === tab);
+							if (!curTab) {
+								return;
+							}
+							const ordered = await showSortableList(curTab.value);
+							reorder(ordered);
+						}}
+					>
+						<i className="icon-[mdi--reorder-horizontal]"></i>
+					</Button>
+				</div>
 				{tabs.map((v) => (
 					<TabsContent
 						key={v.label}
 						value={v.label}
-						className="flex-1 overflow-y-auto scrollbar-hidden flex flex-col gap-4"
+						className="mt-0 flex-1 overflow-y-auto scrollbar-hidden flex flex-col gap-4"
 					>
-						<Button variant="outline">
+						<Button
+							variant="outline"
+							onClick={() => {
+								toAddCategory();
+							}}
+						>
 							<i className="icon-[mdi--plus]"></i>
 							{t("add-new-category-group")}
 						</Button>
@@ -97,7 +148,23 @@ export default function CategoryList({
 													}}
 												/>
 											</div>
-											<i className=" group-[[data-state=open]]:icon-[mdi--chevron-down] group-[[data-state=closed]]:icon-[mdi--chevron-up]" />
+											<div>
+												<Button
+													variant="ghost"
+													className="p-1 h-fit"
+													onClick={async (e) => {
+														e.preventDefault();
+														e.stopPropagation();
+														const ordered = await showSortableList(
+															parent.children,
+														);
+														reorder(ordered);
+													}}
+												>
+													<i className="icon-[mdi--reorder-horizontal]"></i>
+												</Button>
+												<i className=" group-[[data-state=open]]:icon-[mdi--chevron-down] group-[[data-state=closed]]:icon-[mdi--chevron-up]" />
+											</div>
 										</div>
 									</Collapsible.Trigger>
 									<Collapsible.Content className="border-t data-[state=open]:animate-collapse-open data-[state=closed]:animate-collapse-close data-[state=closed]:overflow-hidden">
