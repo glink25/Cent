@@ -79,7 +79,7 @@ export default function Page() {
 						{budgets.map((budget) => {
 							return (
 								<BudgetCard
-									className="flex-shrink-0 snap-start"
+									className="flex-shrink-0 snap-start h-fit"
 									key={budget.id}
 									budget={budget}
 									bills={bills}
