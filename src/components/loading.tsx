@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Skeleton } from "./ui/skeleton";
 
 export default function Loading({ children }: { children?: ReactNode }) {
 	return (
@@ -8,3 +9,13 @@ export default function Loading({ children }: { children?: ReactNode }) {
 		</div>
 	);
 }
+
+export const LoadingSkeleton = () => (
+	<div className="w-full p-4 flex flex-col gap-2">
+		<Skeleton className="w-full h-[200px] rounded" />
+		<div className="space-y-2">
+			<Skeleton className="h-4 w-[250px]" />
+			<Skeleton className="h-4 w-[200px]" />
+		</div>
+	</div>
+);
