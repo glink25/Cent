@@ -2,6 +2,12 @@ export type BillType = "income" | "expense";
 
 export type Amount = number;
 
+export type GeoLocation = {
+	latitude: number;
+	longitude: number;
+	accuracy: number;
+}
+
 export type BillCategory = {
 	type: BillType;
 	name: string;
@@ -23,8 +29,8 @@ export type Bill = {
 	time: number;
 	// _created_at: number;
 	// _updated_at: number;
-	image?: File | string;
-	location?: string;
+	images?: (File | string)[];
+	location?: GeoLocation;
 	tagIds?: string[];
 };
 

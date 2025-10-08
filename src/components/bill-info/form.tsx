@@ -110,21 +110,25 @@ export default function BillInfo({
 						)}
 					</div>
 
-					{edit.image && (
-						<div className="flex-1 py-2 flex items-center justify-center">
-							<SmartImage
-								source={edit.image}
-								alt=""
-								className="max-h-[200px] object-contain rounded min-w-24 min-h-24 animate-dynamic-bg"
-								style={
-									{
-										"--color-start":
-											"color-mix(in oklab, var(--primary) 10%, transparent)",
-										" --color-end":
-											"color-mix(in oklab, var(--primary) 80%, transparent)",
-									} as any
-								}
-							/>
+					{edit.images && (
+						<div className="flex-1 py-2 flex gap-2 items-center justify-center max-w-full overflow-x-auto hidden-scrollbar">
+							{edit.images.map((img, i) => (
+								<SmartImage
+									// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+									key={i}
+									source={img}
+									alt=""
+									className="max-h-[200px] object-cover rounded min-w-24 min-h-24 animate-dynamic-bg"
+									style={
+										{
+											"--color-start":
+												"color-mix(in oklab, var(--primary) 10%, transparent)",
+											"--color-end":
+												"color-mix(in oklab, var(--primary) 80%, transparent)",
+										} as any
+									}
+								/>
+							))}
 						</div>
 					)}
 				</div>
