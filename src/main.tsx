@@ -7,9 +7,9 @@ import "./index.css";
 
 import { initIntl, LocaleProvider } from "./locale/index.tsx";
 import RootRoute from "./route.tsx";
-import { getBrowserLang } from "./locale/utils.ts";
+import { usePreferenceStore } from "./store/preference.ts";
 
-const lang = getBrowserLang();
+const lang = usePreferenceStore.getState().locale;
 initIntl(lang).then(() => {
 	createRoot(document.getElementById("root")!).render(
 		<StrictMode>

@@ -2,6 +2,7 @@ import dayjs, { type Dayjs } from "dayjs";
 import duration from "dayjs/plugin/duration";
 import isBetween from "dayjs/plugin/isBetween";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
+import { intl, t } from "@/locale";
 
 dayjs.extend(isBetween);
 dayjs.extend(isSameOrBefore);
@@ -10,26 +11,38 @@ dayjs.extend(duration);
 export const formatTime = (t: number) =>
 	dayjs.unix(t / 1000).format("YYYY-MM-DD HH:mm");
 
-// import { currentLanguage, t } from "@/locale";
 
-const t = (v: any) => v;
-
-const currentLanguage = { id: "en" };
-
-export const denseTime = (time: Dayjs) => {
+export const denseDate = (time: Dayjs) => {
 	const now = dayjs();
 	if (time.isSame(now, "days")) {
 		return t("Today");
 	}
-	const dayDiff = time.diff(now, "day");
-	if (dayDiff <= 3 && dayDiff >= 0) {
-		if (currentLanguage?.id === "zh") return `${time.format("DD")}日`;
+	const dayDiff = Math.abs(time.diff(now, "day"));
+	if (dayDiff <= 3 && time.isSame(now, "M")) {
+		if (intl.locale === "zh") return `${time.format("DD")}日`;
 		return time.format("MM-DD");
 	}
 	if (time.isSame(now, "year")) {
 		return time.format("MM-DD");
 	}
 	return time.format("YYYY-MM-DD");
+};
+
+export const denseTime = (_time: Dayjs | number) => {
+	const now = dayjs();
+	const time = typeof _time === 'number' ? dayjs.unix(_time / 1000) : dayjs(_time)
+	if (time.isSame(now, "days")) {
+		return time.format('HH:mm')
+	}
+	const dayDiff = Math.abs(time.diff(now, "day"));
+	if (dayDiff <= 3 && time.isSame(now, "M")) {
+		if (intl.locale === "zh") return `${time.format("DD")}日 ${time.format('HH:mm')}`;
+		return time.format("MM/DD HH:mm");
+	}
+	if (time.isSame(now, "year")) {
+		return time.format("MM/DD HH:mm");
+	}
+	return time.format("YY/MM/DD HH:mm");
 };
 
 export const shortTime = (t: number) =>

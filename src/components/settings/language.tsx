@@ -1,4 +1,5 @@
 import { useIntl, useLocale } from "@/locale";
+import { locales } from "@/locale/utils";
 import {
 	Select,
 	SelectContent,
@@ -6,7 +7,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "../ui/select";
-import { locales } from "@/locale/utils";
 
 export default function Language() {
 	const t = useIntl();
@@ -22,6 +22,9 @@ export default function Language() {
 					value={locale}
 					onValueChange={(v) => {
 						setLocale(v as any);
+						setTimeout(() => {
+							location.reload();
+						}, 10);
 					}}
 				>
 					<SelectTrigger className="w-fit text-xs rounded-sm">

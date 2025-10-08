@@ -4,12 +4,12 @@ import { useRef } from "react";
 import type { OutputType } from "@/gitray";
 import type { Bill } from "@/ledger/type";
 import { cn } from "@/utils";
-import { denseTime } from "@/utils/time";
+import { denseDate } from "@/utils/time";
 import { showBillInfo } from "../bill-info";
 import BillItem from "./item";
 
 function Divider({ date: day }: { date: Dayjs }) {
-	return <div className="pl-12 pr-4 pt-4 pb-2 text-sm">{denseTime(day)}</div>;
+	return <div className="pl-12 pr-4 pt-4 pb-2 text-sm">{denseDate(day)}</div>;
 }
 
 export default function Ledger({
