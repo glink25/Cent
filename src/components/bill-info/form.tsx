@@ -98,6 +98,12 @@ export default function BillInfo({
 							<div>{t("time")}:</div>
 							<div>{formatTime(edit.time)}</div>
 						</div>
+						{edit.location && (
+							<div className="flex justify-between items-center my-1">
+								<div>{t("location")}:</div>
+								<div>{`(${edit.location.latitude.toFixed(4)},${edit.location.longitude.toFixed(4)})`}</div>
+							</div>
+						)}
 						{tags?.length && (
 							<div className="flex justify-between items-start my-1">
 								<div>{t("tags")}:</div>
