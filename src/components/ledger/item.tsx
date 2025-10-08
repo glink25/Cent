@@ -82,9 +82,9 @@ export default function BillItem({
 			</div>
 
 			{/* 金额 */}
-			<div>
+			<div className="text-right">
 				<div
-					className={`text-lg font-bold truncate flex-shrink-0 text-right ${
+					className={`text-lg font-bold truncate flex-shrink-0 ${
 						bill.type === "expense"
 							? "text-red-700"
 							: bill.type === "income"
