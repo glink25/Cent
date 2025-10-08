@@ -247,5 +247,10 @@
   "reset-success": "重置成功",
   "reset-categories-failed-by-existing-custom-category-transcations": "无法重置分类，因为已经有账单包含自定义分类",
   "click-tag-to-edit": "点击标签进行编辑",
-  "budget-description": "管理预算和支出"
+  "budget-description": "管理预算和支出",
+  "experimental-functions": "实验性功能",
+  "auto-locate-when-add-bill": "新增记账时自动记录位置",
+  "auto-locate-when-add-bill-description": "需要先手动授权位置权限后生效",
+  "enter-add-bill-when-reduce-motion-changed": "【减弱动态效果】变化时进入新增记账页",
+  "enter-add-bill-when-reduce-motion-changed-description": "配合 iOS 快捷指令使用"
 }

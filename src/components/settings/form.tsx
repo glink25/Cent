@@ -4,12 +4,13 @@ import PopupLayout from "@/layouts/popup-layout";
 import { useIntl } from "@/locale";
 import { useUserStore } from "@/store/user";
 import Backup from "../backup";
+import TagSettingsItem from "../bill-tag";
 import { BookSettings } from "../book";
 import Budget from "../budget";
 import CategorySettingsItem from "../category";
 import { Button } from "../ui/button";
-import Language from "./language";
-import TagSettingsItem from "../bill-tag";
+import LabSettingsItem from "./lab";
+import LanguageSettingsItem from "./language";
 
 function UserInfo() {
 	const t = useIntl();
@@ -71,15 +72,22 @@ export default function SettingsForm({
 }) {
 	const t = useIntl();
 	return (
-		<PopupLayout onBack={onCancel} title={t("settings")}>
-			<div className="divide-y divide-solid flex flex-col">
+		<PopupLayout
+			onBack={onCancel}
+			title={t("settings")}
+			className="h-full overflow-hidden"
+		>
+			<div className="divide-y divide-solid flex flex-col overflow-hidden">
 				<UserInfo />
-				<BookSettings />
-				<CategorySettingsItem />
-				<TagSettingsItem />
-				<Budget />
-				<Backup />
-				<Language />
+				<div className="flex-1 overflow-y-auto flex flex-col divide-y pb-4">
+					<BookSettings />
+					<CategorySettingsItem />
+					<TagSettingsItem />
+					<Budget />
+					<Backup />
+					<LabSettingsItem />
+					<LanguageSettingsItem />
+				</div>
 			</div>
 		</PopupLayout>
 	);

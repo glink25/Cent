@@ -1,15 +1,16 @@
 import { Switch } from "radix-ui";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import useCategory from "@/hooks/use-category";
 import { useTag } from "@/hooks/use-tag";
 import PopupLayout from "@/layouts/popup-layout";
 import { amountToNumber, numberToAmount } from "@/ledger/bill";
 import { ExpenseBillCategories, IncomeBillCategories } from "@/ledger/category";
-import type { Bill, BillCategory } from "@/ledger/type";
+import type { Bill } from "@/ledger/type";
 import { categoriesGridClassName } from "@/ledger/utils";
 import { useIntl, useLocale } from "@/locale";
 import type { EditBill } from "@/store/ledger";
+import { usePreferenceStore } from "@/store/preference";
 import { cn } from "@/utils";
 import { showCategoryList } from "../category";
 import { CategoryItem } from "../category/item";
@@ -40,7 +41,6 @@ export default function EditorForm({
 	onCancel?: () => void;
 }) {
 	const t = useIntl();
-	const { locale } = useLocale();
 	const goBack = () => {
 		onCancel?.();
 	};
@@ -54,7 +54,7 @@ export default function EditorForm({
 	// useEffect(() => {
 	// 	setBillState({ ...defaultBill, ...edit });
 	// }, [edit]);
-	const { incomes, expenses, categories: allCategories } = useCategory();
+	const { incomes, expenses } = useCategory();
 
 	const { tags, add: addTag } = useTag();
 
@@ -84,6 +84,18 @@ export default function EditorForm({
 			return { ...v, images: [...(v.images ?? []), file] };
 		});
 	};
+
+	const locationRef = useRef<HTMLButtonElement>(null);
+	const isAdd = useRef(!edit);
+	useEffect(() => {
+		if (
+			!isAdd.current ||
+			!usePreferenceStore.getState().autoLocateWhenAddBill
+		) {
+			return;
+		}
+		locationRef.current?.click?.();
+	}, []);
 
 	return (
 		<Calculator.Root
@@ -278,9 +290,9 @@ export default function EditorForm({
 									</Deletable>
 								) : (
 									<CurrentLocation
+										ref={locationRef}
 										className="px-1 flex items-center justify-center"
 										onValueChange={(v) => {
-											console.log(v, "location");
 											setBillState((prev) => {
 												return { ...prev, location: v };
 											});

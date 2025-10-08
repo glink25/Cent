@@ -1,5 +1,5 @@
 import type React from "react";
-import { type ReactNode, useCallback, useState } from "react";
+import { type ReactNode, type RefObject, useCallback, useState } from "react";
 import type { GeoLocation } from "@/ledger/type";
 import { cn } from "@/utils";
 
@@ -14,6 +14,7 @@ interface CurrentLocationProps {
 	/** 按钮的文本内容，默认为 "获取当前位置" */
 	children?: ReactNode;
 	className?: string;
+	ref?: RefObject<HTMLButtonElement | null>;
 }
 
 const CurrentLocation: React.FC<CurrentLocationProps> = ({
@@ -21,6 +22,7 @@ const CurrentLocation: React.FC<CurrentLocationProps> = ({
 	onError,
 	children,
 	className,
+	ref,
 }) => {
 	// const handleError = useCallback(
 	// 	(error: GeolocationPositionError) => {
@@ -78,7 +80,12 @@ const CurrentLocation: React.FC<CurrentLocationProps> = ({
 	}
 
 	return (
-		<button type="button" onClick={getLocation} className={cn(className)}>
+		<button
+			ref={ref}
+			type="button"
+			onClick={getLocation}
+			className={cn(className)}
+		>
 			{children}
 		</button>
 	);

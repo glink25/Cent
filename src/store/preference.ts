@@ -1,13 +1,15 @@
-import { type LocaleName, getBrowserLang } from "@/locale/utils";
 import { create, type StateCreator } from "zustand";
 import {
-	type PersistOptions,
 	createJSONStorage,
+	type PersistOptions,
 	persist,
 } from "zustand/middleware";
+import { getBrowserLang, type LocaleName } from "@/locale/utils";
 
 type State = {
 	locale: LocaleName;
+	autoLocateWhenAddBill?: boolean
+	enterAddBillWhenReduceMotionChanged?: boolean
 };
 type Store = State;
 
@@ -21,6 +23,7 @@ export const usePreferenceStore = create<Store>()(
 		(set, get) => {
 			return {
 				locale: getBrowserLang(),
+				autoLocateWhenAddBill: false
 			};
 		},
 		{

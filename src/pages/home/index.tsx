@@ -12,13 +12,16 @@ import { amountToNumber } from "@/ledger/bill";
 import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
+import { useUserStore } from "@/store/user";
 import { cn } from "@/utils";
 import { filterOrderedBillListByTimeRange } from "@/utils/filter";
 
 export default function Page() {
+	const t = useIntl();
+
 	const { bills, loading, sync } = useLedgerStore();
 	const { currentBookId } = useBookStore();
-	const t = useIntl();
+	const { login } = useUserStore();
 	const syncIcon =
 		sync === "wait"
 			? "icon-[mdi--cloud-minus-outline]"
@@ -45,7 +48,8 @@ export default function Page() {
 		);
 	}, [todayBills]);
 
-	const { budgets } = useBudget();
+	const { budgets: allBudgets } = useBudget();
+	const budgets = allBudgets.filter((b) => b.joiners.includes(login));
 
 	const budgetContainer = useRef<HTMLDivElement>(null);
 	const { count: budgetCount, index: curBudgetIndex } = useSnap(
