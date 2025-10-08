@@ -1,14 +1,16 @@
-import { useEffect, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { ImageAPI } from "@/api/image";
 
 export default function SmartImage({
 	source,
 	className,
 	alt,
+	style,
 }: {
 	source: string | File;
 	className?: string;
 	alt?: string;
+	style?: CSSProperties;
 }) {
 	const [url, setUrl] = useState<string>(
 		typeof source === "string" ? source : "",
@@ -44,5 +46,5 @@ export default function SmartImage({
 	}, [source]);
 
 	if (url === "") return null;
-	return <img src={url} className={className} alt={alt} />;
+	return <img src={url} className={className} alt={alt} style={style} />;
 }

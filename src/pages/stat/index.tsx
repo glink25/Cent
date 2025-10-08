@@ -6,9 +6,11 @@ import { useNavigate, useParams } from "react-router";
 import { useShallow } from "zustand/shallow";
 import { StorageDeferredAPI } from "@/api/storage";
 import { BillFilterProvider, showBillFilter } from "@/components/bill-filter";
+import { showBillInfo } from "@/components/bill-info";
 import Chart, { type ChartInstance, type ECOption } from "@/components/chart";
 import { DatePicker } from "@/components/date-picker";
 import BillItem from "@/components/ledger/item";
+import { showSortableList } from "@/components/sortable";
 import { Button } from "@/components/ui/button";
 import useCategory from "@/hooks/use-category";
 import { useCreators } from "@/hooks/use-creator";
@@ -19,7 +21,6 @@ import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
 import { cn } from "@/utils";
 import { processBillDataForCharts } from "@/utils/charts";
-import { showSortableList } from "@/components/sortable";
 
 const StaticViews = [
 	// { id: "daily", label: "stat-view-daily" },
@@ -646,13 +647,21 @@ export default function Page() {
 						{dataSources.highestExpenseBill && (
 							<div className="rounded-md border p-2">
 								{t("highest-expense")}:
-								<BillItem bill={dataSources.highestExpenseBill} showTime />
+								<BillItem
+									bill={dataSources.highestExpenseBill}
+									showTime
+									onClick={() => showBillInfo(dataSources.highestExpenseBill!)}
+								/>
 							</div>
 						)}
 						{dataSources.highestIncomeBill && (
 							<div className="rounded-md border p-2">
 								{t("highest-income")}:
-								<BillItem bill={dataSources.highestIncomeBill} showTime />
+								<BillItem
+									bill={dataSources.highestIncomeBill}
+									showTime
+									onClick={() => showBillInfo(dataSources.highestIncomeBill!)}
+								/>
 							</div>
 						)}
 					</div>

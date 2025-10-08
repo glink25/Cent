@@ -1,19 +1,19 @@
 import dayjs from "dayjs";
 import { useMemo, useRef } from "react";
+import { StorageAPI, toBookName } from "@/api/storage";
 import AnimatedNumber from "@/components/animated-number";
 import BudgetCard from "@/components/budget/card";
+import { PaginationIndicator } from "@/components/indicator";
 import Ledger from "@/components/ledger";
 import Loading from "@/components/loading";
 import { useBudget } from "@/hooks/use-budget";
+import { useSnap } from "@/hooks/use-snap";
 import { amountToNumber } from "@/ledger/bill";
 import { useIntl } from "@/locale";
+import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
 import { cn } from "@/utils";
 import { filterOrderedBillListByTimeRange } from "@/utils/filter";
-import { useBookStore } from "@/store/book";
-import { StorageAPI, toBookName } from "@/api/storage";
-import { useSnap } from "@/hooks/use-snap";
-import { PaginationIndicator } from "@/components/indicator";
 
 export default function Page() {
 	const { bills, loading, sync } = useLedgerStore();
@@ -87,7 +87,9 @@ export default function Page() {
 							);
 						})}
 					</div>
-					<PaginationIndicator count={budgetCount} current={curBudgetIndex} />
+					{budgetCount > 1 && (
+						<PaginationIndicator count={budgetCount} current={curBudgetIndex} />
+					)}
 				</div>
 			</div>
 			<button
@@ -107,6 +109,7 @@ export default function Page() {
 							bills={bills}
 							className={cn(bills.length > 0 && "relative")}
 							enableDivideAsOrdered
+							showTime
 						/>
 					) : (
 						<div className="text-xs p-4 text-center">

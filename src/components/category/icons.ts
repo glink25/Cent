@@ -61,7 +61,7 @@ export const ICONS = {
 		{ name: "camera", className: "icon-[mdi--camera]" },
 		{ name: "movie", className: "icon-[mdi--movie]" },
 		{ name: "music", className: "icon-[mdi--music]" },
-		{ name: "guitar", className: "icon-[mdi--guitar]" },
+		{ name: "guitar", className: "icon-[mdi--guitar-acoustic]" },
 		{ name: "gamepad", className: "icon-[mdi--gamepad]" },
 		{ name: "dice-multiple", className: "icon-[mdi--dice-multiple]" },
 	],

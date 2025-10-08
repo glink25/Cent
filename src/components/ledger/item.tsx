@@ -1,14 +1,14 @@
 import { useMemo } from "react";
+import useCategory from "@/hooks/use-category";
 import { useCreators } from "@/hooks/use-creator";
+import { useTag } from "@/hooks/use-tag";
 import { amountToNumber } from "@/ledger/bill";
 import type { Bill } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import { useUserStore } from "@/store/user";
 import { cn } from "@/utils";
-import { shortTime } from "@/utils/time";
-import useCategory from "@/hooks/use-category";
+import { denseTime, shortTime } from "@/utils/time";
 import CategoryIcon from "../category/icon";
-import { useTag } from "@/hooks/use-tag";
 
 interface BillItemProps {
 	bill: Bill;
@@ -96,7 +96,7 @@ export default function BillItem({
 				</div>
 				{showTime && (
 					<div className="text-[8px] text-foreground/60">
-						{shortTime(bill.time)}
+						{denseTime(bill.time)}
 					</div>
 				)}
 			</div>

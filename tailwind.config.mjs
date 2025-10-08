@@ -3,9 +3,6 @@ module.exports = {
   content: ["./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
-      colors: {
-        "kkk": 'red'
-      },
       keyframes: {
         "overlay-show": {
           from: { opacity: "0" },
@@ -41,14 +38,21 @@ module.exports = {
           to: {
             height: '0'
           },
-        }
+        },
+        'dynamic-bg': {
+          // 动画开始时使用 --color-start
+          '0%, 100%': { 'background-color': 'var(--color-start)' },
+          // 动画中间时使用 --color-end
+          '50%': { 'background-color': 'var(--color-end)' },
+        },
       },
       animation: {
         "overlay-show": "overlay-show 150ms cubic-bezier(0.16, 1, 0.3, 1)",
         "content-show": "content-show 150ms cubic-bezier(0.16, 1, 0.3, 1)",
         "slide-from-right": "slide-from-right 150ms cubic-bezier(0.16, 1, 0.3, 1)",
         "collapse-open": "collapse-open 150ms cubic-bezier(0.16, 1, 0.3, 1)",
-        "collapse-close": "collapse-close 150ms cubic-bezier(0.16, 1, 0.3, 1)"
+        "collapse-close": "collapse-close 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+        'dynamic-bg': 'dynamic-bg 3s ease-in-out infinite',
       },
     },
   },

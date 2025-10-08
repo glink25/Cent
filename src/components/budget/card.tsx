@@ -86,9 +86,11 @@ export default function BudgetCard({
 						time={time}
 					/>
 					<div>
-						<Collapsible.Trigger className="h-4 flex justify-end w-full group">
-							<i className=" group-[[data-state=open]]:icon-[mdi--chevron-down] group-[[data-state=closed]]:icon-[mdi--chevron-up]" />
-						</Collapsible.Trigger>
+						{(encountered?.categoriesUsed?.length ?? 0) > 0 && (
+							<Collapsible.Trigger className="h-4 flex justify-end w-full group">
+								<i className=" group-[[data-state=open]]:icon-[mdi--chevron-down] group-[[data-state=closed]]:icon-[mdi--chevron-up]" />
+							</Collapsible.Trigger>
+						)}
 					</div>
 					<Collapsible.Content className="data-[state=open]:animate-collapse-open data-[state=closed]:animate-collapse-close data-[state=closed]:overflow-hidden">
 						{encountered?.categoriesUsed?.map((v) => {

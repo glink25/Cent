@@ -1,4 +1,3 @@
-import { usePreference } from "@/store/preference";
 import React, { type ReactNode, useCallback, useEffect, useState } from "react";
 import {
 	createIntl,
@@ -7,7 +6,8 @@ import {
 	type IntlShape,
 	useIntl as useOriginalIntl,
 } from "react-intl";
-import { locales, type LocaleName } from "./utils";
+import { usePreference } from "@/store/preference";
+import { type LocaleName, locales } from "./utils";
 
 // 在外部使用的 Intl 实例
 export let intl: IntlShape;

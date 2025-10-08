@@ -1,14 +1,14 @@
+import useCategory from "@/hooks/use-category";
 import { useCreators } from "@/hooks/use-creator";
+import { useTag } from "@/hooks/use-tag";
 import { amountToNumber } from "@/ledger/bill";
 import { useIntl } from "@/locale";
 import { type EditBill, useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
 import { formatTime } from "@/utils/time";
 import { showBillEditor } from "../bill-editor";
-import SmartImage from "../image";
-import { useTag } from "@/hooks/use-tag";
-import useCategory from "@/hooks/use-category";
 import CategoryIcon from "../category/icon";
+import SmartImage from "../image";
 
 export default function BillInfo({
 	edit,
@@ -115,7 +115,15 @@ export default function BillInfo({
 							<SmartImage
 								source={edit.image}
 								alt=""
-								className="max-h-[200px] object-contain rounded"
+								className="max-h-[200px] object-contain rounded min-w-24 min-h-24 animate-dynamic-bg"
+								style={
+									{
+										"--color-start":
+											"color-mix(in oklab, var(--primary) 10%, transparent)",
+										" --color-end":
+											"color-mix(in oklab, var(--primary) 80%, transparent)",
+									} as any
+								}
 							/>
 						</div>
 					)}
