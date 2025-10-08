@@ -1,25 +1,27 @@
 import { Switch } from "radix-ui";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import useCategory from "@/hooks/use-category";
+import { useTag } from "@/hooks/use-tag";
 import PopupLayout from "@/layouts/popup-layout";
 import { amountToNumber, numberToAmount } from "@/ledger/bill";
 import { ExpenseBillCategories, IncomeBillCategories } from "@/ledger/category";
 import type { Bill, BillCategory } from "@/ledger/type";
+import { categoriesGridClassName } from "@/ledger/utils";
 import { useIntl, useLocale } from "@/locale";
 import type { EditBill } from "@/store/ledger";
 import { cn } from "@/utils";
 import { showCategoryList } from "../category";
+import { CategoryItem } from "../category/item";
 import { DatePicker } from "../date-picker";
+import Deletable from "../deletable";
 import { FORMAT_IMAGE_SUPPORTED, showFilePicker } from "../file-picker";
 import SmartImage from "../image";
 import IOSUnscrolledInput from "../input";
 import Calculator from "../keyboard";
-import { useTag } from "@/hooks/use-tag";
-import { toast } from "sonner";
+import CurrentLocation from "../simple-location";
 import Tag from "../tag";
-import { CategoryItem } from "../category/item";
 import { goAddBill } from ".";
-import { categoriesGridClassName } from "@/ledger/utils";
 
 const defaultBill = {
 	type: "expense" as Bill["type"],
@@ -78,7 +80,9 @@ export default function EditorForm({
 
 	const chooseImage = async () => {
 		const [file] = await showFilePicker({ accept: FORMAT_IMAGE_SUPPORTED });
-		setBillState((v) => ({ ...v, image: file }));
+		setBillState((v) => {
+			return { ...v, images: [...(v.images ?? []), file] };
+		});
 	};
 
 	return (
@@ -227,23 +231,66 @@ export default function EditorForm({
 				{/* keyboard area */}
 				<div className="keyboard-field h-[480px] sm:h-[380px] flex-shrink-0 flex gap-2 flex-col justify-start bg-stone-900 sm:rounded-b-md text-[white] p-2 pb-[max(env(safe-area-inset-bottom),8px)]">
 					<div className="flex justify-between items-center">
-						<div className="flex items-center">
-							<button
-								type="button"
-								className="mx-1 p-2 flex justify-center items-center rounded-full transition-all hover:(bg-stone-700) active:(bg-stone-500) cursor-pointer"
-								onClick={chooseImage}
-							>
-								{!billState.image ? (
-									<i className="icon-xs icon-[mdi--image-plus-outline] text-[white]"></i>
-								) : (
-									<SmartImage
-										source={billState.image}
-										alt=""
-										className="w-6 h-6 object-cover rounded"
-									/>
+						<div className="flex gap-2 items-center h-10">
+							<div className="flex items-center h-full">
+								{(billState.images?.length ?? 0) > 0 && (
+									<div className="pr-2 flex gap-[6px] items-center overflow-x-auto max-w-22 h-full scrollbar-hidden">
+										{billState.images?.map((img, index) => (
+											<Deletable
+												// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+												key={index}
+												onDelete={() => {
+													setBillState((v) => ({
+														...v,
+														images: v.images?.filter((m) => m !== img),
+													}));
+												}}
+											>
+												<SmartImage
+													source={img}
+													alt=""
+													className="w-6 h-6 object-cover rounded"
+												/>
+											</Deletable>
+										))}
+									</div>
 								)}
-							</button>
-							<div className="p-2 rounded-full transition-all hover:(bg-stone-700) active:(bg-stone-500)">
+								{(billState.images?.length ?? 0) < 3 && (
+									<button
+										type="button"
+										className="px-1 flex justify-center items-center rounded-full transition-all hover:(bg-stone-700) active:(bg-stone-500) cursor-pointer"
+										onClick={chooseImage}
+									>
+										<i className="icon-xs icon-[mdi--image-plus-outline] text-[white]"></i>
+									</button>
+								)}
+							</div>
+							<div className="h-full flex items-center">
+								{billState?.location ? (
+									<Deletable
+										onDelete={() => {
+											setBillState((prev) => {
+												return { ...prev, location: undefined };
+											});
+										}}
+									>
+										<i className="w-5 icon-[mdi--location-radius]"></i>
+									</Deletable>
+								) : (
+									<CurrentLocation
+										className="px-1 flex items-center justify-center"
+										onValueChange={(v) => {
+											console.log(v, "location");
+											setBillState((prev) => {
+												return { ...prev, location: v };
+											});
+										}}
+									>
+										<i className="icon-[mdi--add-location]" />
+									</CurrentLocation>
+								)}
+							</div>
+							<div className="rounded-full transition-all hover:(bg-stone-700) active:(bg-stone-500)">
 								<DatePicker
 									value={billState.time}
 									onChange={(time) => {
