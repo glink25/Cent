@@ -254,5 +254,10 @@
   "enter-add-bill-when-reduce-motion-changed-description": "Maybe useful with iOS shortcuts",
   "enter-add-bill-when-reduce-motion-changed": "Enter add-bill view when Reduce Motion changed",
   "location": "Location",
-  "see-category-ledgers": "See category details"
+  "see-category-ledgers": "See category details",
+  "budget-not-time": "budget coming soon",
+  "budget-unreached": "budget unreached",
+  "budget-reached": "budget reached",
+  "budget-reached-not-yet": "Budget unreached yet",
+  "budget-reached-times": "Budget reached {n} time(s)"
 }

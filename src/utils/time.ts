@@ -12,7 +12,7 @@ export const formatTime = (t: number) =>
 	dayjs.unix(t / 1000).format("YYYY-MM-DD HH:mm");
 
 
-export const denseDate = (time: Dayjs) => {
+export const denseDate = (time: Dayjs, joiner = '-') => {
 	const now = dayjs();
 	if (time.isSame(now, "days")) {
 		return t("Today");
@@ -20,12 +20,12 @@ export const denseDate = (time: Dayjs) => {
 	const dayDiff = Math.abs(time.diff(now, "day"));
 	if (dayDiff <= 3 && time.isSame(now, "M")) {
 		if (intl.locale === "zh") return `${time.format("DD")}日`;
-		return time.format("MM-DD");
+		return time.format(`MM${joiner}DD`);
 	}
 	if (time.isSame(now, "year")) {
-		return time.format("MM-DD");
+		return time.format(`MM${joiner}DD`);
 	}
-	return time.format("YYYY-MM-DD");
+	return time.format(`YYYY${joiner}MM${joiner}DD`);
 };
 
 export const denseTime = (_time: Dayjs | number) => {

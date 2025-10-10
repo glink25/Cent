@@ -112,3 +112,12 @@ export const budgetEncountered = (
 		})),
 	};
 };
+
+export const budgetReached = (budget: EditBudget, bills: Bill[], currentRange: [Dayjs, Dayjs],) => {
+	const encountered = budgetEncountered(budget, bills, currentRange)
+	const total = budgetTotal(budget)
+	return [
+		['total', encountered.totalUsed <= total],
+		...encountered.categoriesUsed?.map(({ id, used }) =>
+			[id, used <= (budget.categoriesBudget?.find(c => c.id === id)?.budget ?? 0)]) ?? []] as [string, boolean][]
+}
