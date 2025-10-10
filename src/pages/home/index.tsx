@@ -21,7 +21,7 @@ export default function Page() {
 
 	const { bills, loading, sync } = useLedgerStore();
 	const { currentBookId } = useBookStore();
-	const { login } = useUserStore();
+	const { id: userId } = useUserStore();
 	const syncIcon =
 		sync === "wait"
 			? "icon-[mdi--cloud-minus-outline]"
@@ -49,7 +49,7 @@ export default function Page() {
 	}, [todayBills]);
 
 	const { budgets: allBudgets } = useBudget();
-	const budgets = allBudgets.filter((b) => b.joiners.includes(login));
+	const budgets = allBudgets.filter((b) => b.joiners.includes(userId));
 
 	const budgetContainer = useRef<HTMLDivElement>(null);
 	const { count: budgetCount, index: curBudgetIndex } = useSnap(
@@ -83,10 +83,9 @@ export default function Page() {
 						{budgets.map((budget) => {
 							return (
 								<BudgetCard
-									className="flex-shrink-0 snap-start h-fit"
+									className="flex-shrink-0 snap-start"
 									key={budget.id}
 									budget={budget}
-									bills={bills}
 								/>
 							);
 						})}
