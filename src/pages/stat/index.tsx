@@ -20,7 +20,14 @@ import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
 import { cn } from "@/utils";
-import { processBillDataForCharts } from "@/utils/charts";
+import {
+	overallTrendOption,
+	processBillDataForCharts,
+	structureOption,
+	userTrendOption,
+} from "@/utils/charts";
+import { useTag } from "@/hooks/use-tag";
+import type { ECElementEvent } from "echarts/core";
 
 const StaticViews = [
 	// { id: "daily", label: "stat-view-daily" },
@@ -35,126 +42,6 @@ type Views = {
 	label: string;
 	filter?: BillFilter;
 };
-
-const overallTrendOption = (dataset: { source: any[] }, options?: ECOption) =>
-	merge(
-		{
-			// 提示框，'axis' 表示鼠标悬浮在x轴上时触发
-			tooltip: {
-				trigger: "axis",
-			},
-			// 图例，用于筛选系列
-			legend: {
-				// ECharts 会自动从 dataset.source 的第一行读取图例名称
-				// ['date', '收入', '支出', '结余'] -> '收入', '支出', '结余'
-			},
-			// ECharts 的数据核心
-			dataset: dataset,
-			// x轴配置，type: 'category' 表示类目轴
-			// ECharts 会自动将 dataset 的第一列 ('date') 映射到 x 轴
-			xAxis: {
-				type: "category",
-				boundaryGap: false, // 折线图建议设为 false，让线贴近y轴
-			},
-			// y轴配置，type: 'value' 表示数值轴
-			yAxis: {
-				type: "value",
-			},
-			// 系列列表，定义了图表中的每一条线（或其他图形）
-			series: [
-				// ECharts 会自动将 dataset 的第二列('收入')映射到第一个系列
-				{ type: "line", smooth: true },
-				// 第三列('支出')映射到第二个系列
-				{ type: "line", smooth: true },
-				// 第四列('结余')映射到第三个系列
-				{ type: "line", smooth: true },
-			],
-		},
-		options,
-	);
-
-/**
- * 通用的趋势图 ECharts Option 生成器
- * @param title - 图表标题
- * @param dataset - 包含 source 的数据集
- * @param options - 自定义配置
- * @returns ECharts Option
- */
-const userTrendOption = (
-	dataset: { source: (string | number)[][] },
-	options?: ECOption,
-): ECOption => {
-	const seriesCount = dataset.source[0].length - 1;
-
-	const baseOption: ECOption = {
-		tooltip: { trigger: "axis" },
-		legend: {},
-		dataset: dataset,
-		xAxis: { type: "category", boundaryGap: false },
-		yAxis: { type: "value" },
-		series: Array.from({ length: seriesCount }, (_, i) => ({
-			type: "line",
-			smooth: true,
-			name: dataset.source[0][i + 1], // 系列名称，用于图例和 tooltip
-			encode: {
-				x: "date", // 映射到 dataset 中的 'date' 列
-				y: dataset.source[0][i + 1], // 映射到 dataset 中的 'glink25' 列
-			},
-		})),
-	};
-
-	return merge(baseOption, options);
-};
-
-const structureOption = (dataset: any[], options?: ECOption) =>
-	merge(
-		{
-			title: {
-				text: "支出结构",
-				left: "center", // 标题居中
-			},
-			// 提示框，'item' 表示鼠标悬浮在数据项（扇区）上时触发
-			tooltip: {
-				trigger: "item",
-				// 格式化提示内容：a(系列名), b(数据项名), c(数值), d(百分比)
-				formatter: "{b}: {c} ({d}%)",
-			},
-			legend: {
-				orient: "vertical", // 图例垂直排列
-				left: "left", // 靠左放置
-			},
-			series: [
-				{
-					name: "支出类型", // 系列名称，会在 tooltip 中显示
-					type: "pie",
-					center: ["55%", "50%"],
-					radius: "55%", // 饼图半径
-					labelLine: {
-						show: true,
-						length: 10, // 第一段（直线段）长度 20px 或 20（单位取决于版本 / 语法上下文）
-						length2: 10, // 第二段（拐弯 / 水平延伸）长度 30px
-						lineStyle: {
-							width: 1,
-							type: "solid",
-							color: "#aaa",
-						},
-						smooth: 0.2, // 可选，让折线有点圆弧过渡
-					},
-					// 直接使用我们生成的 { name, value } 格式的数据
-					data: dataset,
-					emphasis: {
-						// 高亮状态下的样式
-						itemStyle: {
-							shadowBlur: 10,
-							shadowOffsetX: 0,
-							shadowColor: "rgba(0, 0, 0, 0.5)",
-						},
-					},
-				},
-			],
-		},
-		options,
-	);
 
 const FocusTypes = ["income", "expense", "balance"] as const;
 type FocusType = (typeof FocusTypes)[number];
@@ -211,6 +98,25 @@ function FocusTypeSelector({
 					<span className="text-[10px] opacity-60">{money[2]}</span>
 				</div>
 			</button>
+		</div>
+	);
+}
+
+function TagItem({
+	name,
+	money,
+	total,
+}: {
+	name: string;
+	money: number;
+	total: number;
+}) {
+	return (
+		<div className="flex w-full items-center gap-2">
+			<div className="text-sm">#{name}</div>
+			<div className="flex-1">
+				{money} - {total}
+			</div>
 		</div>
 	);
 }
@@ -372,11 +278,12 @@ export default function Page() {
 	}, [filter]);
 
 	const navigate = useNavigate();
-	const seeDetails = () => {
-		navigate("/search", { state: { filter } });
+	const seeDetails = (append?: Partial<BillFilter>) => {
+		navigate("/search", { state: { filter: { ...filter, ...append } } });
 	};
 
 	const { categories } = useCategory();
+	const { tags } = useTag();
 	const creators = useCreators();
 
 	const trendChart = useRef<ChartInstance>(undefined);
@@ -418,13 +325,15 @@ export default function Page() {
 			processBillDataForCharts(
 				{
 					bills: filtered,
-					getMajorCategory: (id) => {
+					getCategory: (id) => {
 						const cate = categories.find((c) => c.id === id);
 						if (!cate?.parent) {
-							return cate ?? { id, name: id };
+							return cate
+								? { ...cate, parent: { ...cate } }
+								: { id, name: id, parent: { id, name: id } };
 						}
 						const parent = categories.find((c) => c.id === cate.parent)!;
-						return parent;
+						return { ...cate, parent };
 					},
 					getUserInfo: (id) => {
 						return {
@@ -499,6 +408,44 @@ export default function Page() {
 		t,
 	]);
 
+	const [selectedCategoryName, setSelectedCategoryName] = useState<string>();
+
+	const onStructureChartClick = useCallback((params: ECElementEvent) => {
+		if (params.componentType === "series" && params.seriesType === "pie") {
+			setSelectedCategoryName(params.name);
+		}
+	}, []);
+
+	const selectedCategory = useMemo(() => {
+		return categories.find((c) => c.name === selectedCategoryName);
+	}, [categories, selectedCategoryName]);
+
+	const selectedCategoryChart = useMemo(() => {
+		if (dimension !== "category") {
+			return undefined;
+		}
+		if (!selectedCategory) {
+			return undefined;
+		}
+		const data = dataSources.subCategoryStructure[selectedCategory.id];
+		if (!data) {
+			return undefined;
+		}
+		return structureOption(data, { title: { text: selectedCategory.name } });
+	}, [dimension, dataSources.subCategoryStructure, selectedCategory]);
+
+	const tagStructure = useMemo(
+		() =>
+			Array.from(dataSources.tagStructure.entries()).map(([tagId, struct]) => {
+				const tag = tags.find((t) => t.id === tagId);
+				return {
+					...tag!,
+					...struct,
+				};
+			}),
+		[dataSources.tagStructure, tags],
+	);
+	const totalMoneys = FocusTypes.map((t) => dataSources.total[t]);
 	return (
 		<div className="w-full h-full p-2 flex flex-col items-center justify-center gap-4 overflow-hidden">
 			<div className="w-full mx-2 max-w-[600px] flex flex-col">
@@ -618,7 +565,7 @@ export default function Page() {
 			<FocusTypeSelector
 				value={focusType}
 				onValueChange={setFocusType}
-				money={FocusTypes.map((t) => dataSources.total[t])}
+				money={totalMoneys}
 			/>
 			<div className="w-full flex-1 flex justify-center overflow-y-auto">
 				<div className="w-full mx-2 max-w-[600px] flex flex-col items-center gap-4">
@@ -635,14 +582,54 @@ export default function Page() {
 							key={dimension}
 							option={charts[1]}
 							className="w-full h-full border rounded-md"
+							onClick={onStructureChartClick}
 						/>
 					</div>
-					<div>
-						<Button variant="ghost" onClick={() => seeDetails()}>
-							{t("see-all-ledgers")}
-							<i className="icon-[mdi--arrow-up-right]"></i>
-						</Button>
-					</div>
+					{selectedCategoryChart && (
+						<div className="flex-shrink-0 w-full border rounded-md">
+							<div className="w-full h-[300px]">
+								<Chart
+									option={selectedCategoryChart}
+									className="w-full h-full "
+								/>
+							</div>
+							<div className="flex justify-end p-1">
+								<Button
+									variant="ghost"
+									size={"sm"}
+									onClick={() => {
+										if (selectedCategory) {
+											seeDetails({ categories: [selectedCategory?.id] });
+										}
+									}}
+								>
+									{t("see-category-ledgers")}
+									<i className="icon-[mdi--arrow-up-right]"></i>
+								</Button>
+							</div>
+						</div>
+					)}
+					{tagStructure.length > 0 && (
+						<div className="rounded-md border p-2 w-full">
+							{tagStructure.map((struct) => {
+								const index = FocusTypes.indexOf(focusType);
+								const money = [
+									struct.income,
+									struct.expense,
+									struct.income - struct.expense,
+								][index];
+								const total = totalMoneys[index];
+								return (
+									<TagItem
+										key={struct.id}
+										name={struct.name}
+										money={money}
+										total={total}
+									></TagItem>
+								);
+							})}
+						</div>
+					)}
 					<div className="w-full flex flex-col gap-4">
 						{dataSources.highestExpenseBill && (
 							<div className="rounded-md border p-2">
@@ -664,6 +651,13 @@ export default function Page() {
 								/>
 							</div>
 						)}
+					</div>
+
+					<div>
+						<Button variant="ghost" onClick={() => seeDetails()}>
+							{t("see-all-ledgers")}
+							<i className="icon-[mdi--arrow-up-right]"></i>
+						</Button>
 					</div>
 					<div className="w-full h-20 flex-shrink-0"></div>
 				</div>

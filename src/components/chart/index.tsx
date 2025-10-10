@@ -58,12 +58,13 @@ echarts.use([
 type ChartProps = {
 	className?: string;
 	option: ECOption;
+	onClick?: (e: echarts.ECElementEvent) => boolean | void;
 };
 
 export type ChartInstance = echarts.ECharts;
 
 const Chart = forwardRef<ChartInstance | undefined, ChartProps>(function _Chart(
-	{ className, option }: ChartProps,
+	{ className, option, onClick }: ChartProps,
 	ref,
 ) {
 	const rootRef = useRef<HTMLDivElement>(null);
@@ -76,10 +77,12 @@ const Chart = forwardRef<ChartInstance | undefined, ChartProps>(function _Chart(
 		}
 		const chart = echarts.init(el);
 		chartRef.current = chart;
+		chart.on("click", onClick as any);
 		return () => {
+			chart.off("click", onClick as any);
 			chart.dispose();
 		};
-	}, []);
+	}, [onClick]);
 
 	useResize(rootRef.current, (sizer) => {
 		chartRef?.current?.resize(sizer());

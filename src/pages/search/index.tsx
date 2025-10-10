@@ -12,6 +12,7 @@ import type { Bill, BillFilter } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
 import { cn } from "@/utils";
+import useCategory from "@/hooks/use-category";
 
 const SORTS = [
 	// 最近的在最上面
@@ -47,8 +48,23 @@ const SORTS = [
 export default function Page() {
 	const t = useIntl();
 
+	const { categories } = useCategory();
 	const { state } = useLocation();
-	const [form, setForm] = useState<BillFilter>(state?.filter ?? {});
+	const [form, setForm] = useState<BillFilter>(() => {
+		if (state.filter) {
+			const filter = state.filter as BillFilter;
+			return {
+				...filter,
+				// 如果传入的参数只有父级分类，则需要同时选择子级分类
+				categories: categories
+					.filter((c) =>
+						filter.categories?.some((v) => v === c.id || v === c.parent),
+					)
+					.map((c) => c.id),
+			};
+		}
+		return {};
+	});
 	const [filterOpen, setFilterOpen] = useState(false);
 
 	const toReset = useCallback(() => {

@@ -253,5 +253,6 @@
   "auto-locate-when-add-bill-description": "需要先手动授权位置权限后生效",
   "enter-add-bill-when-reduce-motion-changed": "【减弱动态效果】变化时进入新增记账页",
   "enter-add-bill-when-reduce-motion-changed-description": "配合 iOS 快捷指令使用",
-  "location": "位置"
+  "location": "位置",
+  "see-category-ledgers": "查看分类账单"
 }

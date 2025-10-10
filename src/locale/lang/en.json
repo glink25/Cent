@@ -253,5 +253,6 @@
   "auto-locate-when-add-bill-description": "Active after manully grant permission",
   "enter-add-bill-when-reduce-motion-changed-description": "Maybe useful with iOS shortcuts",
   "enter-add-bill-when-reduce-motion-changed": "Enter add-bill view when Reduce Motion changed",
-  "location": "Location"
+  "location": "Location",
+  "see-category-ledgers": "See category details"
 }

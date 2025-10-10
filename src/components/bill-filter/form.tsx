@@ -106,7 +106,7 @@ export default function BillFilterForm({
 			return t("all");
 		}
 		return ids
-			.map((id) => t(allCategories.find((v) => v.id === id)?.name ?? id))
+			.map((id) => allCategories.find((v) => v.id === id)?.name ?? id)
 			.join(",");
 	};
 
