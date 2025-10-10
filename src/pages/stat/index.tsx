@@ -1,4 +1,5 @@
 import dayjs, { type Dayjs } from "dayjs";
+import type { ECElementEvent } from "echarts/core";
 import { merge } from "lodash-es";
 import { Switch } from "radix-ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -12,10 +13,12 @@ import { DatePicker } from "@/components/date-picker";
 import BillItem from "@/components/ledger/item";
 import { showSortableList } from "@/components/sortable";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import useCategory from "@/hooks/use-category";
 import { useCreators } from "@/hooks/use-creator";
 import { useCustomFilters } from "@/hooks/use-custom-filters";
-import type { BillFilter } from "@/ledger/type";
+import { useTag } from "@/hooks/use-tag";
+import type { BillFilter, BillType } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
@@ -26,8 +29,6 @@ import {
 	structureOption,
 	userTrendOption,
 } from "@/utils/charts";
-import { useTag } from "@/hooks/use-tag";
-import type { ECElementEvent } from "echarts/core";
 
 const StaticViews = [
 	// { id: "daily", label: "stat-view-daily" },
@@ -98,25 +99,6 @@ function FocusTypeSelector({
 					<span className="text-[10px] opacity-60">{money[2]}</span>
 				</div>
 			</button>
-		</div>
-	);
-}
-
-function TagItem({
-	name,
-	money,
-	total,
-}: {
-	name: string;
-	money: number;
-	total: number;
-}) {
-	return (
-		<div className="flex w-full items-center gap-2">
-			<div className="text-sm">#{name}</div>
-			<div className="flex-1">
-				{money} - {total}
-			</div>
 		</div>
 	);
 }
@@ -610,24 +592,31 @@ export default function Page() {
 						</div>
 					)}
 					{tagStructure.length > 0 && (
-						<div className="rounded-md border p-2 w-full">
-							{tagStructure.map((struct) => {
-								const index = FocusTypes.indexOf(focusType);
-								const money = [
-									struct.income,
-									struct.expense,
-									struct.income - struct.expense,
-								][index];
-								const total = totalMoneys[index];
-								return (
-									<TagItem
-										key={struct.id}
-										name={struct.name}
-										money={money}
-										total={total}
-									></TagItem>
-								);
-							})}
+						<div className="rounded-md border p-2 w-full flex flex-col">
+							<h2 className="font-medium text-lg my-3 text-center">标签详情</h2>
+							<div className="flex flex-col w-full divide-y">
+								{tagStructure.map((struct) => {
+									const index = FocusTypes.indexOf(focusType);
+									const money = [
+										struct.income,
+										struct.expense,
+										struct.income - struct.expense,
+									][index];
+									const total = totalMoneys[index];
+									return (
+										<TagItem
+											key={struct.id}
+											name={struct.name}
+											money={money}
+											total={total}
+											type={focusType}
+											onClick={() => {
+												seeDetails({ tags: [struct.id] });
+											}}
+										></TagItem>
+									);
+								})}
+							</div>
 						</div>
 					)}
 					<div className="w-full flex flex-col gap-4">
@@ -664,5 +653,55 @@ export default function Page() {
 			</div>
 			<BillFilterProvider />
 		</div>
+	);
+}
+
+function TagItem({
+	name,
+	money,
+	total,
+	type,
+	onClick,
+}: {
+	name: string;
+	money: number;
+	total: number;
+	type: FocusType;
+	onClick?: () => void;
+}) {
+	const percent = total === 0 ? 0 : money / total;
+	return (
+		<Button
+			variant="ghost"
+			className="flex w-full items-center gap-2 pr-4 py-2 cursor-pointer"
+			onClick={onClick}
+		>
+			<div className="text-sm w-[80px] truncate text-left">#{name}</div>
+			<div className="flex-1">
+				<Progress
+					value={percent * 100}
+					className="h-3 [&_[data-state=indeterminate]]:hidden"
+				>
+					<div
+						className={cn(
+							"absolute top-0 text-[8px] px-2 rounded-full min-w-min h-full flex items-center justify-end text-white",
+							type === "expense"
+								? "bg-red-700"
+								: type === "income"
+									? "bg-green-700"
+									: "bg-stone-700",
+						)}
+						style={{ width: `${percent * 100}%` }}
+					>
+						{(percent * 100).toFixed(2)}%
+					</div>
+				</Progress>
+			</div>
+			<div className="w-[40px] truncate text-right">
+				{type === "expense" ? "-" : type === "income" ? "+" : ""}
+				{money}
+			</div>
+			<i className="icon-[mdi--arrow-up-right]"></i>
+		</Button>
 	);
 }

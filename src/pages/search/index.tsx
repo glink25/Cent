@@ -7,12 +7,12 @@ import BillFilterForm from "@/components/bill-filter";
 import Clearable from "@/components/clearable";
 import Ledger from "@/components/ledger";
 import { Button } from "@/components/ui/button";
+import useCategory from "@/hooks/use-category";
 import { useCustomFilters } from "@/hooks/use-custom-filters";
 import type { Bill, BillFilter } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
 import { cn } from "@/utils";
-import useCategory from "@/hooks/use-category";
 
 const SORTS = [
 	// 最近的在最上面
@@ -51,8 +51,8 @@ export default function Page() {
 	const { categories } = useCategory();
 	const { state } = useLocation();
 	const [form, setForm] = useState<BillFilter>(() => {
-		if (state.filter) {
-			const filter = state.filter as BillFilter;
+		const filter = state?.filter as BillFilter;
+		if (filter) {
 			return {
 				...filter,
 				// 如果传入的参数只有父级分类，则需要同时选择子级分类
