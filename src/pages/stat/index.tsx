@@ -1,6 +1,7 @@
-import dayjs, { type Dayjs } from "dayjs";
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
+import dayjs from "dayjs";
 import type { ECElementEvent } from "echarts/core";
-import { merge } from "lodash-es";
 import { Switch } from "radix-ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
@@ -8,7 +9,7 @@ import { useShallow } from "zustand/shallow";
 import { StorageDeferredAPI } from "@/api/storage";
 import { BillFilterProvider, showBillFilter } from "@/components/bill-filter";
 import { showBillInfo } from "@/components/bill-info";
-import Chart, { type ChartInstance, type ECOption } from "@/components/chart";
+import Chart, { type ChartInstance } from "@/components/chart";
 import { DatePicker } from "@/components/date-picker";
 import BillItem from "@/components/ledger/item";
 import { showSortableList } from "@/components/sortable";
@@ -18,7 +19,7 @@ import useCategory from "@/hooks/use-category";
 import { useCreators } from "@/hooks/use-creator";
 import { useCustomFilters } from "@/hooks/use-custom-filters";
 import { useTag } from "@/hooks/use-tag";
-import type { BillFilter, BillType } from "@/ledger/type";
+import type { BillFilter } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
@@ -66,7 +67,9 @@ function FocusTypeSelector({
 					btnClass,
 					focusType === "income" && "!bg-stone-700 !text-white",
 				)}
-				onClick={() => setFocusType("income")}
+				onClick={() => {
+					setFocusType("income");
+				}}
 			>
 				<div className="flex flex-col items-center justify-center">
 					{t("income")}
@@ -271,37 +274,8 @@ export default function Page() {
 	const trendChart = useRef<ChartInstance>(undefined);
 
 	const [dimension, setDimension] = useState<"category" | "user">("category");
-	const [focusType, _setFocusType] = useState<FocusType>("expense");
-	const setFocusType: typeof _setFocusType = useCallback((v) => {
-		_setFocusType((prev) => {
-			const newV = typeof v === "function" ? v(prev) : v;
-			const opt = trendChart.current?.getOption();
-			const legend = (opt?.dataset as any)?.[0]?.source?.[0]?.slice(1);
-			if (!legend?.length) {
-				return newV;
-			}
-			const selectLegendIndex = FocusTypes.indexOf(newV);
-			const unselectLegendIndexes = FocusTypes.map((value, index) => ({
-				value,
-				index,
-			}))
-				.filter((v) => v.index !== selectLegendIndex)
-				.map((v) => v.index);
-			trendChart.current?.dispatchAction({
-				type: "legendSelect",
-				name: legend[selectLegendIndex],
-			});
-			unselectLegendIndexes.forEach((i) => {
-				trendChart.current?.dispatchAction({
-					type: "legendUnSelect",
-					name: legend[i],
-				});
-			});
-
-			return newV;
-		});
-	}, []);
-
+	const [selectedCategoryName, setSelectedCategoryName] = useState<string>();
+	const [focusType, setFocusType] = useState<FocusType>("expense");
 	const dataSources = useMemo(
 		() =>
 			processBillDataForCharts(
@@ -332,10 +306,21 @@ export default function Page() {
 
 	const charts = useMemo(() => {
 		if (dimension === "category") {
+			const incomeName = dataSources.overallTrend.source?.[0]?.[1];
+			const expenseName = dataSources.overallTrend.source?.[0]?.[2];
+			const balanceName = dataSources.overallTrend.source?.[0]?.[3];
+
 			return [
 				overallTrendOption(dataSources.overallTrend, {
 					title: {
 						text: t("overall-trend"),
+					},
+					legend: {
+						selected: {
+							[incomeName]: focusType === "income",
+							[expenseName]: focusType === "expense", // 默认选中（显示）
+							[balanceName]: focusType === "balance",
+						},
 					},
 				}),
 				focusType === "expense"
@@ -389,8 +374,6 @@ export default function Page() {
 		dataSources.userIncomeTrend,
 		t,
 	]);
-
-	const [selectedCategoryName, setSelectedCategoryName] = useState<string>();
 
 	const onStructureChartClick = useCallback((params: ECElementEvent) => {
 		if (params.componentType === "series" && params.seriesType === "pie") {
@@ -532,10 +515,10 @@ export default function Page() {
 										return v === "category" ? "user" : "category";
 									});
 								}}
-								className="relative z-[0] h-[29px] w-[54px] cursor-default rounded-sm bg-blackA6 outline-none bg-stone-300 group"
+								className="relative z-[0] h-[29px] w-[54px] cursor-pointer rounded-sm bg-blackA6 outline-none bg-stone-300 group"
 							>
 								<div className="absolute top-0 left-0 w-full h-full flex items-center justify-center gap-2 z-[1]">
-									<i className="icon-[mdi--category-outline] group-[data-[state=checked]]:text-white"></i>
+									<i className="icon-[mdi--view-grid-outline] group-[data-[state=checked]]:text-white"></i>
 									<i className="icon-[mdi--account-outline]"></i>
 								</div>
 								<Switch.Thumb className="block size-[22px] translate-x-[4px] rounded-sm bg-white  transition-transform duration-100 will-change-transform data-[state=checked]:translate-x-[28px]" />
@@ -546,7 +529,10 @@ export default function Page() {
 			</div>
 			<FocusTypeSelector
 				value={focusType}
-				onValueChange={setFocusType}
+				onValueChange={(v) => {
+					setFocusType(v);
+					setSelectedCategoryName(undefined);
+				}}
 				money={totalMoneys}
 			/>
 			<div className="w-full flex-1 flex justify-center overflow-y-auto">
@@ -594,28 +580,30 @@ export default function Page() {
 					{tagStructure.length > 0 && (
 						<div className="rounded-md border p-2 w-full flex flex-col">
 							<h2 className="font-medium text-lg my-3 text-center">标签详情</h2>
-							<div className="flex flex-col w-full divide-y">
-								{tagStructure.map((struct) => {
-									const index = FocusTypes.indexOf(focusType);
-									const money = [
-										struct.income,
-										struct.expense,
-										struct.income - struct.expense,
-									][index];
-									const total = totalMoneys[index];
-									return (
-										<TagItem
-											key={struct.id}
-											name={struct.name}
-											money={money}
-											total={total}
-											type={focusType}
-											onClick={() => {
-												seeDetails({ tags: [struct.id] });
-											}}
-										></TagItem>
-									);
-								})}
+							<div className="table w-full border-collapse">
+								<div className="table-row-group divide-y">
+									{tagStructure.map((struct) => {
+										const index = FocusTypes.indexOf(focusType);
+										const money = [
+											struct.income,
+											struct.expense,
+											struct.income - struct.expense,
+										][index];
+										const total = totalMoneys[index];
+										return (
+											<TagItem
+												key={struct.id}
+												name={struct.name}
+												money={money}
+												total={total}
+												type={focusType}
+												onClick={() => {
+													seeDetails({ tags: [struct.id] });
+												}}
+											></TagItem>
+										);
+									})}
+								</div>
 							</div>
 						</div>
 					)}
@@ -641,7 +629,6 @@ export default function Page() {
 							</div>
 						)}
 					</div>
-
 					<div>
 						<Button variant="ghost" onClick={() => seeDetails()}>
 							{t("see-all-ledgers")}
@@ -671,16 +658,17 @@ function TagItem({
 }) {
 	const percent = total === 0 ? 0 : money / total;
 	return (
-		<Button
-			variant="ghost"
-			className="flex w-full items-center gap-2 pr-4 py-2 cursor-pointer"
+		<div
+			className="w-full items-center cursor-pointer table-row h-10 rounded transition-all hover:bg-accent hover:text-accent-foreground"
 			onClick={onClick}
 		>
-			<div className="text-sm w-[80px] truncate text-left">#{name}</div>
-			<div className="flex-1">
+			<div className="text-sm truncate text-left table-cell w-[1px] align-middle pl-2">
+				#{name}
+			</div>
+			<div className="table-cell w-auto px-2 align-middle">
 				<Progress
 					value={percent * 100}
-					className="h-3 [&_[data-state=indeterminate]]:hidden"
+					className="h-3 [&_[data-state=indeterminate]]:hidden min-w-[1px]"
 				>
 					<div
 						className={cn(
@@ -697,11 +685,15 @@ function TagItem({
 					</div>
 				</Progress>
 			</div>
-			<div className="w-[40px] truncate text-right">
-				{type === "expense" ? "-" : type === "income" ? "+" : ""}
-				{money}
+			<div className="w-[1px] truncate text-right table-cell align-middle pr-2">
+				<div className="flex items-center w-full">
+					<div className="flex-1 gap-1">
+						{type === "expense" ? "-" : type === "income" ? "+" : ""}
+						{money}
+					</div>
+					<i className="icon-[mdi--arrow-up-right]"></i>
+				</div>
 			</div>
-			<i className="icon-[mdi--arrow-up-right]"></i>
-		</Button>
+		</div>
 	);
 }
