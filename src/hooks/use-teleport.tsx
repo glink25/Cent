@@ -1,5 +1,6 @@
 import {
 	createContext,
+	type HTMLAttributes,
 	type ReactNode,
 	type RefObject,
 	useContext,
@@ -29,7 +30,7 @@ export default function createTeleportSlot() {
 		return context;
 	}
 
-	function Slot(props: any) {
+	function Slot(props: HTMLAttributes<HTMLDivElement>) {
 		const { parentRef } = useTeleportContext();
 		return <div {...props} ref={parentRef}></div>;
 	}

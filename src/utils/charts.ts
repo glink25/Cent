@@ -402,10 +402,40 @@ export const overallTrendOption = (
 			xAxis: {
 				type: "category",
 				boundaryGap: false, // 折线图建议设为 false，让线贴近y轴
+				axisLabel: {
+					fontSize: 10, // 设置 y 轴刻度标签字体大小
+				},
+				axisLine: {
+					show: true, // 确保 X 轴线显示
+					lineStyle: {
+						color: "#666", // 可以设置轴线颜色
+						width: 1, // 可以设置轴线宽度
+						// type: 'solid'  // 也可以设置线的类型，如实线 'solid'，虚线 'dashed'
+					},
+				},
 			},
 			// y轴配置，type: 'value' 表示数值轴
 			yAxis: {
 				type: "value",
+				splitLine: {
+					// y轴网格线
+					show: true, // 确保显示
+					lineStyle: {
+						type: "dashed", // 设置为虚线
+						// color: '#ccc' // 可以设置颜色
+					},
+				},
+				axisLabel: {
+					fontSize: 10, // 设置 y 轴刻度标签字体大小
+				},
+				axisLine: {
+					show: true, // 确保 X 轴线显示
+					lineStyle: {
+						color: "#666", // 可以设置轴线颜色
+						width: 1, // 可以设置轴线宽度
+						// type: 'solid'  // 也可以设置线的类型，如实线 'solid'，虚线 'dashed'
+					},
+				},
 			},
 			// 系列列表，定义了图表中的每一条线（或其他图形）
 			series: [
