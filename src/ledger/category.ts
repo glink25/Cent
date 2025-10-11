@@ -497,7 +497,7 @@ export const IncomeBillCategories: BillCategory[] = [
 	},
 	{
 		name: "gifts",
-		id: "gifts",
+		id: "gifts-income",
 		type: "income",
 		icon: "icon-[mdi--gift]",
 		color: "#ea7ccc",
@@ -505,7 +505,7 @@ export const IncomeBillCategories: BillCategory[] = [
 	},
 	{
 		name: "hongbao",
-		id: "hongbao",
+		id: "hongbao-income",
 		type: "income",
 		icon: "icon-[mdi--redeem]",
 		color: "#ea7ccc",
@@ -563,3 +563,12 @@ export const getDefaultCategoryById = (id: string) => {
 		return cate;
 	}
 };
+// check id repeat:
+// const ids: string[] = [];
+// BillCategories.forEach((c) => {
+// 	if (ids.includes(c.id)) {
+// 		console.log("repeat id:", c.id, c);
+// 	} else {
+// 		ids.push(c.id);
+// 	}
+// });
