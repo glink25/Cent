@@ -259,5 +259,9 @@
   "budget-unreached": "预算未达成",
   "budget-not-time": "预算尚未开启",
   "budget-reached-not-yet": "预算尚未达标",
-  "budget-reached-times": "预算达标{n}次"
+  "budget-reached-times": "预算达标{n}次",
+  "see-expense-ledgers": "查看支出账单",
+  "see-income-ledgers": "查看收入账单",
+  "tag-details": "标签详情",
+  "analysis": "分析"
 }

@@ -34,8 +34,6 @@ export interface ProcessBillDataOptions {
 	gap?: OpUnitType;
 }
 
-// --- 定义我们函数的输出结构 ---
-
 /**
  * ECharts 饼图数据项格式
  */
@@ -440,11 +438,11 @@ export const overallTrendOption = (
 			// 系列列表，定义了图表中的每一条线（或其他图形）
 			series: [
 				// ECharts 会自动将 dataset 的第二列('收入')映射到第一个系列
-				{ type: "line", smooth: true },
+				{ type: "line", smooth: true, showSymbol: false },
 				// 第三列('支出')映射到第二个系列
-				{ type: "line", smooth: true },
+				{ type: "line", smooth: true, showSymbol: false },
 				// 第四列('结余')映射到第三个系列
-				{ type: "line", smooth: true },
+				{ type: "line", smooth: true, showSymbol: false },
 			],
 		},
 		options,
@@ -477,6 +475,7 @@ export const userTrendOption = (
 				x: "date", // 映射到 dataset 中的 'date' 列
 				y: dataset.source[0][i + 1], // 映射到 dataset 中的 'glink25' 列
 			},
+			showSymbol: false,
 		})),
 	};
 

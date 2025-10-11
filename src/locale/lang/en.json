@@ -259,5 +259,9 @@
   "budget-unreached": "budget unreached",
   "budget-reached": "budget reached",
   "budget-reached-not-yet": "Budget unreached yet",
-  "budget-reached-times": "Budget reached {n} time(s)"
+  "budget-reached-times": "Budget reached {n} time(s)",
+  "see-expense-ledgers": "See expense details",
+  "see-income-ledgers": "See income details",
+  "tag-details": "Tag Details",
+  "analysis": "Analysis"
 }

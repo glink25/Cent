@@ -30,6 +30,8 @@ import {
 	structureOption,
 	userTrendOption,
 } from "@/utils/charts";
+import type { AnalysisResult } from "@/api/storage/analysis";
+import { amountToNumber } from "@/ledger/bill";
 
 const StaticViews = [
 	// { id: "daily", label: "stat-view-daily" },
@@ -262,6 +264,35 @@ export default function Page() {
 		});
 	}, [filter]);
 
+	const [analysis, setAnalysis] = useState<AnalysisResult>();
+	const analysisUnit =
+		selectedViewId === "yearly"
+			? "year"
+			: selectedViewId === "monthly"
+				? "month"
+				: selectedViewId === "weekly"
+					? "week"
+					: undefined;
+	useEffect(() => {
+		const book = useBookStore.getState().currentBookId;
+		if (!book || !filter?.start || !filter?.end) {
+			setAnalysis(undefined);
+			return;
+		}
+		if (!analysisUnit) {
+			setAnalysis(undefined);
+			return;
+		}
+		StorageDeferredAPI.analysis(
+			book,
+			[filter.start, filter.end],
+			analysisUnit,
+		).then((v) => {
+			setAnalysis(v);
+			console.log(v, "analysis");
+		});
+	}, [analysisUnit, filter?.start, filter?.end]);
+
 	const navigate = useNavigate();
 	const seeDetails = (append?: Partial<BillFilter>) => {
 		navigate("/search", { state: { filter: { ...filter, ...append } } });
@@ -331,9 +362,7 @@ export default function Page() {
 						? structureOption(dataSources.incomeStructure, {
 								title: { text: t("income-structure") },
 							})
-						: structureOption(dataSources.expenseStructure, {
-								title: { text: t("expense-structure") },
-							}),
+						: undefined,
 			];
 		}
 		return [
@@ -356,9 +385,7 @@ export default function Page() {
 					? structureOption(dataSources.userIncomeStructure, {
 							title: { text: t("income-structure") },
 						})
-					: structureOption(dataSources.userBalanceStructure, {
-							title: { text: t("expense-structure") },
-						}),
+					: undefined,
 		];
 	}, [
 		dimension,
@@ -368,7 +395,6 @@ export default function Page() {
 		dataSources.expenseStructure,
 		dataSources.userIncomeStructure,
 		dataSources.userExpenseStructure,
-		dataSources.userBalanceStructure,
 		dataSources.userBalanceTrend,
 		dataSources.userExpenseTrend,
 		dataSources.userIncomeTrend,
@@ -537,22 +563,44 @@ export default function Page() {
 			/>
 			<div className="w-full flex-1 flex justify-center overflow-y-auto">
 				<div className="w-full mx-2 max-w-[600px] flex flex-col items-center gap-4">
-					<div className="flex-shrink-0 w-full h-[300px]">
-						<Chart
-							ref={trendChart}
-							key={dimension}
-							option={charts[0]}
-							className="w-full h-full border rounded-md"
-						/>
-					</div>
-					<div className="flex-shrink-0 w-full h-[300px]">
-						<Chart
-							key={dimension}
-							option={charts[1]}
-							className="w-full h-full border rounded-md"
-							onClick={onStructureChartClick}
-						/>
-					</div>
+					{charts[0] && (
+						<div className="flex-shrink-0 w-full h-[300px]">
+							<Chart
+								ref={trendChart}
+								key={dimension}
+								option={charts[0]}
+								className="w-full h-full border rounded-md"
+							/>
+						</div>
+					)}
+					{charts[1] && (
+						<div className="flex-shrink-0 w-full border rounded-md">
+							<div className="flex-shrink-0 w-full h-[300px]">
+								<Chart
+									key={dimension}
+									option={charts[1]}
+									className="w-full h-full"
+									onClick={onStructureChartClick}
+								/>
+							</div>
+							<div className="flex justify-end p-1">
+								<Button
+									variant="ghost"
+									size={"sm"}
+									onClick={() => {
+										seeDetails({
+											type: focusType === "expense" ? "expense" : "income",
+										});
+									}}
+								>
+									{focusType === "expense"
+										? t("see-expense-ledgers")
+										: t("see-income-ledgers")}
+									<i className="icon-[mdi--arrow-up-right]"></i>
+								</Button>
+							</div>
+						</div>
+					)}
 					{selectedCategoryChart && (
 						<div className="flex-shrink-0 w-full border rounded-md">
 							<div className="w-full h-[300px]">
@@ -579,7 +627,9 @@ export default function Page() {
 					)}
 					{tagStructure.length > 0 && (
 						<div className="rounded-md border p-2 w-full flex flex-col">
-							<h2 className="font-medium text-lg my-3 text-center">标签详情</h2>
+							<h2 className="font-medium text-lg my-3 text-center">
+								{t("tag-details")}
+							</h2>
 							<div className="table w-full border-collapse">
 								<div className="table-row-group divide-y">
 									{tagStructure.map((struct) => {
@@ -604,6 +654,23 @@ export default function Page() {
 										);
 									})}
 								</div>
+							</div>
+						</div>
+					)}
+					{analysis && (
+						<div className="rounded-md border p-2 w-full flex flex-col">
+							<h2 className="font-medium text-lg my-3 text-center">
+								{t("analysis")}
+							</h2>
+							<div className="common">
+								日均支出{amountToNumber(analysis.common.dayAvg).toFixed(2)}
+								，月均支出
+								{amountToNumber(analysis.common.monthAvg).toFixed(2)}，年均支出
+								{amountToNumber(analysis.common.yearAvg).toFixed(2)}
+							</div>
+							<div className="predict">预计本周/本月/今年支出y</div>
+							<div className="compare">
+								比昨天/上周/上月/去年增长x%，比去年同期增长y%
 							</div>
 						</div>
 					)}
