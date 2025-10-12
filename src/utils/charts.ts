@@ -1,8 +1,8 @@
+import dayjs, { type OpUnitType } from "dayjs";
+import { merge } from "lodash-es";
 import type { ECOption } from "@/components/chart";
 import { amountToNumber } from "@/ledger/bill";
 import type { Bill, BillType } from "@/ledger/type";
-import dayjs, { type OpUnitType } from "dayjs";
-import { merge } from "lodash-es";
 
 /**
  * 处理器函数的选项
@@ -241,11 +241,11 @@ export function processBillDataForCharts(
 					income: 0,
 					expense: 0,
 				});
-				if (bill.type === "income") {
-					tagStructure.get(tagId)!.income += amount;
-				} else {
-					tagStructure.get(tagId)!.expense += amount;
-				}
+			}
+			if (bill.type === "income") {
+				tagStructure.get(tagId)!.income += amount;
+			} else {
+				tagStructure.get(tagId)!.expense += amount;
 			}
 		});
 	}
