@@ -90,19 +90,21 @@ export default function Page() {
 							);
 						})}
 					</div>
-					{budgetCount > 1 && (
-						<PaginationIndicator count={budgetCount} current={curBudgetIndex} />
-					)}
 				</div>
 			</div>
 			<button
 				type="button"
-				className="flex justify-between items-center pl-7 pr-5 py-2 cursor-pointer"
+				className="flex justify-between items-center pl-7 pr-5 py-1 cursor-pointer"
 				onClick={() => {
 					StorageAPI.toSync();
 				}}
 			>
 				<div>{loading && <Loading />}</div>
+				<div>
+					{budgetCount > 1 && (
+						<PaginationIndicator count={budgetCount} current={curBudgetIndex} />
+					)}
+				</div>
 				{<i className={cn(syncIcon)} />}
 			</button>
 			<div className="flex-1 translate-0 pb-[10px] overflow-hidden">

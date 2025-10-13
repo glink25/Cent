@@ -30,6 +30,8 @@ import {
 	structureOption,
 	userTrendOption,
 } from "@/utils/charts";
+import type { AnalysisResult } from "@/api/storage/analysis";
+import { amountToNumber } from "@/ledger/bill";
 
 const StaticViews = [
 	// { id: "daily", label: "stat-view-daily" },
@@ -304,6 +306,35 @@ export default function Page() {
 		[filtered, selectedViewId, categories, creators, t],
 	);
 
+	const [analysis, setAnalysis] = useState<AnalysisResult>();
+	const analysisUnit =
+		selectedViewId === "yearly"
+			? "year"
+			: selectedViewId === "monthly"
+				? "month"
+				: selectedViewId === "weekly"
+					? "week"
+					: "day";
+	useEffect(() => {
+		const book = useBookStore.getState().currentBookId;
+		if (!book || !filter?.start || !filter?.end) {
+			setAnalysis(undefined);
+			return;
+		}
+		if (!analysisUnit) {
+			setAnalysis(undefined);
+			return;
+		}
+		StorageDeferredAPI.analysis(
+			book,
+			[filter.start, filter.end],
+			analysisUnit,
+			focusType,
+		).then((v) => {
+			setAnalysis(v);
+		});
+	}, [analysisUnit, focusType, filter?.start, filter?.end]);
+
 	const charts = useMemo(() => {
 		if (dimension === "category") {
 			const incomeName = dataSources.overallTrend.source?.[0]?.[1];
@@ -545,14 +576,34 @@ export default function Page() {
 							className="w-full h-full border rounded-md"
 						/>
 					</div>
-					<div className="flex-shrink-0 w-full h-[300px]">
-						<Chart
-							key={dimension}
-							option={charts[1]}
-							className="w-full h-full border rounded-md"
-							onClick={onStructureChartClick}
-						/>
-					</div>
+					{focusType !== "balance" && (
+						<div className="flex-shrink-0 w-full border rounded-md">
+							<div className="w-full">
+								<Chart
+									key={dimension}
+									option={charts[1]}
+									className="w-full h-[300px] "
+									onClick={onStructureChartClick}
+								/>
+								<div className="flex justify-end p-1">
+									<Button
+										variant="ghost"
+										size={"sm"}
+										onClick={() => {
+											seeDetails({
+												type: focusType,
+											});
+										}}
+									>
+										{focusType === "expense"
+											? t("see-expense-ledgers")
+											: t("see-income-ledgers")}
+										<i className="icon-[mdi--arrow-up-right]"></i>
+									</Button>
+								</div>
+							</div>
+						</div>
+					)}
 					{selectedCategoryChart && (
 						<div className="flex-shrink-0 w-full border rounded-md">
 							<div className="w-full h-[300px]">
@@ -605,6 +656,18 @@ export default function Page() {
 									})}
 								</div>
 							</div>
+						</div>
+					)}
+					{analysis && (
+						<div className="rounded-md border p-2 w-full flex flex-col">
+							<h2 className="font-medium text-lg my-3 text-center">
+								{t("analysis")}
+							</h2>
+							<AnalysisDetail
+								analysis={analysis}
+								type={focusType}
+								unit={analysisUnit}
+							/>
 						</div>
 					)}
 					<div className="w-full flex flex-col gap-4">
@@ -695,5 +758,106 @@ function TagItem({
 				</div>
 			</div>
 		</div>
+	);
+}
+
+function AnalysisDetail({
+	analysis,
+	type,
+	unit,
+}: {
+	analysis: AnalysisResult;
+	type: FocusType;
+	unit?: "week" | "month" | "year" | "day";
+}) {
+	const t = useIntl();
+
+	// 1. 准备所有需要格式化和插入到文案中的动态值
+	const formattedValues = {
+		dayAvg: (
+			<span data-state="value" data-type="day">
+				{amountToNumber(analysis.current.dayAvg).toFixed(2)}
+			</span>
+		),
+		weekAvg: (
+			<span data-state="value" data-type="week">
+				{amountToNumber(analysis.current.weekAvg).toFixed(2)}
+			</span>
+		),
+		monthAvg: (
+			<span data-state="value" data-type="month">
+				{amountToNumber(analysis.current.monthAvg).toFixed(2)}
+			</span>
+		),
+		yearAvg: (
+			<span data-state="value" data-type="year">
+				{amountToNumber(analysis.current.yearAvg).toFixed(2)}
+			</span>
+		),
+		projectedTotal: (
+			<span data-state="value" data-type="predict">
+				{amountToNumber(analysis.projected.total).toFixed(2)}
+			</span>
+		),
+	};
+
+	// 2. 将对比文案也变成一个独立的、可翻译的部分
+	const previousChange =
+		analysis.previous.total === 0
+			? 0
+			: (analysis.current.total - analysis.previous.total) /
+				analysis.previous.total;
+	const lastYearChange =
+		analysis.lastYear.total === 0
+			? 0
+			: (analysis.current.total - analysis.lastYear.total) /
+				analysis.lastYear.total;
+
+	// 辅助函数，用于获取增长/减少的文案片段
+	const getGrowthMessage = (changeValue: number) => {
+		const percentage = (Math.abs(changeValue) * 100).toFixed(2);
+		// 根据数值正负选择不同的翻译ID
+		const messageId =
+			changeValue >= 0
+				? "analysis.growth.positive"
+				: "analysis.growth.negative";
+		// 使用 intl.formatMessage 生成文案片段
+		return (
+			<span className={changeValue >= 0 ? "text-red-700" : "text-green-700"}>
+				{t(messageId, { p: percentage })}
+			</span>
+		);
+	};
+
+	// 3. 将对比部分的完整句子也抽象成一个翻译ID
+	// 当 unit 为 'day' 时，可能没有“上一周期”的概念，可以不显示
+	const ComparisonSection =
+		unit !== "day" ? (
+			<div className="compare text-xs">
+				{t("analysis.comparison.full", {
+					// `lastPeriod` 也从语言包获取
+					lastPeriod: t(`period.${unit}`),
+					// 将生成的文案片段作为值传入
+					changeSinceLastPeriod: getGrowthMessage(previousChange),
+					changeSinceLastYear: getGrowthMessage(lastYearChange),
+				})}
+			</div>
+		) : null;
+	return (
+		<>
+			<div
+				className={cn(
+					"common text-sm [&_[data-state=value]]:font-medium pb-2",
+					type === "expense"
+						? "[&_[data-state=value]]:text-green-700"
+						: type === "income"
+							? "[&_[data-state=value]]:text-red-700"
+							: "",
+				)}
+			>
+				{t(`analysis.summary.${type}.${unit}`, formattedValues)}
+			</div>
+			{ComparisonSection}
+		</>
 	);
 }

@@ -3,6 +3,7 @@ import { merge } from "lodash-es";
 import type { ECOption } from "@/components/chart";
 import { amountToNumber } from "@/ledger/bill";
 import type { Bill, BillType } from "@/ledger/type";
+import { formatDate } from "./time";
 
 /**
  * 处理器函数的选项
@@ -97,22 +98,6 @@ export interface ProcessedChartData {
 		expense: number;
 		balance: number;
 	};
-}
-
-/**
- * 格式化日期为 YYYY-MM-DD
- * @param timestamp 时间戳
- * @param gap 最小时间单位
- * @returns 格式化后的日期字符串
- */
-function formatDate(timestamp: number, gap: OpUnitType = "day"): string {
-	const date = dayjs.unix(timestamp / 1000).startOf(gap);
-	return date.format("YYYY-MM-DD");
-	// const date = new Date(timestamp);
-	// const year = date.getFullYear();
-	// const month = (date.getMonth() + 1).toString().padStart(2, "0");
-	// const day = date.getDate().toString().padStart(2, "0");
-	// return `${year}-${month}-${day}`;
 }
 
 /**

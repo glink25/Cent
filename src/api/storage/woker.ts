@@ -7,6 +7,7 @@ import { StashBucket } from "@/gitray/stash";
 import type { Bill, BillFilter } from "@/ledger/type";
 import { isBillMatched } from "@/ledger/utils";
 import type { GlobalMeta } from ".";
+import { analysis as analysisBills, type AnalysisType } from "./analysis";
 
 const storeMap = new Map<
 	string,
@@ -39,10 +40,23 @@ const getInfo = async (storeFullName: string) => {
 	};
 };
 
+const analysis = async (
+	storeFullName: string,
+	dateRange: [number, number], // 时间戳ms
+	analysisUnit: "year" | "month" | "week" | "day",
+	type: AnalysisType,
+) => {
+	const result = await analysisBills(dateRange, type, analysisUnit, (range) =>
+		filter(storeFullName, { start: range[0], end: range[1] }),
+	);
+	return result;
+};
+
 const exposed = {
 	init: (v: any) => {},
 	getInfo,
 	filter,
+	analysis,
 };
 
 export type Exposed = typeof exposed;

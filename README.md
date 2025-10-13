@@ -8,8 +8,8 @@ Todo:
     大类占比图表 done
     二级类别占比 done
     Tag统计 done
-    日均、月均、年均统计
-    对比上月分析
+    日均、月均、年均统计 done
+    对比上月分析 done
 4. 自定义类别 done
     类别增删改 done
     自定义类别图标 done

@@ -26,7 +26,7 @@ export default function CategorySettingsItem() {
 			>
 				<div className="w-full px-4 flex justify-between items-center">
 					<div className="flex items-center gap-2">
-						<i className="icon-[mdi--category-outline] size-5"></i>
+						<i className="icon-[mdi--view-grid-outline] size-5"></i>
 						{t("edit-categories")}
 					</div>
 					<i className="icon-[mdi--chevron-right] size-5"></i>
