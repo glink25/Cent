@@ -315,7 +315,7 @@ export class Gitray<Item extends BaseItem> {
 		);
 	}
 
-	private async syncImmediate() {
+	private async syncImmediate(signal?: AbortSignal) {
 		return Promise.all(
 			Array.from(this.storeMap.entries()).map(
 				async ([storeFullName, { itemBucket }]) => {
@@ -417,7 +417,15 @@ export class Gitray<Item extends BaseItem> {
 							const base64Content = await blobToBase64(file);
 							const { data: blob } = await octokit.request(
 								"POST /repos/{owner}/{repo}/git/blobs",
-								{ owner, repo, content: base64Content, encoding: "base64" },
+								{
+									owner,
+									repo,
+									content: base64Content,
+									encoding: "base64",
+									request: {
+										signal,
+									},
+								},
 							);
 							return {
 								path,
@@ -438,21 +446,49 @@ export class Gitray<Item extends BaseItem> {
 					]);
 					const { data: repoData } = await octokit.request(
 						"GET /repos/{owner}/{repo}",
-						{ owner, repo },
+						{
+							owner,
+							repo,
+							request: {
+								signal,
+							},
+						},
 					);
 					const { data: refData } = await octokit.request(
 						"GET /repos/{owner}/{repo}/git/ref/{ref}",
-						{ owner, repo, ref: `heads/${repoData.default_branch}` },
+						{
+							owner,
+							repo,
+							ref: `heads/${repoData.default_branch}`,
+							request: {
+								signal,
+							},
+						},
 					);
 					const { data: commitData } = await octokit.request(
 						"GET /repos/{owner}/{repo}/git/commits/{commit_sha}",
-						{ owner, repo, commit_sha: refData.object.sha },
+						{
+							owner,
+							repo,
+							commit_sha: refData.object.sha,
+							request: {
+								signal,
+							},
+						},
 					);
 					const baseTreeSha = commitData.tree.sha;
 					const latestCommitSha = refData.object.sha;
 					const { data: newTree } = await octokit.request(
 						"POST /repos/{owner}/{repo}/git/trees",
-						{ owner, repo, tree: treePayload, base_tree: baseTreeSha },
+						{
+							owner,
+							repo,
+							tree: treePayload,
+							base_tree: baseTreeSha,
+							request: {
+								signal,
+							},
+						},
 					);
 					const { data: newCommit } = await octokit.request(
 						"POST /repos/{owner}/{repo}/git/commits",
@@ -462,6 +498,9 @@ export class Gitray<Item extends BaseItem> {
 							message: `[Gitray] Batch update for ${storeFullName}`,
 							tree: newTree.sha,
 							parents: [latestCommitSha],
+							request: {
+								signal,
+							},
 						},
 					);
 					await octokit.request("PATCH /repos/{owner}/{repo}/git/refs/{ref}", {
@@ -469,6 +508,9 @@ export class Gitray<Item extends BaseItem> {
 						repo,
 						ref: `heads/${repoData.default_branch}`,
 						sha: newCommit.sha,
+						request: {
+							signal,
+						},
 					});
 					await itemBucket.deleteStashes(...stashes.map((s) => s.id));
 				},
@@ -476,28 +518,14 @@ export class Gitray<Item extends BaseItem> {
 		);
 	}
 
-	private syncProcessors: Processor[] = [];
-	/**
-	 * 同步状态处理
-	 * 当batch被调用后，更新首先会被写入本地
-	 * 一段时间后，Gitray会自动调用
-	 * @param processor
-	 */
+	private scheduler = new Scheduler((signal) => {
+		this.syncImmediate(signal);
+	});
+
 	onSync(processor: (finished: Promise<void>) => void) {
-		this.syncProcessors.push(processor);
-		return () => {
-			const i = this.syncProcessors.indexOf(processor);
-			this.syncProcessors.splice(i, 1);
-		};
-	}
-	private syncHandler() {
-		const finished = this.syncImmediate();
-		this.syncProcessors.forEach((p) => {
-			p(finished.then());
-		});
+		return this.scheduler.onProcess(processor);
 	}
 
-	private scheduler = new Scheduler(() => this.syncHandler());
 	async toSync() {
 		this.scheduler.scheduleSync();
 	}

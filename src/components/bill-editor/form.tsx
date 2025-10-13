@@ -136,6 +136,11 @@ export default function EditorForm({
 						</div>
 						<div className="flex-1 flex flex-col justify-center items-end bg-stone-400 rounded-lg ml-2 px-2 overflow-x-scroll">
 							<Calculator.Value className="text-white text-3xl font-semibold focus:(border-none outline-none) text-right bg-transparent appearance-remove-all placeholder-white placeholder-opacity-50"></Calculator.Value>
+							{billState.amount < 0 && (
+								<div className="absolute text-red-700 text-[8px] bottom-0 translate-y-[calc(-50%-2px)]">
+									{t("bill-negative-tip")}
+								</div>
+							)}
 						</div>
 					</div>
 				}

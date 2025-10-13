@@ -210,7 +210,7 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
 
 	return {
 		loading: false,
-		sync: "success",
+		sync: "success" as LedgerStore["sync"],
 		bills: [],
 		actions: [],
 		pendingCursor: undefined,
@@ -231,7 +231,7 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
 			StorageAPI.batch(repo, [
 				{
 					type: "update",
-					value: { ...v, creatorId, id: v4() },
+					value: { ...v, amount: Math.abs(v.amount), creatorId, id: v4() },
 				},
 			]);
 		},
@@ -242,7 +242,7 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
 			StorageAPI.batch(repo, [
 				{
 					type: "update",
-					value: { id, ...v, creatorId },
+					value: { id, ...v, amount: Math.abs(v.amount), creatorId },
 				},
 			]);
 		},

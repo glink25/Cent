@@ -281,5 +281,6 @@
   "analysis.summary.balance.day": "Average daily balance: {dayAvg}",
   "analysis.summary.balance.month": "Avg daily balance: {dayAvg}, Avg weekly balance: {weekAvg}, Avg monthly balance: {monthAvg}, Projected this month: {projectedTotal}",
   "analysis.summary.balance.week": "Avg daily balance: {dayAvg}, Avg weekly balance: {weekAvg}, Projected this week: {projectedTotal}",
-  "analysis.summary.balance.year": "Avg daily balance: {dayAvg}, Avg weekly balance: {weekAvg}, Avg monthly balance: {monthAvg}, Avg yearly balance: {yearAvg}, Projected this year: {projectedTotal}"
+  "analysis.summary.balance.year": "Avg daily balance: {dayAvg}, Avg weekly balance: {weekAvg}, Avg monthly balance: {monthAvg}, Avg yearly balance: {yearAvg}, Projected this year: {projectedTotal}",
+  "bill-negative-tip": "Bill amount will always saved as positive"
 }

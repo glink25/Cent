@@ -281,5 +281,6 @@
   "analysis.summary.balance.day": "日均结余{dayAvg}",
   "analysis.summary.balance.month": "日均结余{dayAvg}，周均结余{weekAvg}，月均结余{monthAvg}，预计当月结余{projectedTotal}",
   "analysis.summary.balance.week": "日均结余{dayAvg}，周均结余{weekAvg}，预计当周结余{projectedTotal}",
-  "analysis.summary.balance.year": "日均结余{dayAvg}，周均结余{weekAvg}，月均结余{monthAvg}，年均结余{yearAvg}，预计当年结余{projectedTotal}"
+  "analysis.summary.balance.year": "日均结余{dayAvg}，周均结余{weekAvg}，月均结余{monthAvg}，年均结余{yearAvg}，预计当年结余{projectedTotal}",
+  "bill-negative-tip": "账单金额保存时将始终为正数"
 }

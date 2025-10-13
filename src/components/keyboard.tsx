@@ -6,7 +6,7 @@ import { Button } from "./ui/button";
 import { useIntl } from "@/locale";
 
 type Char = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "0";
-type Operator = "+" | "-" | "×" | "/";
+type Operator = "+" | "-" | "×" | "÷";
 type Eraser = "c";
 type Point = ".";
 type Eq = "=";
@@ -48,7 +48,7 @@ const Layout = [
 	{ label: "=", cols: 2 },
 ];
 
-const operators = ["+", "-", "×", "/"];
+const operators = ["+", "-", "×", "÷"];
 
 const isOperator = (v: string): v is Operator => operators.includes(v);
 
@@ -59,16 +59,23 @@ const padZero = (v: (Operator | "." | Char)[]) => {
 	return v;
 };
 
-const arrayToFormula = (full: (Operator | "." | Char)[]) => {
+const padPrecision = (v: (Operator | "." | Char)[], precision: number) => {
+	const index = v.indexOf(".") === -1 ? v.length : v.indexOf(".");
+	return v.slice(0, index + precision + 1);
+};
+
+const arrayToFormula = (full: (Operator | "." | Char)[], precision: number) => {
 	const opIndex = full.findIndex((v, i) => i !== 0 && isOperator(v));
 	if (opIndex === -1) {
-		return [padZero(full)] as Formula;
+		return [padPrecision(padZero(full), precision)] as Formula;
 	}
 	const left = full.slice(0, opIndex);
 	const right = full.slice(opIndex + 1);
-	return [padZero(left), full[opIndex], padZero(right)].filter(
-		(v) => v.length > 0,
-	) as Formula;
+	return [
+		padPrecision(padZero(left), precision),
+		full[opIndex],
+		padPrecision(padZero(right), precision),
+	].filter((v) => v.length > 0) as Formula;
 };
 
 const numToNumber = (num: Num) => {
@@ -78,14 +85,14 @@ const numToNumber = (num: Num) => {
 	return Number(num.join(""));
 };
 
-const formulaToNumber = (form: Formula) => {
+const formulaToNumber = (form: Formula, precision: number) => {
 	const [leftNum, op, rightNum] = form;
 	const left = numToNumber(leftNum);
 	if (op === undefined || rightNum === undefined) {
 		return left;
 	}
 	const right = numToNumber(rightNum);
-	const prec = (v: number) => Number(v.toPrecision(3));
+	const prec = (v: number) => Number(v.toFixed(precision));
 	switch (op) {
 		case "+":
 			return prec(left + right);
@@ -93,18 +100,22 @@ const formulaToNumber = (form: Formula) => {
 			return prec(left - right);
 		case "×":
 			return prec(left * right);
-		case "/":
+		case "÷":
 			return prec(left / right);
 	}
 };
 
-const createFormula = (_value: string | number, _prev?: Formula) => {
+const createFormula = (
+	_value: string | number,
+	precision: number,
+	_prev?: Formula,
+) => {
 	const prev = _prev ?? [["0"]];
 	const value = `${_value}` as Value;
 	if (value === "c") {
 		const full = prev.flat();
 		full.pop();
-		return arrayToFormula(full);
+		return arrayToFormula(full, precision);
 	}
 	// 1，传入小数点，但上一个数字已经有小数点
 	const num = prev[2] ?? prev[0];
@@ -119,15 +130,17 @@ const createFormula = (_value: string | number, _prev?: Formula) => {
 	if (isOperator(value)) {
 		// 如果已经有operator，先计算出结果，再追加
 		if (prev[1]) {
-			const result = [`${formulaToNumber(prev)}`.split("")] as Formula;
-			return createFormula(value, result);
+			const result = [
+				`${formulaToNumber(prev, precision)}`.split(""),
+			] as Formula;
+			return createFormula(value, precision, result);
 		}
 		// 否则直接追加
 		prev[1] = value;
 		return [...prev] as Formula;
 	}
 	if (value === "=") {
-		return [`${formulaToNumber(prev)}`.split("")] as Formula;
+		return [`${formulaToNumber(prev, precision)}`.split("")] as Formula;
 	}
 
 	const full = prev.flat();
@@ -135,7 +148,7 @@ const createFormula = (_value: string | number, _prev?: Formula) => {
 		return prev;
 	}
 	full.push(value);
-	return arrayToFormula(full);
+	return arrayToFormula(full, precision);
 };
 
 const toText = (form: Formula) => {
@@ -152,10 +165,12 @@ export const CalculatorRoot = ({
 	children,
 	initialValue,
 	onValueChange,
+	precision = 3,
 }: {
 	initialValue?: number;
 	onValueChange?: (v: number) => void;
 	children: React.ReactNode;
+	precision?: number;
 }) => {
 	const [currentFormula, setCurrentFormula] = useState(() =>
 		numberToFormula(initialValue ?? 0),
@@ -165,8 +180,8 @@ export const CalculatorRoot = ({
 		if (value === "r") {
 			return;
 		}
-		const newFormula = createFormula(value, currentFormula);
-		onValueChange?.(formulaToNumber(newFormula));
+		const newFormula = createFormula(value, precision, currentFormula);
+		onValueChange?.(formulaToNumber(newFormula, precision));
 
 		setCurrentFormula(newFormula);
 	};
