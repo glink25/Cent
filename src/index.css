@@ -25,24 +25,24 @@ body {
 }
 
 * {
-  -webkit-touch-callout: none; /* iOS Safari */
-  -webkit-user-select: none; /* Chrome, Safari, Opera */
-  -moz-user-select: none; /* Firefox */
-  -ms-user-select: none; /* Internet Explorer/Edge */
-  user-select: none; /* Non-prefixed version, currently supported by all modern browsers */
+	-webkit-touch-callout: none; /* iOS Safari */
+	-webkit-user-select: none; /* Chrome, Safari, Opera */
+	-moz-user-select: none; /* Firefox */
+	-ms-user-select: none; /* Internet Explorer/Edge */
+	user-select: none; /* Non-prefixed version, currently supported by all modern browsers */
 }
 
 input,
 input * {
-  -webkit-touch-callout: default;
-  -webkit-user-select: text;
-  -moz-user-select: text;
-  -ms-user-select: text;
-  user-select: text;
+	-webkit-touch-callout: default;
+	-webkit-user-select: text;
+	-moz-user-select: text;
+	-ms-user-select: text;
+	user-select: text;
 }
 
 button {
-  touch-action: manipulation;
+	touch-action: manipulation;
 }
 
 ::-webkit-scrollbar {
@@ -56,9 +56,6 @@ button {
 }
 ::-webkit-scrollbar-track {
 	border-radius: 4px;
-}
-.scrollbar-hidden::-webkit-scrollbar {
-	display: none;
 }
 
 @theme inline {
