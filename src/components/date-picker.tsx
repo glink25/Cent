@@ -3,66 +3,66 @@ import type React from "react";
 import { useEffect, useRef } from "react";
 
 type Props = {
-	value?: number;
-	formatter?: (time: number) => string;
-	displayFormatter?: string | ((time?: Dayjs) => string);
-	onChange?: (value: number) => void;
-	children?: React.ReactNode;
-	onBlur?: () => void;
-	type?: "datetime-local" | "date";
+    value?: number;
+    formatter?: (time: number) => string;
+    displayFormatter?: string | ((time?: Dayjs) => string);
+    onChange?: (value: number) => void;
+    children?: React.ReactNode;
+    onBlur?: () => void;
+    type?: "datetime-local" | "date";
 };
 
 export function DatePicker({
-	value,
-	displayFormatter = "MM-DD",
-	onChange,
-	children,
-	onBlur,
-	type = "datetime-local",
+    value,
+    displayFormatter = "MM-DD",
+    onChange,
+    children,
+    onBlur,
+    type = "datetime-local",
 }: Props) {
-	const inputRef = useRef<HTMLInputElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
 
-	// display 格式化函数
-	const display =
-		typeof displayFormatter === "function"
-			? displayFormatter
-			: (d?: Dayjs) => d?.format(displayFormatter as string);
+    // display 格式化函数
+    const display =
+        typeof displayFormatter === "function"
+            ? displayFormatter
+            : (d?: Dayjs) => d?.format(displayFormatter as string);
 
-	// 初始值处理（等价于 Vue: if props.modelValue === undefined）
-	// useEffect(() => {
-	// 	if (value === undefined) {
-	// 		const now = Date.now()
-	// 		// const initial = formatter?.(now) ?? now;
-	// 		onChange?.(now);
-	// 	}
-	// }, [value, onChange]);
+    // 初始值处理（等价于 Vue: if props.modelValue === undefined）
+    // useEffect(() => {
+    // 	if (value === undefined) {
+    // 		const now = Date.now()
+    // 		// const initial = formatter?.(now) ?? now;
+    // 		onChange?.(now);
+    // 	}
+    // }, [value, onChange]);
 
-	const onClickInput = (e: React.MouseEvent<HTMLInputElement>) => {
-		// 调用原生 datetime-local 的选择器
-		(e.target as HTMLInputElement).showPicker?.();
-	};
+    const onClickInput = (e: React.MouseEvent<HTMLInputElement>) => {
+        // 调用原生 datetime-local 的选择器
+        (e.target as HTMLInputElement).showPicker?.();
+    };
 
-	const onTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const value = e.target.value;
-		const time = Date.parse(value);
-		// const formatted = formatter?.(time) ?? time;
-		onChange?.(time);
-	};
+    const onTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        const time = Date.parse(value);
+        // const formatted = formatter?.(time) ?? time;
+        onChange?.(time);
+    };
 
-	const current = value ? dayjs(value as any) : undefined;
+    const current = value ? dayjs(value as any) : undefined;
 
-	return (
-		<label className="flex items-center relative cursor-pointer">
-			{children}
-			<div className="mx-2">{display(current)}</div>
-			<input
-				ref={inputRef}
-				type={type}
-				className="absolute top-0 left-0 w-2 h-full opacity-0"
-				onClick={onClickInput}
-				onChange={onTimeChange}
-				onBlur={onBlur}
-			/>
-		</label>
-	);
+    return (
+        <label className="flex items-center relative cursor-pointer">
+            {children}
+            <div className="mx-2">{display(current)}</div>
+            <input
+                ref={inputRef}
+                type={type}
+                className="absolute top-0 left-0 w-2 h-full opacity-0"
+                onClick={onClickInput}
+                onChange={onTimeChange}
+                onBlur={onBlur}
+            />
+        </label>
+    );
 }

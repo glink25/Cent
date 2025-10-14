@@ -7,12 +7,7 @@
 	},
 	"files": {
 		"ignoreUnknown": false,
-		"includes": [
-			"**",
-			"!**/dist",
-			"!**/node_modules",
-			"!**/public"
-		]
+		"includes": ["**", "!**/dist", "!**/node_modules", "!**/public"]
 	},
 	"formatter": {
 		"enabled": true,
@@ -30,7 +25,10 @@
 	},
 	"javascript": {
 		"formatter": {
-			"quoteStyle": "double"
+			"quoteStyle": "double",
+			"indentStyle": "space",
+			"indentWidth": 4,
+			"semicolons": "always"
 		}
 	},
 	"assist": {

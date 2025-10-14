@@ -1,34 +1,34 @@
 import { wrap } from "comlink";
+import type { BillTag } from "@/components/bill-tag/type";
 import type { Budget } from "@/components/budget/type";
 import { BillIndexeBDStorage, Gitray } from "@/gitray";
 import type { Bill, BillCategory, BillFilter } from "@/ledger/type";
 import { getToken } from "../login";
 import type { Exposed } from "./woker";
 import DeferredWorker from "./woker?worker";
-import type { BillTag } from "@/components/bill-tag/type";
 
 export type GlobalMeta = {
-	customFilters?: { id: string; filter: BillFilter; name: string }[];
-	budgets?: Budget[];
-	categories?: BillCategory[];
-	tags: BillTag[];
+    customFilters?: { id: string; filter: BillFilter; name: string }[];
+    budgets?: Budget[];
+    categories?: BillCategory[];
+    tags: BillTag[];
 };
 
 const config = {
-	repoPrefix: "cent-journal",
-	entryName: "ledger",
-	orderKeys: ["time"],
+    repoPrefix: "cent-journal",
+    entryName: "ledger",
+    orderKeys: ["time"],
 };
 
 const repo = new Gitray<Bill>({
-	...config,
-	auth: getToken,
-	storage: (name) => new BillIndexeBDStorage(`book-${name}`),
+    ...config,
+    auth: getToken,
+    storage: (name) => new BillIndexeBDStorage(`book-${name}`),
 });
 
 export const toBookName = (bookId: string) => {
-	const [owner, repo] = bookId.split("/");
-	return repo.replace(`${config.repoPrefix}-`, "");
+    const [owner, repo] = bookId.split("/");
+    return repo.replace(`${config.repoPrefix}-`, "");
 };
 
 export const StorageAPI = repo;
@@ -36,7 +36,7 @@ export const StorageAPI = repo;
 // ComlinkSharedWorker
 
 const workerInstance = new DeferredWorker({
-	/* normal Worker options*/
+    /* normal Worker options*/
 });
 const StorageDeferredAPI = wrap<Exposed>(workerInstance);
 

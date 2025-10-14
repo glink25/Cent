@@ -1,6 +1,6 @@
 import { decode, encode } from "js-base64";
 import { sortBy } from "lodash-es";
-import { Octokit } from "octokit";
+import type { Octokit } from "octokit";
 import { transformAssets } from "./assets";
 import { shortId } from "./id";
 import { Scheduler } from "./scheduler";

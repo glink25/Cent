@@ -11,13 +11,13 @@ import { usePreferenceStore } from "./store/preference";
 
 const lang = usePreferenceStore.getState().locale;
 initIntl(lang).then(() => {
-	createRoot(document.getElementById("root")!).render(
-		<StrictMode>
-			<LocaleProvider>
-				<MemoryRouter>
-					<RootRoute />
-				</MemoryRouter>
-			</LocaleProvider>
-		</StrictMode>,
-	);
+    createRoot(document.getElementById("root")!).render(
+        <StrictMode>
+            <LocaleProvider>
+                <MemoryRouter>
+                    <RootRoute />
+                </MemoryRouter>
+            </LocaleProvider>
+        </StrictMode>,
+    );
 });

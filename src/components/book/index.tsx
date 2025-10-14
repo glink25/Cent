@@ -12,173 +12,219 @@ import { Checkbox } from "../ui/checkbox";
 import { Label } from "../ui/label";
 
 export default function BookGuide() {
-	const t = useIntl();
-	const isLogin = useUserStore(
-		useShallow((state) => Boolean(state.login) && `${state.id}`),
-	);
-	const { books, visible, currentBookId, loading } = useBookStore();
-	// const bookNum = books.length;
+    const t = useIntl();
+    const isLogin = useUserStore(
+        useShallow((state) => Boolean(state.login) && `${state.id}`),
+    );
+    const { books, visible, currentBookId, loading } = useBookStore();
+    // const bookNum = books.length;
 
-	const [creating, setCreating] = useState(false);
-	if (!isLogin) {
-		return null;
-	}
-	if (currentBookId !== undefined && !visible) {
-		return null;
-	}
+    const [creating, setCreating] = useState(false);
+    if (!isLogin) {
+        return null;
+    }
+    if (currentBookId !== undefined && !visible) {
+        return null;
+    }
 
-	const toSwitchBook = (bookId: string) => {
-		useBookStore.getState().switchToBook(bookId);
-	};
-	const toInvite = (book: Book) => {
-		const ok = confirm(
-			"Share your git repository to your friends, Collaborators can create and edit together!",
-		);
-		if (!ok) {
-			return;
-		}
-		window.open(`https://github.com/${book.repo}/settings/access`, "_blank");
-	};
+    const toSwitchBook = (bookId: string) => {
+        useBookStore.getState().switchToBook(bookId);
+    };
+    const toInvite = (book: Book) => {
+        const ok = confirm(
+            "Share your git repository to your friends, Collaborators can create and edit together!",
+        );
+        if (!ok) {
+            return;
+        }
+        window.open(
+            `https://github.com/${book.repo}/settings/access`,
+            "_blank",
+        );
+    };
 
-	const toDelete = (book: Book) => {
-		const ok = confirm("You need to delete this repo by yourself");
-		if (!ok) {
-			return;
-		}
-		window.open(`https://github.com/${book.repo}/settings`, "_blank");
-	};
+    const toDelete = (book: Book) => {
+        const ok = confirm("You need to delete this repo by yourself");
+        if (!ok) {
+            return;
+        }
+        window.open(`https://github.com/${book.repo}/settings`, "_blank");
+    };
 
-	return (
-		<Dialog.Root
-			open={visible || currentBookId === undefined}
-			onOpenChange={(v) => {
-				if (!v) {
-					useBookStore.setState((v) => ({ ...v, visible: false }));
-				}
-			}}
-		>
-			<Dialog.Portal>
-				<Dialog.Overlay className="fixed inset-0 bg-black/50 data-[state=open]:animate-overlay-show"></Dialog.Overlay>
-				<Dialog.Content>
-					<VisuallyHidden.Root>
-						<Dialog.Title>{t("select-a-book")}</Dialog.Title>
-						<Dialog.Description>{t("select-a-book")}</Dialog.Description>
-					</VisuallyHidden.Root>
-					<div className="fixed top-0 left-0 w-full h-full flex justify-center items-center pointer-events-none">
-						<Dialog.Content
-							className={cn(
-								"bg-white max-h-[55vh] w-fit max-w-[500px] rounded-md data-[state=open]:animate-content-show",
-							)}
-						>
-							<VisuallyHidden.Root>
-								<Dialog.Title>{t("select-a-book")}</Dialog.Title>
-								<Dialog.Description>{t("select-a-book")}</Dialog.Description>
-							</VisuallyHidden.Root>
-							<div className="w-fit h-full flex justify-center items-center pointer-events-auto">
-								<div className="bg-[white] w-[350px] h-[450px] py-4 flex flex-col justify-center items-center rounded">
-									{books.length > 0 ? (
-										<div className="flex-1 flex flex-col w-full gap-2 h-full overflow-hidden">
-											<div className="flex gap-2 px-4">
-												{t("select-a-book")}
-												{loading && <Loading></Loading>}
-											</div>
-											<div className="flex flex-col gap-2 px-4 overflow-y-auto">
-												{books.map((book) => {
-													return (
-														<Label
-															key={book.id}
-															className="cursor-pointer hover:bg-accent/50 overflow-hidden flex items-center gap-3 rounded-lg border p-3 has-[[aria-checked=true]]:border-blue-600 has-[[aria-checked=true]]:bg-blue-50 dark:has-[[aria-checked=true]]:border-blue-900 dark:has-[[aria-checked=true]]:bg-blue-950"
-														>
-															<Checkbox
-																checked={book.id === currentBookId}
-																onCheckedChange={(v) => {
-																	if (v) {
-																		toSwitchBook(book.id);
-																	}
-																}}
-																className="inline-flex items-center data-[state=checked]:border-blue-600 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white dark:data-[state=checked]:border-blue-700 dark:data-[state=checked]:bg-blue-700"
-															/>
-															<div className="flex-1 flex justify-between gap-1.5 font-normal overflow-hidden">
-																<div className="flex-1 text-sm leading-none font-medium flex flex-col gap-1 overflow-hidden">
-																	<p>{toBookName(book.repo)}</p>
-																	<span className="text-xs opacity-60 truncate">
-																		{book.repo}
-																	</span>
-																</div>
-																<div className="flex gap-1 items-center">
-																	<Button
-																		size="sm"
-																		onClick={() => toInvite(book)}
-																	>
-																		{t("invite")}
-																	</Button>
-																	<Button
-																		size="sm"
-																		variant="destructive"
-																		onClick={() => toDelete(book)}
-																	>
-																		{t("delete")}
-																	</Button>
-																</div>
-															</div>
-														</Label>
-													);
-												})}
-											</div>
-										</div>
-									) : loading ? (
-										<Loading>{t("loading-books")}</Loading>
-									) : (
-										<div className="flex-1">{t("no-books-go-create-one")}</div>
-									)}
-									<Button
-										disabled={creating}
-										onClick={async () => {
-											const name = prompt("please input book name:");
-											if (!name) {
-												return;
-											}
-											setCreating(true);
-											try {
-												const store = await StorageAPI.createStore(name);
-												await useBookStore.getState().updateBookList();
-											} finally {
-												setCreating(false);
-											}
-										}}
-									>
-										{creating && <Loading />}
-										{t("create-new-book")}
-									</Button>
-								</div>
-							</div>
-						</Dialog.Content>
-					</div>
-				</Dialog.Content>
-			</Dialog.Portal>
-		</Dialog.Root>
-	);
+    return (
+        <Dialog.Root
+            open={visible || currentBookId === undefined}
+            onOpenChange={(v) => {
+                if (!v) {
+                    useBookStore.setState((v) => ({ ...v, visible: false }));
+                }
+            }}
+        >
+            <Dialog.Portal>
+                <Dialog.Overlay className="fixed inset-0 bg-black/50 data-[state=open]:animate-overlay-show"></Dialog.Overlay>
+                <Dialog.Content>
+                    <VisuallyHidden.Root>
+                        <Dialog.Title>{t("select-a-book")}</Dialog.Title>
+                        <Dialog.Description>
+                            {t("select-a-book")}
+                        </Dialog.Description>
+                    </VisuallyHidden.Root>
+                    <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center pointer-events-none">
+                        <Dialog.Content
+                            className={cn(
+                                "bg-white max-h-[55vh] w-fit max-w-[500px] rounded-md data-[state=open]:animate-content-show",
+                            )}
+                        >
+                            <VisuallyHidden.Root>
+                                <Dialog.Title>
+                                    {t("select-a-book")}
+                                </Dialog.Title>
+                                <Dialog.Description>
+                                    {t("select-a-book")}
+                                </Dialog.Description>
+                            </VisuallyHidden.Root>
+                            <div className="w-fit h-full flex justify-center items-center pointer-events-auto">
+                                <div className="bg-[white] w-[350px] h-[450px] py-4 flex flex-col justify-center items-center rounded">
+                                    {books.length > 0 ? (
+                                        <div className="flex-1 flex flex-col w-full gap-2 h-full overflow-hidden">
+                                            <div className="flex gap-2 px-4">
+                                                {t("select-a-book")}
+                                                {loading && <Loading></Loading>}
+                                            </div>
+                                            <div className="flex flex-col gap-2 px-4 overflow-y-auto">
+                                                {books.map((book) => {
+                                                    return (
+                                                        <Label
+                                                            key={book.id}
+                                                            className="cursor-pointer hover:bg-accent/50 overflow-hidden flex items-center gap-3 rounded-lg border p-3 has-[[aria-checked=true]]:border-blue-600 has-[[aria-checked=true]]:bg-blue-50 dark:has-[[aria-checked=true]]:border-blue-900 dark:has-[[aria-checked=true]]:bg-blue-950"
+                                                        >
+                                                            <Checkbox
+                                                                checked={
+                                                                    book.id ===
+                                                                    currentBookId
+                                                                }
+                                                                onCheckedChange={(
+                                                                    v,
+                                                                ) => {
+                                                                    if (v) {
+                                                                        toSwitchBook(
+                                                                            book.id,
+                                                                        );
+                                                                    }
+                                                                }}
+                                                                className="inline-flex items-center data-[state=checked]:border-blue-600 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white dark:data-[state=checked]:border-blue-700 dark:data-[state=checked]:bg-blue-700"
+                                                            />
+                                                            <div className="flex-1 flex justify-between gap-1.5 font-normal overflow-hidden">
+                                                                <div className="flex-1 text-sm leading-none font-medium flex flex-col gap-1 overflow-hidden">
+                                                                    <p>
+                                                                        {toBookName(
+                                                                            book.repo,
+                                                                        )}
+                                                                    </p>
+                                                                    <span className="text-xs opacity-60 truncate">
+                                                                        {
+                                                                            book.repo
+                                                                        }
+                                                                    </span>
+                                                                </div>
+                                                                <div className="flex gap-1 items-center">
+                                                                    <Button
+                                                                        size="sm"
+                                                                        onClick={() =>
+                                                                            toInvite(
+                                                                                book,
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        {t(
+                                                                            "invite",
+                                                                        )}
+                                                                    </Button>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="destructive"
+                                                                        onClick={() =>
+                                                                            toDelete(
+                                                                                book,
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        {t(
+                                                                            "delete",
+                                                                        )}
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
+                                                        </Label>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    ) : loading ? (
+                                        <Loading>{t("loading-books")}</Loading>
+                                    ) : (
+                                        <div className="flex-1">
+                                            {t("no-books-go-create-one")}
+                                        </div>
+                                    )}
+                                    <Button
+                                        disabled={creating}
+                                        onClick={async () => {
+                                            const name = prompt(
+                                                "please input book name:",
+                                            );
+                                            if (!name) {
+                                                return;
+                                            }
+                                            setCreating(true);
+                                            try {
+                                                const store =
+                                                    await StorageAPI.createStore(
+                                                        name,
+                                                    );
+                                                await useBookStore
+                                                    .getState()
+                                                    .updateBookList();
+                                            } finally {
+                                                setCreating(false);
+                                            }
+                                        }}
+                                    >
+                                        {creating && <Loading />}
+                                        {t("create-new-book")}
+                                    </Button>
+                                </div>
+                            </div>
+                        </Dialog.Content>
+                    </div>
+                </Dialog.Content>
+            </Dialog.Portal>
+        </Dialog.Root>
+    );
 }
 
 export function BookSettings() {
-	const t = useIntl();
-	return (
-		<div className="backup">
-			<Button
-				onClick={() => {
-					useBookStore.setState((prev) => ({ ...prev, visible: true }));
-				}}
-				variant="ghost"
-				className="w-full py-4 rounded-none h-auto"
-			>
-				<div className="w-full px-4 flex justify-between items-center">
-					<div className="flex items-center gap-2">
-						<i className="icon-[mdi--book-cog-outline] size-5"></i>
-						{t("ledger-books")}
-					</div>
-					<i className="icon-[mdi--chevron-right] size-5"></i>
-				</div>
-			</Button>
-		</div>
-	);
+    const t = useIntl();
+    return (
+        <div className="backup">
+            <Button
+                onClick={() => {
+                    useBookStore.setState((prev) => ({
+                        ...prev,
+                        visible: true,
+                    }));
+                }}
+                variant="ghost"
+                className="w-full py-4 rounded-none h-auto"
+            >
+                <div className="w-full px-4 flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                        <i className="icon-[mdi--book-cog-outline] size-5"></i>
+                        {t("ledger-books")}
+                    </div>
+                    <i className="icon-[mdi--chevron-right] size-5"></i>
+                </div>
+            </Button>
+        </div>
+    );
 }

@@ -1,4 +1,4 @@
 export type BillTag = {
-	id: string;
-	name: string;
+    id: string;
+    name: string;
 };

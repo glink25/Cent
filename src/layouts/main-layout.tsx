@@ -16,33 +16,34 @@ import useRapidReducedMotionChange from "@/hooks/use-reduce-motion";
 import { usePreferenceStore } from "@/store/preference";
 
 export default function MainLayout() {
-	useRapidReducedMotionChange(
-		useCallback(() => {
-			goAddBill();
-		}, []),
-		{
-			disable:
-				!usePreferenceStore.getState().enterAddBillWhenReduceMotionChanged,
-		},
-	);
-	return (
-		<>
-			<Navigation />
-			<div className="w-full h-full sm:pl-18">
-				<Outlet />
-			</div>
-			<BillEditorProvider />
-			<BillInfoProvider />
-			<SortableListProvider />
-			<Settings />
-			<BookGuide />
-			<BudgetProvider />
-			<BudgetEditProvider />
-			<BudgetDetailProvider />
-			<TagListProvider />
-			<CategoryListProvider />
-			<Login />
-			<Toaster />
-		</>
-	);
+    useRapidReducedMotionChange(
+        useCallback(() => {
+            goAddBill();
+        }, []),
+        {
+            disable:
+                !usePreferenceStore.getState()
+                    .enterAddBillWhenReduceMotionChanged,
+        },
+    );
+    return (
+        <>
+            <Navigation />
+            <div className="w-full h-full sm:pl-18">
+                <Outlet />
+            </div>
+            <BillEditorProvider />
+            <BillInfoProvider />
+            <SortableListProvider />
+            <Settings />
+            <BookGuide />
+            <BudgetProvider />
+            <BudgetEditProvider />
+            <BudgetDetailProvider />
+            <TagListProvider />
+            <CategoryListProvider />
+            <Login />
+            <Toaster />
+        </>
+    );
 }

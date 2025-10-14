@@ -1,10 +1,13 @@
 import { produce } from "immer";
 import { merge } from "lodash-es";
+import { toast } from "sonner";
 import { v4 } from "uuid";
 import { create } from "zustand";
+import { UserAPI, type UserInfo } from "@/api/user";
 import type { OutputType } from "@/gitray";
 import type { Action, Full, Update } from "@/gitray/stash";
 import type { Bill } from "@/ledger/type";
+import { t } from "@/locale";
 import {
     type GlobalMeta,
     StorageAPI,
@@ -12,9 +15,6 @@ import {
 } from "../api/storage";
 import { useBookStore } from "./book";
 import { useUserStore } from "./user";
-import { toast } from "sonner";
-import { t } from "@/locale";
-import { UserAPI, type UserInfo } from "@/api/user";
 
 export type EditBill = Omit<OutputType<Bill>, "id"> & {
     id?: Bill["id"];

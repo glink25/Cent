@@ -25,35 +25,37 @@ export function useCustomFilters() {
         return id;
     }, []);
 
-    const updateFilter = useCallback(async (
-        id: string,
-        value?: { name?: string; filter?: BillFilter },
-    ) => {
-        const book = useBookStore.getState().currentBookId;
-        if (!book) {
-            return;
-        }
-        await useLedgerStore.getState().updateGlobalMeta((prev) => {
-            if (prev.customFilters === undefined) {
+    const updateFilter = useCallback(
+        async (id: string, value?: { name?: string; filter?: BillFilter }) => {
+            const book = useBookStore.getState().currentBookId;
+            if (!book) {
+                return;
+            }
+            await useLedgerStore.getState().updateGlobalMeta((prev) => {
+                if (prev.customFilters === undefined) {
+                    return prev;
+                }
+                if (value === undefined) {
+                    prev.customFilters = prev.customFilters.filter(
+                        (v) => v.id !== id,
+                    );
+                    return prev;
+                }
+                const index = prev.customFilters.findIndex((v) => v.id === id);
+                if (index === -1) {
+                    return prev;
+                }
+                if (value.name) {
+                    prev.customFilters[index].name = value.name;
+                }
+                if (value.filter) {
+                    prev.customFilters[index].filter = value.filter;
+                }
                 return prev;
-            }
-            if (value === undefined) {
-                prev.customFilters = prev.customFilters.filter((v) => v.id !== id);
-                return prev;
-            }
-            const index = prev.customFilters.findIndex((v) => v.id === id);
-            if (index === -1) {
-                return prev;
-            }
-            if (value.name) {
-                prev.customFilters[index].name = value.name;
-            }
-            if (value.filter) {
-                prev.customFilters[index].filter = value.filter;
-            }
-            return prev;
-        });
-    }, []);
+            });
+        },
+        [],
+    );
 
     return {
         addFilter,

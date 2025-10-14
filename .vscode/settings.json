@@ -1,6 +1,19 @@
 {
-  "i18n-ally.localesPaths": ["src/locale/lang"],
-  "i18n-ally.keystyle": "flat",
-  "i18n-ally.displayLanguage": "zh",
-  "editor.defaultFormatter": "biomejs.biome"
+	"i18n-ally.localesPaths": ["src/locale/lang"],
+	"i18n-ally.keystyle": "flat",
+	"i18n-ally.displayLanguage": "zh",
+	"editor.defaultFormatter": "biomejs.biome",
+	"editor.codeActionsOnSave": {
+		"source.organizeImports.biome": "explicit",
+		"source.fixAll.biome": "explicit"
+	},
+	"[jsonc]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"[json]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"[javascript]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	}
 }

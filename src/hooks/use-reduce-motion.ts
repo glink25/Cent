@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 
 /**
  * @param callback - 当检测到减弱动态效果设置在短时间内连续变化时执行的回调函数。
@@ -8,7 +8,7 @@ import { useEffect, useRef } from 'react';
  */
 const useRapidReducedMotionChange = (
     callback: () => void,
-    options?: { disable?: boolean; threshold?: number; timeout?: number }
+    options?: { disable?: boolean; threshold?: number; timeout?: number },
 ): void => {
     const { threshold = 2, timeout = 3000, disable } = options || {};
     const changeCount = useRef<number>(0);
@@ -16,11 +16,17 @@ const useRapidReducedMotionChange = (
 
     useEffect(() => {
         // 确保在浏览器环境下执行
-        if (typeof window === 'undefined' || typeof window.matchMedia === 'undefined' || disable) {
+        if (
+            typeof window === "undefined" ||
+            typeof window.matchMedia === "undefined" ||
+            disable
+        ) {
             return;
         }
 
-        const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const mediaQuery = window.matchMedia(
+            "(prefers-reduced-motion: reduce)",
+        );
 
         const handleChange = () => {
             // 如果计时器已存在，则清除它，以重置时间窗口
@@ -46,11 +52,11 @@ const useRapidReducedMotionChange = (
 
         // 添加事件监听器
         // 使用 'change' 事件，而不是已弃用的 addListener
-        mediaQuery.addEventListener('change', handleChange);
+        mediaQuery.addEventListener("change", handleChange);
 
         // 组件卸载时的清理函数
         return () => {
-            mediaQuery.removeEventListener('change', handleChange);
+            mediaQuery.removeEventListener("change", handleChange);
             // 同时清理可能存在的计时器
             if (timer.current) {
                 clearTimeout(timer.current);
