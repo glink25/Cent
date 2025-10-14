@@ -9,6 +9,7 @@ import { BookSettings } from "../book";
 import Budget from "../budget";
 import CategorySettingsItem from "../category";
 import { Button } from "../ui/button";
+import AboutSettingsItem from "./about";
 import LabSettingsItem from "./lab";
 import LanguageSettingsItem from "./language";
 
@@ -86,6 +87,7 @@ export default function SettingsForm({
                     <Budget />
                     <Backup />
                     <LabSettingsItem />
+                    <AboutSettingsItem />
                     <LanguageSettingsItem />
                 </div>
             </div>

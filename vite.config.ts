@@ -1,13 +1,22 @@
 import { resolve } from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react-swc";
+
 // import { analyzer } from "vite-bundle-analyzer";
 
+import { readFileSync } from "node:fs";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
+const packageJSON = readFileSync("./package.json", { encoding: "utf-8" });
+const packageValue = JSON.parse(packageJSON);
+
 // https://vite.dev/config/
 export default defineConfig({
+    define: {
+        // Provide an explicit app-level constant derived from an env var.
+        __BUILD_INFO: { version: `${packageValue.version}` },
+    },
     plugins: [
         react(),
         tailwindcss(),
