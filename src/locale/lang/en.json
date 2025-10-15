@@ -287,5 +287,7 @@
   "cent-app-name": "Cent",
   "blog": "Blog",
   "feedback": "Feedback",
-  "preparing": "Preparing..."
+  "preparing": "Preparing...",
+  "user-management": "Users",
+  "collaborators": "Collaborators"
 }

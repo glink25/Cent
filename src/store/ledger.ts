@@ -10,6 +10,7 @@ import type { Bill } from "@/ledger/type";
 import { t } from "@/locale";
 import {
     type GlobalMeta,
+    type PersonalMeta,
     StorageAPI,
     StorageDeferredAPI,
 } from "../api/storage";
@@ -57,6 +58,9 @@ type LedgerStoreActions = {
     updateGlobalMeta: (
         v: Partial<GlobalMeta> | ((prev: GlobalMeta) => GlobalMeta),
     ) => Promise<void>;
+    updatePersonalMeta: (
+        v: Partial<PersonalMeta> | ((prev: PersonalMeta) => PersonalMeta),
+    ) => Promise<void>;
 };
 
 type LedgerStore = LedgerStoreState & LedgerStoreActions;
@@ -96,7 +100,17 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
             .then((creators) => {
                 set(
                     produce((state: LedgerStore) => {
-                        state.infos = { ...state.infos!, creators };
+                        const uid = useUserStore.getState().login;
+                        const personalMeta = state.infos?.meta.personal?.[uid];
+                        const names = personalMeta?.names;
+                        state.infos = {
+                            ...state.infos!,
+                            creators: (creators ?? []).map((c) => ({
+                                ...c,
+                                originalName: c.name,
+                                name: names?.[c.login] ?? c.name,
+                            })),
+                        };
                     }),
                 );
             })
@@ -263,6 +277,27 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
             const prevMeta = await StorageAPI.getMeta(repo);
             const newMeta =
                 typeof v === "function" ? v(prevMeta) : merge(prevMeta, v);
+            await StorageAPI.batch(repo, [
+                {
+                    type: "meta",
+                    metaValue: newMeta,
+                },
+            ]);
+            await updateBillList();
+        },
+        updatePersonalMeta: async (v) => {
+            const repo = getCurrentFullRepoName();
+            const prevMeta = await StorageAPI.getMeta(repo);
+            const uid = useUserStore.getState().login;
+            const personalMeta =
+                (prevMeta as GlobalMeta | undefined)?.personal?.[uid] ?? {};
+            const newPersonalMeta =
+                typeof v === "function"
+                    ? v(personalMeta)
+                    : merge(personalMeta, v);
+            const newMeta = merge(prevMeta, {
+                personal: { [uid]: newPersonalMeta },
+            });
             await StorageAPI.batch(repo, [
                 {
                     type: "meta",

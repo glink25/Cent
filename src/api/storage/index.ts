@@ -7,11 +7,16 @@ import { getToken } from "../login";
 import type { Exposed } from "./woker";
 import DeferredWorker from "./woker?worker";
 
+export type PersonalMeta = {
+    names?: Record<string, string>;
+};
+
 export type GlobalMeta = {
     customFilters?: { id: string; filter: BillFilter; name: string }[];
     budgets?: Budget[];
     categories?: BillCategory[];
     tags: BillTag[];
+    personal?: Record<string, PersonalMeta>;
 };
 
 const config = {

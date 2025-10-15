@@ -12,6 +12,7 @@ import { Button } from "../ui/button";
 import AboutSettingsItem from "./about";
 import LabSettingsItem from "./lab";
 import LanguageSettingsItem from "./language";
+import UserSettingsItem from "./user";
 
 function UserInfo() {
     const t = useIntl();
@@ -27,10 +28,7 @@ function UserInfo() {
         location.reload();
     };
     return (
-        <div
-            className="flex items-center justify-between gap-2 px-8 py-4
-        "
-        >
+        <div className="flex items-center justify-between gap-2 px-8 py-4">
             <div className="flex items-center gap-2">
                 <img
                     src={avatar_url}
@@ -85,6 +83,7 @@ export default function SettingsForm({
                     <CategorySettingsItem />
                     <TagSettingsItem />
                     <Budget />
+                    <UserSettingsItem />
                     <Backup />
                     <LabSettingsItem />
                     <AboutSettingsItem />

@@ -287,5 +287,7 @@
   "cent-app-name": "日计",
   "feedback": "反馈",
   "blog": "Blog",
-  "preparing": "准备中..."
+  "preparing": "准备中...",
+  "user-management": "用户管理",
+  "collaborators": "合作者"
 }
