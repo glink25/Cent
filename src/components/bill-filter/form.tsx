@@ -495,7 +495,7 @@ function RangeInput({
     );
 }
 
-function DateInput({
+export function DateInput({
     value,
     onChange,
     onBlur,

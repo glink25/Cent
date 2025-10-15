@@ -9,6 +9,7 @@ import { useShallow } from "zustand/shallow";
 import { StorageDeferredAPI } from "@/api/storage";
 import type { AnalysisResult } from "@/api/storage/analysis";
 import { BillFilterProvider, showBillFilter } from "@/components/bill-filter";
+import { DateInput } from "@/components/bill-filter/form";
 import { showBillInfo } from "@/components/bill-info";
 import Chart, { type ChartInstance } from "@/components/chart";
 import { DatePicker } from "@/components/date-picker";
@@ -198,9 +199,9 @@ export default function Page() {
 
     const [filtered, setFiltered] = useState<typeof bills>([]);
 
-    const [customEnd, setCustomEnd] = useState(() => dayjs().unix() * 1000);
-    const [customStart, setCustomStart] = useState(
-        () => dayjs().subtract(1, "month").unix() * 1000,
+    const [customEnd, setCustomEnd] = useState<number | undefined>(undefined);
+    const [customStart, setCustomStart] = useState<number | undefined>(
+        undefined,
     );
 
     const { updateFilter } = useCustomFilters();
@@ -483,7 +484,7 @@ export default function Page() {
                             </Button>
                         </div>
                     </div>
-                    <div className="flex gap-2 items-center">
+                    <div className="flex gap-2 items-center h-9">
                         {slices.length > 0 ? (
                             <div className="flex-1 flex gap-2 overflow-x-auto scrollbar-hidden">
                                 {slices.map((slice) => (
@@ -506,7 +507,7 @@ export default function Page() {
                             </div>
                         ) : selectedViewId === "custom" ? (
                             <div className="flex-1 flex items-center gap-3 text-xs">
-                                <Button variant="outline" size="sm">
+                                {/* <Button variant="outline" size="sm">
                                     <DatePicker
                                         value={customStart}
                                         onChange={setCustomStart}
@@ -520,7 +521,18 @@ export default function Page() {
                                         onChange={setCustomEnd}
                                         displayFormatter={"YYYY/MM/DD"}
                                     ></DatePicker>
-                                </Button>
+                                </Button> */}
+                                <DateInput
+                                    value={customStart}
+                                    type="start"
+                                    onChange={setCustomStart}
+                                ></DateInput>
+                                <div>-</div>
+                                <DateInput
+                                    value={customEnd}
+                                    type="end"
+                                    onChange={setCustomEnd}
+                                ></DateInput>
                             </div>
                         ) : (
                             <div className="flex-1 text-sm h-8 flex items-center">

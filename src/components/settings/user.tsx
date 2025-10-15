@@ -5,6 +5,7 @@ import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
 import createConfirmProvider from "../confirm";
+import Deletable from "../deletable";
 import { Button } from "../ui/button";
 
 function Form({ onCancel }: { onCancel?: () => void }) {
@@ -23,6 +24,15 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                 prev.names = {};
             }
             prev.names[user.login] = newName;
+            return prev;
+        });
+    };
+    const toRecoverName = async (user: { login: string }) => {
+        await useLedgerStore.getState().updatePersonalMeta((prev) => {
+            if (!prev.names) {
+                prev.names = {};
+            }
+            delete prev.names[user.login];
             return prev;
         });
     };
@@ -67,9 +77,25 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                                     />
 
                                     <div>
-                                        <div className="font-semibold">
-                                            {user.name}
-                                        </div>
+                                        {user.name !== user.originalName ? (
+                                            <Deletable
+                                                className="[&_.delete-button]:bg-stone-800"
+                                                onDelete={() => {
+                                                    toRecoverName(user);
+                                                }}
+                                                icon={
+                                                    <i className="icon-[mdi--reload] text-white size-3"></i>
+                                                }
+                                            >
+                                                <div className="font-semibold">
+                                                    {user.name}
+                                                </div>
+                                            </Deletable>
+                                        ) : (
+                                            <div className="font-semibold">
+                                                {user.name}
+                                            </div>
+                                        )}
                                         <div className="text-sm opacity-60">
                                             {user.login}
                                         </div>

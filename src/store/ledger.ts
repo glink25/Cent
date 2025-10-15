@@ -27,7 +27,7 @@ type LedgerStoreState = {
     actions: Action<Bill>[];
     infos?: {
         meta: GlobalMeta;
-        creators?: UserInfo[];
+        creators?: (UserInfo & { originalName: string })[];
     };
 
     loading: boolean;

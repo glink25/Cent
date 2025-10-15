@@ -3,10 +3,12 @@ import { cn } from "@/utils";
 
 export default function Deletable({
     children,
+    icon,
     className,
     onDelete,
 }: {
     children?: ReactNode;
+    icon?: ReactNode;
     className?: string;
     onDelete?: () => void;
 }) {
@@ -21,7 +23,9 @@ export default function Deletable({
                 type="button"
                 onClick={onDelete}
             >
-                <i className="icon-[mdi--close] text-white size-3"></i>
+                {icon ?? (
+                    <i className="icon-[mdi--close] text-white size-3"></i>
+                )}
             </button>
         </div>
     );
