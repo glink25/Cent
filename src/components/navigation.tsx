@@ -73,7 +73,7 @@ export default function Navigation() {
             {/* settings */}
             <button
                 type="button"
-                className="w-14 h-14 sm:w-10 sm:h-10 cursor-pointer flex items-center justify-center rounded-full shadow-md m-2 transition-all hover:bg-foreground/40 active:bg-foreground/20 dark:bg-stone-500 dark:hover:bg-[#aba8a5]"
+                className="w-14 h-14 sm:w-10 sm:h-10 cursor-pointer flex items-center justify-center rounded-full shadow-md m-2 transition-all hover:bg-foreground/40 active:bg-foreground/20 bg-background dark:bg-stone-500 dark:hover:bg-[#aba8a5]"
                 onClick={() => {
                     showSettings();
                 }}

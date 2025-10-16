@@ -14,6 +14,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useIntl } from "@/locale";
 
 type Align = "start" | "center" | "end";
 // 类型定义 (保持不变)
@@ -64,6 +65,22 @@ const CascaderMenuItem = ({
     const isSelected = selectedIds.has(item.id);
     const hasChildren = item.children && item.children.length > 0;
 
+    const checked = (() => {
+        if (!item.children || item.children.length === 0) {
+            return isSelected;
+        }
+        const selectedChild = item.children.filter((c) =>
+            selectedIds.has(c.id),
+        );
+        if (selectedChild.length === item.children.length) {
+            return true;
+        }
+        if (selectedChild.length === 0) {
+            return false;
+        }
+        return "indeterminate";
+    })();
+
     const handleSelect = () => {
         // --------------------------------------------------
         // 优化点 2: 总是计算自身和所有后代的 ID
@@ -74,15 +91,18 @@ const CascaderMenuItem = ({
     };
 
     const content = (
-        <div className="flex items-center w-full" onClick={handleSelect}>
+        <div
+            className="flex items-center w-full cursor-pointer"
+            onClick={handleSelect}
+        >
             <Checkbox
                 id={`checkbox-${item.id}`}
-                checked={isSelected}
+                checked={checked}
                 className="mr-2 pointer-events-none" // checkbox 本身不响应点击，由父 div 处理
             />
             <label
                 htmlFor={`checkbox-${item.id}`}
-                className="flex-grow cursor-pointer"
+                className="flex-grow pointer-events-none"
             >
                 {item.name}
             </label>
@@ -137,6 +157,7 @@ const CascaderLevel = ({
     align?: Align;
 }) => {
     const checkboxRef = useRef<HTMLButtonElement>(null);
+    const t = useIntl();
 
     const levelAllIds = useMemo(
         () =>
@@ -188,7 +209,7 @@ const CascaderLevel = ({
                 onSelect={(e) => e.preventDefault()}
                 onClick={handleSelectAll}
             >
-                <div className="flex items-center w-full">
+                <div className="flex items-center w-full cursor-pointer">
                     <Checkbox
                         checked={
                             isPartiallySelected
@@ -200,9 +221,9 @@ const CascaderLevel = ({
                     />
                     <label
                         htmlFor={`select-all-${levelItems[0]?.id}`}
-                        className="w-full cursor-pointer"
+                        className="w-full pointer-events-none"
                     >
-                        全选
+                        {t("select-all")}
                     </label>
                 </div>
             </DropdownMenuItem>
@@ -248,6 +269,15 @@ export const CascadeMultipleSelect = ({
         } else {
             ids.forEach((id) => newSelectedIds.delete(id));
         }
+
+        // 如果父组件的子元素没有完全被选中，则删除父元素id
+        list.forEach((parent) => {
+            if (parent.children?.some((c) => !newSelectedIds.has(c.id))) {
+                newSelectedIds.delete(parent.id);
+            } else if (!parent.asGroupLabel) {
+                newSelectedIds.add(parent.id);
+            }
+        });
 
         // 最后，将新的 Set 转换为数组，并调用一次 onValueChange
         onValueChange(Array.from(newSelectedIds));

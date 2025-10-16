@@ -303,5 +303,7 @@
   "theme": "主题",
   "theme-system": "跟随系统",
   "theme-light": "浅色",
-  "theme-dark": "深色"
+  "theme-dark": "深色",
+  "app-brand": "记录每一天",
+  "app-introduce": "开源，免费，多人协作记账App"
 }
