@@ -27,7 +27,7 @@ export default defineConfig({
             manifest: {
                 name: "Cent - 日计",
                 short_name: "Cent",
-                description: "Accounting  your life - 记录每一天",
+                description: "Accounting your life - 记录每一天",
                 theme_color: "#ffffff",
                 icons: [
                     {

@@ -31,6 +31,7 @@ export async function initIntl(locale: LocaleName) {
             },
             cache,
         );
+        document.title = `${t("APP_NAME")}`;
     } catch (error) {
         console.error(
             `Failed to load locale messages for ${currentLocale.name}:`,

@@ -48,7 +48,7 @@ export default function Ledger({
             <div
                 className={cn(
                     enableDivideAsOrdered &&
-                        "translate-x-0 before:block before:fixed before:top-0 before:left-9 before:w-[1px] before:h-[calc(100%-95px)] before:bg-black",
+                        "translate-x-0 before:block before:fixed before:top-0 before:left-9 before:w-[1px] before:h-[calc(100%-95px)] before:bg-foreground",
                 )}
                 style={{
                     height: `${rowVirtualizer.getTotalSize()}px`,

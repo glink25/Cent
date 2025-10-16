@@ -27,10 +27,10 @@ export default function Navigation() {
             {/* search */}
             <button
                 type="button"
-                className={`w-14 h-14 sm:w-10 sm:h-10 cursor-pointer flex items-center justify-center rounded-full shadow-md m-2  transition-all bg-background hover:bg-foreground/40 active:bg-foreground/20 ${
+                className={`w-14 h-14 sm:w-10 sm:h-10 cursor-pointer flex items-center justify-center rounded-full shadow-md m-2 transition-all hover:bg-foreground/40 active:bg-foreground/20 dark:hover:bg-[#aba8a5] ${
                     currentTab === "/search"
-                        ? "bg-foreground/20"
-                        : "bg-background"
+                        ? "bg-foreground/20 dark:bg-[#918c89]"
+                        : "bg-background dark:bg-stone-500"
                 }`}
                 onClick={() => switchTab("/search")}
             >
@@ -38,10 +38,10 @@ export default function Navigation() {
             </button>
 
             {/* middle group */}
-            <div className="flex items-center rounded-full p-1 bg-background w-56 h-14 m-2 shadow-md sm:flex-col sm:w-10 sm:h-50 sm:-order-1">
+            <div className="flex items-center rounded-full p-1 bg-background dark:bg-stone-500 w-56 h-14 m-2 shadow-md sm:flex-col sm:w-10 sm:h-50 sm:-order-1">
                 <button
                     type="button"
-                    className={`flex-1 h-full w-full transition rounded-full flex items-center justify-center cursor-pointer bg-background hover:bg-foreground/40 active:bg-foreground/20 ${
+                    className={`flex-1 h-full w-full transition rounded-full flex items-center justify-center cursor-pointer hover:bg-foreground/40 active:bg-foreground/20 ${
                         currentTab === "/" ? "bg-foreground/20" : ""
                     }`}
                     onClick={() => switchTab("/")}
@@ -59,7 +59,7 @@ export default function Navigation() {
 
                 <button
                     type="button"
-                    className={`flex-1 h-full w-full transition-all rounded-full flex items-center justify-center cursor-pointer bg-background hover:bg-foreground/40 active:bg-foreground/20 ${
+                    className={`flex-1 h-full w-full transition-all rounded-full flex items-center justify-center cursor-pointer hover:bg-foreground/40 active:bg-foreground/20 ${
                         currentTab === "/stat" ? "bg-foreground/20" : ""
                     }`}
                     onClick={() => switchTab("/stat")}
@@ -73,7 +73,7 @@ export default function Navigation() {
             {/* settings */}
             <button
                 type="button"
-                className="w-14 h-14 sm:w-10 sm:h-10 cursor-pointer flex items-center justify-center rounded-full shadow-md m-2 transition-all bg-background hover:bg-foreground/40 active:bg-foreground/20"
+                className="w-14 h-14 sm:w-10 sm:h-10 cursor-pointer flex items-center justify-center rounded-full shadow-md m-2 transition-all hover:bg-foreground/40 active:bg-foreground/20 dark:bg-stone-500 dark:hover:bg-[#aba8a5]"
                 onClick={() => {
                     showSettings();
                 }}
