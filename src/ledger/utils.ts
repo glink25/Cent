@@ -76,7 +76,7 @@ const isCommentMatched = (bill: Bill, comment?: string) => {
 };
 
 const isAssetsMatched = (bill: Bill, assets?: boolean) => {
-    return assets === true ? Boolean(bill.image) : true;
+    return assets === true ? bill.images?.some((img) => Boolean(img)) : true;
 };
 
 const isTagsMatched = (bill: Bill, tagIds?: string[]) => {

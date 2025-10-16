@@ -1,4 +1,10 @@
-import { type CSSProperties, useEffect, useRef, useState } from "react";
+import {
+    type CSSProperties,
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from "react";
 import { ImageAPI } from "@/api/image";
 
 export default function SmartImage({
@@ -12,6 +18,7 @@ export default function SmartImage({
     alt?: string;
     style?: CSSProperties;
 }) {
+    const [status, setStatus] = useState("loading");
     const [url, setUrl] = useState<string>(
         typeof source === "string" ? source : "",
     );
@@ -45,6 +52,23 @@ export default function SmartImage({
         };
     }, [source]);
 
+    const onLoad = useCallback(() => {
+        setStatus("loaded");
+    }, []);
+    const onError = useCallback(() => {
+        setStatus("error");
+    }, []);
+
     if (url === "") return null;
-    return <img src={url} className={className} alt={alt} style={style} />;
+    return (
+        <img
+            data-state={status}
+            src={url}
+            className={className}
+            alt={alt}
+            style={style}
+            onLoad={onLoad}
+            onError={onError}
+        />
+    );
 }

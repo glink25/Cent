@@ -2,7 +2,6 @@
 declare const self: DedicatedWorkerGlobalScope;
 
 import { expose, transfer } from "comlink";
-import { encode } from "js-base64";
 import { BillIndexeBDStorage } from "@/gitray";
 import { StashBucket } from "@/gitray/stash";
 import type { Bill, BillFilter } from "@/ledger/type";

@@ -129,7 +129,7 @@ export default function BillInfo({
                                     key={i}
                                     source={img}
                                     alt=""
-                                    className="max-h-[200px] object-cover rounded min-w-24 min-h-24 animate-dynamic-bg"
+                                    className="max-h-[200px] object-cover rounded min-w-24 min-h-24 data-[state=loading]:animate-dynamic-bg"
                                     style={
                                         {
                                             "--color-start":
