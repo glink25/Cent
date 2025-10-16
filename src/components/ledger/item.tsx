@@ -50,7 +50,7 @@ export default function BillItem({
         >
             {/* 左侧图标 + 信息 */}
             <div className="flex items-center overflow-hidden">
-                <div className="rounded-full bg-white border w-10 h-10 flex items-center justify-center">
+                <div className="rounded-full bg-background border w-10 h-10 flex items-center justify-center">
                     {category?.icon && <CategoryIcon icon={category.icon} />}
                 </div>
                 <div className="flex-1 flex flex-col px-4 overflow-hidden">

@@ -70,7 +70,7 @@ export default function BookGuide() {
                     <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center pointer-events-none">
                         <Dialog.Content
                             className={cn(
-                                "bg-white max-h-[55vh] w-fit max-w-[500px] rounded-md data-[state=open]:animate-content-show",
+                                "bg-background max-h-[55vh] w-fit max-w-[500px] rounded-md data-[state=open]:animate-content-show",
                             )}
                         >
                             <VisuallyHidden.Root>
@@ -82,7 +82,7 @@ export default function BookGuide() {
                                 </Dialog.Description>
                             </VisuallyHidden.Root>
                             <div className="w-fit h-full flex justify-center items-center pointer-events-auto">
-                                <div className="bg-[white] w-[350px] h-[450px] py-4 flex flex-col justify-center items-center rounded">
+                                <div className="bg-background w-[350px] h-[450px] py-4 flex flex-col justify-center items-center rounded">
                                     {books.length > 0 ? (
                                         <div className="flex-1 flex flex-col w-full gap-2 h-full overflow-hidden">
                                             <div className="flex gap-2 px-4">

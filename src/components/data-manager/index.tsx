@@ -86,7 +86,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
             onBack={onCancel}
             className="h-full overflow-hidden"
         >
-            <div className="bg-[white] w-full h-[450px] flex flex-col justify-center items-center rounded">
+            <div className="w-full h-[450px] flex flex-col justify-center items-center rounded">
                 <div className="flex-1 flex flex-col w-full gap-2 h-full overflow-hidden">
                     <div className="px-4 opacity-60 text-sm">{t("backup")}</div>
                     <div className="flex flex-col px-4 gap-2">

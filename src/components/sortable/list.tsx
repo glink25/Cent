@@ -46,7 +46,7 @@ function SortableListItem({ id, name }: SortableItem) {
             style={style}
             {...attributes}
             {...listeners}
-            className="bg-white border rounded-md p-2 shadow-sm active:cursor-grabbing flex items-center justify-between"
+            className="bg-background border rounded-md p-2 shadow-sm active:cursor-grabbing flex items-center justify-between"
         >
             <div>{name}</div>
             <i className="icon-[mdi--reorder-horizontal]"></i>

@@ -36,6 +36,27 @@
         }, 1);
       }
     </script>
+    <script>
+      (function () {
+        try {
+          const stored = localStorage.getItem("theme"); // 'dark' | 'light' | 'system' | null
+          if (stored === "dark") {
+            document.documentElement.classList.add("dark");
+          } else if (stored === "light") {
+            document.documentElement.classList.remove("dark");
+          } else {
+            // 没有显式偏好，按系统决定
+            const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+            if (prefersDark) document.documentElement.classList.add("dark");
+            else document.documentElement.classList.remove("dark");
+          }
+        } catch (e) {
+          // localStorage 可能被禁用，安全降级：按系统
+          const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+          if (prefersDark) document.documentElement.classList.add("dark");
+        }
+      })();
+    </script>
   </head>
   <body tabindex="1">
     <div id="root"></div>

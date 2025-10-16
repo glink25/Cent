@@ -64,7 +64,7 @@ export default function BillInfo({
                     {/* header */}
                     <div className="flex items-center justify-between">
                         <div className="flex items-center">
-                            <div className="w-12 h-12 flex-shrink-0 rounded-full bg-white border p-4 flex items-center justify-center">
+                            <div className="w-12 h-12 flex-shrink-0 rounded-full bg-background border p-4 flex items-center justify-center">
                                 {categoryInfo?.icon && (
                                     <CategoryIcon icon={categoryInfo?.icon} />
                                 )}

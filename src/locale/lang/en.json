@@ -299,5 +299,9 @@
   "overlap-preview-description": "All data in current book will be cleared",
   "preview": "Preview",
   "invite-tip": "Share your git repository to your friends, Collaborators can create and edit together!",
-  "delete-book-tip": "You need to delete this repo by yourself"
+  "delete-book-tip": "You need to delete this repo by yourself",
+  "theme": "Theme",
+  "theme-system": "System",
+  "theme-light": "Light",
+  "theme-dark": "Dark"
 }

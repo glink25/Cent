@@ -14,6 +14,7 @@ import { Settings } from "@/components/settings";
 import { SortableListProvider } from "@/components/sortable";
 import { Toaster } from "@/components/ui/sonner";
 import useRapidReducedMotionChange from "@/hooks/use-reduce-motion";
+import { ThemeProvider } from "@/hooks/use-theme";
 import { usePreferenceStore } from "@/store/preference";
 
 export default function MainLayout() {
@@ -28,7 +29,7 @@ export default function MainLayout() {
         },
     );
     return (
-        <>
+        <ThemeProvider>
             <Navigation />
             <div className="w-full h-full sm:pl-18">
                 <Outlet />
@@ -46,6 +47,6 @@ export default function MainLayout() {
             <ModalProvider />
             <Login />
             <Toaster />
-        </>
+        </ThemeProvider>
     );
 }

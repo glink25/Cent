@@ -299,5 +299,9 @@
   "overlap-preview-description": "账本中所有数据将被清空，替换为{n}条数据",
   "overlap-github-tip": "（Github仓库文件也将一同被清空，可以通过git命令回滚）",
   "invite-tip": "可以通过共享仓库与其他人一起使用账本",
-  "delete-book-tip": "需要手动删除远端仓库"
+  "delete-book-tip": "需要手动删除远端仓库",
+  "theme": "主题",
+  "theme-system": "跟随系统",
+  "theme-light": "浅色",
+  "theme-dark": "深色"
 }

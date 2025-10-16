@@ -12,6 +12,7 @@ import { Button } from "../ui/button";
 import AboutSettingsItem from "./about";
 import LabSettingsItem from "./lab";
 import LanguageSettingsItem from "./language";
+import ThemeSettingsItem from "./theme";
 import UserSettingsItem from "./user";
 
 function UserInfo() {
@@ -87,6 +88,7 @@ export default function SettingsForm({
                     <DataManagerSettingsItem />
                     <LabSettingsItem />
                     <AboutSettingsItem />
+                    <ThemeSettingsItem />
                     <LanguageSettingsItem />
                 </div>
             </div>

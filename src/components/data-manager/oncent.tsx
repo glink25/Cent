@@ -162,7 +162,7 @@ function OncentImportForm({
                             <SelectValue placeholder={t("select-a-user")} />
                         </SelectTrigger>
                         <SelectPortal>
-                            <SelectContent className="bg-white shadow">
+                            <SelectContent className="bg-background shadow">
                                 <SelectViewport className="SelectViewport">
                                     {data?.map((item) => {
                                         return (

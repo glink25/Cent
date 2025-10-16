@@ -580,7 +580,7 @@ export default function Page() {
                                     <i className="icon-[mdi--view-grid-outline] group-[data-[state=checked]]:text-white"></i>
                                     <i className="icon-[mdi--account-outline]"></i>
                                 </div>
-                                <Switch.Thumb className="block size-[22px] translate-x-[4px] rounded-sm bg-white  transition-transform duration-100 will-change-transform data-[state=checked]:translate-x-[28px]" />
+                                <Switch.Thumb className="block size-[22px] translate-x-[4px] rounded-sm bg-background transition-transform duration-100 will-change-transform data-[state=checked]:translate-x-[28px]" />
                             </Switch.Root>
                         </div>
                     </div>

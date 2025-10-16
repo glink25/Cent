@@ -55,7 +55,7 @@ export default function createConfirmProvider<Value, Returned = Value>(
                     <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center pointer-events-none">
                         <Dialog.Content
                             className={cn(
-                                "pointer-events-auto bg-white max-h-[55vh] w-[90vw] max-w-[500px] rounded-md data-[state=open]:animate-content-show",
+                                "pointer-events-auto bg-background max-h-[55vh] w-[90vw] max-w-[500px] rounded-md data-[state=open]:animate-content-show",
                                 contentClassName,
                             )}
                             onOpenAutoFocus={(e) => {

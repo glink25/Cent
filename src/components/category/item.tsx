@@ -23,7 +23,7 @@ export function CategoryItem({
                 `rounded-lg border flex-1 py-1 px-2 h-8 flex items-center justify-center whitespace-nowrap cursor-pointer`,
                 selected
                     ? "bg-slate-700 text-white "
-                    : "bg-stone-200  text-light-900",
+                    : "bg-stone-200  text-light-900 dark:bg-stone-500",
                 className,
             )}
             onMouseDown={onMouseDown}
