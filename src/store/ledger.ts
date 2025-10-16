@@ -100,7 +100,7 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
             .then((creators) => {
                 set(
                     produce((state: LedgerStore) => {
-                        const uid = useUserStore.getState().login;
+                        const uid = useUserStore.getState().id;
                         const personalMeta = state.infos?.meta.personal?.[uid];
                         const names = personalMeta?.names;
                         state.infos = {
@@ -108,7 +108,7 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
                             creators: (creators ?? []).map((c) => ({
                                 ...c,
                                 originalName: c.name,
-                                name: names?.[c.login] ?? c.name,
+                                name: names?.[c.id] ?? c.name,
                             })),
                         };
                     }),
@@ -288,7 +288,7 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
         updatePersonalMeta: async (v) => {
             const repo = getCurrentFullRepoName();
             const prevMeta = await StorageAPI.getMeta(repo);
-            const uid = useUserStore.getState().login;
+            const uid = useUserStore.getState().id;
             const personalMeta =
                 (prevMeta as GlobalMeta | undefined)?.personal?.[uid] ?? {};
             const newPersonalMeta =

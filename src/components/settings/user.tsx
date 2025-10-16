@@ -14,7 +14,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
     const { currentBookId } = useBookStore();
     const creators = useCreators();
 
-    const toEditName = async (user: { login: string }) => {
+    const toEditName = async (user: { id: string }) => {
         const newName = prompt("请输入自定义昵称");
         if (!newName) {
             return;
@@ -23,16 +23,16 @@ function Form({ onCancel }: { onCancel?: () => void }) {
             if (!prev.names) {
                 prev.names = {};
             }
-            prev.names[user.login] = newName;
+            prev.names[user.id] = newName;
             return prev;
         });
     };
-    const toRecoverName = async (user: { login: string }) => {
+    const toRecoverName = async (user: { id: string }) => {
         await useLedgerStore.getState().updatePersonalMeta((prev) => {
             if (!prev.names) {
                 prev.names = {};
             }
-            delete prev.names[user.login];
+            delete prev.names[user.id];
             return prev;
         });
     };
