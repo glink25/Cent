@@ -37,6 +37,9 @@ export default function BillInfo({
         return null;
     }
     const categoryInfo = categories.find((c) => c.id === edit.categoryId);
+    const canEdit =
+        edit.creatorId === curUserId ||
+        creators.every((c) => c.id !== edit.creatorId);
 
     const toEdit = async () => {
         if (edit?.id) {
@@ -144,7 +147,7 @@ export default function BillInfo({
                 {/* footer */}
                 <div className="footer flex justify-between items-center">
                     <div className="flex">
-                        {edit.creatorId === curUserId && (
+                        {canEdit && (
                             <button
                                 type="button"
                                 className="buttoned px-2 rounded-md text-red-600 cursor-pointer"
@@ -162,7 +165,7 @@ export default function BillInfo({
                         >
                             {t("cancel")}
                         </button>
-                        {edit.creatorId === curUserId && (
+                        {canEdit && (
                             <button
                                 type="button"
                                 className="buttoned ml-2 px-2 rounded-md font-semibold cursor-pointer"

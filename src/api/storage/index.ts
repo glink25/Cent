@@ -1,7 +1,7 @@
 import { wrap } from "comlink";
 import type { BillTag } from "@/components/bill-tag/type";
 import type { Budget } from "@/components/budget/type";
-import { BillIndexeBDStorage, Gitray } from "@/gitray";
+import { BillIndexeBDStorage, type Full, Gitray } from "@/gitray";
 import type { Bill, BillCategory, BillFilter } from "@/ledger/type";
 import { getToken } from "../login";
 import type { Exposed } from "./woker";
@@ -17,6 +17,11 @@ export type GlobalMeta = {
     categories?: BillCategory[];
     tags: BillTag[];
     personal?: Record<string, PersonalMeta>;
+};
+
+export type ExportedJSON = {
+    items: Full<Bill>[];
+    meta: GlobalMeta;
 };
 
 const config = {

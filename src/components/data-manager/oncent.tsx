@@ -124,7 +124,6 @@ function OncentImportForm({
             .filter((v) => v.data?.length);
     }, [edit]);
 
-    console.log(data, "import data");
     const [loading, setLoading] = useState(false);
     const toConfirm = async () => {
         const selected = data?.find((v) => v.user.id === selectedUserId);
@@ -135,7 +134,7 @@ function OncentImportForm({
         try {
             await useLedgerStore
                 .getState()
-                .batchImport(
+                .batchImportFromBills(
                     selected.data?.map((v) => transferToBill(v as BillRow)) ??
                         [],
                     importStrategy === "overlap",

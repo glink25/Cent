@@ -48,7 +48,7 @@ type LedgerStoreActions = {
         id: Bill["id"],
         entry: Omit<Bill, "id" | "creatorId">,
     ) => Promise<void>;
-    batchImport: (
+    batchImportFromBills: (
         entries: Omit<Bill, "id" | "creatorId">[],
         overlap?: boolean,
     ) => Promise<void>;
@@ -306,7 +306,8 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
             ]);
             await updateBillList();
         },
-        batchImport: async (
+
+        batchImportFromBills: async (
             data: Omit<Bill, "id" | "creatorId">[],
             overlap = false,
         ) => {

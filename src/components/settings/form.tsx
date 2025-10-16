@@ -3,11 +3,11 @@ import { StorageAPI } from "@/api/storage";
 import PopupLayout from "@/layouts/popup-layout";
 import { useIntl } from "@/locale";
 import { useUserStore } from "@/store/user";
-import Backup from "../backup";
 import TagSettingsItem from "../bill-tag";
 import { BookSettings } from "../book";
 import Budget from "../budget";
 import CategorySettingsItem from "../category";
+import DataManagerSettingsItem from "../data-manager";
 import { Button } from "../ui/button";
 import AboutSettingsItem from "./about";
 import LabSettingsItem from "./lab";
@@ -84,7 +84,7 @@ export default function SettingsForm({
                     <TagSettingsItem />
                     <Budget />
                     <UserSettingsItem />
-                    <Backup />
+                    <DataManagerSettingsItem />
                     <LabSettingsItem />
                     <AboutSettingsItem />
                     <LanguageSettingsItem />

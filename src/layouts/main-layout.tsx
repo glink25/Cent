@@ -8,6 +8,7 @@ import { BudgetEditProvider, BudgetProvider } from "@/components/budget";
 import { BudgetDetailProvider } from "@/components/budget/detail";
 import { CategoryListProvider } from "@/components/category";
 import Login from "@/components/login";
+import { ModalProvider } from "@/components/modal";
 import Navigation from "@/components/navigation";
 import { Settings } from "@/components/settings";
 import { SortableListProvider } from "@/components/sortable";
@@ -42,6 +43,7 @@ export default function MainLayout() {
             <BudgetDetailProvider />
             <TagListProvider />
             <CategoryListProvider />
+            <ModalProvider />
             <Login />
             <Toaster />
         </>

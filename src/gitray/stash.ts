@@ -11,6 +11,7 @@ export type Update<T extends BaseItem> = {
     id: string;
     value: T;
     metaValue?: undefined;
+    overlap?: number;
 };
 
 export type Delete<T extends BaseItem> = {
@@ -19,6 +20,7 @@ export type Delete<T extends BaseItem> = {
     id: string;
     value: T["id"];
     metaValue?: undefined;
+    overlap?: number;
 };
 
 export type MetaUpdate = {
@@ -27,6 +29,7 @@ export type MetaUpdate = {
     id: string;
     value?: undefined;
     metaValue: any;
+    overlap?: number;
 };
 
 export type FullAction<T extends BaseItem> = Update<T> | Delete<T> | MetaUpdate;
@@ -34,7 +37,9 @@ export type FullAction<T extends BaseItem> = Update<T> | Delete<T> | MetaUpdate;
 export type Action<T extends BaseItem> = Omit<
     FullAction<T>,
     "timestamp" | "id"
->;
+> & {
+    timestamp?: number;
+};
 
 export type Full<T extends BaseItem> = T & {
     __delete_at?: number;
@@ -136,13 +141,32 @@ export class StashBucket<T extends BaseItem, Meta = any, Config = any> {
         return this.metaStorage.getValue();
     }
 
-    async batch(actions: Action<T>[]) {
+    async batch(actions: Action<T>[], overlap = false) {
         const now = Date.now();
         const fullActions = actions.map(
-            (ac) => ({ ...ac, id: v4(), timestamp: now }) as FullAction<T>,
+            (ac) =>
+                ({
+                    ...ac,
+                    id: v4(),
+                    timestamp: ac.timestamp ?? now,
+                }) as FullAction<T>,
         );
         const prevActions = await this.getStashes();
-        const densed = denseStashes([...fullActions, ...prevActions]);
+        const densed = denseStashes([
+            ...fullActions,
+            ...(overlap ? [] : prevActions),
+        ]);
+        if (overlap) {
+            const now = Date.now();
+            densed[0].overlap = now;
+            if (densed[densed.length - 1]) {
+                densed[densed.length - 1].overlap = now;
+            }
+            if (densed[densed.length - 2]) {
+                densed[densed.length - 2].overlap = now;
+            }
+            await this.itemStorage.clear();
+        }
         await this.stashStorage.clear();
         await this.stashStorage.put(...densed);
         const stashed = await this.stashStorage.toArray();
@@ -171,16 +195,16 @@ export class StashBucket<T extends BaseItem, Meta = any, Config = any> {
         await Promise.all([
             this.itemStorage.put(
                 ...updates.map((ac) => ({
-                    ...ac.value,
                     __create_at: ac.timestamp,
                     __update_at: ac.timestamp,
+                    ...ac.value,
                 })),
             ),
             this.itemStorage.delete(...deletes.map((ac) => ac.value)),
             meta &&
                 this.metaStorage.setValue({
-                    ...meta.metaValue,
                     __update_at: meta.timestamp,
+                    ...meta.metaValue,
                 }),
         ]);
     }

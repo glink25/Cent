@@ -289,5 +289,13 @@
   "feedback": "Feedback",
   "preparing": "Preparing...",
   "user-management": "Users",
-  "collaborators": "Collaborators"
+  "collaborators": "Collaborators",
+  "data-manager": "Data Manage",
+  "append-preview-description": "{n} bills will append to current book",
+  "data-export": "Export data",
+  "data-import": "Import data",
+  "import-description": "bills with same timestamp or id will be ignored",
+  "overlap-github-tip": "(Gtihub repo wil also be cleared, but can be restored by git commands)",
+  "overlap-preview-description": "All data in current book will be cleared",
+  "preview": "Preview"
 }

@@ -1,12 +1,14 @@
 /// <reference lib="webworker" />
 declare const self: DedicatedWorkerGlobalScope;
 
-import { expose } from "comlink";
+import { expose, transfer } from "comlink";
+import { encode } from "js-base64";
 import { BillIndexeBDStorage } from "@/gitray";
 import { StashBucket } from "@/gitray/stash";
 import type { Bill, BillFilter } from "@/ledger/type";
 import { isBillMatched } from "@/ledger/utils";
-import type { GlobalMeta } from ".";
+import { blobToBase64 } from "@/utils/file";
+import type { ExportedJSON, GlobalMeta } from ".";
 import { type AnalysisType, analysis as analysisBills } from "./analysis";
 
 const storeMap = new Map<
@@ -52,11 +54,51 @@ const analysis = async (
     return result;
 };
 
+const toJSON = async (storeFullName: string) => {
+    const { meta } = await getInfo(storeFullName);
+    const items = await filter(storeFullName, {});
+    await Promise.all(
+        items.map(async (v) => {
+            // convert to base64
+            const imagesJSON = v.images
+                ? await Promise.all(
+                      v.images?.map(async (img) => {
+                          if (img instanceof File) {
+                              const str = await blobToBase64(img);
+                              const base64Url = `data:${img.type};base64,${str}`;
+                              return base64Url;
+                          }
+                          return img;
+                      }),
+                  )
+                : undefined;
+            v.images = imagesJSON;
+            return v;
+        }),
+    );
+    const json = JSON.stringify({
+        meta,
+        items,
+    } as ExportedJSON);
+    return json;
+};
+
+const exportToArrayBuffer = async (storeFullName: string) => {
+    const data = await toJSON(storeFullName);
+    const uint8 = new TextEncoder().encode(data);
+    // 把对象和要转移的 buffer 一起返回，并声明 transferables
+    return transfer(
+        uint8.buffer, // 返回值
+        [uint8.buffer], // 要转移的对象
+    );
+};
+
 const exposed = {
     init: (v: any) => {},
     getInfo,
     filter,
     analysis,
+    exportToArrayBuffer,
 };
 
 export type Exposed = typeof exposed;

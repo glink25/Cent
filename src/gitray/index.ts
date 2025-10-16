@@ -358,9 +358,13 @@ export class Gitray<Item extends BaseItem> {
         return detail;
     }
 
-    async batch(storeFullName: string, actions: Action<Item>[]) {
+    async batch(
+        storeFullName: string,
+        actions: Action<Item>[],
+        overlap = false,
+    ) {
         const { itemBucket } = this.getStore(storeFullName);
-        await itemBucket.batch(actions);
+        await itemBucket.batch(actions, overlap);
         this.notifyChange(storeFullName);
         this.toSync();
     }
@@ -403,6 +407,7 @@ export class Gitray<Item extends BaseItem> {
                     if (stashes.length === 0) {
                         return;
                     }
+                    const isOverlap = Boolean(stashes[0].overlap);
                     const octokit = await this.getOctokit();
                     const [owner, repo] = storeFullName.split("/");
                     if ([owner, repo].some((v) => v.length === 0))
@@ -436,8 +441,15 @@ export class Gitray<Item extends BaseItem> {
                         if (itemStashes.length === 0) {
                             return { chunks: [], assets: [] };
                         }
-                        const structure =
+                        const remoteStructure =
                             await this.fetchStoreStructure(storeFullName);
+                        const structure = isOverlap
+                            ? {
+                                  chunks: [],
+                                  assets: [],
+                                  meta: remoteStructure.meta,
+                              }
+                            : remoteStructure;
                         const sortedChunk = sortBy(
                             structure.chunks,
                             (v) => v.startIndex,
@@ -462,7 +474,7 @@ export class Gitray<Item extends BaseItem> {
 
                         const startIndex = latestChunk?.startIndex ?? 0;
                         const chunks: {
-                            file: File;
+                            file: File | null;
                             path: string;
                             content: any[];
                         }[] = [];
@@ -485,6 +497,22 @@ export class Gitray<Item extends BaseItem> {
                                 file,
                                 content: con,
                                 path,
+                            });
+                        }
+                        // 如果是overlap，将远端的file全部置空（删除）
+                        if (isOverlap) {
+                            [
+                                ...remoteStructure.chunks,
+                                ...remoteStructure.assets,
+                            ].forEach((rc) => {
+                                if (chunks.some((c) => c.path === rc.path)) {
+                                    return;
+                                }
+                                chunks.push({
+                                    file: null,
+                                    content: [],
+                                    path: rc.path,
+                                });
                             });
                         }
                         return {
@@ -511,6 +539,14 @@ export class Gitray<Item extends BaseItem> {
                             ...chunks,
                             ...metas,
                         ].map(async ({ file, path }) => {
+                            if (file === null) {
+                                return {
+                                    path,
+                                    mode: "100644" as const,
+                                    type: "blob" as const,
+                                    sha: null,
+                                };
+                            }
                             const base64Content = await blobToBase64(file);
                             const { data: blob } = await octokit.request(
                                 "POST /repos/{owner}/{repo}/git/blobs",
@@ -592,7 +628,9 @@ export class Gitray<Item extends BaseItem> {
                         {
                             owner,
                             repo,
-                            message: `[Gitray] Batch update for ${storeFullName}`,
+                            message: isOverlap
+                                ? `[Gitray] Overlap for ${storeFullName}`
+                                : `[Gitray] Batch update for ${storeFullName}`,
                             tree: newTree.sha,
                             parents: [latestCommitSha],
                             request: {
