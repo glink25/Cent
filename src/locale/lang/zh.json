@@ -297,5 +297,7 @@
   "import-description": "(时间和id相同的数据将被过滤)",
   "append-preview-description": "{n}条数据将被追加到帐本中",
   "overlap-preview-description": "账本中所有数据将被清空，替换为{n}条数据",
-  "overlap-github-tip": "（Github仓库文件也将一同被清空，可以通过git命令回滚）"
+  "overlap-github-tip": "（Github仓库文件也将一同被清空，可以通过git命令回滚）",
+  "invite-tip": "可以通过共享仓库与其他人一起使用账本",
+  "delete-book-tip": "需要手动删除远端仓库"
 }

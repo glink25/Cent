@@ -31,9 +31,7 @@ export default function BookGuide() {
         useBookStore.getState().switchToBook(bookId);
     };
     const toInvite = (book: Book) => {
-        const ok = confirm(
-            "Share your git repository to your friends, Collaborators can create and edit together!",
-        );
+        const ok = confirm(t("invite-tip"));
         if (!ok) {
             return;
         }
@@ -44,7 +42,7 @@ export default function BookGuide() {
     };
 
     const toDelete = (book: Book) => {
-        const ok = confirm("You need to delete this repo by yourself");
+        const ok = confirm(t("delete-book-tip"));
         if (!ok) {
             return;
         }
