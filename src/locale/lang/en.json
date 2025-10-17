@@ -305,5 +305,6 @@
   "theme-light": "Light",
   "theme-dark": "Dark",
   "app-brand": "Accounting your life",
-  "see-introduce": "see introduce"
+  "see-introduce": "see introduce",
+  "pwa-install-tip": "Add to home screen for best experience"
 }

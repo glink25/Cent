@@ -75,6 +75,7 @@ function Guide({ className }: { className?: string }) {
         >
             <h1 className="text-3xl font-bold">{t("APP_NAME")}</h1>
             <p className="text-sm">{t("app-introduce")}</p>
+            <div className="text-xs opacity-60">{t("pwa-install-tip")}</div>
             <a
                 className="absolute bottom-4 right-4 text-xs opacity-60 underline"
                 target="_blank"
