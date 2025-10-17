@@ -152,40 +152,42 @@ export default function EditorForm({
             >
                 {/* categories */}
                 <div className="flex-1 overflow-hidden flex flex-col px-2 text-sm font-medium gap-2">
-                    <div
-                        className={cn(
-                            "grid gap-1",
-                            categoriesGridClassName(categories),
-                        )}
-                    >
-                        {categories.map((item) => (
-                            <CategoryItem
-                                key={item.id}
-                                category={item}
-                                selected={billState.categoryId === item.id}
-                                onMouseDown={() => {
-                                    setBillState((v) => ({
-                                        ...v,
-                                        categoryId: item.id,
-                                    }));
-                                }}
-                            />
-                        ))}
-                        <button
-                            type="button"
+                    <div className="flex-1 overflow-y-auto scrollbar-hidden w-full">
+                        <div
                             className={cn(
-                                `rounded-lg border flex-1 py-1 px-2 h-8 flex gap-2 items-center justify-center whitespace-nowrap cursor-pointer`,
+                                "grid gap-1",
+                                categoriesGridClassName(categories),
                             )}
-                            onClick={() => {
-                                showCategoryList();
-                            }}
                         >
-                            <i className="icon-[mdi--settings]"></i>
-                            {t("edit")}
-                        </button>
+                            {categories.map((item) => (
+                                <CategoryItem
+                                    key={item.id}
+                                    category={item}
+                                    selected={billState.categoryId === item.id}
+                                    onMouseDown={() => {
+                                        setBillState((v) => ({
+                                            ...v,
+                                            categoryId: item.id,
+                                        }));
+                                    }}
+                                />
+                            ))}
+                            <button
+                                type="button"
+                                className={cn(
+                                    `rounded-lg border flex-1 py-1 px-2 h-8 flex gap-2 items-center justify-center whitespace-nowrap cursor-pointer`,
+                                )}
+                                onClick={() => {
+                                    showCategoryList();
+                                }}
+                            >
+                                <i className="icon-[mdi--settings]"></i>
+                                {t("edit")}
+                            </button>
+                        </div>
                     </div>
                     {(subCategories?.length ?? 0) > 0 && (
-                        <div className="flex-1 overflow-y-auto rounded-md border p-2 shadow scrollbar-hidden">
+                        <div className="flex-1 flex-shrink-0 min-h-20 overflow-y-auto rounded-md border p-2 shadow scrollbar-hidden">
                             <div
                                 className={cn(
                                     "grid gap-1",

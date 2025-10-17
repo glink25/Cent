@@ -1,13 +1,17 @@
+import { cloneDeep, merge } from "lodash-es";
 import {
     type ExportedJSON,
+    type GlobalMeta,
     StorageAPI,
     StorageDeferredAPI,
 } from "@/api/storage";
 import type { MetaUpdate, Update } from "@/gitray";
 import PopupLayout from "@/layouts/popup-layout";
+import { BillCategories } from "@/ledger/category";
 import type { Bill } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
+import { useLedgerStore } from "@/store/ledger";
 import { download } from "@/utils/download";
 import createConfirmProvider from "../confirm";
 import { FORMAT_BACKUP, showFilePicker } from "../file-picker";
@@ -34,6 +38,38 @@ function Form({ onCancel }: { onCancel?: () => void }) {
             return;
         }
         const { strategy, ...rest } = res;
+        const currentMeta = cloneDeep(
+            useLedgerStore.getState().infos?.meta ?? ({} as GlobalMeta),
+        );
+        const newMeta =
+            strategy === "overlap"
+                ? rest.meta
+                : (() => {
+                      // 相同名称或者id的category将合并为同一个
+                      const curm = currentMeta;
+                      curm.categories = undefined;
+                      const newm = { ...rest.meta };
+                      const merged = merge(curm, newm);
+                      if (!rest.meta?.categories) {
+                          merged.categories = currentMeta.categories;
+                          return merged;
+                      }
+                      const newCategories = [...(currentMeta.categories ?? [])];
+                      rest.meta.categories.forEach((c) => {
+                          const sameIdIndex = newCategories?.findIndex(
+                              (x) => x.id === c.id,
+                          );
+                          if (sameIdIndex !== -1) {
+                              const old = newCategories[sameIdIndex];
+                              newCategories[sameIdIndex] = { ...c };
+                              newCategories[sameIdIndex].id = old.id;
+                          } else {
+                              newCategories.push(c);
+                          }
+                      });
+                      merged.categories = newCategories;
+                      return merged;
+                  })();
         await StorageAPI.batch(
             bookid,
             [
@@ -47,7 +83,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                 }),
                 {
                     type: "meta",
-                    metaValue: rest.meta,
+                    metaValue: newMeta,
                 } as MetaUpdate,
             ],
             strategy === "overlap",

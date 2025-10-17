@@ -272,7 +272,10 @@ export const CascadeMultipleSelect = ({
 
         // 如果父组件的子元素没有完全被选中，则删除父元素id
         list.forEach((parent) => {
-            if (parent.children?.some((c) => !newSelectedIds.has(c.id))) {
+            if ((parent.children?.length ?? 0) === 0) {
+            } else if (
+                parent.children?.some((c) => !newSelectedIds.has(c.id))
+            ) {
                 newSelectedIds.delete(parent.id);
             } else if (!parent.asGroupLabel) {
                 newSelectedIds.add(parent.id);
