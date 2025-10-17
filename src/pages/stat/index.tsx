@@ -439,15 +439,18 @@ export default function Page() {
 
     const tagStructure = useMemo(
         () =>
-            Array.from(dataSources.tagStructure.entries()).map(
-                ([tagId, struct]) => {
+            Array.from(dataSources.tagStructure.entries())
+                .map(([tagId, struct]) => {
                     const tag = tags.find((t) => t.id === tagId);
+                    if (!tag) {
+                        return undefined;
+                    }
                     return {
-                        ...tag!,
+                        ...tag,
                         ...struct,
                     };
-                },
-            ),
+                })
+                .filter((v) => v !== undefined),
         [dataSources.tagStructure, tags],
     );
     const totalMoneys = FocusTypes.map((t) => dataSources.total[t]);
@@ -663,7 +666,7 @@ export default function Page() {
                     {tagStructure.length > 0 && (
                         <div className="rounded-md border p-2 w-full flex flex-col">
                             <h2 className="font-medium text-lg my-3 text-center">
-                                标签详情
+                                {t("tag-details")}
                             </h2>
                             <div className="table w-full border-collapse">
                                 <div className="table-row-group divide-y">
