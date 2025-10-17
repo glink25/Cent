@@ -1,4 +1,4 @@
-# 🪙 Cent
+# Cent
 
 > 你可能只需要一个记账软件。
 
@@ -12,6 +12,7 @@ Cent 是一个 **完全免费、开源的多人协作记账 Web App**，
 
 🔗 **在线体验**：[https://cent.linkai.work](https://cent.linkai.work)  
 💾 **开源仓库**：[https://github.com/glink25/Cent](https://github.com/glink25/Cent)
+📖 **博客**：[https://glink25.github.io/tag/Cent/](https://glink25.github.io/tag/Cent/)
 
 ---
 
