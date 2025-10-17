@@ -2,7 +2,7 @@
 
 > 你可能只需要一个记账软件。
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-green.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 [![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
 [![PWA](https://img.shields.io/badge/PWA-supported-blue.svg)]()
 [![GitHub Repo](https://img.shields.io/badge/data-storage_on_GitHub-black?logo=github)]()
@@ -88,18 +88,6 @@ Cent 内置一套自定义的增量同步策略，仅同步增量差异：
 
 ---
 
-## 🧩 技术栈
-
-| 类别 | 使用技术 |
-|------|-----------|
-| 前端框架 | React + TypeScript |
-| 数据层 | IndexedDB + GitHub Repo |
-| 身份验证 | GitHub OAuth |
-| 部署 | Cloudflare Pages |
-| PWA | Service Worker + Manifest |
-
----
-
 ## 🧪 开发计划
 
 - ✅ 增量同步核心实现  
@@ -125,3 +113,12 @@ pnpm install
 # 本地运行
 pnpm dev
 ```
+
+## 📜 许可证
+
+本项目采用 Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)
+ 协议。
+ - 允许共享、改编与再发布
+ - 必须署名原作者
+ - 禁止商业使用
+ - 派生作品须使用相同许可协议
