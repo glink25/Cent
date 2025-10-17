@@ -81,7 +81,7 @@ function Guide({ className }: { className?: string }) {
                 href="https://glink25.github.io/post/Cent---%E4%BD%A0%E5%8F%AF%E8%83%BD%E5%8F%AA%E9%9C%80%E8%A6%81%E4%B8%80%E4%B8%AA%E8%AE%B0%E8%B4%A6%E8%BD%AF%E4%BB%B6/"
                 rel="noopener"
             >
-                查看介绍
+                {t("see-introduce")}
             </a>
         </div>
     );
