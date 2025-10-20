@@ -31,8 +31,10 @@
       gtag("config", "G-5TC4KTPWH0");
     </script>
     <script>
-      if (!location.href.includes("error") && location.href.includes("accessSession")) {
-        localStorage.setItem("_oauth_res", location.href);
+      // handle login authorized
+      // github login
+      if (location.href.includes("github_authorized")) {
+        localStorage.setItem("_oauth_res", JSON.stringify({ type: "github", url: location.href }));
         setTimeout(() => {
           location.replace(window.origin);
         }, 1);

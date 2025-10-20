@@ -215,45 +215,45 @@ export default function CategoryEditForm({
                                 </FormItem>
                             )}
                         ></FormField>
-                        {category?.parent && (
-                            <FormField
-                                control={form.control}
-                                name="parent"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>
-                                            {t("category-parent")}
-                                        </FormLabel>
-                                        <FormControl>
-                                            <Select
-                                                onValueChange={field.onChange}
-                                                defaultValue={field.value}
-                                            >
-                                                <FormControl>
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="父类" />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent align="end">
-                                                    {(category.type ===
-                                                    "expense"
-                                                        ? expenses
-                                                        : incomes
-                                                    ).map((parent) => (
-                                                        <SelectItem
-                                                            key={parent.id}
-                                                            value={parent.id}
-                                                        >
-                                                            {parent.name}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </FormControl>
-                                    </FormItem>
-                                )}
-                            ></FormField>
-                        )}
+                        <FormField
+                            control={form.control}
+                            name="parent"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>
+                                        {t("category-parent")}
+                                    </FormLabel>
+                                    <FormControl>
+                                        <Select
+                                            onValueChange={field.onChange}
+                                            defaultValue={field.value}
+                                        >
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="父类" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent align="end">
+                                                <SelectItem value={""}>
+                                                    {parent.name}
+                                                </SelectItem>
+                                                {(category.type === "expense"
+                                                    ? expenses
+                                                    : incomes
+                                                ).map((parent) => (
+                                                    <SelectItem
+                                                        key={parent.id}
+                                                        value={parent.id}
+                                                    >
+                                                        {parent.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </FormControl>
+                                </FormItem>
+                            )}
+                        ></FormField>
                     </div>
                 </div>
 

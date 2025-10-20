@@ -9,35 +9,44 @@ const { promise: loginFinished, resolve: resolveLoginFinished } =
 const create = () => {
     const login = () => {
         window.open(
-            `${LOGIN_API_HOST}/api/oauth/authorize?redirect_uri=${encodeURIComponent(`${window.origin}`)}`,
+            `${LOGIN_API_HOST}/api/github-oauth/authorize?redirect_uri=${encodeURIComponent(`${window.origin}`)}`,
             "_self",
         );
     };
 
     const afterLogin = async () => {
-        const res = localStorage.getItem("_oauth_res");
-        if (!res) {
+        const resText = localStorage.getItem("_oauth_res");
+        if (!resText) {
             resolveLoginFinished();
             return;
         }
+        const res = JSON.parse(resText);
+        if (res.type !== "github") {
+            return;
+        }
         localStorage.removeItem("_oauth_res");
-        const url = new URL(res);
-        const accessSession = url.searchParams.get("accessSession");
-        const [accessToken] = await Promise.all(
-            [accessSession].map(async (s) => {
-                const res = await fetch(`${LOGIN_API_HOST}/api/oauth/token`, {
-                    method: "POST",
-                    body: JSON.stringify({ session: s }),
-                });
-                const data = await res.json();
-                return data.token;
-            }),
+        const url = new URL(res.url);
+        const githubTokenData = JSON.parse(
+            url.searchParams.get("github_authorized") ?? "{}",
         );
+        const accessToken = githubTokenData["access_token"];
+        const expiresIn = githubTokenData["expires_in"];
+        const refreshToken = githubTokenData["refresh_token"];
+        const refreshTokenExpiresIn =
+            githubTokenData["refresh_token_expires_in"];
+        const tokenType = githubTokenData["token_type"];
+        const scope = githubTokenData["scope"];
+
         if (accessToken)
             localStorage.setItem(
                 LOCAL_TOKEN_KEY,
                 JSON.stringify({
                     accessToken,
+                    expiresIn,
+                    refreshToken,
+                    refreshTokenExpiresIn,
+                    tokenType,
+                    scope,
                 }),
             );
         resolveLoginFinished();
