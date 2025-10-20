@@ -309,5 +309,6 @@
   "pwa-install-tip": "Add to home screen for best experience",
   "login-by": "Login with {name}",
   "parent-category": "Parent",
-  "no-parent-category": "No parent"
+  "no-parent-category": "No parent",
+  "offline-mode": "Offline Mode"
 }

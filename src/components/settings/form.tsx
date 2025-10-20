@@ -22,14 +22,21 @@ function UserInfo() {
         if (!ok) {
             return;
         }
-        await StorageAPI.logout();
+        await Promise.all([
+            StorageAPI.logout(),
+            new Promise<void>((res) => {
+                setTimeout(() => {
+                    res();
+                }, 100);
+            }),
+        ]);
         localStorage.clear();
         sessionStorage.clear();
         location.reload();
     };
     return (
         <div className="flex items-center justify-between gap-2 px-8 py-4">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 relative">
                 <img
                     src={avatar_url}
                     alt={`${id}`}
@@ -40,6 +47,14 @@ function UserInfo() {
                     <div className="font-semibold">{name}</div>
                     <div className="text-sm opacity-60">{id}</div>
                 </div>
+                <div
+                    className="absolute top-0 right-0 translate-x-[100%] px-2"
+                    title={`Signed with ${StorageAPI.name}`}
+                >
+                    <div className="text-xs border rounded px-1">
+                        {StorageAPI.name}
+                    </div>
+                </div>
             </div>
             <div className="flex items-center gap-2">
                 {expired && (
@@ -47,7 +62,7 @@ function UserInfo() {
                         size="sm"
                         variant="outline"
                         onClick={() => {
-                            StorageAPI.login();
+                            StorageAPI.loginWith(StorageAPI.type);
                         }}
                     >
                         <i className="icon-[mdi--reload]"></i>

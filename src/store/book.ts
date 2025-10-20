@@ -16,7 +16,7 @@ type BookStoreState = {
 type BookStoreActions = {
     addBook: (name: string) => Promise<void>;
     deleteBook: (id: string) => Promise<void>;
-    switchToBook: (id: string) => Promise<void>;
+    switchToBook: (id: string | undefined) => Promise<void>;
     updateBookList: () => Promise<Book[]>;
 };
 

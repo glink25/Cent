@@ -18,11 +18,7 @@ export type SyncEndpointConfig = {
 };
 
 export type SyncEndpoint = {
-    type: string;
-    name: string;
-    login: () => void;
     logout: () => Promise<any>;
-    manuallyLogin?: () => void;
 
     fetchAllBooks: () => Promise<Book[]>;
     createBook: (name: string) => Promise<{
@@ -30,8 +26,8 @@ export type SyncEndpoint = {
         name: string;
     }>;
     initBook: (id: string) => Promise<any>;
-    inviteForBook: (bookId: string) => any;
-    deleteBook: (bookId: string) => any;
+    inviteForBook?: (bookId: string) => any;
+    deleteBook: (bookId: string) => Promise<any>;
 
     batch: (
         bookId: string,
@@ -52,4 +48,10 @@ export type SyncEndpoint = {
     getOnlineAsset?: (src: string) => Promise<Blob | undefined>;
 };
 
-export type SyncEndpointFactory = (config: SyncEndpointConfig) => SyncEndpoint;
+export type SyncEndpointFactory = {
+    type: string;
+    name: string;
+    login: () => void;
+    manuallyLogin?: () => void;
+    init: () => SyncEndpoint;
+};

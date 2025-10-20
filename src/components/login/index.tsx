@@ -4,6 +4,7 @@ import { StorageAPI } from "@/api/storage";
 import { t, useIntl } from "@/locale";
 import { useUserStore } from "@/store/user";
 import { cn } from "@/utils";
+import { Button } from "../ui/button";
 
 export default function Login() {
     const t = useIntl();
@@ -21,7 +22,7 @@ export default function Login() {
             <div className="w-full h-full flex justify-center items-center">
                 <div className="bg-background w-[350px] h-[450px] flex flex-col gap-4 justify-center items-center rounded-lg overflow-hidden">
                     <Guide />
-                    <div className="h-20 flex flex-col gap-4">
+                    <div className="min-h-20 h-fit pb-4 flex flex-col gap-4">
                         {loading ? (
                             <div>
                                 <i className="icon-[mdi--loading] animate-spin"></i>
@@ -29,24 +30,39 @@ export default function Login() {
                             </div>
                         ) : (
                             <>
-                                <button
-                                    type="button"
-                                    className="rounded bg-black text-white px-2 py-1"
-                                    onClick={() => {
-                                        StorageAPI.login();
-                                    }}
-                                >
-                                    {t("login-by", { name: StorageAPI.name })}
-                                </button>
-                                {StorageAPI.manuallyLogin && (
+                                <div className="flex flex-col gap-1">
+                                    <Button
+                                        onClick={() => {
+                                            StorageAPI.loginWith("github");
+                                        }}
+                                    >
+                                        <i className="icon-[mdi--github]"></i>
+                                        {t("login-to-github")}
+                                    </Button>
                                     <button
                                         type="button"
-                                        className="underline text-xs"
-                                        onClick={StorageAPI.manuallyLogin}
+                                        className="underline text-xs cursor-pointer"
+                                        onClick={() =>
+                                            StorageAPI.loginManuallyWith(
+                                                "github",
+                                            )
+                                        }
                                     >
                                         {t("or-use-an-exist-token")}
                                     </button>
-                                )}
+                                </div>
+                                <div>
+                                    <Button
+                                        variant="secondary"
+                                        className="w-full"
+                                        onClick={() => {
+                                            StorageAPI.loginWith("offline");
+                                        }}
+                                    >
+                                        <i className="icon-[mdi--local]"></i>
+                                        {t("offline-mode")}
+                                    </Button>
+                                </div>
                             </>
                         )}
                     </div>

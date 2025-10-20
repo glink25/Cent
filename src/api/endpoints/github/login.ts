@@ -53,7 +53,6 @@ export const createLoginAPI = () => {
             );
         resolveLoginFinished();
     };
-    afterLogin();
 
     const _getToken = async () => {
         await loginFinished;
@@ -130,6 +129,7 @@ export const createLoginAPI = () => {
         getToken,
         manuallySetToken,
         getLocalToken,
+        afterLogin,
     };
 };
 

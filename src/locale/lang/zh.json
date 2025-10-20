@@ -106,7 +106,7 @@
   "select-a-user": "选择一个用户",
   "edit-categories": "编辑分类",
   "budget-manager": "预算管理",
-  "login": "登录",
+  "login": "登录中",
   "login-to-github": "使用 Github 登录",
   "or-use-an-exist-token": "或者使用现有的token",
   "token-expired-please-re-login-to-github-from-setting-page": "Token已过期，请到设置页面重新登录",
@@ -310,5 +310,6 @@
   "pwa-install-tip": "添加到主屏幕以获取最佳体验",
   "login-by": "使用{name}登录",
   "parent-category": "父类",
-  "no-parent-category": "无父类"
+  "no-parent-category": "无父类",
+  "offline-mode": "离线模式"
 }

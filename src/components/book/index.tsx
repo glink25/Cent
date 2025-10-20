@@ -38,16 +38,21 @@ export default function BookGuide() {
         //     `https://github.com/${book.repo}/settings/access`,
         //     "_blank",
         // );
-        StorageAPI.inviteForBook(book.id);
+        StorageAPI.inviteForBook?.(book.id);
     };
 
-    const toDelete = (book: Book) => {
+    const toDelete = async (book: Book) => {
         // const ok = confirm(t("delete-book-tip"));
         // if (!ok) {
         //     return;
         // }
         // window.open(`https://github.com/${book.repo}/settings`, "_blank");
-        StorageAPI.deleteBook(book.id);
+        try {
+            await StorageAPI.deleteBook(book.id);
+            useBookStore.getState().switchToBook(undefined);
+        } catch (error) {
+            console.log(error);
+        }
     };
 
     return (
@@ -127,31 +132,36 @@ export default function BookGuide() {
                                                                     </span>
                                                                 </div>
                                                                 <div className="flex gap-1 items-center">
-                                                                    <Button
-                                                                        size="sm"
-                                                                        onClick={() =>
-                                                                            toInvite(
-                                                                                book,
-                                                                            )
-                                                                        }
-                                                                    >
-                                                                        {t(
-                                                                            "invite",
-                                                                        )}
-                                                                    </Button>
-                                                                    <Button
-                                                                        size="sm"
-                                                                        variant="destructive"
-                                                                        onClick={() =>
-                                                                            toDelete(
-                                                                                book,
-                                                                            )
-                                                                        }
-                                                                    >
-                                                                        {t(
-                                                                            "delete",
-                                                                        )}
-                                                                    </Button>
+                                                                    {StorageAPI.inviteForBook && (
+                                                                        <Button
+                                                                            size="sm"
+                                                                            onClick={() =>
+                                                                                toInvite(
+                                                                                    book,
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            {t(
+                                                                                "invite",
+                                                                            )}
+                                                                        </Button>
+                                                                    )}
+                                                                    {currentBookId !==
+                                                                        book.id && (
+                                                                        <Button
+                                                                            size="sm"
+                                                                            variant="destructive"
+                                                                            onClick={() =>
+                                                                                toDelete(
+                                                                                    book,
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            {t(
+                                                                                "delete",
+                                                                            )}
+                                                                        </Button>
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                         </Label>

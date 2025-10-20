@@ -37,7 +37,7 @@ export interface GitrayDBSchema extends DBSchema {
     };
 }
 
-export class BillIndexeBDStorage implements StashStorage {
+export class BillIndexedDBStorage implements StashStorage {
     public readonly dbName: string;
 
     constructor(dbName: string) {

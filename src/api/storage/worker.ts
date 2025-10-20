@@ -3,7 +3,7 @@ declare const self: DedicatedWorkerGlobalScope;
 
 import { expose, transfer } from "comlink";
 import { StashBucket } from "@/database/stash";
-import { BillIndexeBDStorage } from "@/database/storage";
+import { BillIndexedDBStorage } from "@/database/storage";
 import type { Bill, BillFilter } from "@/ledger/type";
 import { isBillMatched } from "@/ledger/utils";
 import { blobToBase64 } from "@/utils/file";
@@ -12,12 +12,12 @@ import { type AnalysisType, analysis as analysisBills } from "./analysis";
 
 const storeMap = new Map<
     string,
-    { itemStorage: BillIndexeBDStorage; itemBucket: StashBucket<Bill> }
+    { itemStorage: BillIndexedDBStorage; itemBucket: StashBucket<Bill> }
 >();
 const getDB = (storeFullName: string) => {
     const itemStorage =
         storeMap.get(storeFullName)?.itemStorage ??
-        new BillIndexeBDStorage(`book-${storeFullName}`);
+        new BillIndexedDBStorage(`book-${storeFullName}`);
     const itemBucket =
         storeMap.get(storeFullName)?.itemBucket ??
         new StashBucket(

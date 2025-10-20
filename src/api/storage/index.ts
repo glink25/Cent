@@ -3,8 +3,9 @@ import type { BillTag } from "@/components/bill-tag/type";
 import type { Budget } from "@/components/budget/type";
 import type { Full } from "@/database/stash";
 import type { Bill, BillCategory, BillFilter } from "@/ledger/type";
-import { createEmptyEndpoint } from "../endpoints/empty";
-import { createGithubEndpoint } from "../endpoints/github";
+import { EmptyEndpoint } from "../endpoints/empty";
+import { GithubEndpoint } from "../endpoints/github";
+import { OfflineEndpoint } from "../endpoints/offline";
 import type { Exposed } from "./worker";
 import DeferredWorker from "./worker?worker";
 
@@ -25,19 +26,35 @@ export type ExportedJSON = {
     meta: GlobalMeta;
 };
 
-const config = {
-    repoPrefix: "cent-journal",
-    entryName: "ledger",
-    orderKeys: ["time"],
-};
-
 const SYNC_ENDPOINT_KEY = "SYNC_ENDPOINT";
 const type = localStorage.getItem(SYNC_ENDPOINT_KEY) ?? "github";
 
-export const StorageAPI =
+const _StorageAPI =
     type === "github"
-        ? createGithubEndpoint(config)
-        : createEmptyEndpoint(config);
+        ? GithubEndpoint
+        : type === "offline"
+          ? OfflineEndpoint
+          : EmptyEndpoint;
+const actions = _StorageAPI.init();
+
+export const StorageAPI = {
+    name: _StorageAPI.name,
+    type: _StorageAPI.type,
+    ...actions,
+    loginWith: (type: string) => {
+        if (type === "github") {
+            return GithubEndpoint.login();
+        }
+        if (type === "offline") {
+            return OfflineEndpoint.login();
+        }
+    },
+    loginManuallyWith: (type: string) => {
+        if (type === "github") {
+            return GithubEndpoint.manuallyLogin?.();
+        }
+    },
+};
 
 // ComlinkSharedWorker
 
@@ -47,5 +64,3 @@ const workerInstance = new DeferredWorker({
 const StorageDeferredAPI = wrap<Exposed>(workerInstance);
 
 export { StorageDeferredAPI };
-
-StorageDeferredAPI.init(config);
