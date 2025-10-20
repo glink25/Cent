@@ -32,7 +32,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                 <a
                     className="w-full h-10 flex justify-between items-center px-4"
                     target="_blank"
-                    href="mailto://centnext@icloud.com"
+                    href="https://github.com/glink25/Cent/issues/new"
                     rel="noopener"
                 >
                     <div className="flex items-center gap-2">
@@ -53,13 +53,25 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                     </div>
                     <i className="icon-[mdi--arrow-top-right]"></i>
                 </a>
-                <div className="w-full h-10 flex justify-between items-center px-4 opacity-60">
+                <a
+                    className="w-full h-10 flex justify-between items-center px-4"
+                    target="_blank"
+                    href="https://github.com/glink25/Cent"
+                    rel="noopener"
+                >
+                    <div className="flex items-center gap-2">
+                        <i className="icon-[mdi--github] size-5"></i>
+                        <div className="text-sm">Github</div>
+                    </div>
+                    <i className="icon-[mdi--arrow-top-right]"></i>
+                </a>
+                {/* <div className="w-full h-10 flex justify-between items-center px-4 opacity-60">
                     <div className="flex items-center gap-2">
                         <i className="icon-[mdi--github] size-5"></i>
                         <div className="text-sm">Github</div>
                     </div>
                     <div className="text-xs">{t("preparing")}</div>
-                </div>
+                </div> */}
             </div>
         </PopupLayout>
     );
