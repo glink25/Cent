@@ -1,3 +1,5 @@
+import { asyncOnce } from "@/utils/async";
+
 // const LOGIN_API_HOST = "http://localhost:8787";
 const LOGIN_API_HOST = "https://oncent-backend.linkai.work";
 
@@ -42,9 +44,9 @@ const create = () => {
                 LOCAL_TOKEN_KEY,
                 JSON.stringify({
                     accessToken,
-                    expiresIn,
+                    expiresIn: Date.now() + expiresIn,
                     refreshToken,
-                    refreshTokenExpiresIn,
+                    refreshTokenExpiresIn: Date.now() + refreshTokenExpiresIn,
                     tokenType,
                     scope,
                 }),
@@ -58,16 +60,68 @@ const create = () => {
     };
 };
 
-export type Token = { accessToken: string; refreshToken?: string };
+type GithubTokenResponse = {
+    access_token: string;
+    expires_in: number;
+    refresh_token: string;
+    refresh_token_expires_in: number;
+    scope: string;
+    token_type: string;
+};
 
-export const getToken = async () => {
+export type Token = {
+    accessToken: string;
+    refreshToken?: string;
+    expiresIn?: number;
+    refreshTokenExpiresIn?: number;
+};
+
+const _getToken = async () => {
     await loginFinished;
     const token = getLocalToken();
     if (!token) {
         throw new Error("token not found");
     }
+    if (token.expiresIn) {
+        const now = Date.now();
+        const diff = token.expiresIn - now;
+        // 小于2小时 刷新token
+        if (diff < 2 * 60 * 60 * 1000) {
+            // to refresh
+            const res = await fetch(
+                `${LOGIN_API_HOST}/api/github-oauth/refresh-token`,
+                {
+                    method: "POST",
+                    body: JSON.stringify({ refreshToken: token.refreshToken }),
+                },
+            );
+            const githubTokenData = (await res.json()) as GithubTokenResponse;
+            const accessToken = githubTokenData["access_token"];
+            const expiresIn = githubTokenData["expires_in"];
+            const refreshToken = githubTokenData["refresh_token"];
+            const refreshTokenExpiresIn =
+                githubTokenData["refresh_token_expires_in"];
+            const tokenType = githubTokenData["token_type"];
+            const scope = githubTokenData["scope"];
+            const newToken = {
+                accessToken,
+                expiresIn: Date.now() + expiresIn * 1000,
+                refreshToken,
+                refreshTokenExpiresIn:
+                    Date.now() + refreshTokenExpiresIn * 1000,
+                tokenType,
+                scope,
+            };
+            if (accessToken) {
+                localStorage.setItem(LOCAL_TOKEN_KEY, JSON.stringify(newToken));
+                return newToken;
+            }
+        }
+    }
     return token;
 };
+
+export const getToken = asyncOnce(_getToken);
 
 export const manuallySetToken = (token: string) => {
     localStorage.setItem(
