@@ -30,6 +30,8 @@ import { cn } from "@/utils";
 import CategoryIcon from "./icon";
 import { ICONS } from "./icons";
 
+const NO_PARENT = "__noparent";
+
 export const createFormSchema = (t: any) =>
     z.object({
         name: z
@@ -218,41 +220,77 @@ export default function CategoryEditForm({
                         <FormField
                             control={form.control}
                             name="parent"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>
-                                        {t("category-parent")}
-                                    </FormLabel>
-                                    <FormControl>
-                                        <Select
-                                            onValueChange={field.onChange}
-                                            defaultValue={field.value}
-                                        >
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="父类" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent align="end">
-                                                <SelectItem value={""}>
-                                                    {parent.name}
-                                                </SelectItem>
-                                                {(category.type === "expense"
-                                                    ? expenses
-                                                    : incomes
-                                                ).map((parent) => (
+                            render={({ field }) => {
+                                const selectValue =
+                                    field.value === undefined ||
+                                    field.value === null
+                                        ? NO_PARENT
+                                        : field.value;
+                                console.log(selectValue, "ssss");
+                                return (
+                                    <FormItem>
+                                        <FormLabel>
+                                            {t("category-parent")}
+                                        </FormLabel>
+                                        <FormControl>
+                                            <Select
+                                                value={selectValue}
+                                                onValueChange={(value) => {
+                                                    let newValue:
+                                                        | string
+                                                        | undefined;
+                                                    if (value === NO_PARENT) {
+                                                        // 如果选择了 'NO_PARENT'，将 RHF 的值设置为 undefined
+                                                        newValue = undefined;
+                                                    } else {
+                                                        // 否则，设置为 Select 传来的实际值
+                                                        newValue = value;
+                                                    }
+                                                    // 调用 RHF 的 onChange 更新表单状态
+                                                    field.onChange(newValue);
+                                                }}
+                                            >
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue
+                                                            placeholder={t(
+                                                                "parent-category",
+                                                            )}
+                                                        />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent align="end">
                                                     <SelectItem
-                                                        key={parent.id}
-                                                        value={parent.id}
+                                                        value={NO_PARENT}
                                                     >
-                                                        {parent.name}
+                                                        {t(
+                                                            "no-parent-category",
+                                                        )}
                                                     </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </FormControl>
-                                </FormItem>
-                            )}
+                                                    {(category.type ===
+                                                    "expense"
+                                                        ? expenses
+                                                        : incomes
+                                                    )
+                                                        .filter(
+                                                            (p) =>
+                                                                p.id !==
+                                                                edit?.id,
+                                                        )
+                                                        .map((p) => (
+                                                            <SelectItem
+                                                                key={p.id}
+                                                                value={p.id}
+                                                            >
+                                                                {p.name}
+                                                            </SelectItem>
+                                                        ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </FormControl>
+                                    </FormItem>
+                                );
+                            }}
                         ></FormField>
                     </div>
                 </div>

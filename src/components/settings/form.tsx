@@ -1,4 +1,3 @@
-import { LoginAPI } from "@/api/login";
 import { StorageAPI } from "@/api/storage";
 import PopupLayout from "@/layouts/popup-layout";
 import { useIntl } from "@/locale";
@@ -17,13 +16,13 @@ import UserSettingsItem from "./user";
 
 function UserInfo() {
     const t = useIntl();
-    const { login, avatar_url, name, expired } = useUserStore();
+    const { id, avatar_url, name, expired } = useUserStore();
     const toLogOut = async () => {
         const ok = confirm(t("logout-warning"));
         if (!ok) {
             return;
         }
-        await StorageAPI.dangerousClearAll();
+        await StorageAPI.logout();
         localStorage.clear();
         sessionStorage.clear();
         location.reload();
@@ -33,13 +32,13 @@ function UserInfo() {
             <div className="flex items-center gap-2">
                 <img
                     src={avatar_url}
-                    alt={login}
+                    alt={`${id}`}
                     className="w-12 h-12 rounded-full border"
                 />
 
                 <div>
                     <div className="font-semibold">{name}</div>
-                    <div className="text-sm opacity-60">{login}</div>
+                    <div className="text-sm opacity-60">{id}</div>
                 </div>
             </div>
             <div className="flex items-center gap-2">
@@ -48,7 +47,7 @@ function UserInfo() {
                         size="sm"
                         variant="outline"
                         onClick={() => {
-                            LoginAPI.login();
+                            StorageAPI.login();
                         }}
                     >
                         <i className="icon-[mdi--reload]"></i>

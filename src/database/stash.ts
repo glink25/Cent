@@ -47,6 +47,8 @@ export type Full<T extends BaseItem> = T & {
     __update_at: number;
 };
 
+export type OutputType<T> = T;
+
 export type Arrayable<T extends BaseItem> = {
     put: (...v: T[]) => Promise<void>;
     delete: (...ids: T["id"][]) => Promise<void>;

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { GlobalMeta } from "@/api/storage";
-import type { Full } from "@/gitray";
+import type { Full } from "@/database/stash";
 import PopupLayout from "@/layouts/popup-layout";
 import type { Bill } from "@/ledger/type";
 import { useIntl } from "@/locale";

@@ -1,11 +1,12 @@
 import { wrap } from "comlink";
 import type { BillTag } from "@/components/bill-tag/type";
 import type { Budget } from "@/components/budget/type";
-import { BillIndexeBDStorage, type Full, Gitray } from "@/gitray";
+import type { Full } from "@/database/stash";
 import type { Bill, BillCategory, BillFilter } from "@/ledger/type";
-import { getToken } from "../login";
-import type { Exposed } from "./woker";
-import DeferredWorker from "./woker?worker";
+import { createEmptyEndpoint } from "../endpoints/empty";
+import { createGithubEndpoint } from "../endpoints/github";
+import type { Exposed } from "./worker";
+import DeferredWorker from "./worker?worker";
 
 export type PersonalMeta = {
     names?: Record<string, string>;
@@ -30,18 +31,13 @@ const config = {
     orderKeys: ["time"],
 };
 
-const repo = new Gitray<Bill>({
-    ...config,
-    auth: getToken,
-    storage: (name) => new BillIndexeBDStorage(`book-${name}`),
-});
+const SYNC_ENDPOINT_KEY = "SYNC_ENDPOINT";
+const type = localStorage.getItem(SYNC_ENDPOINT_KEY) ?? "github";
 
-export const toBookName = (bookId: string) => {
-    const [owner, repo] = bookId.split("/");
-    return repo.replace(`${config.repoPrefix}-`, "");
-};
-
-export const StorageAPI = repo;
+export const StorageAPI =
+    type === "github"
+        ? createGithubEndpoint(config)
+        : createEmptyEndpoint(config);
 
 // ComlinkSharedWorker
 

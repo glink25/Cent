@@ -1,24 +1,21 @@
 import { decode, encode } from "js-base64";
 import { sortBy } from "lodash-es";
 import type { Octokit } from "octokit";
-import { transformAssets } from "./assets";
-import { shortId } from "./id";
-import { Scheduler } from "./scheduler";
-import { asyncSingleton } from "./singleton";
+import type { ChangeListener, UserInfo } from "@/api/endpoints/type";
+import { transformAssets } from "../database/assets";
+import { shortId } from "../database/id";
+import { Scheduler } from "../database/scheduler";
+import { asyncSingleton } from "../database/singleton";
 import {
     type Action,
     type BaseItem,
     StashBucket,
     type StashStorage,
-} from "./stash";
+} from "../database/stash";
 
 const loadOctokit = () => import("octokit").then((v) => v.Octokit);
 
-export type OutputType<T> = T;
-
 export type Processor = (finished: Promise<void>) => void;
-
-export type ChangeListener = (args: { store: string }) => void;
 
 export type GitrayConfig = {
     /**
@@ -158,13 +155,60 @@ export class Gitray<Item extends BaseItem> {
         return new Octokit({ auth: accessToken });
     }
 
-    private async getUserInfo(): Promise<{ id: number; login: string }> {
+    private async getCurrentUserInfo(): Promise<{ id: number; login: string }> {
         if (!this.userInfo) {
             const octokit = await this.getOctokit();
             const { data } = await octokit.request("GET /user");
             this.userInfo = { id: data.id, login: data.login };
         }
         return this.userInfo;
+    }
+    public async getUserInfo(id?: string) {
+        const octokit = await this.getOctokit();
+        const { data } = await octokit.request("GET /user/{account_id}", {
+            account_id: id as unknown as number,
+        });
+        return {
+            avatar_url: data.avatar_url,
+            name: data.login,
+            id: data.id as unknown as string,
+        } as UserInfo;
+    }
+    public async getCollaborators(id: string) {
+        const octokit = await this.getOctokit();
+        const [owner, repo] = id.split("/");
+        const { data } = await octokit.request(
+            "GET /repos/{owner}/{repo}/collaborators",
+            { owner, repo },
+        );
+        return data.map((v) => ({
+            avatar_url: v.avatar_url,
+            name: v.login,
+            id: v.id as unknown as string,
+        })) as UserInfo[];
+    }
+
+    public async getOnlineAsset(url: string) {
+        if (!url.startsWith("https://raw.githubusercontent.com")) {
+            return undefined;
+        }
+        const [owner, repo, ref, ...paths] = url
+            .replace("https://raw.githubusercontent.com/", "")
+            .replace("HEAD/", "")
+            .split("/");
+        const { accessToken } = await this.config.auth();
+        const res = await fetch(
+            `/repos/${owner}/${repo}/contents/${paths.join("/")}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    Accept: "application/vnd.github+json",
+                    "X-GitHub-Api-Version": "2022-11-28",
+                },
+            },
+        );
+        const blob = await res.blob();
+        return blob;
     }
 
     /**
@@ -302,10 +346,8 @@ export class Gitray<Item extends BaseItem> {
      * 在本地indexedDB 中创建一个对应名称的
      * 同步在github上创建一个对应名称的repo，并新建一个README.md文件进行仓库初始化
      */
-    async createStore(
-        name: string,
-    ): Promise<{ fullName: string; name: string }> {
-        const { login: owner } = await this.getUserInfo();
+    async createStore(name: string): Promise<{ id: string; name: string }> {
+        const { login: owner } = await this.getCurrentUserInfo();
         const storeName = `${this.config.repoPrefix}-${name}`;
         const octokit = await this.getOctokit();
         await octokit.request("POST /user/repos", {
@@ -319,7 +361,7 @@ export class Gitray<Item extends BaseItem> {
             message: "Initial commit by Gitray",
             content: encode(JSON.stringify({})),
         });
-        return { fullName: `${owner}/${storeName}`, name: storeName };
+        return { id: `${owner}/${storeName}`, name: storeName };
     }
 
     private storeMap = new Map<
@@ -678,7 +720,7 @@ export class Gitray<Item extends BaseItem> {
     private changeListeners: ChangeListener[] = [];
     private notifyChange(storeFullName: string) {
         this.changeListeners.forEach((p) => {
-            p({ store: storeFullName });
+            p({ bookId: storeFullName });
         });
     }
     /**
@@ -711,7 +753,3 @@ async function blobToBase64(blob: Blob): Promise<string> {
         reader.readAsDataURL(blob);
     });
 }
-
-export type * from "./stash";
-
-export * from "./storage";

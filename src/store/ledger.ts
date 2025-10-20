@@ -3,9 +3,8 @@ import { merge } from "lodash-es";
 import { toast } from "sonner";
 import { v4 } from "uuid";
 import { create } from "zustand";
-import { UserAPI, type UserInfo } from "@/api/user";
-import type { OutputType } from "@/gitray";
-import type { Action, Full, Update } from "@/gitray/stash";
+import type { UserInfo } from "@/api/endpoints/type";
+import type { Action, Full, OutputType, Update } from "@/database/stash";
 import type { Bill } from "@/ledger/type";
 import { t } from "@/locale";
 import {
@@ -127,13 +126,13 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
         );
         try {
             updateBillList();
-            StorageAPI.toSync();
             const currentBookId = useBookStore.getState().currentBookId;
             if (!currentBookId) {
                 return;
             }
-            await StorageAPI.initStore(currentBookId);
+            await StorageAPI.initBook(currentBookId);
             await updateBillList();
+            StorageAPI.toSync();
         } catch (err) {
             if ((err as any)?.status === 404) {
                 toast.error(
@@ -179,7 +178,7 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
             }),
         );
         try {
-            await StorageAPI.initStore(currentBookId);
+            await StorageAPI.initBook(currentBookId);
             await updateBillList();
         } finally {
             set(

@@ -307,5 +307,8 @@
   "app-brand": "记录每一天",
   "app-introduce": "开源，免费，多人协作记账App",
   "see-introduce": "查看介绍",
-  "pwa-install-tip": "添加到主屏幕以获取最佳体验"
+  "pwa-install-tip": "添加到主屏幕以获取最佳体验",
+  "login-by": "使用{name}登录",
+  "parent-category": "父类",
+  "no-parent-category": "无父类"
 }

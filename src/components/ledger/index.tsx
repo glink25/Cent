@@ -1,7 +1,7 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import dayjs, { type Dayjs } from "dayjs";
 import { useRef } from "react";
-import type { OutputType } from "@/gitray";
+import type { OutputType } from "@/database/stash";
 import type { Bill } from "@/ledger/type";
 import { cn } from "@/utils";
 import { denseDate } from "@/utils/time";

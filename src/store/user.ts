@@ -4,13 +4,12 @@ import type { StateCreator } from "zustand";
 import { create } from "zustand";
 import type { PersistOptions } from "zustand/middleware";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { getLocalToken, LoginAPI } from "@/api/login";
+import type { UserInfo } from "@/api/endpoints/type";
+import { StorageAPI } from "@/api/storage";
 import { t } from "@/locale";
-import { UserAPI, type UserInfo } from "../api/user";
 
 type UserStoreState = {
     avatar_url: string;
-    login: string;
     name: string;
     id: number | string;
     loading: boolean;
@@ -22,7 +21,7 @@ type UserStoreState = {
 type UserStoreActions = {
     updateUserInfo: () => Promise<void>;
 
-    getUserInfo: (login: string | number) => Promise<UserInfo>;
+    getUserInfo: (login: string) => Promise<UserInfo>;
     getCollaborators: (repo: string) => Promise<UserInfo[]>;
 };
 
@@ -36,7 +35,7 @@ type Persist<S> = (
 export const useUserStore = create<UserStore>()(
     (persist as Persist<UserStore>)(
         (set, get) => {
-            const loading = Boolean(getLocalToken());
+            const loading = Boolean(true);
             const updateUserInfo = async () => {
                 await Promise.resolve();
                 set(
@@ -45,18 +44,19 @@ export const useUserStore = create<UserStore>()(
                     }),
                 );
                 try {
-                    const res = await UserAPI.getUserInfo();
+                    const res = await StorageAPI.getUserInfo();
                     set(
                         produce((state: UserStore) => {
                             state.avatar_url = res.avatar_url;
-                            state.login = res.login;
                             state.name = res.name;
                             state.id = res.id;
                             state.expired = undefined;
                         }),
                     );
                 } catch (error) {
-                    if ((error as any)?.status === "401") {
+                    if (
+                        (error as Error)?.message.startsWith("Bad credentials")
+                    ) {
                         toast.error(
                             t(
                                 "token-expired-please-re-login-to-github-from-setting-page",
@@ -66,7 +66,7 @@ export const useUserStore = create<UserStore>()(
                                 action: {
                                     label: t("re-login"),
                                     onClick: () => {
-                                        LoginAPI.login();
+                                        StorageAPI.login();
                                     },
                                 },
                             },
@@ -89,12 +89,11 @@ export const useUserStore = create<UserStore>()(
 
             updateUserInfo();
 
-            const getUserInfo = async (login: string | number) => {
+            const getUserInfo = async (login: string) => {
                 const run = async () => {
-                    const res = await UserAPI.getUserInfo(login);
+                    const res = await StorageAPI.getUserInfo(login);
                     const info = {
                         avatar_url: res.avatar_url,
-                        login: res.login,
                         name: res.name,
                         id: res.id,
                     };
@@ -116,7 +115,7 @@ export const useUserStore = create<UserStore>()(
 
             const getCollaborators = async (repo: string) => {
                 const run = async () => {
-                    const res = await UserAPI.getCollaborators(repo);
+                    const res = await StorageAPI.getCollaborators(repo);
                     set(
                         produce((state: UserStore) => {
                             state.cachedCollaborators[repo] = res;
@@ -136,7 +135,7 @@ export const useUserStore = create<UserStore>()(
                 avatar_url: "",
                 login: "",
                 name: "",
-                id: -1,
+                id: 0,
                 updateUserInfo,
                 getUserInfo,
                 getCollaborators,

@@ -3,9 +3,9 @@ import type { StateCreator } from "zustand";
 import { create } from "zustand";
 import type { PersistOptions } from "zustand/middleware";
 import { createJSONStorage, persist } from "zustand/middleware";
+import type { Book } from "@/api/endpoints/type";
 import { StorageAPI } from "../api/storage";
 
-export type Book = { id: string; repo: any };
 type BookStoreState = {
     currentBookId: string | undefined;
     books: Book[];
@@ -40,13 +40,8 @@ export const useBookStore = create<BookStore>()(
                     }),
                 );
                 try {
-                    const res = await StorageAPI.fetchAllStore();
-                    const allBooks = res.map((repo) => {
-                        return {
-                            repo,
-                            id: repo,
-                        };
-                    });
+                    const res = await StorageAPI.fetchAllBooks();
+                    const allBooks = res;
                     set(
                         produce((state: BookStore) => {
                             state.books = allBooks;
@@ -69,7 +64,7 @@ export const useBookStore = create<BookStore>()(
                 currentBookId: undefined,
                 updateBookList,
                 addBook: async (name) => {
-                    await StorageAPI.createStore(name);
+                    await StorageAPI.createBook(name);
                     await updateBookList();
                 },
                 deleteBook: async (id) => {

@@ -1,6 +1,6 @@
 import { createPortal } from "react-dom";
 import { useShallow } from "zustand/shallow";
-import { LoginAPI, manuallySetToken } from "@/api/login";
+import { StorageAPI } from "@/api/storage";
 import { t, useIntl } from "@/locale";
 import { useUserStore } from "@/store/user";
 import { cn } from "@/utils";
@@ -9,21 +9,12 @@ export default function Login() {
     const t = useIntl();
     const [isLogin, loading] = useUserStore(
         useShallow((state) => {
-            return [Boolean(state.login) && state.id, state.loading];
+            return [Boolean(state.id), state.loading];
         }),
     );
     if (isLogin) {
         return null;
     }
-
-    const inputTokenToLogin = async () => {
-        const token = prompt(t("please-enter-your-github-token"));
-        if (!token) {
-            return;
-        }
-        manuallySetToken(token);
-        location.reload();
-    };
     return createPortal(
         <div className="fixed top-0 right-0 z-[9999] w-screen h-screen overflow-hidden">
             <div className="absolute w-full h-full bg-[rgba(0,0,0,0.5)] z-[-1]"></div>
@@ -42,18 +33,20 @@ export default function Login() {
                                     type="button"
                                     className="rounded bg-black text-white px-2 py-1"
                                     onClick={() => {
-                                        LoginAPI.login();
+                                        StorageAPI.login();
                                     }}
                                 >
-                                    {t("login-to-github")}
+                                    {t("login-by", { name: StorageAPI.name })}
                                 </button>
-                                <button
-                                    type="button"
-                                    className="underline text-xs"
-                                    onClick={inputTokenToLogin}
-                                >
-                                    {t("or-use-an-exist-token")}
-                                </button>
+                                {StorageAPI.manuallyLogin && (
+                                    <button
+                                        type="button"
+                                        className="underline text-xs"
+                                        onClick={StorageAPI.manuallyLogin}
+                                    >
+                                        {t("or-use-an-exist-token")}
+                                    </button>
+                                )}
                             </>
                         )}
                     </div>

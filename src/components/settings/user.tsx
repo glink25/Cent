@@ -10,7 +10,7 @@ import { Button } from "../ui/button";
 
 function Form({ onCancel }: { onCancel?: () => void }) {
     const t = useIntl();
-    const { login, avatar_url, name: myName } = useUserStore();
+    const { id, avatar_url, name: myName } = useUserStore();
     const { currentBookId } = useBookStore();
     const creators = useCreators();
 
@@ -53,7 +53,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
 
                     <div>
                         <div className="font-semibold">{myName}</div>
-                        <div className="text-sm opacity-60">{login}</div>
+                        <div className="text-sm opacity-60">{id}</div>
                     </div>
                 </div>
             </div>
@@ -62,11 +62,11 @@ function Form({ onCancel }: { onCancel?: () => void }) {
             </div>
             <div className="divide-y divide-solid flex flex-col overflow-hidden gap-2">
                 {creators
-                    .filter((u) => u.login !== login)
+                    .filter((u) => u.id !== id)
                     .map((user) => {
                         return (
                             <div
-                                key={user.login}
+                                key={user.id}
                                 className="flex items-center justify-between gap-2 px-4 py-2"
                             >
                                 <div className="flex items-center gap-2">
@@ -97,7 +97,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                                             </div>
                                         )}
                                         <div className="text-sm opacity-60">
-                                            {user.login}
+                                            {user.id}
                                         </div>
                                     </div>
                                 </div>

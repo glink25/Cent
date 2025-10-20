@@ -5,9 +5,8 @@ import {
     StorageAPI,
     StorageDeferredAPI,
 } from "@/api/storage";
-import type { MetaUpdate, Update } from "@/gitray";
+import type { MetaUpdate, Update } from "@/database/stash";
 import PopupLayout from "@/layouts/popup-layout";
-import { BillCategories } from "@/ledger/category";
 import type { Bill } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
@@ -47,6 +46,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                 : (() => {
                       // 相同名称或者id的category将合并为同一个
                       const curm = currentMeta;
+                      const newCategories = [...(currentMeta.categories ?? [])];
                       curm.categories = undefined;
                       const newm = { ...rest.meta };
                       const merged = merge(curm, newm);
@@ -54,7 +54,6 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                           merged.categories = currentMeta.categories;
                           return merged;
                       }
-                      const newCategories = [...(currentMeta.categories ?? [])];
                       rest.meta.categories.forEach((c) => {
                           const sameIdIndex = newCategories?.findIndex(
                               (x) => x.id === c.id,

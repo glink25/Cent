@@ -35,6 +35,7 @@
       // github login
       if (location.href.includes("github_authorized")) {
         localStorage.setItem("_oauth_res", JSON.stringify({ type: "github", url: location.href }));
+        localStorage.setItem("SYNC_ENDPOINT", "github");
         setTimeout(() => {
           location.replace(window.origin);
         }, 1);

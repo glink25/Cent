@@ -31,10 +31,10 @@ export default function BillItem({
         [bill.categoryId, categories],
     );
 
-    const { login: selfLogin, id: selfId } = useUserStore();
+    const { id: selfId } = useUserStore();
     const creators = useCreators();
     const creator = creators.find((c) => c.id === bill.creatorId);
-    const isMe = creator?.login === selfLogin || creator?.login === selfId;
+    const isMe = creator?.id === selfId;
     const tags = bill.tagIds
         ?.map((id) => allTags.find((t) => t.id === id))
         .filter((v) => v !== undefined);

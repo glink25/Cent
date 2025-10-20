@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import { useMemo, useRef } from "react";
-import { StorageAPI, toBookName } from "@/api/storage";
+import { useShallow } from "zustand/shallow";
+import { StorageAPI } from "@/api/storage";
 import AnimatedNumber from "@/components/animated-number";
 import BudgetCard from "@/components/budget/card";
 import { PaginationIndicator } from "@/components/indicator";
@@ -20,7 +21,12 @@ export default function Page() {
     const t = useIntl();
 
     const { bills, loading, sync } = useLedgerStore();
-    const { currentBookId } = useBookStore();
+    const currentBook = useBookStore(
+        useShallow((state) => {
+            const { currentBookId, books } = state;
+            return books.find((b) => b.id === currentBookId);
+        }),
+    );
     const { id: userId } = useUserStore();
     const syncIcon =
         sync === "wait"
@@ -65,7 +71,7 @@ export default function Page() {
                         value={todayAmount}
                         className="font-bold text-4xl "
                     />
-                    {currentBookId && (
+                    {currentBook && (
                         <button
                             type="button"
                             className="absolute bottom-2 left-4 text-xs opacity-60 flex items-center gap-1 cursor-pointer"
@@ -77,7 +83,7 @@ export default function Page() {
                             }}
                         >
                             <i className="icon-[mdi--book]"></i>
-                            {toBookName(currentBookId)}
+                            {currentBook.name}
                         </button>
                     )}
                 </div>

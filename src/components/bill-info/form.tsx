@@ -29,9 +29,9 @@ export default function BillInfo({
     const tags = edit?.tagIds
         ?.map((id) => allTags.find((t) => t.id === id))
         .filter((v) => v !== undefined);
-    const { name, login } = creator ?? { name: undefined, login: undefined };
-    const { login: selfLogin, id: selfId } = useUserStore();
-    const isMe = login === selfLogin || login === selfId;
+    const { name, id } = creator ?? { name: undefined, id: undefined };
+    const { id: selfId } = useUserStore();
+    const isMe = id === selfId;
 
     if (!edit) {
         return null;

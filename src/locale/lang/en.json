@@ -306,5 +306,8 @@
   "theme-dark": "Dark",
   "app-brand": "Accounting your life",
   "see-introduce": "see introduce",
-  "pwa-install-tip": "Add to home screen for best experience"
+  "pwa-install-tip": "Add to home screen for best experience",
+  "login-by": "Login with {name}",
+  "parent-category": "Parent",
+  "no-parent-category": "No parent"
 }

@@ -1,9 +1,10 @@
 import { Dialog, VisuallyHidden } from "radix-ui";
 import { useState } from "react";
 import { useShallow } from "zustand/shallow";
-import { StorageAPI, toBookName } from "@/api/storage";
+import type { Book } from "@/api/endpoints/type";
+import { StorageAPI } from "@/api/storage";
 import { useIntl } from "@/locale";
-import { type Book, useBookStore } from "@/store/book";
+import { useBookStore } from "@/store/book";
 import { useUserStore } from "@/store/user";
 import { cn } from "@/utils";
 import Loading from "../loading";
@@ -13,9 +14,7 @@ import { Label } from "../ui/label";
 
 export default function BookGuide() {
     const t = useIntl();
-    const isLogin = useUserStore(
-        useShallow((state) => Boolean(state.login) && `${state.id}`),
-    );
+    const isLogin = useUserStore(useShallow((state) => Boolean(state.id)));
     const { books, visible, currentBookId, loading } = useBookStore();
     // const bookNum = books.length;
 
@@ -31,22 +30,24 @@ export default function BookGuide() {
         useBookStore.getState().switchToBook(bookId);
     };
     const toInvite = (book: Book) => {
-        const ok = confirm(t("invite-tip"));
-        if (!ok) {
-            return;
-        }
-        window.open(
-            `https://github.com/${book.repo}/settings/access`,
-            "_blank",
-        );
+        // const ok = confirm(t("invite-tip"));
+        // if (!ok) {
+        //     return;
+        // }
+        // window.open(
+        //     `https://github.com/${book.repo}/settings/access`,
+        //     "_blank",
+        // );
+        StorageAPI.inviteForBook(book.id);
     };
 
     const toDelete = (book: Book) => {
-        const ok = confirm(t("delete-book-tip"));
-        if (!ok) {
-            return;
-        }
-        window.open(`https://github.com/${book.repo}/settings`, "_blank");
+        // const ok = confirm(t("delete-book-tip"));
+        // if (!ok) {
+        //     return;
+        // }
+        // window.open(`https://github.com/${book.repo}/settings`, "_blank");
+        StorageAPI.deleteBook(book.id);
     };
 
     return (
@@ -115,13 +116,13 @@ export default function BookGuide() {
                                                             <div className="flex-1 flex justify-between gap-1.5 font-normal overflow-hidden">
                                                                 <div className="flex-1 text-sm leading-none font-medium flex flex-col gap-1 overflow-hidden">
                                                                     <p>
-                                                                        {toBookName(
-                                                                            book.repo,
-                                                                        )}
+                                                                        {
+                                                                            book.name
+                                                                        }
                                                                     </p>
                                                                     <span className="text-xs opacity-60 truncate">
                                                                         {
-                                                                            book.repo
+                                                                            book.id
                                                                         }
                                                                     </span>
                                                                 </div>
@@ -177,7 +178,7 @@ export default function BookGuide() {
                                             setCreating(true);
                                             try {
                                                 const store =
-                                                    await StorageAPI.createStore(
+                                                    await StorageAPI.createBook(
                                                         name,
                                                     );
                                                 await useBookStore

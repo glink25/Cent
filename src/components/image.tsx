@@ -5,7 +5,7 @@ import {
     useRef,
     useState,
 } from "react";
-import { ImageAPI } from "@/api/image";
+import { StorageAPI } from "@/api/storage";
 
 export default function SmartImage({
     source,
@@ -27,8 +27,12 @@ export default function SmartImage({
     useEffect(() => {
         if (!(source instanceof File)) {
             // 普通字符串 url
-            if (source.startsWith("https://raw.githubusercontent.com")) {
-                ImageAPI.getImage(source).then((file) => {
+            if (StorageAPI.getOnlineAsset) {
+                StorageAPI.getOnlineAsset?.(source).then((file) => {
+                    if (file === undefined) {
+                        setUrl(source);
+                        return;
+                    }
                     const objectUrl = URL.createObjectURL(file);
                     objectUrlRef.current = objectUrl;
                     setUrl(objectUrl);
