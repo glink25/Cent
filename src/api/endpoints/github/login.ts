@@ -108,6 +108,7 @@ export const createLoginAPI = () => {
     const getToken = asyncOnce(_getToken);
 
     const manuallySetToken = (token: string) => {
+        localStorage.setItem("SYNC_ENDPOINT", "github");
         localStorage.setItem(
             LOCAL_TOKEN_KEY,
             JSON.stringify({
