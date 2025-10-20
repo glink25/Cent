@@ -104,14 +104,21 @@ export default function Page() {
                     </div>
                 </div>
             </div>
-            <button
-                type="button"
-                className="flex justify-between items-center pl-7 pr-5 py-1 cursor-pointer"
-                onClick={() => {
-                    StorageAPI.toSync();
-                }}
-            >
-                <div>{loading && <Loading />}</div>
+            <div className="flex justify-between items-center pl-7 pr-5 py-1">
+                <button
+                    className="cursor-pointer"
+                    type="button"
+                    onClick={() => {
+                        if (loading) {
+                            return;
+                        }
+                        useLedgerStore.getState().initCurrentBook();
+                    }}
+                >
+                    <div className={cn("opacity-0", loading && "opacity-100")}>
+                        <Loading />
+                    </div>
+                </button>
                 <div>
                     {budgetCount > 1 && (
                         <PaginationIndicator
@@ -120,8 +127,16 @@ export default function Page() {
                         />
                     )}
                 </div>
-                {<i className={cn(syncIcon)} />}
-            </button>
+                <button
+                    type="button"
+                    className="cursor-pointer"
+                    onClick={() => {
+                        StorageAPI.toSync();
+                    }}
+                >
+                    <i className={cn(syncIcon)} />
+                </button>
+            </div>
             <div className="flex-1 translate-0 pb-[10px] overflow-hidden">
                 <div className="w-full h-full">
                     {bills.length > 0 ? (

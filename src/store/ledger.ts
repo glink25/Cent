@@ -53,6 +53,7 @@ type LedgerStoreActions = {
     ) => Promise<void>;
 
     refreshBillList: () => Promise<Full<Bill>[]>;
+    initCurrentBook: () => Promise<void>;
 
     updateGlobalMeta: (
         v: Partial<GlobalMeta> | ((prev: GlobalMeta) => GlobalMeta),
@@ -234,6 +235,7 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
         bills: [],
         actions: [],
         pendingCursor: undefined,
+        initCurrentBook: init,
         refreshBillList: updateBillList,
         removeBill: async (id) => {
             const repo = getCurrentFullRepoName();
