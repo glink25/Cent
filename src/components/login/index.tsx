@@ -10,7 +10,7 @@ export default function Login() {
     const t = useIntl();
     const [isLogin, loading] = useUserStore(
         useShallow((state) => {
-            return [Boolean(state.id), state.loading];
+            return [state.id !== -1 && Boolean(state.id), state.loading];
         }),
     );
     if (isLogin) {
