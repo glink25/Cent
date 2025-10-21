@@ -2,15 +2,16 @@ import { createPortal } from "react-dom";
 import { useShallow } from "zustand/shallow";
 import { StorageAPI } from "@/api/storage";
 import { t, useIntl } from "@/locale";
-import { useUserStore } from "@/store/user";
+import { useIsLogin, useUserStore } from "@/store/user";
 import { cn } from "@/utils";
 import { Button } from "../ui/button";
 
 export default function Login() {
     const t = useIntl();
-    const [isLogin, loading] = useUserStore(
+    const isLogin = useIsLogin();
+    const [loading] = useUserStore(
         useShallow((state) => {
-            return [state.id !== -1 && Boolean(state.id), state.loading];
+            return [state.loading];
         }),
     );
     if (isLogin) {

@@ -4,6 +4,7 @@ import type { StateCreator } from "zustand";
 import { create } from "zustand";
 import type { PersistOptions } from "zustand/middleware";
 import { createJSONStorage, persist } from "zustand/middleware";
+import { useShallow } from "zustand/shallow";
 import type { UserInfo } from "@/api/endpoints/type";
 import { StorageAPI } from "@/api/storage";
 import { t } from "@/locale";
@@ -150,3 +151,10 @@ export const useUserStore = create<UserStore>()(
         },
     ),
 );
+
+export const useIsLogin = () => {
+    const isLogin = useUserStore(
+        useShallow((state) => state.id !== -1 && Boolean(state.id)),
+    );
+    return isLogin;
+};

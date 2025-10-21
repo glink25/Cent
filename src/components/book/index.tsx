@@ -5,7 +5,7 @@ import type { Book } from "@/api/endpoints/type";
 import { StorageAPI } from "@/api/storage";
 import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
-import { useUserStore } from "@/store/user";
+import { useIsLogin, useUserStore } from "@/store/user";
 import { cn } from "@/utils";
 import Loading from "../loading";
 import { Button } from "../ui/button";
@@ -14,7 +14,7 @@ import { Label } from "../ui/label";
 
 export default function BookGuide() {
     const t = useIntl();
-    const isLogin = useUserStore(useShallow((state) => Boolean(state.id)));
+    const isLogin = useIsLogin();
     const { books, visible, currentBookId, loading } = useBookStore();
     // const bookNum = books.length;
 
