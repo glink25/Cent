@@ -41,6 +41,14 @@ const animationVariants = {
         // 退出状态 (关闭时)
         exit: { x: window.innerWidth, y: 0 }, // 保持 x 轴运动
     },
+    fade: {
+        // 隐藏状态 (未打开)
+        initial: { opacity: 0, scale: 0.9 },
+        // 动画状态 (打开时)
+        animate: { opacity: 1, scale: 1 },
+        // 退出状态 (关闭时)
+        exit: { opacity: 0, scale: 0.9 },
+    },
 };
 
 // 2. 定义过渡属性 (Transition)
@@ -148,6 +156,9 @@ type DialogContentProps = Omit<
 > &
     HTMLMotionProps<"div"> & {
         from?: DialogFlipDirection;
+    } & {
+        swipe?: boolean;
+        fade?: boolean;
     };
 
 const toPx = (v: string) => {
@@ -166,16 +177,20 @@ function DialogContent({
     onEscapeKeyDown,
     onPointerDownOutside,
     onInteractOutside,
-    transition = transitionProps, // 默认使用 iOS spring
+    transition = transitionProps,
+    fade,
+    swipe,
     ...props
 }: DialogContentProps) {
     const isDesktop = useIsDesktop();
     const contentRef = useRef<HTMLDivElement>(null); // 用于获取 Dialog 内容的 DOM 元素
 
     // 动态选择变体
-    const currentVariant = isDesktop
-        ? animationVariants.desktop
-        : animationVariants.mobile;
+    const currentVariant = fade
+        ? animationVariants.fade
+        : isDesktop
+          ? animationVariants.desktop
+          : animationVariants.mobile;
 
     const { setIsOpen, setProgress } = useDialog();
     const onClose = useCallback(() => {
@@ -195,7 +210,7 @@ function DialogContent({
      */
     const isPointerNearLeftEdge = useCallback(
         (event: React.PointerEvent) => {
-            if (!contentRef.current || isDesktop) return false;
+            if (!contentRef.current || isDesktop || fade) return false;
 
             const rect = contentRef.current.getBoundingClientRect();
             // 假设 DialogContent 占据了屏幕大部分宽度
@@ -212,7 +227,7 @@ function DialogContent({
 
             return isNearEdge;
         },
-        [isDesktop],
+        [isDesktop, fade],
     );
 
     /**
@@ -221,10 +236,9 @@ function DialogContent({
     const handlePointerDown = useCallback(
         (event: React.PointerEvent) => {
             // 仅在非桌面端使用此逻辑
-            if (isDesktop) return;
+            if (isDesktop || fade) return;
 
             // 阻止事件的默认行为，防止浏览器默认拖动等
-            
 
             // **核心逻辑：检测位置并有条件地启动拖动**
             if (isPointerNearLeftEdge(event)) {
@@ -238,7 +252,7 @@ function DialogContent({
                 console.log("no drag");
             }
         },
-        [isDesktop, dragControls, isPointerNearLeftEdge],
+        [isDesktop, dragControls, fade, isPointerNearLeftEdge],
     );
 
     // 3. 定义拖拽结束时的处理逻辑（保持不变）
@@ -303,9 +317,11 @@ function DialogContent({
                 exit={currentVariant.exit}
                 transition={transition}
                 onUpdate={(e) => {
-                    const p = isDesktop
-                        ? toPx(`${e.y}`) / window.innerHeight
-                        : toPx(`${e.x}`) / window.innerWidth;
+                    const p = fade
+                        ? 1 - Number(e.opacity)
+                        : isDesktop
+                          ? toPx(`${e.y}`) / window.innerHeight
+                          : toPx(`${e.x}`) / window.innerWidth;
                     setProgress(Number(p.toFixed(2)));
                 }}
                 {...props}

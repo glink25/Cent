@@ -23,11 +23,15 @@ export default function createConfirmProvider<Value, Returned = Value>(
         dialogDescription = dialogTitle,
         dialogModalClose,
         contentClassName,
+        fade,
+        swipe,
     }: {
         dialogTitle: string | ReactNode;
         dialogDescription?: string | ReactNode;
         dialogModalClose?: boolean;
         contentClassName?: string;
+        fade?: boolean;
+        swipe?: boolean;
     },
 ) {
     const useStore = confirmStoreFactory<Value, Returned>();
@@ -69,6 +73,8 @@ export default function createConfirmProvider<Value, Returned = Value>(
                     <DialogOverlay className="fixed inset-0 bg-black/50" />
                     <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center pointer-events-none">
                         <DialogContent
+                            fade={fade}
+                            swipe={swipe}
                             className={cn(
                                 "pointer-events-auto bg-background max-h-[55vh] w-[90vw] max-w-[500px] rounded-md",
                                 contentClassName,

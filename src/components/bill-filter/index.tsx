@@ -74,6 +74,8 @@ function BillFilterFormed({
 export const [BillFilterProvider, showBillFilter] = createConfirmProvider(
     BillFilterFormed,
     {
-        dialogTitle: "Edit Bill",
+        dialogTitle: "Edit Bill Filter",
+        fade: true,
+        swipe: false,
     },
 );
