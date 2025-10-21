@@ -66,7 +66,7 @@ export const useUserStore = create<UserStore>()(
                                 action: {
                                     label: t("re-login"),
                                     onClick: () => {
-                                        StorageAPI.login();
+                                        StorageAPI.loginWith(StorageAPI.type);
                                     },
                                 },
                             },

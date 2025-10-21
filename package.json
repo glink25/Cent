@@ -6,7 +6,7 @@
 	"scripts": {
 		"dev": "vite --host",
 		"build": "pnpm run lint && vite build",
-		"lint": "biome lint --diagnostic-level error",
+		"lint": "tsc -b && biome check --diagnostic-level error",
 		"preview": "vite preview",
 		"check": "biome check --write"
 	},
