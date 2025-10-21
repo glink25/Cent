@@ -4,7 +4,7 @@ import { create } from "zustand";
 type ConfirmStoreState<Value, Returned = Value> = {
     visible: boolean;
     edit?: Value;
-    controller?: Pick<PromiseWithResolvers<Returned>, "reject" | "resolve">;
+    controller?: PromiseWithResolvers<Returned>;
 };
 
 type ConfirmStoreAction<Value, Returned = Value> = {
@@ -19,17 +19,22 @@ type ConfirmStore<Value, Returned = Value> = ConfirmStoreState<
     ConfirmStoreAction<Value, Returned>;
 
 export const confirmStoreFactory = <Value, Returned = Value>() => {
-    const useStore = create<ConfirmStore<Value, Returned>>()((set) => {
+    const useStore = create<ConfirmStore<Value, Returned>>()((set, get) => {
         return {
             visible: false,
             open: (v) => {
+                const last = get().controller?.promise;
+                if (last) {
+                    return last;
+                }
                 const { promise, reject, resolve } =
                     Promise.withResolvers<Returned>();
+
                 set(
                     produce((state) => {
                         state.visible = true;
                         state.edit = v;
-                        state.controller = { reject, resolve };
+                        state.controller = { reject, resolve, promise };
                     }),
                 );
                 return promise;

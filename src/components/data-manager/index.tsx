@@ -161,7 +161,7 @@ const [DataManagerProvider, showDataManager] = createConfirmProvider(Form, {
     dialogTitle: "data-manager",
     dialogModalClose: true,
     contentClassName:
-        "h-full w-full max-h-full max-w-full data-[state=open]:animate-slide-from-right rounded-none sm:rounded-md sm:max-h-[55vh] sm:w-[90vw] sm:max-w-[500px] sm:data-[state=open]:animate-content-show",
+        "h-full w-full max-h-full max-w-full rounded-none sm:rounded-md sm:max-h-[55vh] sm:w-[90vw] sm:max-w-[500px]",
 });
 
 export default function DataManagerSettingsItem() {

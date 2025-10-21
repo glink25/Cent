@@ -1,4 +1,4 @@
-import { type HTMLMotionProps, motion, useSpring } from "framer-motion";
+import { type HTMLMotionProps, motion, useSpring } from "motion/react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 

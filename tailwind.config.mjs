@@ -50,15 +50,15 @@ module.exports = {
             },
             animation: {
                 "overlay-show":
-                    "overlay-show 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+                    "overlay-show 200ms cubic-bezier(0.16, 1, 0.3, 1)",
                 "content-show":
-                    "content-show 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+                    "content-show 200ms cubic-bezier(0.16, 1, 0.3, 1)",
                 "slide-from-right":
-                    "slide-from-right 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+                    "slide-from-right 200ms cubic-bezier(0.16, 1, 0.3, 1)",
                 "collapse-open":
-                    "collapse-open 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+                    "collapse-open 200ms cubic-bezier(0.16, 1, 0.3, 1)",
                 "collapse-close":
-                    "collapse-close 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+                    "collapse-close 200ms cubic-bezier(0.16, 1, 0.3, 1)",
                 "dynamic-bg": "dynamic-bg 3s ease-in-out infinite",
             },
         },

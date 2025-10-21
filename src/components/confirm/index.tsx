@@ -1,7 +1,15 @@
-import { Dialog, VisuallyHidden } from "radix-ui";
+import { VisuallyHidden } from "radix-ui";
 import type { ReactNode } from "react";
 import { useShallow } from "zustand/shallow";
 import { cn } from "@/utils";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogOverlay,
+    DialogPortal,
+    DialogTitle,
+} from "../ui/dialog";
 import { confirmStoreFactory } from "./state";
 
 export default function createConfirmProvider<Value, Returned = Value>(
@@ -35,14 +43,18 @@ export default function createConfirmProvider<Value, Returned = Value>(
 
         const onCancel = () => {
             controller?.reject();
-            useStore.getState().update({ visible: false });
+            useStore
+                .getState()
+                .update({ visible: false, controller: undefined });
         };
         const onConfirm = (v: Returned) => {
             controller?.resolve(v);
-            useStore.getState().update({ visible: false });
+            useStore
+                .getState()
+                .update({ visible: false, controller: undefined });
         };
         return (
-            <Dialog.Root
+            <Dialog
                 open={visible}
                 onOpenChange={(v) => {
                     if (dialogModalClose && !v) {
@@ -50,12 +62,12 @@ export default function createConfirmProvider<Value, Returned = Value>(
                     }
                 }}
             >
-                <Dialog.Portal>
-                    <Dialog.Overlay className="fixed inset-0 bg-black/50 data-[state=open]:animate-overlay-show" />
+                <DialogPortal>
+                    <DialogOverlay className="fixed inset-0 bg-black/50" />
                     <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center pointer-events-none">
-                        <Dialog.Content
+                        <DialogContent
                             className={cn(
-                                "pointer-events-auto bg-background max-h-[55vh] w-[90vw] max-w-[500px] rounded-md data-[state=open]:animate-content-show",
+                                "pointer-events-auto bg-background max-h-[55vh] w-[90vw] max-w-[500px] rounded-md",
                                 contentClassName,
                             )}
                             onOpenAutoFocus={(e) => {
@@ -66,20 +78,20 @@ export default function createConfirmProvider<Value, Returned = Value>(
                             }}
                         >
                             <VisuallyHidden.Root>
-                                <Dialog.Title>{dialogTitle}</Dialog.Title>
-                                <Dialog.Description>
+                                <DialogTitle>{dialogTitle}</DialogTitle>
+                                <DialogDescription>
                                     {dialogDescription}
-                                </Dialog.Description>
+                                </DialogDescription>
                             </VisuallyHidden.Root>
                             <Form
                                 edit={editBill}
                                 onCancel={onCancel}
                                 onConfirm={onConfirm}
                             />
-                        </Dialog.Content>
+                        </DialogContent>
                     </div>
-                </Dialog.Portal>
-            </Dialog.Root>
+                </DialogPortal>
+            </Dialog>
         );
     }
 
