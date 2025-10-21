@@ -180,7 +180,7 @@ export default function BookGuide() {
                                         disabled={creating}
                                         onClick={async () => {
                                             const name = prompt(
-                                                "please input book name:",
+                                                t("please-input-book-name"),
                                             );
                                             if (!name) {
                                                 return;

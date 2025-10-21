@@ -38,7 +38,9 @@ export default function Login() {
                                         }}
                                     >
                                         <i className="icon-[mdi--github]"></i>
-                                        {t("login-to-github")}
+                                        <div className="flex-1">
+                                            {t("login-to-github")}
+                                        </div>
                                     </Button>
                                     <button
                                         type="button"
@@ -61,7 +63,9 @@ export default function Login() {
                                         }}
                                     >
                                         <i className="icon-[mdi--local]"></i>
-                                        {t("offline-mode")}
+                                        <div className="flex-1">
+                                            {t("offline-mode")}
+                                        </div>
                                     </Button>
                                 </div>
                             </>
