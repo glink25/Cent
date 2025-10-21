@@ -224,13 +224,14 @@ function DialogContent({
             if (isDesktop) return;
 
             // 阻止事件的默认行为，防止浏览器默认拖动等
-            event.preventDefault();
+            
 
             // **核心逻辑：检测位置并有条件地启动拖动**
             if (isPointerNearLeftEdge(event)) {
                 // 如果在左侧边缘，我们希望只允许拖动。
                 // 此时可以手动启动 Framer Motion 的拖动
                 dragControls.start(event);
+                event.preventDefault();
             } else {
                 // 如果不在边缘，则不做任何操作，阻止 Framer Motion 启动拖动。
                 // 此时手势将不会被识别为拖动。
