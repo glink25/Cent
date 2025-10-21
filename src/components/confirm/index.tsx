@@ -1,5 +1,5 @@
 import { VisuallyHidden } from "radix-ui";
-import type { ReactNode } from "react";
+import { type ReactNode, useCallback } from "react";
 import { useShallow } from "zustand/shallow";
 import { cn } from "@/utils";
 import {
@@ -57,7 +57,10 @@ export default function createConfirmProvider<Value, Returned = Value>(
             <Dialog
                 open={visible}
                 onOpenChange={(v) => {
-                    if (dialogModalClose && !v) {
+                    // if (dialogModalClose && !v) {
+                    //     onCancel();
+                    // }
+                    if (!v) {
                         onCancel();
                     }
                 }}
@@ -70,12 +73,20 @@ export default function createConfirmProvider<Value, Returned = Value>(
                                 "pointer-events-auto bg-background max-h-[55vh] w-[90vw] max-w-[500px] rounded-md",
                                 contentClassName,
                             )}
-                            onOpenAutoFocus={(e) => {
+                            onOpenAutoFocus={useCallback((e: Event) => {
                                 (
                                     document.activeElement as HTMLElement
                                 )?.blur?.();
                                 e.preventDefault();
-                            }}
+                            }, [])}
+                            onInteractOutside={useCallback(
+                                (e: Event) => {
+                                    if (!dialogModalClose) {
+                                        e.preventDefault();
+                                    }
+                                },
+                                [dialogModalClose],
+                            )}
                         >
                             <VisuallyHidden.Root>
                                 <DialogTitle>{dialogTitle}</DialogTitle>
