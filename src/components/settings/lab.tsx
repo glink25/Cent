@@ -45,6 +45,14 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                             {t(
                                 "enter-add-bill-when-reduce-motion-changed-description",
                             )}
+                            <a
+                                href="https://glink25.github.io/post/Cent-PWA%E5%B0%8F%E6%8A%80%E5%B7%A7/#%E5%BF%AB%E6%8D%B7%E8%AE%B0%E8%B4%A6"
+                                className="underline px-2"
+                                target="_blank"
+                                rel="noopener"
+                            >
+                                Tips
+                            </a>
                         </div>
                     </div>
                     <Switch
