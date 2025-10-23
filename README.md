@@ -35,6 +35,8 @@ Cent 是一个 **完全免费、开源的多人协作记账 Web App**，
 Cent 是一个“纯前端”的 PWA 应用。  
 除 GitHub OAuth 登录外，Cent 不依赖任何后端服务。
 
+了解详情：[现在开始将Github作为数据库](https://glink25.github.io/post/%E7%8E%B0%E5%9C%A8%E5%BC%80%E5%A7%8B%E5%B0%86Github%E4%BD%9C%E4%B8%BA%E6%95%B0%E6%8D%AE%E5%BA%93/)
+
 ### 🗂 数据结构
 
 - 每个账本（Book）即为一个 GitHub 仓库。
