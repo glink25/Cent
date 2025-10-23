@@ -81,7 +81,7 @@ export default function TagList({
                     )}
                     onClick={async () => {
                         try {
-                            const tagName = prompt("input tag name");
+                            const tagName = prompt(t("input-tag-name"));
                             if (!tagName) return;
                             await addTag({ name: tagName });
                         } catch (error) {

@@ -15,7 +15,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
     const creators = useCreators();
 
     const toEditName = async (user: { id: string }) => {
-        const newName = prompt("请输入自定义昵称");
+        const newName = prompt(t("please-enter-nickname"));
         if (!newName) {
             return;
         }
