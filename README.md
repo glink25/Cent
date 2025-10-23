@@ -123,3 +123,129 @@ pnpm dev
  - 必须署名原作者
  - 禁止商业使用
  - 派生作品须使用相同许可协议
+
+ ---
+
+ # Cent
+
+> You might only need an accounting software.
+
+[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-green.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+[![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
+[![PWA](https://img.shields.io/badge/PWA-supported-blue.svg)]()
+[![GitHub Repo](https://img.shields.io/badge/data-storage_on_GitHub-black?logo=github)]()
+
+Cent is a **completely free, open-source, collaborative accounting Web App**,  
+which uses a **GitHub Repository** for data synchronization and version control, enabling real-time cross-platform sync without a server.
+
+🔗 **Live Demo**: [https://cent.linkai.work](https://cent.linkai.work)  
+💾 **Open Source Repository**: [https://github.com/glink25/Cent](https://github.com/glink25/Cent)  
+📖 **Blog**: [https://glink25.github.io/tag/Cent/](https://glink25.github.io/tag/Cent/)  
+
+---
+
+## ✨ Features
+
+- 💾 **Fully Self-Contained Data**: Ledger data is stored in your private GitHub repository, without any third-party servers.  
+- 👥 **Multi-User Collaboration**: Share ledgers and synchronize changes in real-time using the GitHub Collaborator feature.  
+- ⚡️ **Incremental Sync**: Only uploads/downloads changed data, significantly reducing sync time.  
+- 📊 **Rich Statistical Analysis**: Supports multi-dimensional filtering and trend analysis, with customizable analysis views.  
+- 🏷️ **Category and Tag System**: Supports two-level categories, custom tags, icons, and sorting.  
+- 💰 **Budget Management**: Set budgets by category or tag and monitor progress in real-time.  
+- 🖼️ **Attachment Support**: Allows uploading image attachments for bills.  
+- 📱 **PWA Support**: Can be installed to the desktop and used like a native App, supported on iOS and Android.  
+- 🔒 **Completely Open Source**: Deployment cost is nearly zero, the code is fully auditable and can be self-hosted.
+
+---
+
+## 🧠 Core Principles
+
+Cent is a "pure frontend" PWA application.  
+Apart from GitHub OAuth login, Cent does not rely on any backend services.
+
+### 🗂 Data Structure
+
+- Each ledger (Book) corresponds to a GitHub repository.
+- Data is stored in JSON format within the repository, supporting historical version rollback.
+- Multi-ledger management is achieved by identifying ledgers via repository names.
+
+### 🔁 Incremental Sync Mechanism
+
+Cent incorporates a custom incremental synchronization strategy, only syncing the differential changes:  
+- Initial Sync: Full data download.  
+- Subsequent Sync: Only transfers newly added or modified parts.  
+- Supports offline caching and resume capability.  
+
+This mechanism significantly improves sync efficiency, leading to a smooth and natural collaborative experience.
+
+### 🧩 Extensible Sync Endpoints
+
+The synchronization logic has been abstracted and encapsulated, with future support planned for:  
+- Self-hosted Servers  
+- Cloud Drives (e.g., Dropbox, OneDrive)  
+- Local Offline Ledgers  
+
+---
+
+## 📈 Feature Preview
+
+| Feature | Screenshot |
+|------|------|
+| Two-Level Categories & Tag Management | ![Category Example](https://glink25.github.io/post-assets/mgucw881-cent-accountting.jpg) |
+| Custom Tags | ![Tag Example](https://glink25.github.io/post-assets/mgucw884-cent-tag-1.jpg) |
+| Statistics and Analysis View | ![Statistical Analysis](https://glink25.github.io/post-assets/mgucw884-cent-stat.jpg) |
+| Budget Management | ![Budget View](https://glink25.github.io/post-assets/mgucw884-cent-budget.jpg) |
+| GitHub Collaboration | ![Collaboration Feature](https://glink25.github.io/post-assets/mgucw884-github-collaborator.jpg) |
+
+---
+
+## 🚀 Deployment and Usage
+
+### Method 1: Use the Online Version Directly
+
+1. Open [https://cent.linkai.work](https://cent.linkai.work)
+2. Log in and authorize with GitHub
+3. Create a new ledger (a new repository will be created automatically)
+4. Start recording transactions 🎉
+
+### Method 2: Self-Deployment
+
+1. Fork this repository  
+2. Deploy on [Cloudflare Pages](https://pages.cloudflare.com/) or any static hosting platform  
+3. Manually input your GitHub Token on the login screen to use it  
+4. All ledgers and data are stored in your GitHub repositories  
+
+---
+
+## 🧪 Development Plan
+
+- ✅ Incremental sync core implementation  
+- ✅ Multi-user collaborative ledgers  
+- 🚧 Automated testing system  
+- 🚧 Map visualization of expenditures  
+- 🚧 More sync endpoints (Cloud Drives / Self-hosted Servers)  
+- 🚧 Mobile interaction optimization  
+
+---
+
+## 💬 Contribution and Feedback
+
+Cent welcomes all developers and users to contribute:
+
+```bash
+# Clone the project
+git clone [https://github.com/glink25/Cent.git](https://github.com/glink25/Cent.git)
+
+# Install dependencies
+pnpm install
+
+# Run locally
+pnpm dev
+```
+
+## 📜 License
+ - This project is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0) License.
+ - You are free to share, adapt, and redistribute.
+ - You must give appropriate credit.
+ - You may not use the material for commercial purposes.
+ - If you remix, transform, or build upon the material, you must distribute your contributions under the same license as the original.
