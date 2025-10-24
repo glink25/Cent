@@ -15,7 +15,7 @@ const charKeys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"] as const;
 const pointKey = ".";
 
 type Char = (typeof charKeys)[number];
-type Operator = "+" | "-" | "×" | "÷";
+type Operator = "+" | "-" | "x" | "÷";
 type Eraser = "c";
 type Point = typeof pointKey;
 type Eq = "=";
@@ -49,7 +49,7 @@ const Layout = [
     { label: "7" },
     { label: "8" },
     { label: "9" },
-    { label: "×" },
+    { label: "x" },
     { label: "÷" },
     { label: "r" },
     { label: "0" },
@@ -57,7 +57,7 @@ const Layout = [
     { label: "=", cols: 2 },
 ];
 
-const operators = ["+", "-", "×", "÷"];
+const operators = ["+", "-", "x", "÷"];
 
 const isOperator = (v: string): v is Operator => operators.includes(v);
 
@@ -107,7 +107,7 @@ const formulaToNumber = (form: Formula, precision: number) => {
             return prec(left + right);
         case "-":
             return prec(left - right);
-        case "×":
+        case "x":
             return prec(left * right);
         case "÷":
             return prec(left / right);
@@ -212,7 +212,7 @@ export const CalculatorRoot = ({
         if (input) {
             const onPress = (event: KeyboardEvent) => {
                 const key = event.key;
-                if (![pointKey, ...charKeys].includes(key as any)) {
+                if (Layout.every((k) => k.label !== key)) {
                     return;
                 }
                 handleButtonClick(key);
@@ -245,7 +245,16 @@ export const CalculatorRoot = ({
 
 export const CalculatorValue = ({ className }: { className?: string }) => {
     const { formula } = useContext(CalculatorContext)!;
-    return <div className={cn(className)}>{toText(formula)}</div>;
+    return (
+        <div className={cn(className)}>
+            {toText(formula)
+                .split("")
+                .map((v, i) => (
+                    // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                    <span key={i}>{v === "x" ? "×" : v}</span>
+                ))}
+        </div>
+    );
 };
 
 export const CalculatorKeyboard = ({
@@ -281,6 +290,8 @@ export const CalculatorKeyboard = ({
                             <i className="icon-[mdi--reload]"></i>
                             <div className="text-xs">{t("add-again")}</div>
                         </div>
+                    ) : row.label === "x" ? (
+                        <span data-label>×</span>
                     ) : (
                         <span data-label>{row.label}</span>
                     )}
