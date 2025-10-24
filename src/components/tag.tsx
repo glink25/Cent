@@ -23,7 +23,7 @@ export default function Tag({
             data-state={checked ? "checked" : "uncheck"}
             className={cn(
                 `rounded-md border py-1 px-2 flex items-center justify-center whitespace-nowrap cursor-pointer`,
-                "data-[state=checked]:bg-slate-700 data-[state=checked]:text-white bg-stone-200  text-light-900",
+                "data-[state=checked]:bg-slate-700 data-[state=checked]:text-white bg-stone-200 dark:bg-stone-500 text-light-900",
                 className,
             )}
             onMouseDown={() => {
