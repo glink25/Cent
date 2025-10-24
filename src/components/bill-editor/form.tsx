@@ -97,6 +97,12 @@ export default function EditorForm({
         locationRef.current?.click?.();
     }, []);
 
+    const monitorRef = useRef<HTMLButtonElement>(null);
+    const [monitorFocused, setMonitorFocused] = useState(false);
+    useEffect(() => {
+        monitorRef.current?.focus?.();
+    }, []);
+
     return (
         <Calculator.Root
             initialValue={edit?.amount ? amountToNumber(edit?.amount) : 0}
@@ -106,6 +112,7 @@ export default function EditorForm({
                     amount: numberToAmount(n),
                 }));
             }}
+            input={monitorFocused}
         >
             <PopupLayout
                 className="h-full gap-2 pb-0 overflow-y-auto scrollbar-hidden"
@@ -139,14 +146,24 @@ export default function EditorForm({
                                 </Switch.Thumb>
                             </Switch.Root>
                         </div>
-                        <div className="flex-1 flex flex-col justify-center items-end bg-stone-400 rounded-lg ml-2 px-2 overflow-x-scroll">
+                        <button
+                            ref={monitorRef}
+                            type="button"
+                            onFocus={() => {
+                                setMonitorFocused(true);
+                            }}
+                            onBlur={() => {
+                                setMonitorFocused(false);
+                            }}
+                            className="flex-1 flex flex-col justify-center items-end bg-stone-400 focus:outline rounded-lg ml-2 px-2 overflow-x-scroll"
+                        >
                             <Calculator.Value className="text-white text-3xl font-semibold text-right bg-transparent"></Calculator.Value>
                             {billState.amount < 0 && (
                                 <div className="absolute text-red-700 text-[8px] bottom-0 translate-y-[calc(-50%-2px)]">
                                     {t("bill-negative-tip")}
                                 </div>
                             )}
-                        </div>
+                        </button>
                     </div>
                 }
             >

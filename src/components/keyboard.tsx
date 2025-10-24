@@ -1,14 +1,23 @@
 // Caculator.tsx
 
-import { createContext, useContext, useState } from "react";
+import {
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useState,
+} from "react";
 import { useIntl } from "@/locale";
 import { cn } from "@/utils";
 import { Button } from "./ui/button";
 
-type Char = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "0";
+const charKeys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"] as const;
+const pointKey = ".";
+
+type Char = (typeof charKeys)[number];
 type Operator = "+" | "-" | "×" | "÷";
 type Eraser = "c";
-type Point = ".";
+type Point = typeof pointKey;
 type Eq = "=";
 type Value = Char | Operator | Point | Eraser | Eq;
 
@@ -166,25 +175,64 @@ export const CalculatorRoot = ({
     initialValue,
     onValueChange,
     precision = 3,
+    input,
 }: {
     initialValue?: number;
     onValueChange?: (v: number) => void;
     children: React.ReactNode;
     precision?: number;
+    input?: boolean;
 }) => {
     const [currentFormula, setCurrentFormula] = useState(() =>
         numberToFormula(initialValue ?? 0),
     );
 
-    const handleButtonClick = (value: ButtonValue) => {
-        if (value === "r") {
-            return;
-        }
-        const newFormula = createFormula(value, precision, currentFormula);
-        onValueChange?.(formulaToNumber(newFormula, precision));
+    const handleButtonClick = useCallback(
+        (value: ButtonValue) => {
+            if (value === "r") {
+                return;
+            }
 
-        setCurrentFormula(newFormula);
-    };
+            setCurrentFormula((currentFormula) => {
+                const newFormula = createFormula(
+                    value,
+                    precision,
+                    currentFormula,
+                );
+                Promise.resolve().then(() => {
+                    onValueChange?.(formulaToNumber(newFormula, precision));
+                });
+                return newFormula;
+            });
+        },
+        [onValueChange, precision],
+    );
+
+    useEffect(() => {
+        if (input) {
+            const onPress = (event: KeyboardEvent) => {
+                const key = event.key;
+                if (![pointKey, ...charKeys].includes(key as any)) {
+                    return;
+                }
+                handleButtonClick(key);
+            };
+            const onKeydown = (event: KeyboardEvent) => {
+                const key = event.key;
+                if (key === "Backspace") {
+                    event.preventDefault();
+                    handleButtonClick("c");
+                }
+            };
+            document.addEventListener("keypress", onPress);
+            document.addEventListener("keydown", onKeydown);
+
+            return () => {
+                document.removeEventListener("keypress", onPress);
+                document.removeEventListener("keydown", onKeydown);
+            };
+        }
+    }, [input, handleButtonClick]);
 
     return (
         <CalculatorContext.Provider
