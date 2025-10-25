@@ -226,7 +226,6 @@ export default function CategoryEditForm({
                                     field.value === null
                                         ? NO_PARENT
                                         : field.value;
-                                console.log(selectValue, "ssss");
                                 return (
                                     <FormItem>
                                         <FormLabel>

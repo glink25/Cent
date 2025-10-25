@@ -168,7 +168,7 @@ export default function EditorForm({
                 }
             >
                 {/* categories */}
-                <div className="flex-1 flex-shrink-0 overflow-y-auto min-h-20 scrollbar-hidden flex flex-col px-2 text-sm font-medium gap-2">
+                <div className="flex-1 flex-shrink-0 overflow-y-auto min-h-[80px] scrollbar-hidden flex flex-col px-2 text-sm font-medium gap-2">
                     <div className="flex flex-col min-h-[80px] grow-[2] shrink overflow-y-auto scrollbar-hidden w-full">
                         <div
                             className={cn(
@@ -284,7 +284,7 @@ export default function EditorForm({
                 </div>
 
                 {/* keyboard area */}
-                <div className="keyboard-field h-[480px] sm:h-[380px] flex-shrink-0 flex gap-2 flex-col justify-start bg-stone-900 sm:rounded-b-md text-[white] p-2 pb-[max(env(safe-area-inset-bottom),8px)]">
+                <div className="keyboard-field min-h-[min(calc(100%-264px),480px)] max-h-[calc(100%-264px)] sm:min-h-[min(calc(100%-264px),380px)] flex gap-2 flex-col justify-start bg-stone-900 sm:rounded-b-md text-[white] p-2 pb-[max(env(safe-area-inset-bottom),8px)]">
                     <div className="flex justify-between items-center">
                         <div className="flex gap-2 items-center h-10">
                             <div className="flex items-center h-full">
@@ -315,7 +315,7 @@ export default function EditorForm({
                                 {(billState.images?.length ?? 0) < 3 && (
                                     <button
                                         type="button"
-                                        className="px-1 flex justify-center items-center rounded-full transition-all hover:(bg-stone-700) active:(bg-stone-500) cursor-pointer"
+                                        className="px-1 flex justify-center items-center rounded-full transition-all cursor-pointer"
                                         onClick={chooseImage}
                                     >
                                         <i className="icon-xs icon-[mdi--image-plus-outline] text-[white]"></i>
@@ -381,7 +381,7 @@ export default function EditorForm({
 
                     <button
                         type="button"
-                        className="flex h-[80px] justify-center items-center bg-green-700 rounded-lg font-bold text-lg cursor-pointer"
+                        className="flex h-[80px] min-h-[48px] justify-center items-center bg-green-700 rounded-lg font-bold text-lg cursor-pointer"
                         onClick={toConfirm}
                     >
                         <i className="icon-[mdi--check] icon-md"></i>

@@ -245,7 +245,7 @@ function DialogContent({
                 // 如果在左侧边缘，我们希望只允许拖动。
                 // 此时可以手动启动 Framer Motion 的拖动
                 dragControls.start(event);
-                event.preventDefault();
+                // event.preventDefault();
             } else {
                 // 如果不在边缘，则不做任何操作，阻止 Framer Motion 启动拖动。
                 // 此时手势将不会被识别为拖动。
