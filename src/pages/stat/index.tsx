@@ -510,21 +510,6 @@ export default function Page() {
                             </div>
                         ) : selectedViewId === "custom" ? (
                             <div className="flex-1 flex items-center gap-3 text-xs">
-                                {/* <Button variant="outline" size="sm">
-                                    <DatePicker
-                                        value={customStart}
-                                        onChange={setCustomStart}
-                                        displayFormatter={"YYYY/MM/DD"}
-                                    ></DatePicker>
-                                </Button>
-                                <div>-</div>
-                                <Button variant="outline" size="sm">
-                                    <DatePicker
-                                        value={customEnd}
-                                        onChange={setCustomEnd}
-                                        displayFormatter={"YYYY/MM/DD"}
-                                    ></DatePicker>
-                                </Button> */}
                                 <DateInput
                                     value={customStart}
                                     type="start"

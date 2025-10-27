@@ -222,12 +222,13 @@ export default function BudgetEditForm({
                                                 </PopoverTrigger>
                                             </FormControl>
                                             <PopoverContent
-                                                className="w-auto min-h-[265px] p-0"
+                                                className="w-auto min-h-[265px] p-3"
                                                 align="start"
                                             >
                                                 <Calendar
-                                                    className="min-w-[240px]"
+                                                    className="min-w-[240px] rounded-md p-0"
                                                     mode="single"
+                                                    captionLayout="dropdown"
                                                     selected={field.value}
                                                     onSelect={field.onChange}
                                                     disabled={(date) =>
@@ -279,12 +280,13 @@ export default function BudgetEditForm({
                                                 </FormControl>
                                             </PopoverTrigger>
                                             <PopoverContent
-                                                className="w-auto min-h-[265px] p-0"
+                                                className="w-auto min-h-[265px] p-4"
                                                 align="end"
                                             >
                                                 <Calendar
                                                     mode="single"
-                                                    className="min-w-[240px]"
+                                                    captionLayout="dropdown"
+                                                    className="min-w-[240px] rounded-md p-0"
                                                     selected={field.value}
                                                     onSelect={field.onChange}
                                                     disabled={(date) =>
