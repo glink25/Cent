@@ -76,7 +76,7 @@ export default function createConfirmProvider<Value, Returned = Value>(
                             fade={fade}
                             swipe={swipe}
                             className={cn(
-                                "pointer-events-auto bg-background max-h-[55vh] w-[90vw] max-w-[500px] rounded-md",
+                                "pointer-events-auto bg-background max-h-[55vh] w-[90vw] max-w-[500px] rounded-md overflow-y-auto",
                                 contentClassName,
                             )}
                             onOpenAutoFocus={useCallback((e: Event) => {
