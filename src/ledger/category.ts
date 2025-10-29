@@ -552,23 +552,3 @@ export const BillCategories: BillCategory[] = [
     ...ExpenseBillCategories,
     ...IncomeBillCategories,
 ];
-
-const map = new Map<string, BillCategory>();
-
-export const getDefaultCategoryById = (id: string) => {
-    if (map.has(id)) return map.get(id)!;
-    const cate = BillCategories.find((c) => c.id === id);
-    if (cate) {
-        map.set(id, cate);
-        return cate;
-    }
-};
-// check id repeat:
-// const ids: string[] = [];
-// BillCategories.forEach((c) => {
-// 	if (ids.includes(c.id)) {
-// 		console.log("repeat id:", c.id, c);
-// 	} else {
-// 		ids.push(c.id);
-// 	}
-// });

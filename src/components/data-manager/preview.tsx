@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import type { GlobalMeta } from "@/api/storage";
 import type { Full } from "@/database/stash";
 import PopupLayout from "@/layouts/popup-layout";
-import type { Bill } from "@/ledger/type";
+import type { Bill, GlobalMeta } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import { useLedgerStore } from "@/store/ledger";
 import { base64ToFile } from "@/utils/file";

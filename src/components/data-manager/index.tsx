@@ -1,13 +1,8 @@
 import { cloneDeep, merge } from "lodash-es";
-import {
-    type ExportedJSON,
-    type GlobalMeta,
-    StorageAPI,
-    StorageDeferredAPI,
-} from "@/api/storage";
+import { StorageAPI, StorageDeferredAPI } from "@/api/storage";
 import type { MetaUpdate, Update } from "@/database/stash";
 import PopupLayout from "@/layouts/popup-layout";
-import type { Bill } from "@/ledger/type";
+import type { Bill, ExportedJSON, GlobalMeta } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
@@ -18,6 +13,7 @@ import modal from "../modal";
 import { Button } from "../ui/button";
 import { showOncentImport } from "./oncent";
 import { ImportPreviewProvider, showImportPreview } from "./preview";
+import { toSmartImport } from "./smart-import";
 
 function Form({ onCancel }: { onCancel?: () => void }) {
     const t = useIntl();
@@ -148,6 +144,15 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                             onClick={toImportFromOncent}
                         >
                             {t("import-from-oncent-github-io")}
+                        </Button>
+                    </div>
+                    <div className="flex flex-col px-4 gap-2 hidden">
+                        <Button
+                            variant="outline"
+                            className="py-4"
+                            onClick={toSmartImport}
+                        >
+                            {t("smart-import")}
                         </Button>
                     </div>
                 </div>

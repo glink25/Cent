@@ -5,14 +5,9 @@ import { v4 } from "uuid";
 import { create } from "zustand";
 import type { UserInfo } from "@/api/endpoints/type";
 import type { Action, Full, OutputType, Update } from "@/database/stash";
-import type { Bill } from "@/ledger/type";
+import type { Bill, GlobalMeta, PersonalMeta } from "@/ledger/type";
 import { t } from "@/locale";
-import {
-    type GlobalMeta,
-    type PersonalMeta,
-    StorageAPI,
-    StorageDeferredAPI,
-} from "../api/storage";
+import { StorageAPI, StorageDeferredAPI } from "../api/storage";
 import { useBookStore } from "./book";
 import { useUserStore } from "./user";
 

@@ -56,6 +56,7 @@ const [LoadingProvider, showLoading] = createConfirmProvider(LoadingForm, {
     dialogTitle: "loading",
     dialogModalClose: false,
     contentClassName: "w-[240px] h-[240px]",
+    fade: true,
 });
 
 const loading = (v?: Omit<LoadingState, "target">) => {

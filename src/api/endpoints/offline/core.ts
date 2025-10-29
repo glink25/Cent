@@ -121,11 +121,24 @@ export class OfflineStorage {
         );
     }
 
+    private listeners: ((finished: Promise<void>) => void)[] = [];
     onSync(processor: (finished: Promise<void>) => void) {
-        return () => {};
+        this.listeners.push(processor);
+        return () => {
+            this.listeners = this.listeners.filter((v) => v !== processor);
+        };
     }
 
-    async toSync() {}
+    async toSync() {
+        const finished = Promise.all(
+            Array.from(this.storeMap.entries()).map(([k, value]) => {
+                const { itemBucket } = value;
+                return itemBucket.stashStorage.clear();
+            }),
+        );
+        this.listeners.map((v) => v(finished.then()));
+        return finished;
+    }
 
     // onChange
     private changeListeners: ChangeListener[] = [];

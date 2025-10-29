@@ -4,10 +4,9 @@ declare const self: DedicatedWorkerGlobalScope;
 import { expose, transfer } from "comlink";
 import { StashBucket } from "@/database/stash";
 import { BillIndexedDBStorage } from "@/database/storage";
-import type { Bill, BillFilter } from "@/ledger/type";
+import type { Bill, BillFilter, ExportedJSON, GlobalMeta } from "@/ledger/type";
 import { isBillMatched } from "@/ledger/utils";
 import { blobToBase64 } from "@/utils/file";
-import type { ExportedJSON, GlobalMeta } from ".";
 import { type AnalysisType, analysis as analysisBills } from "./analysis";
 
 const storeMap = new Map<

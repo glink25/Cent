@@ -314,5 +314,6 @@
   "offline-mode": "离线模式",
   "please-input-book-name": "请输入账本名称：",
   "input-tag-name": "请输入标签名称",
-  "please-enter-nickname": "请输入自定义昵称"
+  "please-enter-nickname": "请输入自定义昵称",
+  "smart-import": "智能导入"
 }
