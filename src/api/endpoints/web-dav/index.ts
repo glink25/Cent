@@ -1,3 +1,4 @@
+import type { WebDAVEdit } from "@/components/modal/web-dav";
 import { BillIndexedDBStorage } from "@/database/storage";
 import type { Bill } from "@/ledger/type";
 import type { SyncEndpointFactory } from "../type";
@@ -16,12 +17,7 @@ const getAuth = () => {
         return;
     }
     const parsed = JSON.parse(data);
-    return parsed as {
-        remote: string;
-        username: string;
-        password: string;
-        proxy?: string;
-    };
+    return parsed as WebDAVEdit;
 };
 
 export const WebDAVEndpoint: SyncEndpointFactory = {
@@ -68,31 +64,46 @@ export const WebDAVEndpoint: SyncEndpointFactory = {
             ...config,
             username: auth.username,
             password: auth.password,
+            customUserName: auth.customUserName,
             remoteUrl,
             storage: (name) => new BillIndexedDBStorage(`book-${name}`),
         });
         const toBookName = (bookId: string) => {
             return bookId.replace(`${config.repoPrefix}-`, "");
         };
+
         return {
             logout: async () => {
                 await repo.dangerousClearAll();
                 return;
             },
             getUserInfo: async () => {
-                return {
+                const Me = {
+                    id: auth.customUserName || auth.username,
+                    name: auth.customUserName || auth.username,
+                    avatar_url: "/icon.png",
+                };
+                return Me;
+            },
+            getCollaborators: async (id) => {
+                const aliases = await repo.getUserAliases(id);
+                const Me = {
                     id: auth.username,
                     name: auth.username,
                     avatar_url: "/icon.png",
                 };
+                const users = [
+                    Me,
+                    ...aliases
+                        .filter((a) => a !== Me.name)
+                        .map((alias) => ({
+                            id: alias,
+                            name: alias,
+                            avatar_url: "/icon.png",
+                        })),
+                ];
+                return users;
             },
-            getCollaborators: async () => [
-                {
-                    id: auth.username,
-                    name: auth.username,
-                    avatar_url: "/icon.png",
-                },
-            ],
             getOnlineAsset: async (url) => {
                 return repo.getOnlineAsset(url);
             },

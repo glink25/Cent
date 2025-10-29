@@ -315,5 +315,13 @@
   "please-input-book-name": "请输入账本名称：",
   "input-tag-name": "请输入标签名称",
   "please-enter-nickname": "请输入自定义昵称",
-  "smart-import": "智能导入"
+  "smart-import": "智能导入",
+  "sync-with-web-dav": "使用Web DAV进行同步",
+  "web-dav-remote-url": "Web DAV服务地址",
+  "username": "用户名",
+  "password": "密码",
+  "proxy-url": "代理地址",
+  "custom-user-id": "用户ID",
+  "custom-user": "自定义用户",
+  "custom-user-name": "昵称"
 }

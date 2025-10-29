@@ -31,6 +31,7 @@ export type WebDAVSyncConfig = {
     remoteUrl: string;
     username: string;
     password: string;
+    customUserName: string | undefined;
     /**
      * (可选) 用于所有 store 的根目录
      * @default 'webdav-db'
@@ -74,6 +75,10 @@ export type StoreDetail = {
 
 type Config = {
     structure?: StoreStructure;
+};
+
+type WebDAVPrivateMeta = {
+    _webDAVUserAliases?: string[];
 };
 
 // treeDateToStructure -> fileStatsToStructure
@@ -272,6 +277,15 @@ export class WebDAVSync<Item extends BaseItem> {
         });
         this.clientInstance = client;
         return client;
+    }
+
+    public async getUserAliases(storeName: string) {
+        const { itemBucket } = this.getStore(storeName);
+        const meta: WebDAVPrivateMeta | undefined = await itemBucket.getMeta();
+        if (!meta?._webDAVUserAliases) {
+            return [];
+        }
+        return meta._webDAVUserAliases;
     }
 
     // getOnlineAsset: 改为从 WebDAV 获取
@@ -543,6 +557,26 @@ export class WebDAVSync<Item extends BaseItem> {
         }
         await itemBucket.configStorage.setValue({
             structure: remote,
+        });
+        //
+        itemBucket.getMeta().then((meta?: WebDAVPrivateMeta) => {
+            const customUserName = this.config.customUserName;
+            if (!customUserName) {
+                return;
+            }
+            if (!meta?._webDAVUserAliases?.includes(customUserName)) {
+                const newMeta = meta ?? {};
+                newMeta._webDAVUserAliases = [
+                    ...(meta?._webDAVUserAliases ?? []),
+                    customUserName,
+                ];
+                itemBucket.batch([
+                    {
+                        type: "meta",
+                        metaValue: newMeta,
+                    },
+                ]);
+            }
         });
         this.notifyChange(storeName);
         return detail;

@@ -15,15 +15,16 @@ import {
 } from "../ui/form";
 import { Input } from "../ui/input";
 
-type Edit = {
+export type WebDAVEdit = {
     remote: string;
     username: string;
     password: string;
     proxy?: string;
+    customUserName?: string;
 };
 
-type LoadingState = Partial<Edit> & {
-    check?: (v: Edit) => Promise<unknown>;
+type LoadingState = Partial<WebDAVEdit> & {
+    check?: (v: WebDAVEdit) => Promise<unknown>;
 };
 
 export const createFormSchema = (t: any) =>
@@ -32,6 +33,7 @@ export const createFormSchema = (t: any) =>
         username: z.string(),
         password: z.string(),
         proxy: z.optional(z.string()),
+        customUserName: z.optional(z.string()),
     });
 
 const LoadingForm = ({
@@ -48,7 +50,7 @@ const LoadingForm = ({
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema) as any,
         defaultValues: {
-            proxy: "http://localhost:8787/proxy?url=",
+            proxy: "https://oncent-backend.linkai.work/proxy?url=",
         },
     });
     const [checking, setChecking] = useState(false);
@@ -64,16 +66,24 @@ const LoadingForm = ({
     };
     return (
         <div className="w-full h-full flex flex-col items-center justify-center overflow-hidden">
-            <div className="flex py-4">使用Web DAV进行同步</div>
+            <a
+                className="flex py-4 items-center gap-1"
+                href="https://glink25.github.io/post/Cent"
+                target="_blank"
+                rel="noopener"
+            >
+                {t("sync-with-web-dav")}
+                <i className="icon-[mdi--question-mark-circle-outline]"></i>
+            </a>
             <Form {...form}>
-                <div className="w-full flex-1 flex flex-col gap-2 px-4 overflow-y-auto">
+                <div className="w-full flex-1 flex flex-col gap-4 px-4 overflow-y-auto">
                     <FormField
                         control={form.control}
                         name="remote"
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel asChild>
-                                    <div>Web DAV地址</div>
+                                    <div>{t("web-dav-remote-url")}</div>
                                 </FormLabel>
                                 <FormControl>
                                     <Input
@@ -91,7 +101,7 @@ const LoadingForm = ({
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel asChild>
-                                    <div>用户名</div>
+                                    <div>{t("username")}</div>
                                 </FormLabel>
                                 <FormControl>
                                     <Input {...field} />
@@ -106,7 +116,7 @@ const LoadingForm = ({
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel asChild>
-                                    <div>密码</div>
+                                    <div>{t("password")}</div>
                                 </FormLabel>
                                 <FormControl>
                                     <Input {...field} type="password" />
@@ -121,7 +131,15 @@ const LoadingForm = ({
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel asChild>
-                                    <div>代理地址</div>
+                                    <a
+                                        className="flex items-center gap-1"
+                                        href="https://glink25.github.io/post/Cent"
+                                        target="_blank"
+                                        rel="noopener"
+                                    >
+                                        {t("proxy-url")}
+                                        <i className="icon-[mdi--question-mark-circle-outline]"></i>
+                                    </a>
                                 </FormLabel>
                                 <FormControl>
                                     <Input {...field} />
@@ -130,6 +148,34 @@ const LoadingForm = ({
                             </FormItem>
                         )}
                     />
+                    <div className="flex flex-col gap-4 rounded-md border p-2">
+                        <a
+                            className="flex items-center gap-1"
+                            href="https://glink25.github.io/post/Cent"
+                            target="_blank"
+                            rel="noopener"
+                        >
+                            {t("custom-user")}
+                            <i className="icon-[mdi--question-mark-circle-outline]"></i>
+                        </a>
+                        <FormField
+                            control={form.control}
+                            name="customUserName"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel asChild>
+                                        <div className="flex items-center gap-1">
+                                            {t("custom-user-name")}
+                                        </div>
+                                    </FormLabel>
+                                    <FormControl>
+                                        <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
                 </div>
 
                 <div className="p-4 w-full flex justify-end">
@@ -161,7 +207,7 @@ export const [WebDAVAuthProvider, showWebDAVAuth] = createConfirmProvider(
     {
         dialogTitle: "loading",
         dialogModalClose: true,
-        contentClassName: "w-[350px] h-[450px] ",
+        contentClassName: "w-[350px] h-[480px]",
         fade: true,
     },
 );

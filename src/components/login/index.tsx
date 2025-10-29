@@ -21,7 +21,7 @@ export default function Login() {
         <div className="fixed top-0 right-0 z-[998] w-screen h-screen overflow-hidden">
             <div className="absolute w-full h-full bg-[rgba(0,0,0,0.5)] z-[-1]"></div>
             <div className="w-full h-full flex justify-center items-center">
-                <div className="bg-background w-[350px] h-[450px] flex flex-col gap-4 justify-center items-center rounded-lg overflow-hidden">
+                <div className="bg-background w-[350px] h-[480px] flex flex-col gap-4 justify-center items-center rounded-lg overflow-hidden">
                     <Guide />
                     <div className="min-h-20 h-fit pb-4 flex flex-col gap-4">
                         {loading ? (
