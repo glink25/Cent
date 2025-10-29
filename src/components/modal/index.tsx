@@ -1,7 +1,9 @@
 import { type ReactNode, useEffect } from "react";
+import { toast } from "sonner";
 import { useIntl } from "@/locale";
 import createConfirmProvider from "../confirm";
 import { Button } from "../ui/button";
+import { showWebDAVAuth, WebDAVAuthProvider } from "./web-dav";
 
 type LoadingState = {
     target: EventTarget;
@@ -73,13 +75,18 @@ const loading = (v?: Omit<LoadingState, "target">) => {
 export function ModalProvider() {
     return (
         <>
-            <LoadingProvider></LoadingProvider>
+            <LoadingProvider />
+            <WebDAVAuthProvider />
         </>
     );
 }
 
 const modal = {
     loading,
+    webDavAuth: showWebDAVAuth,
+    toast,
 };
+
+export type Modal = typeof modal;
 
 export default modal;

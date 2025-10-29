@@ -36,24 +36,28 @@ function UserInfo() {
     };
     return (
         <div className="flex items-center justify-between gap-2 px-8 py-4">
-            <div className="flex items-center gap-2 relative">
+            <div className="flex-1 flex items-center gap-2 overflow-hidden">
                 <img
                     src={avatar_url}
                     alt={`${id}`}
                     className="w-12 h-12 rounded-full border"
                 />
 
-                <div>
-                    <div className="font-semibold">{name}</div>
-                    <div className="text-sm opacity-60">{id}</div>
-                </div>
-                <div
-                    className="absolute top-0 right-0 translate-x-[100%] px-2"
-                    title={`Signed with ${StorageAPI.name}`}
-                >
-                    <div className="text-xs border rounded px-1">
-                        {StorageAPI.name}
+                <div className="flex flex-col overflow-hidden">
+                    <div className="flex">
+                        <div className="font-semibold flex-1 truncate">
+                            {name}
+                        </div>
+                        <div
+                            className="px-2 flex-shrink-0"
+                            title={`Signed with ${StorageAPI.name}`}
+                        >
+                            <div className="text-xs border rounded px-1">
+                                {StorageAPI.name}
+                            </div>
+                        </div>
                     </div>
+                    <div className="text-sm opacity-60">{id}</div>
                 </div>
             </div>
             <div className="flex items-center gap-2">

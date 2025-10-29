@@ -54,6 +54,7 @@
 		"tailwind-merge": "^3.3.1",
 		"tailwindcss-animate": "^1.0.7",
 		"uuid": "^11.1.0",
+		"webdav": "^5.8.0",
 		"zod": "^4.1.11",
 		"zustand": "^5.0.8",
 		"zustand-computed": "^2.1.0"
