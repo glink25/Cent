@@ -27,13 +27,11 @@ export const WebDAVEndpoint: SyncEndpointFactory = {
         const auth = await modal.webDavAuth({
             check: async (data) => {
                 const remote = data.remote.replace(/\/$/, "");
-                const remoteUrl = data.proxy
-                    ? `${data.proxy}${encodeURIComponent(remote)}`
-                    : remote;
                 await WebDAVSync.checkConfig({
-                    remoteUrl,
+                    remoteUrl: remote,
                     username: data.username,
                     password: data.password,
+                    proxy: data.proxy,
                 }).catch((error) => {
                     modal.toast.error(
                         (error as Error)?.message ?? JSON.stringify(error),
@@ -57,15 +55,13 @@ export const WebDAVEndpoint: SyncEndpointFactory = {
             throw new Error("web dav auth not found");
         }
         const remote = auth.remote.replace(/\/$/, "");
-        const remoteUrl = auth.proxy
-            ? `${auth.proxy}${encodeURIComponent(remote)}`
-            : remote;
         const repo = new WebDAVSync<Bill>({
             ...config,
             username: auth.username,
             password: auth.password,
             customUserName: auth.customUserName,
-            remoteUrl,
+            remoteUrl: remote,
+            proxy: auth.proxy,
             storage: (name) => new BillIndexedDBStorage(`book-${name}`),
         });
         const toBookName = (bookId: string) => {

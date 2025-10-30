@@ -12,13 +12,52 @@ import {
     StashBucket,
     type StashStorage,
 } from "@/database/stash";
+import { registerProxy } from "@/utils/fetch-proxy";
 
 const createClient = async (
     remoteURL: string,
-    options?: WebDAVClientOptions,
+    options: WebDAVClientOptions,
+    proxy?: string,
 ) => {
     const lib = await import("webdav");
-    return lib.createClient(remoteURL, options);
+    const dispose = registerProxy(async (url, options, next) => {
+        if (!proxy) {
+            return next(url, options);
+        }
+
+        const urlStr = typeof url === "string" ? url : url.toString();
+
+        // 检查是否匹配 remoteURL
+        const isMatch = urlStr.startsWith(remoteURL);
+        if (!isMatch) return next(url, options);
+
+        // 构造代理 URL
+        const proxyUrl = new URL(proxy);
+        const hasMethodParam = [...proxyUrl.searchParams.keys()].includes(
+            "method",
+        );
+
+        // 将原始 URL 作为参数传递
+        proxyUrl.searchParams.set("url", urlStr);
+
+        // 如果 proxy 中包含 method 参数占位，则改为 POST 并附带真实 method
+        const originalMethod = (options.method || "GET").toUpperCase();
+        if (hasMethodParam && originalMethod !== "POST") {
+            proxyUrl.searchParams.set("method", originalMethod);
+            options = {
+                ...options,
+                method: "POST",
+            };
+        }
+
+        const newUrl = proxyUrl.toString();
+        console.log(
+            `[fetch-proxy] redirecting: ${originalMethod} ${urlStr} → POST ${newUrl}`,
+        );
+
+        return next(newUrl, options);
+    });
+    return [lib.createClient(remoteURL, options), dispose] as const;
 };
 
 export type Processor = (finished: Promise<void>) => void;
@@ -31,6 +70,7 @@ export type WebDAVSyncConfig = {
     remoteUrl: string;
     username: string;
     password: string;
+    proxy: string | undefined;
     customUserName: string | undefined;
     /**
      * (可选) 用于所有 store 的根目录
@@ -232,13 +272,20 @@ export class WebDAVSync<Item extends BaseItem> {
      * @returns Promise<{ valid: boolean; error?: string }>
      */
     static async checkConfig(
-        config: Pick<WebDAVSyncConfig, "username" | "password" | "remoteUrl">,
+        config: Pick<
+            WebDAVSyncConfig,
+            "username" | "password" | "remoteUrl" | "proxy"
+        >,
     ) {
-        const { remoteUrl, username, password } = config;
-        const client = await createClient(remoteUrl, {
-            username,
-            password,
-        });
+        const { remoteUrl, username, password, proxy } = config;
+        const [client, dispose] = await createClient(
+            remoteUrl,
+            {
+                username,
+                password,
+            },
+            proxy,
+        );
         try {
             // 尝试列出根目录内容
             // 这是一个无害的 "ping" 操作
@@ -262,6 +309,8 @@ export class WebDAVSync<Item extends BaseItem> {
             }
 
             throw new Error(errorMessage);
+        } finally {
+            dispose();
         }
     }
 
@@ -270,11 +319,15 @@ export class WebDAVSync<Item extends BaseItem> {
         if (this.clientInstance) {
             return this.clientInstance;
         }
-        const { remoteUrl, username, password } = this.config;
-        const client = await createClient(remoteUrl, {
-            username,
-            password,
-        });
+        const { remoteUrl, username, password, proxy } = this.config;
+        const [client] = await createClient(
+            remoteUrl,
+            {
+                username,
+                password,
+            },
+            proxy,
+        );
         this.clientInstance = client;
         return client;
     }
