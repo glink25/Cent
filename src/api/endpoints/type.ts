@@ -1,3 +1,4 @@
+import type { Modal } from "@/components/modal";
 import type { Action, Full } from "@/database/stash";
 import type { Bill } from "@/ledger/type";
 export type ChangeListener = (args: { bookId: string }) => void;
@@ -51,7 +52,7 @@ export type SyncEndpoint = {
 export type SyncEndpointFactory = {
     type: string;
     name: string;
-    login: () => void;
+    login: (ctx: { modal: Modal }) => void;
     manuallyLogin?: () => void;
     init: () => SyncEndpoint;
 };

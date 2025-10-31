@@ -315,5 +315,15 @@
   "please-input-book-name": "请输入账本名称：",
   "input-tag-name": "请输入标签名称",
   "please-enter-nickname": "请输入自定义昵称",
-  "smart-import": "智能导入"
+  "smart-import": "智能导入",
+  "sync-with-web-dav": "使用Web DAV进行同步",
+  "web-dav-remote-url": "Web DAV服务地址",
+  "username": "用户名",
+  "password": "密码",
+  "proxy-url": "代理地址",
+  "custom-user-id": "用户ID",
+  "custom-user": "自定义用户",
+  "custom-user-name": "昵称",
+  "web-dav-proxy-url": "https://glink25.github.io/post/%E9%80%9A%E8%BF%87Web-DAV%E8%BF%9B%E8%A1%8CCent%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5/#%E4%BD%BF%E7%94%A8%E4%BB%A3%E7%90%86",
+  "web-dav-custom-user": "https://glink25.github.io/post/%E9%80%9A%E8%BF%87Web-DAV%E8%BF%9B%E8%A1%8CCent%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5/#%E8%87%AA%E5%AE%9A%E4%B9%89%E7%94%A8%E6%88%B7"
 }

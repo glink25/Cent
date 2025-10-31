@@ -1,3 +1,8 @@
+// 下面是一个用于将大体积数组通过github进行同步的typescript类，它通过如下流程实现同步：
+// 1. 通过StashBucket允许用户对数组进行增删改查操作，并能够获取到增量更新数据StashBucket.stashStorage.toArray()
+// 2. 使用分段策略上传，大体积数组会被按照itemsPerChunk分割，并以不同的文件保存在在GitHub仓库中，以数组索引命名例如（ledger-0.json,ledger-2000.json)
+// 3. 上传时，获取Github 索引最长的文件，将增量数组追加到最新的文件中，并重新按长度（itemsPerChunk）分割，将得到的所有chunk重命名，并重新上传到GitHub中，同时更新所有文件hash
+// 4. 更新时，优先比对hash，找到索引号最小，并且hash有变更的文件，从该文件开始往后获取所有的云端（Github）文件内容，并将这些文件信息整理并覆盖到本地信息中，达成增量更新的目的
 import { decode, encode } from "js-base64";
 import { sortBy } from "lodash-es";
 import type { Octokit } from "octokit";

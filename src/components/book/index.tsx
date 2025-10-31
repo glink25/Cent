@@ -88,7 +88,7 @@ export default function BookGuide() {
                                 </Dialog.Description>
                             </VisuallyHidden.Root>
                             <div className="w-fit h-full flex justify-center items-center pointer-events-auto">
-                                <div className="bg-background w-[350px] h-[450px] py-4 flex flex-col justify-center items-center rounded">
+                                <div className="bg-background w-[350px] h-[480px] py-4 flex flex-col justify-center items-center rounded">
                                     {books.length > 0 ? (
                                         <div className="flex-1 flex flex-col w-full gap-2 h-full overflow-hidden">
                                             <div className="flex gap-2 px-4">
