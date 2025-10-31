@@ -68,7 +68,7 @@ const LoadingForm = ({
         <div className="w-full h-full flex flex-col items-center justify-center overflow-hidden">
             <a
                 className="flex py-4 items-center gap-1"
-                href="https://glink25.github.io/post/Cent"
+                href="https://glink25.github.io/post/%E9%80%9A%E8%BF%87Web-DAV%E8%BF%9B%E8%A1%8CCent%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5/"
                 target="_blank"
                 rel="noopener"
             >
