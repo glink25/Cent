@@ -50,7 +50,7 @@ const LoadingForm = ({
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema) as any,
         defaultValues: {
-            proxy: "https://oncent-backend.linkai.work/proxy?url=",
+            proxy: "", //"https://oncent-backend.linkai.work/proxy?url=",
         },
     });
     const [checking, setChecking] = useState(false);
@@ -133,7 +133,7 @@ const LoadingForm = ({
                                 <FormLabel asChild>
                                     <a
                                         className="flex items-center gap-1"
-                                        href="https://glink25.github.io/post/Cent"
+                                        href={t("web-dav-proxy-url")}
                                         target="_blank"
                                         rel="noopener"
                                     >
@@ -151,7 +151,7 @@ const LoadingForm = ({
                     <div className="flex flex-col gap-4 rounded-md border p-2">
                         <a
                             className="flex items-center gap-1"
-                            href="https://glink25.github.io/post/Cent"
+                            href={t("web-dav-custom-user")}
                             target="_blank"
                             rel="noopener"
                         >

@@ -321,5 +321,7 @@
   "proxy-url": "Proxy URL",
   "custom-user-id": "User ID",
   "custom-user": "Custom User",
-  "custom-user-name": "Nick Name"
+  "custom-user-name": "Nick Name",
+  "web-dav-proxy-url": "https://glink25.github.io/post/%E9%80%9A%E8%BF%87Web-DAV%E8%BF%9B%E8%A1%8CCent%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5/#%E4%BD%BF%E7%94%A8%E4%BB%A3%E7%90%86",
+  "web-dav-custom-user": "https://glink25.github.io/post/%E9%80%9A%E8%BF%87Web-DAV%E8%BF%9B%E8%A1%8CCent%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5/#%E8%87%AA%E5%AE%9A%E4%B9%89%E7%94%A8%E6%88%B7"
 }
