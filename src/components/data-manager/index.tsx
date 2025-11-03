@@ -13,7 +13,7 @@ import modal from "../modal";
 import { Button } from "../ui/button";
 import { showOncentImport } from "./oncent";
 import { ImportPreviewProvider, showImportPreview } from "./preview";
-import { toSmartImport } from "./smart-import";
+import { SmartImportProvider, showSmartImport } from "./smart-import";
 
 function Form({ onCancel }: { onCancel?: () => void }) {
     const t = useIntl();
@@ -146,11 +146,11 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                             {t("import-from-oncent-github-io")}
                         </Button>
                     </div>
-                    <div className="flex flex-col px-4 gap-2 hidden">
+                    <div className="flex flex-col px-4 gap-2">
                         <Button
                             variant="outline"
                             className="py-4"
-                            onClick={toSmartImport}
+                            onClick={showSmartImport}
                         >
                             {t("smart-import")}
                         </Button>
@@ -158,6 +158,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                 </div>
             </div>
             <ImportPreviewProvider />
+            <SmartImportProvider />
         </PopupLayout>
     );
 }

@@ -325,5 +325,22 @@
   "custom-user": "自定义用户",
   "custom-user-name": "昵称",
   "web-dav-proxy-url": "https://glink25.github.io/post/%E9%80%9A%E8%BF%87Web-DAV%E8%BF%9B%E8%A1%8CCent%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5/#%E4%BD%BF%E7%94%A8%E4%BB%A3%E7%90%86",
-  "web-dav-custom-user": "https://glink25.github.io/post/%E9%80%9A%E8%BF%87Web-DAV%E8%BF%9B%E8%A1%8CCent%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5/#%E8%87%AA%E5%AE%9A%E4%B9%89%E7%94%A8%E6%88%B7"
+  "web-dav-custom-user": "https://glink25.github.io/post/%E9%80%9A%E8%BF%87Web-DAV%E8%BF%9B%E8%A1%8CCent%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5/#%E8%87%AA%E5%AE%9A%E4%B9%89%E7%94%A8%E6%88%B7",
+  "alipay-import-transformer": "从支付宝账单导入",
+  "wechat-import-transformer": "从微信账单导入",
+  "custom-import-transformer-name": "自定义方案",
+  "add-new-scheme": "新增方案",
+  "select-scheme": "选择方案",
+  "rename-scheme": "修改方案名称",
+  "bill-file": "账单文件",
+  "step1-prompt-copy": "第一步：将账单文件和下面的提示词同时复制到大模型对话框（例如Chat GPT, DeepSeek）",
+  "copy-prompt": "复制提示词",
+  "step2-code-paste": "第二步：将大模型返回的代码粘贴到这里",
+  "placeholder-paste-code": "将得到的代码粘贴到这里",
+  "paste": "粘贴",
+  "step3-import-finish": "第三步：点击导入即可。如果出错了，可以尝试继续将错误信息提供给大模型进行改进",
+  "copy-error-info": "复制错误信息",
+  "import": "导入",
+  "copy-success": "复制成功",
+  "please-enter-a-new-schema-name": "请输入新的方案名称"
 }
