@@ -70,8 +70,8 @@ export default function createConfirmProvider<Value, Returned = Value>(
                 }}
             >
                 <DialogPortal>
-                    <DialogOverlay className="z-[999] fixed inset-0 bg-black/50" />
-                    <div className="z-[999] fixed top-0 left-0 w-full h-full flex justify-center items-center pointer-events-none">
+                    <DialogOverlay className="fixed inset-0 bg-black/50" />
+                    <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center pointer-events-none">
                         <DialogContent
                             fade={fade}
                             swipe={swipe}

@@ -178,7 +178,7 @@ const LoadingForm = ({
                     </div>
                 </div>
 
-                <div className="p-4 w-full flex justify-end">
+                <div className="p-4 w-full flex justify-end gap-2">
                     <Button
                         variant={"ghost"}
                         className="sm:w-fit w-full"
