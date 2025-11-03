@@ -1,7 +1,7 @@
 import { asyncOnce } from "@/utils/async";
 
 // 从环境变量读取 LOGIN_API_HOST
-const LOGIN_API_HOST = import.meta.env.VITE_LOGIN_API_HOST
+const LOGIN_API_HOST = import.meta.env.VITE_LOGIN_API_HOST;
 const LOCAL_TOKEN_KEY = "github_user_token";
 
 const { promise: loginFinished, resolve: resolveLoginFinished } =
