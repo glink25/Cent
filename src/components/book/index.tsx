@@ -30,23 +30,10 @@ export default function BookGuide() {
         useBookStore.getState().switchToBook(bookId);
     };
     const toInvite = (book: Book) => {
-        // const ok = confirm(t("invite-tip"));
-        // if (!ok) {
-        //     return;
-        // }
-        // window.open(
-        //     `https://github.com/${book.repo}/settings/access`,
-        //     "_blank",
-        // );
         StorageAPI.inviteForBook?.(book.id);
     };
 
     const toDelete = async (book: Book) => {
-        // const ok = confirm(t("delete-book-tip"));
-        // if (!ok) {
-        //     return;
-        // }
-        // window.open(`https://github.com/${book.repo}/settings`, "_blank");
         try {
             await StorageAPI.deleteBook(book.id);
             useBookStore.getState().switchToBook(undefined);

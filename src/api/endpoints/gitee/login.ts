@@ -73,7 +73,7 @@ export const createLoginAPI = () => {
                         }),
                     },
                 );
-                const tokenData = (await res.json()) as GithubTokenResponse;
+                const tokenData = (await res.json()) as GiteeTokenResponse;
                 const accessToken = tokenData["access_token"];
                 const expiresIn = tokenData["expires_in"];
                 const refreshToken = tokenData["refresh_token"];
@@ -132,7 +132,7 @@ export const createLoginAPI = () => {
     };
 };
 
-type GithubTokenResponse = {
+type GiteeTokenResponse = {
     access_token: string;
     expires_in: number;
     refresh_token: string;
