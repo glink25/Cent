@@ -12,7 +12,11 @@ import { FORMAT_BACKUP, showFilePicker } from "../file-picker";
 import modal from "../modal";
 import { Button } from "../ui/button";
 import { showOncentImport } from "./oncent";
-import { ImportPreviewProvider, showImportPreview } from "./preview";
+import {
+    ImportPreviewProvider,
+    importFromPreviewResult,
+    showImportPreview,
+} from "./preview";
 import { SmartImportProvider, showSmartImport } from "./smart-import";
 
 function Form({ onCancel }: { onCancel?: () => void }) {
@@ -32,57 +36,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
         if (!res) {
             return;
         }
-        const { strategy, ...rest } = res;
-        const currentMeta = cloneDeep(
-            useLedgerStore.getState().infos?.meta ?? ({} as GlobalMeta),
-        );
-        const newMeta =
-            strategy === "overlap"
-                ? rest.meta
-                : (() => {
-                      // 相同名称或者id的category将合并为同一个
-                      const curm = currentMeta;
-                      const newCategories = [...(currentMeta.categories ?? [])];
-                      curm.categories = undefined;
-                      const newm = { ...rest.meta };
-                      const merged = merge(curm, newm);
-                      if (!rest.meta?.categories) {
-                          merged.categories = currentMeta.categories;
-                          return merged;
-                      }
-                      rest.meta.categories.forEach((c) => {
-                          const sameIdIndex = newCategories?.findIndex(
-                              (x) => x.id === c.id,
-                          );
-                          if (sameIdIndex !== -1) {
-                              const old = newCategories[sameIdIndex];
-                              newCategories[sameIdIndex] = { ...c };
-                              newCategories[sameIdIndex].id = old.id;
-                          } else {
-                              newCategories.push(c);
-                          }
-                      });
-                      merged.categories = newCategories;
-                      return merged;
-                  })();
-        await StorageAPI.batch(
-            bookid,
-            [
-                ...rest.bills.map((v) => {
-                    return {
-                        id: v.id,
-                        type: "update",
-                        value: { ...v },
-                        timestamp: v.__update_at,
-                    } as Update<Bill>;
-                }),
-                {
-                    type: "meta",
-                    metaValue: newMeta,
-                } as MetaUpdate,
-            ],
-            strategy === "overlap",
-        );
+        await importFromPreviewResult(res);
     };
 
     const toExport = async () => {

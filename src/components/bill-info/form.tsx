@@ -89,22 +89,22 @@ export default function BillInfo({
 
                     {/* details */}
                     <div className="text-gray-500">
-                        <div className="flex justify-between items-center my-1">
+                        <div className="flex justify-between items-center my-1 gap-2">
                             <div>{t("comment")}:</div>
                             <div className="flex-1 overflow-x-auto text-right">
                                 {edit.comment}
                             </div>
                         </div>
-                        <div className="flex justify-between items-center my-1">
+                        <div className="flex justify-between items-center my-1 gap-2">
                             <div>{t("creator")}:</div>
                             <div>{isMe ? t("me") : name}</div>
                         </div>
-                        <div className="flex justify-between items-center my-1">
+                        <div className="flex justify-between items-center my-1 gap-2">
                             <div>{t("time")}:</div>
                             <div>{formatTime(edit.time)}</div>
                         </div>
                         {edit.location && (
-                            <div className="flex justify-between items-center my-1">
+                            <div className="flex justify-between items-center my-1 gap-2">
                                 <div>{t("location")}:</div>
                                 <div>{`(${edit.location.latitude.toFixed(4)},${edit.location.longitude.toFixed(4)})`}</div>
                             </div>
