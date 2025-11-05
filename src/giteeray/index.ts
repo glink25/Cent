@@ -229,7 +229,22 @@ export class Giteeray<Item extends BaseItem> {
             return undefined;
         }
         // try direct fetch
-        const res = await fetch(url);
+        //  `https://gitee.com/${owner}/${repo}/master/assets/${shortId()}-${file.name}`;
+        const splitted = url.split("/");
+        const owner = splitted[3];
+        const repo = splitted[4];
+        const path = splitted.slice(6).join("/");
+        const { accessToken } = await this.config.auth();
+        const headers: Record<string, string> = {
+            Accept: "application/json",
+            Authorization: `token ${accessToken}`, // Gitee accepts token in Authorization header
+        };
+        const res = await fetch(
+            `https://gitee.com/api/v5/repos/${owner}/${repo}/raw/${path}`,
+            {
+                headers,
+            },
+        );
         if (!res.ok) return undefined;
         return res.blob();
     }
@@ -554,7 +569,7 @@ export class Giteeray<Item extends BaseItem> {
                         const [transformed, assets] = transformAssets(
                             itemStashes,
                             (file) => {
-                                return `https://gitee.com/${owner}/${repo}/raw/master/assets/${shortId()}-${file.name}`;
+                                return `https://gitee.com/${owner}/${repo}/master/assets/${shortId()}-${file.name}`;
                             },
                         );
                         const newContent = [
@@ -644,7 +659,7 @@ export class Giteeray<Item extends BaseItem> {
                     for (const { path, file } of [
                         ...assets.map((v) => ({
                             path: v.formattedValue.replace(
-                                `https://gitee.com/${owner}/${repo}/raw/master/`,
+                                `https://gitee.com/${owner}/${repo}/master/`,
                                 "",
                             ),
                             file: v.file,
