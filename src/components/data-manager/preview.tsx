@@ -1,19 +1,25 @@
+import { cloneDeep, merge } from "lodash-es";
 import { useEffect, useRef, useState } from "react";
-import type { Full } from "@/database/stash";
+import { StorageAPI } from "@/api/storage";
+import type { Full, MetaUpdate, Update } from "@/database/stash";
 import PopupLayout from "@/layouts/popup-layout";
 import type { Bill, GlobalMeta } from "@/ledger/type";
 import { useIntl } from "@/locale";
+import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
+import { useUserStore } from "@/store/user";
 import { base64ToFile } from "@/utils/file";
 import createConfirmProvider from "../confirm";
 import { Button } from "../ui/button";
 import { Label } from "../ui/label";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
+import { Switch } from "../ui/switch";
 
 type PreviewState = {
     bills: Full<Bill>[];
     meta?: GlobalMeta;
     strategy?: "append" | "overlap";
+    asMine?: boolean;
 };
 
 const PreviewForm = ({
@@ -29,6 +35,7 @@ const PreviewForm = ({
 
     const [transformed, setTransformed] = useState<PreviewState["bills"]>([]);
     const [loading, setLoading] = useState(true);
+    const [asMine, setAsMine] = useState(edit?.asMine ?? true);
     useEffect(() => {
         const transform = async () => {
             return await (edit?.bills
@@ -102,12 +109,14 @@ const PreviewForm = ({
                                 bills: availableAppend,
                                 meta: edit?.meta,
                                 strategy: "append",
+                                asMine,
                             });
                         } else {
                             onConfirm?.({
                                 bills: edit?.bills ?? [],
                                 meta: edit?.meta,
                                 strategy: "overlap",
+                                asMine,
                             });
                         }
                     }}
@@ -141,6 +150,19 @@ const PreviewForm = ({
                         </Label>
                     </RadioGroup>
                 </div>
+                <div className="flex flex-col px-4 gap-3">
+                    <div>
+                        <div className="opacity-60 text-sm">
+                            将账单放在我的名下:
+                        </div>
+                        <Switch checked={asMine} onCheckedChange={setAsMine} />
+                    </div>
+                    {!asMine && (
+                        <p className="text-xs text-red-700">
+                            账单统计时可能会出现未知用户
+                        </p>
+                    )}
+                </div>
                 <div className="flex-1 flex flex-col px-4 gap-3 overflow-hidden">
                     <p className="opacity-60 text-sm">{t("preview")}:</p>
 
@@ -165,9 +187,9 @@ const PreviewForm = ({
                                     ),
                                 })}
                             </div>
-                            <div className="opacity-60 text-xs">
+                            {/* <div className="opacity-60 text-xs">
                                 {t("overlap-github-tip")}
-                            </div>
+                            </div> */}
                         </div>
                     )}
                 </div>
@@ -190,3 +212,62 @@ export const [ImportPreviewProvider, showImportPreview] = createConfirmProvider(
             "h-full w-full max-h-full max-w-full rounded-none sm:rounded-md sm:max-h-[55vh] sm:w-[90vw] sm:max-w-[500px]",
     },
 );
+
+export const importFromPreviewResult = async (res: PreviewState) => {
+    const { strategy, asMine, ...rest } = res;
+    const currentMeta = cloneDeep(
+        useLedgerStore.getState().infos?.meta ?? ({} as GlobalMeta),
+    );
+    const newMeta =
+        strategy === "overlap"
+            ? rest.meta
+            : (() => {
+                  // 相同名称或者id的category将合并为同一个
+                  const curm = currentMeta;
+                  const newCategories = [...(currentMeta.categories ?? [])];
+                  curm.categories = undefined;
+                  const newm = { ...rest.meta };
+                  const merged = merge(curm, newm);
+                  if (!rest.meta?.categories) {
+                      merged.categories = currentMeta.categories;
+                      return merged;
+                  }
+                  rest.meta.categories.forEach((c) => {
+                      const sameIdIndex = newCategories?.findIndex(
+                          (x) => x.id === c.id,
+                      );
+                      if (sameIdIndex !== -1) {
+                          const old = newCategories[sameIdIndex];
+                          newCategories[sameIdIndex] = { ...c };
+                          newCategories[sameIdIndex].id = old.id;
+                      } else {
+                          newCategories.push(c);
+                      }
+                  });
+                  merged.categories = newCategories;
+                  return merged;
+              })();
+    const bookId = useBookStore.getState().currentBookId;
+    if (!bookId) {
+        return;
+    }
+    const mineId = useUserStore.getState().id;
+    await StorageAPI.batch(
+        bookId,
+        [
+            ...rest.bills.map((v) => {
+                return {
+                    id: v.id,
+                    type: "update",
+                    value: { ...v, creatorId: asMine ? mineId : v.creatorId },
+                    timestamp: v.__update_at,
+                } as Update<Bill>;
+            }),
+            {
+                type: "meta",
+                metaValue: newMeta,
+            } as MetaUpdate,
+        ],
+        strategy === "overlap",
+    );
+};
