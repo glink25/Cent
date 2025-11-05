@@ -341,5 +341,7 @@
   "copy-error-info": "Copy Error Info",
   "import": "Import",
   "copy-success": "Copy Success",
-  "please-enter-a-new-schema-name": "Please enter a new schema name"
+  "please-enter-a-new-schema-name": "Please enter a new schema name",
+  "login-to-gitee": "Login with Gitee",
+  "please-enter-your-gitee-token": "Please enter your gitee token"
 }

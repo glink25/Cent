@@ -1,6 +1,7 @@
 import { wrap } from "comlink";
 import modal from "@/components/modal";
 import { EmptyEndpoint } from "../endpoints/empty";
+import { GiteeEndpoint } from "../endpoints/gitee";
 import { GithubEndpoint } from "../endpoints/github";
 import { OfflineEndpoint } from "../endpoints/offline";
 import { WebDAVEndpoint } from "../endpoints/web-dav";
@@ -11,6 +12,7 @@ const APIS = {
     github: GithubEndpoint,
     offline: OfflineEndpoint,
     webdav: WebDAVEndpoint,
+    gitee: GiteeEndpoint,
 };
 
 const SYNC_ENDPOINT_KEY = "SYNC_ENDPOINT";
@@ -28,6 +30,9 @@ export const StorageAPI = {
         if (type === "github") {
             return GithubEndpoint.login({ modal });
         }
+        if (type === "gitee") {
+            return GiteeEndpoint.login({ modal });
+        }
         if (type === "offline") {
             return OfflineEndpoint.login({ modal });
         }
@@ -38,6 +43,9 @@ export const StorageAPI = {
     loginManuallyWith: (type: string) => {
         if (type === "github") {
             return GithubEndpoint.manuallyLogin?.();
+        }
+        if (type === "gitee") {
+            return GiteeEndpoint.manuallyLogin?.();
         }
     },
 };

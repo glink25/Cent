@@ -342,5 +342,7 @@
   "copy-error-info": "复制错误信息",
   "import": "导入",
   "copy-success": "复制成功",
-  "please-enter-a-new-schema-name": "请输入新的方案名称"
+  "please-enter-a-new-schema-name": "请输入新的方案名称",
+  "login-to-gitee": "使用Gitee登录",
+  "please-enter-your-gitee-token": "请输入你的Gitee Token"
 }

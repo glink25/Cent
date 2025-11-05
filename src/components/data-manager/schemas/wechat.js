@@ -131,11 +131,9 @@ async function transform(file, ctx) {
         reader.onerror = reject;
         reader.readAsArrayBuffer(file);
     });
-    console.log(fileBuffer, "ffbu");
     const workbook = await ctx.XLSX.read(fileBuffer, {
         type: "array",
     });
-    console.log(workbook, "result");
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     const dataArray = XLSX.utils.sheet_to_json(worksheet, {

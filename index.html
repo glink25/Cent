@@ -29,6 +29,12 @@
         setTimeout(() => {
           location.replace(window.origin);
         }, 1);
+      } else if (location.href.includes("gitee_authorized")) {
+        localStorage.setItem("_oauth_res", JSON.stringify({ type: "gitee", url: location.href }));
+        localStorage.setItem("SYNC_ENDPOINT", "gitee");
+        setTimeout(() => {
+          location.replace(window.origin);
+        }, 1);
       }
     </script>
     <script>
