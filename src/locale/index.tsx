@@ -90,9 +90,9 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     }, [locale, switchLanguage]);
 
     // 如果语言包还没有加载好，可以显示一个加载状态
-    if (!isReady) {
-        return <div>Loading language...</div>;
-    }
+    // if (!isReady) {
+    //     return <div>Loading language...</div>;
+    // }
 
     return (
         <LocaleContext.Provider value={{ locale, setLocale: switchLanguage }}>

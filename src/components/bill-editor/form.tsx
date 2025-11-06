@@ -1,5 +1,5 @@
 import { Switch } from "radix-ui";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import useCategory from "@/hooks/use-category";
 import { useTag } from "@/hooks/use-tag";
@@ -72,11 +72,11 @@ export default function EditorForm({
         return categories.find((c) => c.id === selected?.parent)?.children;
     }, [billState.categoryId, categories]);
 
-    const toConfirm = () => {
+    const toConfirm = useCallback(() => {
         onConfirm?.({
             ...billState,
         });
-    };
+    }, [onConfirm, billState]);
 
     const chooseImage = async () => {
         const [file] = await showFilePicker({ accept: FORMAT_IMAGE_SUPPORTED });
@@ -102,6 +102,21 @@ export default function EditorForm({
     useEffect(() => {
         monitorRef.current?.focus?.();
     }, []);
+
+    useEffect(() => {
+        if (monitorFocused) {
+            const onPress = (event: KeyboardEvent) => {
+                const key = event.key;
+                if (key === "Enter") {
+                    toConfirm();
+                }
+            };
+            document.addEventListener("keypress", onPress);
+            return () => {
+                document.removeEventListener("keypress", onPress);
+            };
+        }
+    }, [monitorFocused, toConfirm]);
 
     return (
         <Calculator.Root
