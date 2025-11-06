@@ -92,7 +92,7 @@ Cent 内置一套自定义的增量同步策略，仅同步增量差异：
 3. 在登录界面手动输入 GitHub Token 使用  
 4. 所有账本与数据均存储于你的 GitHub 仓库中  
 
-> 出于安全考虑，self-hosted 方式无法支持 Github/Gitee 鉴权，需要自行在Github设置页面生成具有Repo读写权限的token，通过手动输入token功能使用。
+> 出于安全考虑，self-hosted 方式无法支持 Github/Gitee 一键登录，需要自行在Github/Gitee设置页面生成具有Repo读写权限的token，通过手动输入token功能使用。
 Cent使用Cloudflare Workers部署了一个线上鉴权服务，该服务只针对受信任的域名提供服务。如果需要快捷登录服务，可以参考这个项目[cent-github-backend](https://github.com/glink25/cent-github-backend)项目创建自己的后端服务，并自己申请对应平台的OAuth app。
 
 ---
@@ -226,7 +226,7 @@ The synchronization logic has been abstracted and encapsulated, with future supp
 3. Manually input your GitHub Token on the login screen to use it  
 4. All ledgers and data are stored in your GitHub repositories  
 
-> For security reasons, the self-hosted method cannot support GitHub/Gitee authentication. You will need to manually generate a token with read and write permissions for the repository (Repo) on the GitHub settings page, and use it through the manual token input feature.
+> For security reasons, the self-hosted method cannot support GitHub/Gitee one-click-authentication. You will need to manually generate a token with read and write permissions for the repository (Repo) on the Github/Gitee settings page, and use it through the manual token input feature.
 Cent uses Cloudflare Workers to deploy an online authentication service, which only provides services for trusted domains. If you require a quick login service, you can refer to the project [cent-github-backend](https://github.com/glink25/cent-github-backend) to create your own backend service and apply for an OAuth app on the corresponding platform yourself.
 
 ---
