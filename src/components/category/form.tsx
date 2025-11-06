@@ -42,11 +42,7 @@ export const createFormSchema = (t: any) =>
         parent: z.optional(z.string()),
     });
 
-const allIcons = Array.from(Object.entries(ICONS)).map(([key, value]) => ({
-    label: key,
-    list: value,
-}));
-
+const allIcons = ICONS;
 const validSvgText = (text: string) =>
     text.startsWith("<svg") && text.endsWith("</svg>");
 
@@ -67,7 +63,7 @@ export default function CategoryEditForm({
                 customName: true,
                 type: edit?.type ?? "expense",
                 color: "#fff",
-                icon: ICONS["Finance"][0].className,
+                icon: ICONS[0].icons[0].className,
                 ...edit,
             };
         }
@@ -317,20 +313,22 @@ export default function CategoryEditForm({
                         >
                             {allIcons.map((iconSet) => (
                                 <div
-                                    key={iconSet.label}
+                                    key={iconSet.labelKey}
                                     className="flex flex-col gap-2"
                                 >
                                     <div className="text-sm">
-                                        {iconSet.label}
+                                        {t(iconSet.labelKey)}
                                     </div>
                                     <div
                                         className={
                                             "grid grid-cols-[repeat(auto-fill,minmax(48px,1fr))] gap-2"
                                         }
                                     >
-                                        {iconSet.list.map((icon) => (
+                                        {iconSet.icons.map((icon) => (
                                             <button
-                                                key={icon.name}
+                                                key={
+                                                    iconSet.labelKey + icon.name
+                                                }
                                                 type="button"
                                                 onClick={() => {
                                                     setCategory(

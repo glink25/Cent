@@ -249,7 +249,6 @@ function DialogContent({
             } else {
                 // 如果不在边缘，则不做任何操作，阻止 Framer Motion 启动拖动。
                 // 此时手势将不会被识别为拖动。
-                console.log("no drag");
             }
         },
         [isDesktop, dragControls, fade, isPointerNearLeftEdge],

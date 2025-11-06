@@ -343,5 +343,19 @@
   "copy-success": "Copy Success",
   "please-enter-a-new-schema-name": "Please enter a new schema name",
   "login-to-gitee": "Login with Gitee",
-  "please-enter-your-gitee-token": "Please enter your gitee token"
+  "please-enter-your-gitee-token": "Please enter your gitee token",
+  "category.food_dining": "Food & Dining",
+  "category.transport_travel": "Transportation & Travel",
+  "category.shopping_goods": "Shopping & Goods",
+  "category.apparel_beauty": "Apparel & Beauty",
+  "category.housing_utilities": "Housing & Utilities",
+  "category.comm_internet": "Communication & Internet",
+  "category.medical_health": "Medical & Health",
+  "category.education_learning": "Education & Learning",
+  "category.entertainment_leisure": "Entertainment & Leisure",
+  "category.pets": "Pets",
+  "category.social_gifts": "Social & Gifts",
+  "category.finance_wealth": "Finance & Wealth",
+  "category.charity_donations": "Charity & Donations",
+  "category.others": "Others"
 }
