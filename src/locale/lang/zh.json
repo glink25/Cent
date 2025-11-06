@@ -344,5 +344,19 @@
   "copy-success": "复制成功",
   "please-enter-a-new-schema-name": "请输入新的方案名称",
   "login-to-gitee": "使用Gitee登录",
-  "please-enter-your-gitee-token": "请输入你的Gitee Token"
+  "please-enter-your-gitee-token": "请输入你的Gitee Token",
+  "category.food_dining": "餐饮",
+  "category.transport_travel": "交通与旅行",
+  "category.shopping_goods": "购物与商品",
+  "category.apparel_beauty": "服饰与美容",
+  "category.housing_utilities": "住房与公共事业",
+  "category.comm_internet": "通讯与网络",
+  "category.medical_health": "医疗与健康",
+  "category.education_learning": "教育与学习",
+  "category.entertainment_leisure": "娱乐与休闲",
+  "category.pets": "宠物",
+  "category.social_gifts": "社交与礼品",
+  "category.finance_wealth": "金融与财富",
+  "category.charity_donations": "慈善与捐赠",
+  "category.others": "其他"
 }
