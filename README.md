@@ -14,6 +14,8 @@ Cent 是一个 **完全免费、开源的多人协作记账 Web App**，
 💾 **开源仓库**：[https://github.com/glink25/Cent](https://github.com/glink25/Cent)  
 📖 **博客**：[https://glink25.github.io/tag/Cent/](https://glink25.github.io/tag/Cent/)  
 
+> [Cent 1.0 正式发布 🎉](https://glink25.github.io/edit/?path=Cent-10-%E6%AD%A3%E5%BC%8F%E5%8F%91%E5%B8%83-)
+
 ---
 
 ## ✨ 特性
