@@ -33,6 +33,8 @@ Cent 是一个 **完全免费、开源的多人协作记账 Web App**，
 
 ---
 
+>  [Cent 1.1](https://github.com/users/glink25/projects/2) 已经在计划中，新功能包括快捷指令自动记账、多币种等。
+
 ## 🧠 核心原理
 
 Cent 是一个“纯前端”的 PWA 应用。  
@@ -136,6 +138,32 @@ pnpm lint
  - 派生作品须使用相同许可协议
 
  ---
+
+
+## ☕️ Buy Me a Coffee
+
+感谢您对本项目的支持！Cent目前仅由单人支持开发，您的捐赠将用于维护和持续开发。
+
+---
+
+### 💰 支付宝 (Alipay)
+
+
+<img src="https://glink25.github.io/post-assets/sponsor-solana.jpg" width="50%" alt="支付宝收款码">
+
+---
+
+### 🌐 Solana (SOL)
+
+**钱包地址:**
+
+`vEzM9jmxChx2AoMMDpHARHZcUjmUCHdBShwF9eJYGEg`
+
+**二维码:**
+
+<img src="https://glink25.github.io/post-assets/sponsor-alipay.jpg" width="50%" alt="solana">
+
+---
 
  # Cent
 
