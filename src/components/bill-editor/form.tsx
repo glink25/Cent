@@ -142,8 +142,8 @@ export default function EditorForm({
     const calculatorInitialValue = billState?.currency
         ? amountToNumber(billState.currency.amount)
         : billState?.amount
-          ? amountToNumber(billState?.amount)
-          : 0;
+            ? amountToNumber(billState?.amount)
+            : 0;
 
     return (
         <Calculator.Root
@@ -223,7 +223,7 @@ export default function EditorForm({
                                         const { predict } = convert(
                                             amountToNumber(
                                                 prev.currency?.amount ??
-                                                    prev.amount,
+                                                prev.amount,
                                             ),
                                             newCurrencyId,
                                             baseCurrency.id,
@@ -478,10 +478,35 @@ export default function EditorForm({
                                 <DatePicker
                                     value={billState.time}
                                     onChange={(time) => {
-                                        setBillState((v) => ({
-                                            ...v,
-                                            time: time,
-                                        }));
+                                        setBillState((prev) => {
+                                            if (!prev.currency) {
+                                                return {
+                                                    ...prev,
+                                                    time: time,
+                                                }
+                                            }
+                                            const { predict } = convert(
+                                                amountToNumber(
+                                                    prev.currency?.amount ??
+                                                    prev.amount,
+                                                ),
+                                                prev.currency.target,
+                                                baseCurrency.id,
+                                                time,
+                                            );
+                                            return {
+                                                ...prev,
+                                                time: time,
+                                                amount: numberToAmount(predict),
+                                                currency: {
+                                                    base: baseCurrency.id,
+                                                    target: prev.currency.target,
+                                                    amount:
+                                                        prev.currency?.amount ??
+                                                        prev.amount,
+                                                },
+                                            };
+                                        });
                                     }}
                                 />
                             </div>

@@ -38,32 +38,29 @@ type Persist<S> = (
 export const useCurrencyStore = create<Store>()(
     (persist as Persist<Store>)(
         (set, get) => {
+            // 更新缓存数据，保持按日期排序（最新的在第一位）
+            const updateCache = (rates: Rates, base: string, date: string) => {
+                set((state) => {
+                    // 移除相同日期和base的旧数据
+                    const filtered = state.data.filter(
+                        (d) => !(d.date === date && d.base === base),
+                    );
+                    const newData = [{ rates, base, date }, ...filtered];
+                    // 按日期排序，确保最新的数据在第一位
+                    newData.sort(
+                        (a, b) =>
+                            dayjs(b.date).valueOf() - dayjs(a.date).valueOf(),
+                    );
+                    return { data: newData };
+                });
+            };
+
             const refresh = async () => {
                 const today = new Date();
                 const dateStr = dayjs(today).format("YYYY-MM-DD");
-                const state = get();
 
-                // 检查缓存中是否已有相同日期的汇率信息
-                const hasCache = state.data.some(
-                    (item) => item.date === dateStr,
-                );
-
-                // 如果缓存中已有相同日期的数据，则无需重新请求
-                if (hasCache) {
-                    return;
-                }
-
-                const rates = await fetchCurrency(DefaultCurrencyId, today);
-                set((state) => ({
-                    data: [
-                        {
-                            rates,
-                            base: DefaultCurrencyId,
-                            date: dateStr,
-                        },
-                        ...state.data,
-                    ],
-                }));
+                const rates = await fetchCurrency(DefaultCurrencyId);
+                updateCache(rates, DefaultCurrencyId, dateStr);
             };
 
             Promise.resolve().then(() => {
@@ -159,6 +156,10 @@ export const useCurrencyStore = create<Store>()(
                     // 由于 fetchCurrency 已经内部处理了请求去重，
                     // 相同的 base 和 date 参数只会真正请求一次
                     const freshRates = await fetchCurrency(base, date);
+                    // 更新缓存
+                    const dateStr = dayjs(date).format("YYYY-MM-DD");
+                    updateCache(freshRates, base, dateStr);
+
                     let accurateRate = predictRate;
                     if (freshRates[target]) {
                         accurateRate = 1 / freshRates[target];
@@ -191,7 +192,8 @@ export const useCurrencyStore = create<Store>()(
             version: 0,
             partialize(state) {
                 return {
-                    data: state.data,
+                    // 仅保留前20条数据
+                    data: state.data.slice(0, 20),
                 } as Store;
             },
         },

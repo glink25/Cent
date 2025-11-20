@@ -7,7 +7,9 @@ import {
 import { useCurrency } from "@/hooks/use-currency";
 import PopupLayout from "@/layouts/popup-layout";
 import { useIntl } from "@/locale";
+import { cn } from "@/utils";
 import modal from "../modal";
+import { Button } from "../ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "../ui/select";
 
@@ -19,7 +21,8 @@ export default function CurrencyListForm({
     onConfirm?: (v: any) => void;
 }) {
     const t = useIntl();
-    const { baseCurrency, setBaseCurrency, convert, setRate } = useCurrency();
+    const { baseCurrency, setBaseCurrency, convert, setRate, refresh } =
+        useCurrency();
 
     const rates = useMemo(() => {
         return DefaultCurrencies.map((currency) => {
@@ -34,13 +37,13 @@ export default function CurrencyListForm({
         currency: (typeof DefaultCurrencies)[number],
     ) => {
         if (currency.id === baseCurrency.id) {
-            return
+            return;
         }
-        const rate = rates.find(r => r.id === currency.id)
+        const rate = rates.find((r) => r.id === currency.id);
         if (!rate) {
-            return
+            return;
         }
-        const value = await modal.prompt({
+        const value = (await modal.prompt({
             title: (
                 <div>
                     <h1>手动修改汇率</h1>
@@ -50,18 +53,28 @@ export default function CurrencyListForm({
                 </div>
             ),
             input: { type: "number", defaultValue: rate?.predict.toFixed(6) },
-        }) as string | undefined;
-        console.log(value, 'input alu', value === '')
-        if (value === undefined || value === null || value === '') {
-            setRate(currency.id, undefined)
-            return
+        })) as string | undefined;
+        if (value === undefined || value === null || value === "") {
+            setRate(currency.id, undefined);
+            return;
         }
-        const newRate = Number(value)
+        const newRate = Number(value);
         if (newRate <= 0) {
             toast.error("汇率必须大于0");
             return;
         }
-        setRate(currency.id, newRate)
+        setRate(currency.id, newRate);
+    };
+
+    const [loading, setLoading] = useState(false);
+    const toRefresh = async () => {
+        setLoading(true);
+        try {
+            await refresh();
+            toast.success("汇率更新成功");
+        } finally {
+            setLoading(false);
+        }
     };
     return (
         <PopupLayout
@@ -112,7 +125,41 @@ export default function CurrencyListForm({
             </div>
             <div className="w-full px-6 flex justify-between py-1">
                 <div className="text-xs opacity-60">币种</div>
-                <div className="text-xs opacity-60">汇率</div>
+                <div className="text-xs opacity-60 flex items-center gap-2">
+                    <Popover>
+                        <PopoverTrigger>
+                            <div className="flex items-center gap-1">
+                                汇率
+                                <i className="icon-[mdi--question-mark-circle-outline]"></i>
+                            </div>
+                        </PopoverTrigger>
+                        <PopoverContent className="p-2 text-xs w-fit">
+                            <div>
+                                数据来自
+                                <a
+                                    className="underline"
+                                    href="https://ecb.europa.eu"
+                                    target="_blank"
+                                    rel="noopener"
+                                >
+                                    ecb.europa.eu
+                                </a>
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+                    <Button
+                        className="p-0 h-fit"
+                        disabled={loading}
+                        onClick={toRefresh}
+                    >
+                        <i
+                            className={cn(
+                                "icon-[mdi--refresh]",
+                                loading && "animate-spin",
+                            )}
+                        ></i>
+                    </Button>
+                </div>
             </div>
             <div className="flex-1 overflow-y-auto">
                 <div className="px-4">

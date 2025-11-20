@@ -23,11 +23,12 @@ const requestCache = new Map<string, Promise<Rates>>();
  * @returns 汇率数据 Promise
  */
 export const fetchCurrency = async (base: string, date?: Date | number) => {
-    const dateStr = date
-        ? (typeof date === "number" ? dayjs.unix(date) : dayjs(date)).format(
-              "YYYY-MM-DD",
-          )
-        : dayjs().format("YYYY-MM-DD");
+    const day = date
+        ? typeof date === "number"
+            ? dayjs.unix(date / 1000)
+            : dayjs(date)
+        : dayjs();
+    const dateStr = day.format("YYYY-MM-DD");
     const cacheKey = `${base}-${dateStr}`;
 
     // 如果已有相同的请求正在进行，直接返回现有的 Promise
@@ -38,7 +39,18 @@ export const fetchCurrency = async (base: string, date?: Date | number) => {
 
     // 创建新的请求 Promise
     const promise = (async () => {
-        const dateParam = date ? `/${dateStr}` : "";
+        const isToday = day.isSameOrAfter(dayjs());
+        console.log(isToday, "td", dateStr);
+        const dateParam = (() => {
+            if (!date) {
+                return "";
+            }
+            // 如果日期是今天或者将来，则不传日期以获取到最新的汇率
+            if (isToday) {
+                return "";
+            }
+            return `/${dateStr}`;
+        })();
         const res = await fetch(
             `${LOGIN_API_HOST}/api/currency/${base}${dateParam}`,
         );

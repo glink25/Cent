@@ -3,6 +3,7 @@ import { ChevronDownIcon } from "lucide-react";
 import type React from "react";
 import { type ReactNode, useState } from "react";
 import { useIntl } from "@/locale";
+import { denseDate } from "@/utils/time";
 import { Calendar } from "./ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
@@ -65,7 +66,7 @@ function NativeSelect({
 
 export function DatePicker({
     value,
-    displayFormatter = "MM-DD",
+    displayFormatter = (v) => (v ? denseDate(v) : ""),
     onChange,
     children,
     onBlur,
@@ -113,11 +114,7 @@ export function DatePicker({
                     selected={current.toDate()}
                     onSelect={(v) => {
                         if (v) {
-                            const date = v.getDate();
-                            const month = v.getMonth();
-                            onChange?.(
-                                current.date(date).month(month).unix() * 1000,
-                            );
+                            onChange?.(v.getTime());
                         }
                     }}
                 />

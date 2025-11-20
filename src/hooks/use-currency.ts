@@ -36,6 +36,7 @@ export const useCurrency = () => {
         });
     }, []);
 
+    // 用于手动触发React更新
     const [flag, setFlag] = useState(false);
     const setRate = useCallback(
         async (target: string, rate: number | undefined) => {
@@ -92,10 +93,20 @@ export const useCurrency = () => {
         [flag],
     );
 
+    const refresh = useCallback(async () => {
+        return useCurrencyStore
+            .getState()
+            .refresh()
+            .finally(() => {
+                setFlag((v) => !v);
+            });
+    }, []);
+
     return {
         baseCurrency,
         setBaseCurrency,
         convert,
         setRate,
+        refresh,
     };
 };
