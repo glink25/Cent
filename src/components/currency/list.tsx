@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/security/noDangerouslySetInnerHtml: <explanation> */
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -46,9 +47,9 @@ export default function CurrencyListForm({
         const value = (await modal.prompt({
             title: (
                 <div>
-                    <h1>手动修改汇率</h1>
+                    <h1>{t("manually-update-rate")}</h1>
                     <p className="text-xs opacity-60">
-                        修改后的汇率仅对当前用户生效，置空输入框将恢复自动汇率
+                        {t("manually-update-rate-desc")}
                     </p>
                 </div>
             ),
@@ -60,7 +61,7 @@ export default function CurrencyListForm({
         }
         const newRate = Number(value);
         if (newRate <= 0) {
-            toast.error("汇率必须大于0");
+            toast.error("{t('rate-must-positive')}");
             return;
         }
         setRate(currency.id, newRate);
@@ -71,7 +72,7 @@ export default function CurrencyListForm({
         setLoading(true);
         try {
             await refresh();
-            toast.success("汇率更新成功");
+            toast.success("{t('rate-update-success')}");
         } finally {
             setLoading(false);
         }
@@ -86,23 +87,17 @@ export default function CurrencyListForm({
                 <Popover>
                     <PopoverTrigger>
                         <div className="flex items-center gap-1">
-                            本位币
+                            {t("base-currency")}
                             <i className="icon-[mdi--question-mark-circle-outline]"></i>
                         </div>
                     </PopoverTrigger>
-                    <PopoverContent className="text-sm [&>div]:text-xs [&>div]:opacity-60 [&>div]:py-2">
-                        <p>
-                            修改本位币将切换所有账单的货币单位，并且影响创建账单时的自动汇率转换
-                        </p>
-                        <div>
-                            例如：之前的本位币为RMB，记录了一笔¥100的支出，当切换本位币为USD后，原先的账单将变为$100
-                        </div>
-                        <p>
-                            如果曾经记录了非本位币的账单，以本位币换算后的数值为准
-                        </p>
-                        <div>
-                            例如：之前的本位币为RMB，记录了一笔$100的USD支出，假设当时的汇率换算后为¥700，当切换本位币为USD后，原先的账单将变为$700
-                        </div>
+                    <PopoverContent>
+                        <div
+                            className="text-sm [&>div]:text-xs [&>div]:opacity-60 [&>div]:py-2"
+                            dangerouslySetInnerHTML={{
+                                __html: t("currency_change_warning"),
+                            }}
+                        ></div>
                     </PopoverContent>
                 </Popover>
                 <Select value={baseCurrency.id} onValueChange={setBaseCurrency}>
@@ -124,26 +119,29 @@ export default function CurrencyListForm({
                 </Select>
             </div>
             <div className="w-full px-6 flex justify-between py-1">
-                <div className="text-xs opacity-60">币种</div>
+                <div className="text-xs opacity-60">{t("currency")}</div>
                 <div className="text-xs opacity-60 flex items-center gap-2">
                     <Popover>
                         <PopoverTrigger>
                             <div className="flex items-center gap-1">
-                                汇率
+                                {t("exchange-rate")}
                                 <i className="icon-[mdi--question-mark-circle-outline]"></i>
                             </div>
                         </PopoverTrigger>
                         <PopoverContent className="p-2 text-xs w-fit">
                             <div>
-                                数据来自
-                                <a
-                                    className="underline"
-                                    href="https://ecb.europa.eu"
-                                    target="_blank"
-                                    rel="noopener"
-                                >
-                                    ecb.europa.eu
-                                </a>
+                                {t("exchange-rate-from", {
+                                    a: (
+                                        <a
+                                            className="underline"
+                                            href="https://ecb.europa.eu"
+                                            target="_blank"
+                                            rel="noopener"
+                                        >
+                                            ecb.europa.eu
+                                        </a>
+                                    ),
+                                })}
                             </div>
                         </PopoverContent>
                     </Popover>
@@ -179,13 +177,15 @@ export default function CurrencyListForm({
                                     </div>
                                     <div>
                                         <div>{t(currency.labelKey)}</div>
-                                        <div className="text-xs opacity-60">
+                                        <div className="text-xs opacity-60 text-left">
                                             {currency.id}
                                             {`(${currency.symbol})`}
                                         </div>
                                     </div>
                                 </div>
-                                <div>{rate?.predict.toFixed(6)}</div>
+                                <div className="text-sm">
+                                    {rate?.predict.toFixed(6)}
+                                </div>
                             </button>
                         );
                     })}

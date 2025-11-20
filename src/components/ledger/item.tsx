@@ -93,12 +93,13 @@ export default function BillItem({
             {/* 金额 */}
             <div className="text-right">
                 <div
-                    className={`text-lg font-bold truncate flex-shrink-0 flex flex-col ${bill.type === "expense"
+                    className={`text-lg font-bold truncate flex-shrink-0 flex flex-col ${
+                        bill.type === "expense"
                             ? "text-red-700"
                             : bill.type === "income"
-                                ? "text-green-900"
-                                : ""
-                        }`}
+                              ? "text-green-900"
+                              : ""
+                    }`}
                 >
                     {amountToNumber(bill.amount)}
 

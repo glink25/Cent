@@ -381,5 +381,13 @@
   "c-dkk": "丹麦克朗",
   "c-try": "土耳其里拉",
   "amount": "金额",
-  "currency": "币种"
+  "currency": "币种",
+  "manually-update-rate": "手动修改汇率",
+  "manually-update-rate-desc": "修改后的汇率仅对当前用户生效，置空输入框将恢复自动汇率",
+  "rate-must-positive": "汇率必须大于0",
+  "base-currency": "本位币",
+  "currency_change_warning": "<p>修改本位币将切换所有账单的货币单位，并且影响创建账单时的自动汇率转换</p><div><strong>例如：</strong>之前的本位币为RMB，记录了一笔&yen;100的支出，当切换本位币为USD后，原先的账单将变为$100</div><p>如果曾经记录了非本位币的账单，以本位币换算后的数值为准</p><div><strong>例如：</strong>之前的本位币为RMB，记录了一笔$100的USD支出，假设当时的汇率换算后为&yen;700，当切换本位币为USD后，原先的账单将变为$700</div>",
+  "exchange-rate": "汇率",
+  "exchange-rate-from": "数据来自{a}",
+  "rate-update-success": "汇率更新成功"
 }

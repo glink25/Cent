@@ -142,8 +142,8 @@ export default function EditorForm({
     const calculatorInitialValue = billState?.currency
         ? amountToNumber(billState.currency.amount)
         : billState?.amount
-            ? amountToNumber(billState?.amount)
-            : 0;
+          ? amountToNumber(billState?.amount)
+          : 0;
 
     return (
         <Calculator.Root
@@ -223,7 +223,7 @@ export default function EditorForm({
                                         const { predict } = convert(
                                             amountToNumber(
                                                 prev.currency?.amount ??
-                                                prev.amount,
+                                                    prev.amount,
                                             ),
                                             newCurrencyId,
                                             baseCurrency.id,
@@ -483,12 +483,12 @@ export default function EditorForm({
                                                 return {
                                                     ...prev,
                                                     time: time,
-                                                }
+                                                };
                                             }
                                             const { predict } = convert(
                                                 amountToNumber(
                                                     prev.currency?.amount ??
-                                                    prev.amount,
+                                                        prev.amount,
                                                 ),
                                                 prev.currency.target,
                                                 baseCurrency.id,
@@ -500,7 +500,8 @@ export default function EditorForm({
                                                 amount: numberToAmount(predict),
                                                 currency: {
                                                     base: baseCurrency.id,
-                                                    target: prev.currency.target,
+                                                    target: prev.currency
+                                                        .target,
                                                     amount:
                                                         prev.currency?.amount ??
                                                         prev.amount,

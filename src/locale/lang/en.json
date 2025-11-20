@@ -380,5 +380,13 @@
   "c-dkk": "Danish Krone",
   "c-try": "Turkish Lira",
   "amount": "money",
-  "currency": "Currency"
+  "currency": "Currency",
+  "manually-update-rate": "Manually update rate",
+  "manually-update-rate-desc": "Rate updated manually will only active for current user, clear input to restore auto-rate",
+  "rate-must-positive": "Rate must be larger than 0",
+  "base-currency": "Base Currency",
+  "currency_change_warning": "<p>Changing the base currency will switch the currency unit of all bills and affect the automatic exchange rate conversion when creating new bills.</p><div><strong>Example:</strong> If the previous functional currency was RMB, and you recorded a &yen;100 expense, when the functional currency is switched to USD, the original bill will change to $100.</div><p>If you have previously recorded bills in a non-functional currency, the value converted to the functional currency will prevail.</p><div><strong>Example:</strong> If the previous functional currency was RMB, and you recorded a $100 USD expense (assuming the converted value at that time was &yen;700), when the functional currency is switched to USD, the original bill will change to $700.</div>",
+  "exchange-rate": "Exchange Rate",
+  "exchange-rate-from": "from {a}",
+  "rate-update-success": "Exchange rate updated"
 }
