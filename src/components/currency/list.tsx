@@ -61,7 +61,7 @@ export default function CurrencyListForm({
         }
         const newRate = Number(value);
         if (newRate <= 0) {
-            toast.error("{t('rate-must-positive')}");
+            toast.error(t("rate-must-positive"));
             return;
         }
         setRate(currency.id, newRate);
@@ -175,9 +175,9 @@ export default function CurrencyListForm({
                                     <div className="text-xl">
                                         {currency.icon}
                                     </div>
-                                    <div>
+                                    <div className="text-left">
                                         <div>{t(currency.labelKey)}</div>
-                                        <div className="text-xs opacity-60 text-left">
+                                        <div className="text-xs opacity-60">
                                             {currency.id}
                                             {`(${currency.symbol})`}
                                         </div>
