@@ -40,7 +40,6 @@ export const fetchCurrency = async (base: string, date?: Date | number) => {
     // 创建新的请求 Promise
     const promise = (async () => {
         const isToday = day.isSameOrAfter(dayjs());
-        console.log(isToday, "td", dateStr);
         const dateParam = (() => {
             if (!date) {
                 return "";
