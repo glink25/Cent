@@ -8,6 +8,7 @@ import Clearable from "@/components/clearable";
 import Ledger from "@/components/ledger";
 import { Button } from "@/components/ui/button";
 import useCategory from "@/hooks/use-category";
+import { useCurrency } from "@/hooks/use-currency";
 import { useCustomFilters } from "@/hooks/use-custom-filters";
 import type { Bill, BillFilter } from "@/ledger/type";
 import { useIntl } from "@/locale";
@@ -48,12 +49,14 @@ const SORTS = [
 export default function Page() {
     const t = useIntl();
 
+    const { baseCurrency } = useCurrency();
     const { categories } = useCategory();
     const { state } = useLocation();
     const [form, setForm] = useState<BillFilter>(() => {
         const filter = state?.filter as BillFilter;
         if (filter) {
             return {
+                baseCurrency: baseCurrency.id,
                 ...filter,
                 // 如果传入的参数只有父级分类，则需要同时选择子级分类
                 categories: categories

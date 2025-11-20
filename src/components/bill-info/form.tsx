@@ -1,5 +1,7 @@
+import { DefaultCurrencies } from "@/api/currency/currencies";
 import useCategory from "@/hooks/use-category";
 import { useCreators } from "@/hooks/use-creator";
+import { useCurrency } from "@/hooks/use-currency";
 import { useTag } from "@/hooks/use-tag";
 import { amountToNumber } from "@/ledger/bill";
 import { useIntl } from "@/locale";
@@ -22,6 +24,7 @@ export default function BillInfo({
     const t = useIntl();
     const { id: curUserId } = useUserStore();
     const { categories } = useCategory();
+    const { baseCurrency } = useCurrency();
 
     const creators = useCreators();
     const creator = creators.find((c) => c.id === edit?.creatorId);
@@ -57,6 +60,11 @@ export default function BillInfo({
     const toClose = () => {
         onCancel?.();
     };
+
+    const currency =
+        edit.currency?.target === baseCurrency.id
+            ? undefined
+            : DefaultCurrencies.find((c) => c.id === edit.currency?.target);
     return (
         <div>
             <div className="min-h-[320px] p-4 flex flex-col w-full h-full">
@@ -103,6 +111,16 @@ export default function BillInfo({
                             <div>{t("time")}:</div>
                             <div>{formatTime(edit.time)}</div>
                         </div>
+                        {currency && (
+                            <div className="flex justify-between items-center my-1 gap-2">
+                                <div>币种:</div>
+                                <div>
+                                    {currency.symbol}
+                                    {amountToNumber(edit.currency!.amount)}{" "}
+                                    {t(currency.labelKey)}
+                                </div>
+                            </div>
+                        )}
                         {edit.location && (
                             <div className="flex justify-between items-center my-1 gap-2">
                                 <div>{t("location")}:</div>

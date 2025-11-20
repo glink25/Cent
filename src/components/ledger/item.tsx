@@ -1,6 +1,8 @@
 import { useMemo } from "react";
+import { DefaultCurrencies } from "@/api/currency/currencies";
 import useCategory from "@/hooks/use-category";
 import { useCreators } from "@/hooks/use-creator";
+import { useCurrency } from "@/hooks/use-currency";
 import { useTag } from "@/hooks/use-tag";
 import { amountToNumber } from "@/ledger/bill";
 import type { Bill } from "@/ledger/type";
@@ -39,6 +41,11 @@ export default function BillItem({
         ?.map((id) => allTags.find((t) => t.id === id))
         .filter((v) => v !== undefined);
 
+    const { baseCurrency } = useCurrency();
+    const currency =
+        bill.currency?.target === baseCurrency.id
+            ? undefined
+            : DefaultCurrencies.find((c) => c.id === bill.currency?.target);
     return (
         <button
             type="button"
@@ -86,7 +93,7 @@ export default function BillItem({
             {/* 金额 */}
             <div className="text-right">
                 <div
-                    className={`text-lg font-bold truncate flex-shrink-0 ${
+                    className={`text-lg font-bold truncate flex-shrink-0 flex flex-col ${
                         bill.type === "expense"
                             ? "text-red-700"
                             : bill.type === "income"
@@ -95,7 +102,15 @@ export default function BillItem({
                     }`}
                 >
                     {amountToNumber(bill.amount)}
+
+                    {currency && (
+                        <div className="text-xs">
+                            {currency.symbol}
+                            {amountToNumber(bill.currency!.amount)}
+                        </div>
+                    )}
                 </div>
+
                 {showTime && (
                     <div className="text-[8px] text-foreground/60">
                         {denseTime(bill.time)}

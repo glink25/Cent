@@ -6,6 +6,7 @@ import { numberToAmount } from "./bill";
 dayjs.extend(isSameOrBefore);
 dayjs.extend(isSameOrAfter);
 
+import { DefaultCurrencyId as DefaultBaseCurrencyId } from "@/api/currency/currencies";
 import type { Bill, BillCategory, BillFilter, BillType } from "./type";
 
 const isTypeMatched = (bill: Bill, type?: BillType) => {
@@ -85,6 +86,16 @@ const isTagsMatched = (bill: Bill, tagIds?: string[]) => {
         : true;
 };
 
+const isCurrenciesMatched = (
+    bill: Bill,
+    base: string,
+    currencies?: string[],
+) => {
+    return currencies?.length
+        ? currencies.some((c) => (bill.currency?.target ?? base) === c)
+        : true;
+};
+
 export const isBillMatched = (bill: Bill, filter: BillFilter) => {
     return (
         isTypeMatched(bill, filter.type) &&
@@ -94,7 +105,12 @@ export const isBillMatched = (bill: Bill, filter: BillFilter) => {
         isTimeMatched(bill, filter.start, filter.end, filter.recent) &&
         isAssetsMatched(bill, filter.assets) &&
         isCommentMatched(bill, filter.comment) &&
-        isTagsMatched(bill, filter.tags)
+        isTagsMatched(bill, filter.tags) &&
+        isCurrenciesMatched(
+            bill,
+            filter.baseCurrency ?? DefaultBaseCurrencyId,
+            filter.currencies,
+        )
     );
 };
 

@@ -6,6 +6,7 @@ import TagSettingsItem from "../bill-tag";
 import { BookSettings } from "../book";
 import Budget from "../budget";
 import CategorySettingsItem from "../category";
+import CurrencySettingsItem from "../currency";
 import DataManagerSettingsItem from "../data-manager";
 import { Button } from "../ui/button";
 import AboutSettingsItem from "./about";
@@ -102,6 +103,7 @@ export default function SettingsForm({
                     <CategorySettingsItem />
                     <TagSettingsItem />
                     <Budget />
+                    <CurrencySettingsItem />
                     <UserSettingsItem />
                     <DataManagerSettingsItem />
                     <LabSettingsItem />

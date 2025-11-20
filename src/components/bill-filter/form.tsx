@@ -1,4 +1,5 @@
 import { type Dispatch, type SetStateAction, useMemo } from "react";
+import { DefaultCurrencies } from "@/api/currency/currencies";
 import useCategory from "@/hooks/use-category";
 import { useCreators } from "@/hooks/use-creator";
 import { useTag } from "@/hooks/use-tag";
@@ -129,6 +130,16 @@ export default function BillFilterForm({
         }
         return ids
             .map((id) => allTags.find((v) => v.id === id)?.name ?? id)
+            .join(",");
+    };
+
+    const allCurrencies = DefaultCurrencies;
+    const formatCurrencies = (ids?: (number | string)[]) => {
+        if (ids === undefined || ids.length === 0) {
+            return t("unlimited");
+        }
+        return ids
+            .map((id) => t(allCurrencies.find((v) => v.id === id)!.labelKey))
             .join(",");
     };
     return (
@@ -278,7 +289,7 @@ export default function BillFilterForm({
             <div className="w-full flex justify-between items-center">
                 <div className="flex items-center gap-1">
                     <i className="icon-[mdi--scale-unbalanced]"></i>
-                    {t("range")}:
+                    {t("amount")}:
                 </div>
                 <div className="flex items-center gap-4">
                     <RangeInput
@@ -327,6 +338,57 @@ export default function BillFilterForm({
                         });
                     }}
                 ></CascadeMultipleSelect>
+            </div>
+            {/* currency selector */}
+            <div className="w-full flex justify-between items-center">
+                <div className="flex items-center gap-1">
+                    <i className="icon-[mdi--currency-eur]"></i>
+                    {t("currency")}:
+                </div>
+
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button
+                            variant="outline"
+                            className="px-2 md:px-4 py-2 text-xs md:text-sm"
+                        >
+                            <div className="max-w-[120px] truncate">
+                                {formatCurrencies(form.currencies)}
+                            </div>
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-56" align="end">
+                        {allCurrencies.map((item) => (
+                            <DropdownMenuCheckboxItem
+                                key={item.id}
+                                checked={
+                                    form.currencies
+                                        ? form.currencies.includes(item.id)
+                                        : false
+                                }
+                                onCheckedChange={(v) => {
+                                    setForm((prev) => {
+                                        const set = new Set(
+                                            prev.currencies ?? [],
+                                        );
+                                        if (v) {
+                                            set.add(item.id);
+                                        } else {
+                                            set.delete(item.id);
+                                        }
+                                        const newCurrencies = Array.from(set);
+                                        return {
+                                            ...prev,
+                                            currencies: newCurrencies,
+                                        };
+                                    });
+                                }}
+                            >
+                                {t(item.labelKey)}
+                            </DropdownMenuCheckboxItem>
+                        ))}
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </div>
             {/* user selector */}
             <div className="w-full flex justify-between items-center">

@@ -35,6 +35,15 @@ export type Bill = {
     location?: GeoLocation;
     /** 账单的tag，可以为多个*/
     tagIds?: string[];
+    /** 多币种 */
+    currency?: {
+        // 记账当时设置的本位币
+        base: string;
+        // 记账当时选择的币种
+        target: string;
+        // 记账当时填写的金额
+        amount: number;
+    };
 };
 
 /** 每笔账单仅可以设置一个BillCategory，用于标记这些支出或者收入项属于某些分类
@@ -110,11 +119,14 @@ export type BillFilter = Partial<{
     maxAmountNumber: number;
     assets?: boolean;
     tags?: string[];
+    baseCurrency: string;
+    currencies?: string[];
 }>;
 
 // 个人配置，不需要转换，可以略过
 export type PersonalMeta = {
     names?: Record<string, string>;
+    rates?: Record<string, number>;
 };
 
 // 全局文件配置
@@ -129,6 +141,8 @@ export type GlobalMeta = {
     categories?: BillCategory[];
     // 自定义Tag，所有tag都应该放在这里
     tags: BillTag[];
+    // 本位货币
+    baseCurrency?: string;
 };
 
 // 这是最终导出的核心JSON数据结构，使用这个数据结构可以直接被解析成可以识别的数据

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useCurrency } from "@/hooks/use-currency";
 import type { BillFilter } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import createConfirmProvider from "../confirm";
@@ -16,7 +17,10 @@ function BillFilterFormed({
     onCancel?: () => void;
     onConfirm?: (v: "delete" | { filter: BillFilter; name?: string }) => void;
 }) {
-    const [form, setForm] = useState(edit?.filter ?? {});
+    const { baseCurrency } = useCurrency();
+    const [form, setForm] = useState(
+        edit?.filter ?? { baseCurrency: baseCurrency.id },
+    );
     const [name, setName] = useState(edit?.name ?? "");
     const t = useIntl();
     return (
