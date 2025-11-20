@@ -7,6 +7,7 @@ import BookGuide from "@/components/book";
 import { BudgetEditProvider, BudgetProvider } from "@/components/budget";
 import { BudgetDetailProvider } from "@/components/budget/detail";
 import { CategoryListProvider } from "@/components/category";
+import { CurrencyListProvider } from "@/components/currency";
 import Login from "@/components/login";
 import { ModalProvider } from "@/components/modal";
 import Navigation from "@/components/navigation";
@@ -38,6 +39,7 @@ export default function MainLayout() {
             <BillInfoProvider />
             <SortableListProvider />
             <Settings />
+            <CurrencyListProvider />
             <BookGuide />
             <BudgetProvider />
             <BudgetEditProvider />
