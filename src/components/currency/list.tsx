@@ -72,7 +72,7 @@ export default function CurrencyListForm({
         setLoading(true);
         try {
             await refresh();
-            toast.success("{t('rate-update-success')}");
+            toast.success(t("rate-update-success"));
         } finally {
             setLoading(false);
         }
