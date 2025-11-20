@@ -10,22 +10,24 @@ import { fetchCurrency, type Rates } from "@/api/currency";
 import { DefaultCurrencyId } from "@/api/currency/currencies";
 import Outdated from "@/api/currency/data.json";
 
+export type CConvert = (
+    money: number,
+    target: string,
+    base: string,
+    date?: Date | number,
+) => {
+    predict: number;
+    accurate: boolean;
+    finished: Promise<number>;
+};
+
 type Store = {
     data: { rates: Rates; base: string; date: string }[];
     // 将今日的汇率信息保存到本地
     refresh: () => Promise<void>;
     // 将目标货币转换为本位币，例如convert(100,'USD','CNY') => { predict: 700, accurate: Promise(732)}
     // predict表示缓存优先的计算结果，accurate则是调用api后获取的结果
-    convert: (
-        money: number,
-        target: string,
-        base: string,
-        date?: Date | number,
-    ) => {
-        predict: number;
-        accurate: boolean;
-        finished: Promise<number>;
-    };
+    convert: CConvert;
 };
 
 type Persist<S> = (
@@ -52,8 +54,6 @@ export const useCurrencyStore = create<Store>()(
                 }
 
                 const rates = await fetchCurrency(DefaultCurrencyId, today);
-
-                console.log(rates, "ratesss");
                 set((state) => ({
                     data: [
                         {
@@ -70,12 +70,7 @@ export const useCurrencyStore = create<Store>()(
                 refresh();
             });
 
-            const convert = (
-                money: number,
-                target: string,
-                base: string,
-                date?: Date | number,
-            ) => {
+            const convert: CConvert = (money, target, base, date) => {
                 const state = get();
                 const dateStr = dayjs(date).format("YYYY-MM-DD");
 

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import {
     DefaultCurrencies,
     DefaultCurrencyId,
@@ -18,12 +19,12 @@ export default function CurrencyListForm({
     onConfirm?: (v: any) => void;
 }) {
     const t = useIntl();
-    const { baseCurrency, setBaseCurrency, convert } = useCurrency();
+    const { baseCurrency, setBaseCurrency, convert, setRate } = useCurrency();
 
     const rates = useMemo(() => {
         return DefaultCurrencies.map((currency) => {
             return {
-                ...convert(1, currency.id, baseCurrency.id),
+                ...convert(1, baseCurrency.id, currency.id),
                 id: currency.id,
             };
         });
@@ -32,6 +33,13 @@ export default function CurrencyListForm({
     const toManuallyUpdate = async (
         currency: (typeof DefaultCurrencies)[number],
     ) => {
+        if (currency.id === baseCurrency.id) {
+            return
+        }
+        const rate = rates.find(r => r.id === currency.id)
+        if (!rate) {
+            return
+        }
         const value = await modal.prompt({
             title: (
                 <div>
@@ -41,9 +49,19 @@ export default function CurrencyListForm({
                     </p>
                 </div>
             ),
-            input: { type: "number", defaultValue: 100 },
-        });
-        console.log(value);
+            input: { type: "number", defaultValue: rate?.predict.toFixed(6) },
+        }) as string | undefined;
+        console.log(value, 'input alu', value === '')
+        if (value === undefined || value === null || value === '') {
+            setRate(currency.id, undefined)
+            return
+        }
+        const newRate = Number(value)
+        if (newRate <= 0) {
+            toast.error("汇率必须大于0");
+            return;
+        }
+        setRate(currency.id, newRate)
     };
     return (
         <PopupLayout
@@ -104,8 +122,9 @@ export default function CurrencyListForm({
                             <button
                                 key={currency.id}
                                 type="button"
+                                disabled={currency.id === baseCurrency.id}
                                 className="py-2 border-b w-full flex justify-between items-center"
-                                // onClick={() => toManuallyUpdate(currency)}
+                                onClick={() => toManuallyUpdate(currency)}
                             >
                                 <div className="flex items-center gap-2">
                                     <div className="text-xl">

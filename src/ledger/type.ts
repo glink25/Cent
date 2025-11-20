@@ -126,6 +126,7 @@ export type BillFilter = Partial<{
 // 个人配置，不需要转换，可以略过
 export type PersonalMeta = {
     names?: Record<string, string>;
+    rates?: Record<string, number>;
 };
 
 // 全局文件配置
