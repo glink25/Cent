@@ -2,6 +2,7 @@ import { type ReactNode, useMemo, useState } from "react";
 import { useCopyToClipboard, useLocalStorage } from "react-use";
 import { toast } from "sonner";
 import PopupLayout from "@/layouts/popup-layout";
+import { BillCategories } from "@/ledger/category";
 import type { ExportedJSON } from "@/ledger/type";
 import { t, useIntl } from "@/locale";
 import { readClipboard } from "@/utils/clipboard";
@@ -130,6 +131,9 @@ function SmartImport({ onCancel }: { onCancel?: () => void }) {
         });
         if (!res) {
             return;
+        }
+        if (res.strategy === "overlap") {
+            // 智能导入时，需要
         }
         await importFromPreviewResult(res);
         onCancel?.();
@@ -304,8 +308,8 @@ const runCode = (code: string, file: File) => {
 
                       // Web Worker 接收消息的监听器，使用 async/await 来安全地处理 transform 函数的返回值
                       self.onmessage = async (e) => {
-                          const { fileContent, fileName } = e.data;
-                          
+                          const { fileContent, fileName, DefaultCategories } = e.data;
+                          ctx.DefaultCategories = DefaultCategories;
                           // 确保 transform 函数存在
                           if (typeof transform === 'function') {
                               let result;
@@ -366,7 +370,11 @@ const runCode = (code: string, file: File) => {
         const fileName = file.name;
 
         // 将数据发送到 Worker
-        currentWorker.postMessage({ fileContent, fileName });
+        currentWorker.postMessage({
+            fileContent,
+            fileName,
+            DefaultCategories: BillCategories,
+        });
     });
 };
 

@@ -1,3 +1,4 @@
+// 这是一个用于将微信导出的账单XLSX文件转换为标准的交易结构数据ExportedJSON的脚本
 /**
  * @typedef {Object} ExportedJSON
  * @property {Array} items
@@ -17,6 +18,7 @@
  * @property {Function} Papa.parse - 用于解析CSV数据的方法。
  * @property {object} XLSX - 专门用于解析Excel文件的第三方JS库。
  * @property {Function} XLSX.read - 用于读取Excel文件的方法。
+ * @property {Array} DefaultCategories - 默认的账单分类信息，如果解析结果没有增加分类，则meta.categories应该设置为DefaultCategories，否则，应该返回DefaultCategories加上新增的分类
  */
 
 /**
@@ -171,6 +173,8 @@ async function transform(file, ctx) {
     });
     return {
         items: bills,
-        meta: undefined,
+        meta: {
+            categories: ctx.DefaultCategories,
+        },
     };
 }

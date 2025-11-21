@@ -1,3 +1,6 @@
+import TemplateAlipayScript from "./schemas/alipay.js?raw";
+import TemplateWechatScript from "./schemas/wechat.js?raw";
+
 import { TypeText } from "./type-code";
 
 export const promptText = `你是一个专业的JavaScript开发者，你的任务是编写一个数据转换函数。
@@ -48,64 +51,10 @@ ${TypeText}
 输出的的代码应该遵循 let-it-crash 设计理念，从而使得函数能够抛出正确的错误信息
 
 **函数模板:**
-function transform(file:File, ctx:{Papa:any /** 专门用于解析CSV文件的第三方JS库，你应该遵循该库最新的使用方法来使用 */ ,XLSX:any /** 专门用于解析Excel文件的第三方JS库，你应该遵循该库最新的使用方法来使用 */}):ExportedJSON {
-  // 'data' 是一个包含文件所有内容的字符串。
-  
-  // 步骤1: 解析字符串 (例如: CSV 或 JSON)
-  let parsedData = [];
-  try {
-    // 在这里添加你的解析逻辑
-    // 例如，如果是JSON:
-    // parsedData = JSON.parse(data);
-    
-    // 例如，如果是CSV，分析CSV的结构并准确提取出包含账单的数组部分:
-    // const lines = Papa.parse(file, {
-                //     header: true,
-                //     preview: 3, // 只解析前3行数据
-                //     dynamicTyping: false, // 全部读为字符串，让LLM处理
-                //     skipEmptyLines: true,
-                //     complete: (summaryResult) => {
-                //         if (summaryResult.errors.length) {
-                //             return reject(new Error(summaryResult.errors[0].message));
-                //         }
-                //         inputSummaryData = summaryResult.data;
-                //         document.getElementById('inputSummary').textContent = JSON.stringify(inputSummaryData, null, 2);
-                        
-                //         // 2. 解析完整数据
-                //         Papa.parse(file, {
-                //             header: true,
-                //             dynamicTyping: false,
-                //             skipEmptyLines: true,
-                //             complete: (fullResult) => {
-                //                 if (fullResult.errors.length) {
-                //                     return reject(new Error(fullResult.errors[0].message));
-                //                 }
-                //                 fullParsedData = fullResult.data;
-                //                 resolve();
-                //             },
-                //             error: (err) => reject(err)
-                //         });
-                //     },
-                //     error: (err) => reject(err)
-                // });
-
-  } catch (e) {
-    console.error("解析原始字符串失败:", e);
-    return []; // 解析失败返回空数组
-  }
-
-  // 步骤2: 映射数据
-  const transformedData = parsedData.map(item => {
-    try {
-      return {
-        // ... 在这里映射字段 ...
-      };
-    } catch (e) {
-      console.error("处理单项数据失败:", item, e);
-      return null; // 转换失败则返回 null
-    }
-  }).filter(Boolean); // 过滤掉转换失败的项
-  
-  return transformedData;
-}  
+\`\`\`javascript
+${TemplateAlipayScript}
+\`\`\`
+\`\`\`javascript
+${TemplateWechatScript}
+\`\`\`
 `;
