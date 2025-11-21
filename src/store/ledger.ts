@@ -37,10 +37,14 @@ type LedgerStoreState = {
 
 type LedgerStoreActions = {
     addBill: (entry: Omit<Bill, "id" | "creatorId">) => Promise<void>;
+    removeBills: (ids: Bill["id"][]) => Promise<void>;
     removeBill: (id: Bill["id"]) => Promise<void>;
     updateBill: (
         id: Bill["id"],
         entry: Omit<Bill, "id" | "creatorId">,
+    ) => Promise<void>;
+    updateBills: (
+        entires: { id: Bill["id"]; entry: Omit<Bill, "id" | "creatorId"> }[],
     ) => Promise<void>;
     batchImportFromBills: (
         entries: Omit<Bill, "id" | "creatorId">[],
@@ -224,6 +228,37 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
         }
     });
 
+    const removeBills: LedgerStoreActions["removeBills"] = async (ids) => {
+        const repo = getCurrentFullRepoName();
+        const collection = `${useUserStore.getState().id}`;
+        await StorageAPI.batch(
+            repo,
+            ids.map((id) => ({
+                type: "delete",
+                value: id,
+            })),
+        );
+    };
+    const updateBills: LedgerStoreActions["updateBills"] = async (entries) => {
+        const repo = getCurrentFullRepoName();
+        const collection = `${useUserStore.getState().id}`;
+        const creatorId = useUserStore.getState().id;
+        await StorageAPI.batch(
+            repo,
+            entries.map(({ id, entry: v }) => {
+                return {
+                    type: "update",
+                    value: {
+                        id,
+                        ...v,
+                        amount: Math.abs(v.amount),
+                        creatorId,
+                    },
+                };
+            }),
+        );
+    };
+
     return {
         loading: false,
         sync: "success" as LedgerStore["sync"],
@@ -232,15 +267,9 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
         pendingCursor: undefined,
         initCurrentBook: init,
         refreshBillList: updateBillList,
+        removeBills,
         removeBill: async (id) => {
-            const repo = getCurrentFullRepoName();
-            const collection = `${useUserStore.getState().id}`;
-            StorageAPI.batch(repo, [
-                {
-                    type: "delete",
-                    value: id,
-                },
-            ]);
+            return removeBills([id]);
         },
         addBill: async (v) => {
             const repo = getCurrentFullRepoName();
@@ -257,16 +286,9 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
                 },
             ]);
         },
-        updateBill: async (id, v) => {
-            const repo = getCurrentFullRepoName();
-            const collection = `${useUserStore.getState().id}`;
-            const creatorId = useUserStore.getState().id;
-            StorageAPI.batch(repo, [
-                {
-                    type: "update",
-                    value: { id, ...v, amount: Math.abs(v.amount), creatorId },
-                },
-            ]);
+        updateBills,
+        updateBill: async (id, entry) => {
+            return updateBills([{ id, entry }]);
         },
         updateGlobalMeta: async (v) => {
             const repo = getCurrentFullRepoName();

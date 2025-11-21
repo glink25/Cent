@@ -1,3 +1,5 @@
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
 import { useVirtualizer } from "@tanstack/react-virtual";
 import dayjs, { type Dayjs } from "dayjs";
 import { useRef } from "react";
@@ -6,6 +8,7 @@ import type { Bill } from "@/ledger/type";
 import { cn } from "@/utils";
 import { denseDate } from "@/utils/time";
 import { showBillInfo } from "../bill-info";
+import { Checkbox } from "../ui/checkbox";
 import BillItem from "./item";
 
 function Divider({ date: day }: { date: Dayjs }) {
@@ -17,12 +20,16 @@ export default function Ledger({
     enableDivideAsOrdered,
     className,
     showTime,
+    selectedIds,
+    onSelectChange,
 }: {
     bills: OutputType<Bill>[];
     /** 如果传入的列表已按时间降序，则尝试按照日期分隔 */
     enableDivideAsOrdered?: boolean;
     className?: string;
     showTime?: boolean;
+    selectedIds?: string[];
+    onSelectChange?: (id: string) => void;
 }) {
     const parentRef = useRef<HTMLDivElement>(null);
 
@@ -35,6 +42,8 @@ export default function Ledger({
         overscan: 5,
         paddingEnd: 80,
     });
+
+    const enableSelect = selectedIds !== undefined;
 
     return (
         <div
@@ -95,11 +104,32 @@ export default function Ledger({
                                 enableDivideAsOrdered && (
                                     <Divider date={curDate} />
                                 )}
-                            <BillItem
-                                bill={bill}
-                                onClick={() => showBillInfo(bill)}
-                                showTime={showTime}
-                            />
+                            <div
+                                className="w-full flex items-center overflow-hidden"
+                                onClick={
+                                    enableSelect
+                                        ? () => {
+                                              onSelectChange?.(bill.id);
+                                          }
+                                        : undefined
+                                }
+                            >
+                                {enableSelect && (
+                                    <Checkbox
+                                        checked={selectedIds.includes(bill.id)}
+                                    ></Checkbox>
+                                )}
+                                <BillItem
+                                    bill={bill}
+                                    className="flex-1 overflow-hidden"
+                                    onClick={
+                                        enableSelect
+                                            ? undefined
+                                            : () => showBillInfo(bill)
+                                    }
+                                    showTime={showTime}
+                                />
+                            </div>
                             {isDivider && <Divider date={isDivider} />}
                             {enableDivideAsOrdered &&
                                 virtualRow.index === bills.length - 1 && (

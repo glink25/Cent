@@ -389,5 +389,21 @@
   "currency_change_warning": "<p>修改本位币将切换所有账单的货币单位，并且影响创建账单时的自动汇率转换</p><div><strong>例如：</strong>之前的本位币为RMB，记录了一笔&yen;100的支出，当切换本位币为USD后，原先的账单将变为$100</div><p>如果曾经记录了非本位币的账单，以本位币换算后的数值为准</p><div><strong>例如：</strong>之前的本位币为RMB，记录了一笔$100的USD支出，假设当时的汇率换算后为&yen;700，当切换本位币为USD后，原先的账单将变为$700</div>",
   "exchange-rate": "汇率",
   "exchange-rate-from": "数据来自{a}",
-  "rate-update-success": "汇率更新成功"
+  "rate-update-success": "汇率更新成功",
+  "multi-select": "多选",
+  "batch-edit": "批量编辑",
+  "batch-delete-confirm": "确定要删除{n}条记录吗",
+  "original-tag": "原有标签",
+  "no-tags": "无标签",
+  "change-bills-type": "更改账单类型：",
+  "change-categories-of-ledger": "修改账单分类：",
+  "ledger-will-keep-original-type": "账单将保持原有类型",
+  "ledger-type-will-be-updated-to": "选中的账单将全部修改为{n}",
+  "ledger-will-keep-original-category": "账单将保持原有分类",
+  "ledger-category-will-updated-to": "选中的账单分类将全部修改为{n}",
+  "change-bills-tags": "更改账单标签：",
+  "ledger-will-keep-original-tags": "账单将保持原有标签",
+  "ledger-tags-will-be-clear": "选中的账单将移除所有标签",
+  "ledger-tags-will-be-changed": "选中的账单标签将全部修改为所选标签",
+  "original-category": "原有分类"
 }
