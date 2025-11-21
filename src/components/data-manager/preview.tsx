@@ -1,9 +1,11 @@
-import { cloneDeep, merge } from "lodash-es";
+import { cloneDeep, isEqual, merge } from "lodash-es";
 import { useEffect, useRef, useState } from "react";
 import { StorageAPI } from "@/api/storage";
 import type { Full, MetaUpdate, Update } from "@/database/stash";
 import PopupLayout from "@/layouts/popup-layout";
+import { BillCategories } from "@/ledger/category";
 import type { Bill, GlobalMeta } from "@/ledger/type";
+import { appendCategories } from "@/ledger/utils";
 import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
@@ -222,29 +224,25 @@ export const importFromPreviewResult = async (res: PreviewState) => {
         strategy === "overlap"
             ? rest.meta
             : (() => {
-                  // 相同名称或者id的category将合并为同一个
-                  const curm = currentMeta;
-                  const newCategories = [...(currentMeta.categories ?? [])];
-                  curm.categories = undefined;
-                  const newm = { ...rest.meta };
-                  const merged = merge(curm, newm);
                   if (!rest.meta?.categories) {
-                      merged.categories = currentMeta.categories;
+                      const merged = merge(currentMeta, rest.meta);
                       return merged;
                   }
-                  rest.meta.categories.forEach((c) => {
-                      const sameIdIndex = newCategories?.findIndex(
-                          (x) => x.id === c.id,
-                      );
-                      if (sameIdIndex !== -1) {
-                          const old = newCategories[sameIdIndex];
-                          newCategories[sameIdIndex] = { ...c };
-                          newCategories[sameIdIndex].id = old.id;
-                      } else {
-                          newCategories.push(c);
-                      }
-                  });
-                  merged.categories = newCategories;
+                  const currentCategories =
+                      (currentMeta.categories?.length ?? 0) === 0
+                          ? BillCategories
+                          : currentMeta.categories!;
+                  const incomingCategories = [...(rest.meta?.categories ?? [])];
+                  // 必须用深拷贝否则会被merge改变
+                  const appended = cloneDeep(
+                      appendCategories(currentCategories, incomingCategories),
+                  );
+                  const merged = merge(currentMeta, rest.meta);
+                  if (isEqual(BillCategories, appended)) {
+                      merged.categories = undefined;
+                  } else {
+                      merged.categories = appended;
+                  }
                   return merged;
               })();
     const bookId = useBookStore.getState().currentBookId;
