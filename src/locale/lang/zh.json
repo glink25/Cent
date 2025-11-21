@@ -405,5 +405,8 @@
   "ledger-will-keep-original-tags": "账单将保持原有标签",
   "ledger-tags-will-be-clear": "选中的账单将移除所有标签",
   "ledger-tags-will-be-changed": "选中的账单标签将全部修改为所选标签",
-  "original-category": "原有分类"
+  "original-category": "原有分类",
+  "bill-compression": "账单压缩",
+  "bill-compression-tip": "当频繁批量修改、删除账单数据后，云端保存的增量数据可能会变得极为庞大，【账单压缩】可以用于减少云端数据的大小，。操作前请确保所有设备上的账单数据都已经上传完毕；压缩账单后，其他设备最好重新登录一次确保获取的是最新数据",
+  "wait-synced-tip": "请等待云同步完成"
 }

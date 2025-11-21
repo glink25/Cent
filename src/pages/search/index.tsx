@@ -199,10 +199,7 @@ export default function Page() {
                             (c) => c.type === edit.type,
                         )!.id;
                         bill.categoryId = firstCategoryId;
-                        console.log(firstCategoryId, "first");
                     }
-
-                    console.log(isTypeChanged, bill.categoryId);
                 }
                 if (edit.tagIds !== undefined) {
                     bill.tagIds = edit.tagIds;
