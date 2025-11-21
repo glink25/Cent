@@ -50,7 +50,7 @@ export default function BillItem({
         <button
             type="button"
             className={cn(
-                "bill-item w-full flex justify-between items-center px-4 py-4 buttoned cursor-pointer",
+                "bill-item flex justify-between items-center px-4 py-4 buttoned cursor-pointer",
                 className,
             )}
             onClick={onClick}

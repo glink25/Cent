@@ -172,10 +172,7 @@ export const SingleCascadeSelect = ({
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 {trigger || (
-                    <Button
-                        variant="outline"
-                        className="w-[180px] justify-start"
-                    >
+                    <Button variant="outline" className={"w-fit justify-start"}>
                         {selectedItemName || placeholder}
                     </Button>
                 )}

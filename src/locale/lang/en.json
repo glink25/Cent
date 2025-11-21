@@ -388,5 +388,18 @@
   "currency_change_warning": "<p>Changing the base currency will switch the currency unit of all bills and affect the automatic exchange rate conversion when creating new bills.</p><div><strong>Example:</strong> If the previous functional currency was RMB, and you recorded a &yen;100 expense, when the functional currency is switched to USD, the original bill will change to $100.</div><p>If you have previously recorded bills in a non-functional currency, the value converted to the functional currency will prevail.</p><div><strong>Example:</strong> If the previous functional currency was RMB, and you recorded a $100 USD expense (assuming the converted value at that time was &yen;700), when the functional currency is switched to USD, the original bill will change to $700.</div>",
   "exchange-rate": "Exchange Rate",
   "exchange-rate-from": "from {a}",
-  "rate-update-success": "Exchange rate updated"
+  "rate-update-success": "Exchange rate updated",
+  "multi-select": "select",
+  "batch-edit": "Batch Edit",
+  "original-tag": "Original Tag",
+  "no-tags": "No Tags",
+  "change-bills-type": "Change type of ledger",
+  "change-categories-of-ledger": "Change categories of ledger",
+  "ledger-will-keep-original-category": "Ledger will keep its original category",
+  "ledger-category-will-updated-to": "All ledger categories will be comverted to {n}",
+  "ledger-type-will-be-updated-to": "All ledger type will be converted to {n}",
+  "change-bills-tags": "Update ledger tags",
+  "ledger-tags-will-be-clear": "Ledger tags will be cleared",
+  "ledger-tags-will-be-changed": "Ledger tags will be updated to selected tags",
+  "original-category": "Original Category"
 }

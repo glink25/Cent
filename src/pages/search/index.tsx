@@ -6,13 +6,20 @@ import { StorageDeferredAPI } from "@/api/storage";
 import BillFilterForm from "@/components/bill-filter";
 import Clearable from "@/components/clearable";
 import Ledger from "@/components/ledger";
+import {
+    type BatchEditOptions,
+    BatchEditProvider,
+    showBatchEdit,
+} from "@/components/ledger/batch-edit";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import useCategory from "@/hooks/use-category";
 import { useCurrency } from "@/hooks/use-currency";
 import { useCustomFilters } from "@/hooks/use-custom-filters";
 import type { Bill, BillFilter } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
+import { useLedgerStore } from "@/store/ledger";
 import { cn } from "@/utils";
 
 const SORTS = [
@@ -83,6 +90,8 @@ export default function Page() {
         if (!book) {
             return;
         }
+        setEnableSelect(false);
+        setSelectedIds([]);
         const result = await StorageDeferredAPI.filter(book, form);
         setList(result);
     }, [form]);
@@ -116,6 +125,97 @@ export default function Page() {
         const sort = SORTS[sortIndex] ?? SORTS[0];
         return orderBy(list, [sort.by], [sort.order]);
     }, [list, sortIndex]);
+
+    const [enableSelect, setEnableSelect] = useState(false);
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const onSelectChange = (id: string) => {
+        setSelectedIds((prev) => {
+            if (prev.includes(id)) {
+                return prev.filter((v) => v !== id);
+            }
+            return [...prev, id];
+        });
+    };
+    const allSelected =
+        selectedIds.length === 0
+            ? false
+            : selectedIds.length === sorted.length
+              ? true
+              : "indeterminate";
+
+    const toBatchDelete = async () => {
+        const ok = confirm(
+            t("batch-delete-confirm", {
+                n: selectedIds.length,
+            }),
+        );
+        if (!ok) {
+            return;
+        }
+        setEnableSelect(false);
+        await useLedgerStore.getState().removeBills(selectedIds);
+        await toSearch();
+    };
+    const toBatchEdit = async () => {
+        const initial = selectedIds.reduce(
+            (prev, id, index) => {
+                const bill = sorted.find((v) => v.id === id);
+                if (!bill) {
+                    return prev;
+                }
+                if (index === 0) {
+                    return {
+                        type: bill.type,
+                        categoryId: bill.categoryId,
+                    };
+                }
+                return {
+                    type: bill.type === prev.type ? bill.type : undefined,
+                    categoryId:
+                        bill.categoryId === prev.categoryId
+                            ? bill.categoryId
+                            : undefined,
+                };
+            },
+            {
+                type: undefined,
+                categoryId: undefined,
+            } as BatchEditOptions,
+        );
+        const edit = await showBatchEdit(initial);
+        const updatedEntries = selectedIds
+            .map((id) => {
+                const bill = { ...sorted.find((v) => v.id === id) } as Bill;
+                if (!bill) {
+                    return undefined;
+                }
+                if (edit.type !== undefined) {
+                    const isTypeChanged = bill.type !== edit.type;
+                    bill.type = edit.type;
+                    if (edit.categoryId !== undefined) {
+                        bill.categoryId = edit.categoryId;
+                    } else if (isTypeChanged) {
+                        const firstCategoryId = categories.find(
+                            (c) => c.type === edit.type,
+                        )!.id;
+                        bill.categoryId = firstCategoryId;
+                        console.log(firstCategoryId, "first");
+                    }
+
+                    console.log(isTypeChanged, bill.categoryId);
+                }
+                if (edit.tagIds !== undefined) {
+                    bill.tagIds = edit.tagIds;
+                }
+                return {
+                    id: bill.id,
+                    entry: bill,
+                };
+            })
+            .filter((v) => v !== undefined);
+        await useLedgerStore.getState().updateBills(updatedEntries);
+        await toSearch();
+    };
     return (
         <div className="w-full h-full p-2 flex justify-center overflow-hidden">
             <div className="h-full w-full px-2 max-w-[600px] flex flex-col">
@@ -190,8 +290,87 @@ export default function Page() {
                         </Collapsible.Trigger>
                     </div>
                 </Collapsible.Root>
-                <div className="flex items-center justify-between px-4 text-xs text-foreground/80">
-                    <div>{t("total-records", { n: sorted.length })}</div>
+                <div
+                    className={cn(
+                        "flex items-center justify-between px-4 text-xs text-foreground/80",
+                        enableSelect && "pl-0",
+                    )}
+                >
+                    <div className="flex gap-2 items-center">
+                        {!enableSelect ? (
+                            <>
+                                {sorted.length > 0 && (
+                                    <Button
+                                        className="p-1 h-fit"
+                                        variant={"ghost"}
+                                        size="sm"
+                                        onClick={() => {
+                                            setEnableSelect(true);
+                                        }}
+                                    >
+                                        {t("multi-select")}
+                                    </Button>
+                                )}
+                                {t("total-records", { n: sorted.length })}
+                            </>
+                        ) : (
+                            <>
+                                <Checkbox
+                                    checked={
+                                        selectedIds.length === 0
+                                            ? false
+                                            : selectedIds.length ===
+                                                sorted.length
+                                              ? true
+                                              : "indeterminate"
+                                    }
+                                    onClick={() => {
+                                        if (allSelected === true) {
+                                            setSelectedIds([]);
+                                        } else {
+                                            setSelectedIds(
+                                                sorted.map((v) => v.id),
+                                            );
+                                        }
+                                    }}
+                                ></Checkbox>
+                                <Button
+                                    className="p-1 h-fit"
+                                    variant={"ghost"}
+                                    size="sm"
+                                    onClick={() => {
+                                        setEnableSelect(false);
+                                        setSelectedIds([]);
+                                    }}
+                                >
+                                    {t("cancel")}
+                                </Button>
+                                <span>
+                                    {selectedIds.length}/{sorted.length}
+                                </span>
+                                {selectedIds.length > 0 && (
+                                    <>
+                                        <Button
+                                            className="p-1 h-fit"
+                                            variant={"ghost"}
+                                            size="sm"
+                                            onClick={toBatchEdit}
+                                        >
+                                            {t("edit")}
+                                        </Button>
+                                        <Button
+                                            className="p-1 h-fit text-destructive"
+                                            variant={"ghost"}
+                                            size="sm"
+                                            onClick={toBatchDelete}
+                                        >
+                                            {t("delete")}
+                                        </Button>
+                                    </>
+                                )}
+                            </>
+                        )}
+                    </div>
                     <div>
                         <Button
                             size="sm"
@@ -210,8 +389,14 @@ export default function Page() {
                         </Button>
                     </div>
                 </div>
-                <Ledger bills={sorted} showTime />
+                <Ledger
+                    bills={sorted}
+                    showTime
+                    selectedIds={enableSelect ? selectedIds : undefined}
+                    onSelectChange={onSelectChange}
+                />
             </div>
+            <BatchEditProvider />
         </div>
     );
 }
