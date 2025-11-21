@@ -1,6 +1,5 @@
 import { produce } from "immer";
 import { merge } from "lodash-es";
-import { toast } from "sonner";
 import { v4 } from "uuid";
 import { create } from "zustand";
 import type { UserInfo } from "@/api/endpoints/type";
@@ -10,6 +9,8 @@ import type { Bill, GlobalMeta, PersonalMeta } from "@/ledger/type";
 import { t } from "@/locale";
 import { useBookStore } from "./book";
 import { useUserStore } from "./user";
+
+const toastLib = import("sonner");
 
 export type EditBill = Omit<OutputType<Bill>, "id"> & {
     id?: Bill["id"];
@@ -137,6 +138,7 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
             StorageAPI.toSync();
         } catch (err) {
             if ((err as any)?.status === 404) {
+                const { toast } = await toastLib;
                 toast.error(
                     t(
                         "Repo not found, maybe it was deleted, please select another book",

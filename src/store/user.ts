@@ -1,5 +1,4 @@
 import { produce } from "immer";
-import { toast } from "sonner";
 import type { StateCreator } from "zustand";
 import { create } from "zustand";
 import type { PersistOptions } from "zustand/middleware";
@@ -8,6 +7,8 @@ import { useShallow } from "zustand/shallow";
 import type { UserInfo } from "@/api/endpoints/type";
 import { loadStorageAPI } from "@/api/storage/dynamic";
 import { t } from "@/locale";
+
+const toastLib = import("sonner");
 
 type UserStoreState = {
     avatar_url: string;
@@ -59,6 +60,7 @@ export const useUserStore = create<UserStore>()(
                     if (
                         (error as Error)?.message.startsWith("Bad credentials")
                     ) {
+                        const { toast } = await toastLib;
                         toast.error(
                             t(
                                 "token-expired-please-re-login-to-github-from-setting-page",
