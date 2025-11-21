@@ -6,7 +6,7 @@ import type { PersistOptions } from "zustand/middleware";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { useShallow } from "zustand/shallow";
 import type { UserInfo } from "@/api/endpoints/type";
-import { StorageAPI } from "@/api/storage";
+import { loadStorageAPI } from "@/api/storage/dynamic";
 import { t } from "@/locale";
 
 type UserStoreState = {
@@ -38,6 +38,7 @@ export const useUserStore = create<UserStore>()(
         (set, get) => {
             const loading = Boolean(true);
             const updateUserInfo = async () => {
+                const { StorageAPI } = await loadStorageAPI();
                 await Promise.resolve();
                 set(
                     produce((state) => {
@@ -92,6 +93,7 @@ export const useUserStore = create<UserStore>()(
 
             const getUserInfo = async (login: string) => {
                 const run = async () => {
+                    const { StorageAPI } = await loadStorageAPI();
                     const res = await StorageAPI.getUserInfo(login);
                     const info = {
                         avatar_url: res.avatar_url,
@@ -116,6 +118,7 @@ export const useUserStore = create<UserStore>()(
 
             const getCollaborators = async (repo: string) => {
                 const run = async () => {
+                    const { StorageAPI } = await loadStorageAPI();
                     const res = await StorageAPI.getCollaborators(repo);
                     set(
                         produce((state: UserStore) => {

@@ -1,11 +1,16 @@
 /** biome-ignore-all lint/a11y/noSvgWithoutTitle: <explanation> */
 import { createPortal } from "react-dom";
 import { useShallow } from "zustand/shallow";
-import { StorageAPI } from "@/api/storage";
 import { useIntl } from "@/locale";
 import { useIsLogin, useUserStore } from "@/store/user";
-import { cn } from "@/utils";
 import { Button } from "../ui/button";
+
+const loaded = import("@/api/storage");
+
+const loadStorageAPI = async () => {
+    const lib = await loaded;
+    return lib.StorageAPI;
+};
 
 export default function Login() {
     const t = useIntl();
@@ -35,7 +40,9 @@ export default function Login() {
                                 {/* Github */}
                                 <div className="flex flex-col gap-1">
                                     <Button
-                                        onClick={() => {
+                                        onClick={async () => {
+                                            const StorageAPI =
+                                                await loadStorageAPI();
                                             StorageAPI.loginWith("github");
                                         }}
                                     >
@@ -47,11 +54,13 @@ export default function Login() {
                                     <button
                                         type="button"
                                         className="underline text-xs cursor-pointer"
-                                        onClick={() =>
+                                        onClick={async () => {
+                                            const StorageAPI =
+                                                await loadStorageAPI();
                                             StorageAPI.loginManuallyWith(
                                                 "github",
-                                            )
-                                        }
+                                            );
+                                        }}
                                     >
                                         {t("or-use-an-exist-token")}
                                     </button>
@@ -60,7 +69,9 @@ export default function Login() {
                                 <div className="flex flex-col gap-1">
                                     <Button
                                         className="bg-[#b7312d] hover:bg-[#b7312d]/80"
-                                        onClick={() => {
+                                        onClick={async () => {
+                                            const StorageAPI =
+                                                await loadStorageAPI();
                                             StorageAPI.loginWith("gitee");
                                         }}
                                     >
@@ -81,11 +92,13 @@ export default function Login() {
                                     <button
                                         type="button"
                                         className="underline text-xs cursor-pointer"
-                                        onClick={() =>
+                                        onClick={async () => {
+                                            const StorageAPI =
+                                                await loadStorageAPI();
                                             StorageAPI.loginManuallyWith(
                                                 "gitee",
-                                            )
-                                        }
+                                            );
+                                        }}
                                     >
                                         {t("or-use-an-exist-token")}
                                     </button>
@@ -95,7 +108,9 @@ export default function Login() {
                                     <Button
                                         variant="secondary"
                                         className="w-full relative after:content-['beta'] after:rounded after:bg-yellow-400 after:px-[2px] after:text-[8px] after:block after:absolute after:top-0 after:right-0 after:translate-x-[calc(50%)]"
-                                        onClick={() => {
+                                        onClick={async () => {
+                                            const StorageAPI =
+                                                await loadStorageAPI();
                                             StorageAPI.loginWith("webdav");
                                         }}
                                     >
@@ -108,7 +123,9 @@ export default function Login() {
                                     <Button
                                         variant="secondary"
                                         className="w-full"
-                                        onClick={() => {
+                                        onClick={async () => {
+                                            const StorageAPI =
+                                                await loadStorageAPI();
                                             StorageAPI.loginWith("offline");
                                         }}
                                     >
@@ -132,10 +149,9 @@ function Guide({ className }: { className?: string }) {
     const t = useIntl();
     return (
         <div
-            className={cn(
-                "w-full flex-1 border-b bg-stone-800 text-white flex flex-col items-center justify-center gap-4 relative",
-                className,
-            )}
+            className={
+                "w-full flex-1 border-b bg-stone-800 text-white flex flex-col items-center justify-center gap-4 relative"
+            }
         >
             <h1 className="text-3xl font-bold">{t("APP_NAME")}</h1>
             <p className="text-sm">{t("app-introduce")}</p>

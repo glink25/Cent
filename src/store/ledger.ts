@@ -4,10 +4,10 @@ import { toast } from "sonner";
 import { v4 } from "uuid";
 import { create } from "zustand";
 import type { UserInfo } from "@/api/endpoints/type";
+import { loadStorageAPI } from "@/api/storage/dynamic";
 import type { Action, Full, OutputType, Update } from "@/database/stash";
 import type { Bill, GlobalMeta, PersonalMeta } from "@/ledger/type";
 import { t } from "@/locale";
-import { StorageAPI, StorageDeferredAPI } from "../api/storage";
 import { useBookStore } from "./book";
 import { useUserStore } from "./user";
 
@@ -73,6 +73,7 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
         return id;
     };
     const updateBillList = async () => {
+        const { StorageAPI, StorageDeferredAPI } = await loadStorageAPI();
         await Promise.resolve();
         const repo = getCurrentFullRepoName();
         const [bills] = await Promise.all([
@@ -118,6 +119,7 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
     };
 
     const init = async () => {
+        const { StorageAPI } = await loadStorageAPI();
         await Promise.resolve();
         set(
             produce((state: LedgerStoreState) => {
@@ -178,6 +180,7 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
             }),
         );
         try {
+            const { StorageAPI } = await loadStorageAPI();
             await StorageAPI.initBook(currentBookId);
             await updateBillList();
         } finally {
@@ -189,46 +192,49 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
         }
     });
 
-    StorageAPI.onChange(() => {
-        updateBillList();
+    loadStorageAPI().then(({ StorageAPI }) => {
+        StorageAPI.onChange(() => {
+            updateBillList();
 
-        StorageAPI.getIsNeedSync().then((needSync) => {
-            if (needSync) {
+            StorageAPI.getIsNeedSync().then((needSync) => {
+                if (needSync) {
+                    set(
+                        produce((state: LedgerStoreState) => {
+                            state.sync = "wait";
+                        }),
+                    );
+                }
+            });
+        });
+
+        StorageAPI.onSync(async (finished) => {
+            set(
+                produce((state: LedgerStoreState) => {
+                    state.sync = "syncing";
+                }),
+            );
+            console.log("start sync");
+            try {
+                await finished;
                 set(
                     produce((state: LedgerStoreState) => {
-                        state.sync = "wait";
+                        state.sync = "success";
+                    }),
+                );
+                console.log("sync success");
+            } catch (error) {
+                console.error("sync error", error);
+                set(
+                    produce((state: LedgerStoreState) => {
+                        state.sync = "failed";
                     }),
                 );
             }
         });
     });
 
-    StorageAPI.onSync(async (finished) => {
-        set(
-            produce((state: LedgerStoreState) => {
-                state.sync = "syncing";
-            }),
-        );
-        console.log("start sync");
-        try {
-            await finished;
-            set(
-                produce((state: LedgerStoreState) => {
-                    state.sync = "success";
-                }),
-            );
-            console.log("sync success");
-        } catch (error) {
-            console.error("sync error", error);
-            set(
-                produce((state: LedgerStoreState) => {
-                    state.sync = "failed";
-                }),
-            );
-        }
-    });
-
     const removeBills: LedgerStoreActions["removeBills"] = async (ids) => {
+        const { StorageAPI } = await loadStorageAPI();
         const repo = getCurrentFullRepoName();
         const collection = `${useUserStore.getState().id}`;
         await StorageAPI.batch(
@@ -240,6 +246,7 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
         );
     };
     const updateBills: LedgerStoreActions["updateBills"] = async (entries) => {
+        const { StorageAPI } = await loadStorageAPI();
         const repo = getCurrentFullRepoName();
         const collection = `${useUserStore.getState().id}`;
         const creatorId = useUserStore.getState().id;
@@ -272,6 +279,7 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
             return removeBills([id]);
         },
         addBill: async (v) => {
+            const { StorageAPI } = await loadStorageAPI();
             const repo = getCurrentFullRepoName();
             const creatorId = useUserStore.getState().id;
             StorageAPI.batch(repo, [
@@ -291,6 +299,7 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
             return updateBills([{ id, entry }]);
         },
         updateGlobalMeta: async (v) => {
+            const { StorageAPI } = await loadStorageAPI();
             const repo = getCurrentFullRepoName();
             const prevMeta = await StorageAPI.getMeta(repo);
             const newMeta =
@@ -304,6 +313,7 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
             await updateBillList();
         },
         updatePersonalMeta: async (v) => {
+            const { StorageAPI } = await loadStorageAPI();
             const repo = getCurrentFullRepoName();
             const prevMeta = await StorageAPI.getMeta(repo);
             const uid = useUserStore.getState().id;
@@ -329,6 +339,7 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
             data: Omit<Bill, "id" | "creatorId">[],
             overlap = false,
         ) => {
+            const { StorageAPI } = await loadStorageAPI();
             if (data.length === 0) {
                 throw new Error("没有可导入的项目");
             }
