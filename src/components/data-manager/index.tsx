@@ -1,8 +1,7 @@
-import { cloneDeep, merge } from "lodash-es";
-import { StorageAPI, StorageDeferredAPI } from "@/api/storage";
-import type { MetaUpdate, Update } from "@/database/stash";
+import { toast } from "sonner";
+import { StorageDeferredAPI } from "@/api/storage";
 import PopupLayout from "@/layouts/popup-layout";
-import type { Bill, ExportedJSON, GlobalMeta } from "@/ledger/type";
+import type { ExportedJSON } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
@@ -61,6 +60,25 @@ function Form({ onCancel }: { onCancel?: () => void }) {
         const data = JSON.parse(jsonText);
         await showOncentImport(data);
     };
+
+    const toShrinkData = async () => {
+        const ok = confirm(t("bill-compression-tip"));
+        if (!ok) {
+            return;
+        }
+        const isSynced = useLedgerStore.getState().sync === "success";
+        if (!isSynced) {
+            toast.warning(t("wait-synced-tip"));
+            return;
+        }
+        const bills = await useLedgerStore.getState().refreshBillList();
+        const meta = useLedgerStore.getState().infos?.meta;
+        await importFromPreviewResult({
+            bills,
+            meta,
+            strategy: "overlap",
+        });
+    };
     return (
         <PopupLayout
             title={
@@ -107,6 +125,15 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                             onClick={showSmartImport}
                         >
                             {t("smart-import")}
+                        </Button>
+                    </div>
+                    <div className="flex flex-col px-4 gap-2">
+                        <Button
+                            variant="outline"
+                            className="py-4"
+                            onClick={toShrinkData}
+                        >
+                            {t("bill-compression")}
                         </Button>
                     </div>
                 </div>

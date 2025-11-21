@@ -401,5 +401,8 @@
   "change-bills-tags": "Update ledger tags",
   "ledger-tags-will-be-clear": "Ledger tags will be cleared",
   "ledger-tags-will-be-changed": "Ledger tags will be updated to selected tags",
-  "original-category": "Original Category"
+  "original-category": "Original Category",
+  "bill-compression": "Bill Compression",
+  "bill-compression-tip": "\"Bill Compression\" can be used to reduce the size of cloud data. Please ensure that the bill data on all devices has been completely uploaded before proceeding; after compressing the bills, it is best practice for other devices to log in again to ensure they retrieve the latest data.",
+  "wait-synced-tip": "Please wait cloud sync to be finished"
 }
