@@ -37,7 +37,7 @@ type Persist<S> = (
 export const useUserStore = create<UserStore>()(
     (persist as Persist<UserStore>)(
         (set, get) => {
-            const loading = Boolean(true);
+            const loading = Boolean(false);
             const updateUserInfo = async () => {
                 const { StorageAPI } = await loadStorageAPI();
                 await Promise.resolve();
