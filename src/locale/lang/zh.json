@@ -312,7 +312,7 @@
   "parent-category": "父类",
   "no-parent-category": "无父类",
   "offline-mode": "离线模式",
-  "please-input-book-name": "请输入账本名称：",
+  "please-input-book-name": "请输入账本名称(仅限英文字母和数字组合，不允许特殊符号)：",
   "input-tag-name": "请输入标签名称",
   "please-enter-nickname": "请输入自定义昵称",
   "smart-import": "智能导入",
