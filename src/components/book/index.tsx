@@ -52,7 +52,7 @@ export default function BookGuide() {
             }}
         >
             <Dialog.Portal>
-                <Dialog.Overlay className="fixed inset-0 bg-black/50 data-[state=open]:animate-overlay-show"></Dialog.Overlay>
+                <Dialog.Overlay className="fixed z-[2] inset-0 bg-black/50 data-[state=open]:animate-overlay-show"></Dialog.Overlay>
                 <Dialog.Content>
                     <VisuallyHidden.Root>
                         <Dialog.Title>{t("select-a-book")}</Dialog.Title>
@@ -60,7 +60,7 @@ export default function BookGuide() {
                             {t("select-a-book")}
                         </Dialog.Description>
                     </VisuallyHidden.Root>
-                    <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center pointer-events-none">
+                    <div className="fixed z-[3] top-0 left-0 w-full h-full flex justify-center items-center pointer-events-none">
                         <Dialog.Content
                             className={cn(
                                 "bg-background max-h-[55vh] w-fit max-w-[500px] rounded-md data-[state=open]:animate-content-show",
