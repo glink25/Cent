@@ -20,9 +20,6 @@ const WhatsNew: (PromotionItem & { action?: () => void })[] = [
 
 export const addPromotion = (item: PromotionItem) => {
     useGuideStore.setState((state) => {
-        if (state.dynamicPromotionIds?.includes(item.id)) {
-            return state;
-        }
         return {
             ...state,
             dynamicPromotionIds: Array.from(
