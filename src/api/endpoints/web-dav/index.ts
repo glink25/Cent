@@ -110,7 +110,9 @@ export const WebDAVEndpoint: SyncEndpointFactory = {
             createBook: repo.createStore.bind(repo),
             initBook: repo.initStore.bind(repo),
             deleteBook: async () => {
-                confirm("are you sure to delete?");
+                confirm(
+                    "Please delete this folder on your Web DAV server/app manually",
+                );
             },
             inviteForBook: undefined,
 

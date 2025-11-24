@@ -4,9 +4,11 @@ import { useShallow } from "zustand/shallow";
 import { StorageAPI } from "@/api/storage";
 import AnimatedNumber from "@/components/animated-number";
 import BudgetCard from "@/components/budget/card";
+import { HintTooltip } from "@/components/hint";
 import { PaginationIndicator } from "@/components/indicator";
 import Ledger from "@/components/ledger";
 import Loading from "@/components/loading";
+import { Promotion } from "@/components/promotion";
 import { useBudget } from "@/hooks/use-budget";
 import { useSnap } from "@/hooks/use-snap";
 import { amountToNumber } from "@/ledger/bill";
@@ -87,6 +89,7 @@ export default function Page() {
                         </button>
                     )}
                 </div>
+                <Promotion />
                 <div className="w-full flex flex-col gap-1">
                     <div
                         ref={budgetContainer}
@@ -127,15 +130,20 @@ export default function Page() {
                         />
                     )}
                 </div>
-                <button
-                    type="button"
-                    className="cursor-pointer"
-                    onClick={() => {
-                        StorageAPI.toSync();
-                    }}
+                <HintTooltip
+                    persistKey={"cloudSyncHintShows"}
+                    content={"等待云同步完成后，其他设备即可获取最新的账单数据"}
                 >
-                    <i className={cn(syncIcon)} />
-                </button>
+                    <button
+                        type="button"
+                        className="cursor-pointer"
+                        onClick={() => {
+                            StorageAPI.toSync();
+                        }}
+                    >
+                        <i className={cn(syncIcon)} />
+                    </button>
+                </HintTooltip>
             </div>
             <div className="flex-1 translate-0 pb-[10px] overflow-hidden">
                 <div className="w-full h-full">

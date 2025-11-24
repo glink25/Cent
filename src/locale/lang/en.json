@@ -404,5 +404,7 @@
   "original-category": "Original Category",
   "bill-compression": "Bill Compression",
   "bill-compression-tip": "When you frequently modify or delete bill data in batches, the incremental data saved in the cloud may become extremely large. [Bill Compression] can be used to reduce the size of this cloud data. Please ensure that the bill data on all devices has been completely uploaded before proceeding with the operation; after compressing the bills, it is best practice for other devices to log in again to ensure they retrieve the latest data.",
-  "wait-synced-tip": "Please wait cloud sync to be finished"
+  "wait-synced-tip": "Please wait cloud sync to be finished",
+  "are-you-sure-to-delete-this-budget": "Are you sure to delete the budget?",
+  "are-you-sure-to-delete-this-filter": "Are you sure to delete this filter?"
 }
