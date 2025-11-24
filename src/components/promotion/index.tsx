@@ -1,7 +1,9 @@
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
+/** biome-ignore-all lint/security/noDangerouslySetInnerHtml: <explanation> */
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
 import { useEffect, useRef } from "react";
 import { useShallow } from "zustand/shallow";
+import { useIntl } from "@/locale";
 import { useGuideStore } from "@/store/guide";
 import { useLedgerStore } from "@/store/ledger";
 import { showBudget } from "../budget";
@@ -14,7 +16,7 @@ export type PromotionItem = {
 const WhatsNew: (PromotionItem & { action?: () => void })[] = [
     // {
     //     id: "whats-new-1.1",
-    //     label: "✨ Cent 现在支持多币种，还有更多新功能",
+    //     label: "whats-new-1.1-promotion-label",
     // },
 ];
 
@@ -32,7 +34,7 @@ export const addPromotion = (item: PromotionItem) => {
 /** 记账后推荐制定预算 */
 const BudgetPromotionItem = {
     id: "budget-promotion",
-    label: "🧮 开始通过预算控制开支",
+    label: "budget-promotion-label",
     action: () => {
         showBudget();
     },
@@ -57,6 +59,8 @@ export const afterAddBillPromotion = async () => {
 };
 
 export function Promotion() {
+    const t = useIntl();
+
     const [dynamicPromotionIds, closed] = useGuideStore(
         useShallow((state) => [
             state.dynamicPromotionIds,
@@ -115,7 +119,10 @@ export function Promotion() {
                             }, 1000);
                         }}
                     >
-                        <div className="text-sm">{item.label}</div>
+                        <div
+                            className="text-sm"
+                            dangerouslySetInnerHTML={{ __html: t(item.label) }}
+                        ></div>
                         <button
                             type="button"
                             className="absolute top-1 right-1 cursor-pointer flex w-4 h-4"
