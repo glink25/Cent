@@ -311,7 +311,7 @@
   "parent-category": "Parent",
   "no-parent-category": "No parent",
   "offline-mode": "Offline Mode",
-  "please-input-book-name": "please input book name:",
+  "please-input-book-name": "please input book name(only EN letters & number allowed, no special characters):",
   "input-tag-name": "input tag name",
   "please-enter-nickname": "Please enter a new custom nickname",
   "sync-with-web-dav": "Sync with Web DAV",
