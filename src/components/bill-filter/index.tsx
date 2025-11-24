@@ -45,7 +45,7 @@ function BillFilterFormed({
                     variant="destructive"
                     onClick={() => {
                         const ok = confirm(
-                            "Are you sure to delete this filter?",
+                            t("are-you-sure-to-delete-this-filter"),
                         );
                         if (!ok) {
                             return;

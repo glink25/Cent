@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from "react-router";
 import { StorageDeferredAPI } from "@/api/storage";
 import BillFilterForm from "@/components/bill-filter";
 import Clearable from "@/components/clearable";
+import { HintTooltip } from "@/components/hint";
 import Ledger from "@/components/ledger";
 import {
     type BatchEditOptions,
@@ -279,12 +280,18 @@ export default function Page() {
                                 {t("save-for-analyze")}
                             </Button>
                         )}
-                        <Collapsible.Trigger asChild>
-                            <Button variant="ghost">
-                                <i className="group-[[data-state=open]]:icon-[mdi--filter-variant-minus] group-[[data-state=closed]]:icon-[mdi--filter-variant-plus]"></i>
-                                {t("filter")}
-                            </Button>
-                        </Collapsible.Trigger>
+
+                        <HintTooltip
+                            persistKey="filterHintShows"
+                            content={"点击展开详细筛选面板"}
+                        >
+                            <Collapsible.Trigger asChild>
+                                <Button variant="ghost">
+                                    <i className="group-[[data-state=open]]:icon-[mdi--filter-variant-minus] group-[[data-state=closed]]:icon-[mdi--filter-variant-plus]"></i>
+                                    {t("filter")}
+                                </Button>
+                            </Collapsible.Trigger>
+                        </HintTooltip>
                     </div>
                 </Collapsible.Root>
                 <div

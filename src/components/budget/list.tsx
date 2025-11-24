@@ -123,7 +123,9 @@ export default function BudgetListForm({
                                                 className="w-[24px] h-[24px] p-0"
                                                 onClick={async () => {
                                                     const ok = confirm(
-                                                        "Are you sure to delete the budget?",
+                                                        t(
+                                                            "are-you-sure-to-delete-this-budget",
+                                                        ),
                                                     );
                                                     if (!ok) {
                                                         return;
