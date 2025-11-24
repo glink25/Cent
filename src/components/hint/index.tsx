@@ -1,5 +1,6 @@
 import { PopoverArrow } from "@radix-ui/react-popover";
 import { type ReactNode, useEffect, useState } from "react";
+import { useBookStore } from "@/store/book";
 import { type GuidePersistKey, useGuideStore } from "@/store/guide";
 import { useIsLogin } from "@/store/user";
 import { cn } from "@/utils";
@@ -16,7 +17,9 @@ export function HintTooltip({
     content?: ReactNode;
 }) {
     const isLogin = useIsLogin();
+    const shows = useGuideStore((state) => state[persistKey]);
     const [open, setOpen] = useState(false);
+    const curBook = useBookStore((state) => state.currentBookId);
 
     useEffect(() => {
         setTimeout(() => {
@@ -26,19 +29,19 @@ export function HintTooltip({
             }
         }, 1000);
     }, [persistKey]);
-    if (!isLogin) {
+    if (!isLogin || !curBook || shows) {
         return children;
     }
     return (
         <Popover
             open={open}
             onOpenChange={(v) => {
-                setOpen(v);
                 if (!v) {
                     useGuideStore.setState((prev) => ({
                         ...prev,
                         [persistKey]: true,
                     }));
+                    setOpen(v);
                 }
             }}
         >
