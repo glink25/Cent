@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Route, Routes } from "react-router";
+import { MemoryRouter, Route, Routes } from "react-router";
 import Home from "@/pages/home";
 import { LoadingSkeleton } from "./components/loading";
 import MainLayout from "./layouts/main-layout";
@@ -8,7 +8,7 @@ const Stat = lazy(() => import("@/pages/stat"));
 
 const Search = lazy(() => import("@/pages/search"));
 
-export default function RootRoute() {
+function RootRoute() {
     return (
         <Routes>
             <Route element={<MainLayout />}>
@@ -31,5 +31,13 @@ export default function RootRoute() {
                 />
             </Route>
         </Routes>
+    );
+}
+
+export default function Rooot() {
+    return (
+        <MemoryRouter>
+            <RootRoute />
+        </MemoryRouter>
     );
 }

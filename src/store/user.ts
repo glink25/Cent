@@ -1,13 +1,14 @@
 import { produce } from "immer";
-import { toast } from "sonner";
 import type { StateCreator } from "zustand";
 import { create } from "zustand";
 import type { PersistOptions } from "zustand/middleware";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { useShallow } from "zustand/shallow";
 import type { UserInfo } from "@/api/endpoints/type";
-import { StorageAPI } from "@/api/storage";
+import { loadStorageAPI } from "@/api/storage/dynamic";
 import { t } from "@/locale";
+
+const toastLib = import("sonner");
 
 type UserStoreState = {
     avatar_url: string;
@@ -36,8 +37,9 @@ type Persist<S> = (
 export const useUserStore = create<UserStore>()(
     (persist as Persist<UserStore>)(
         (set, get) => {
-            const loading = Boolean(true);
+            const loading = Boolean(false);
             const updateUserInfo = async () => {
+                const { StorageAPI } = await loadStorageAPI();
                 await Promise.resolve();
                 set(
                     produce((state) => {
@@ -58,6 +60,7 @@ export const useUserStore = create<UserStore>()(
                     if (
                         (error as Error)?.message.startsWith("Bad credentials")
                     ) {
+                        const { toast } = await toastLib;
                         toast.error(
                             t(
                                 "token-expired-please-re-login-to-github-from-setting-page",
@@ -92,6 +95,7 @@ export const useUserStore = create<UserStore>()(
 
             const getUserInfo = async (login: string) => {
                 const run = async () => {
+                    const { StorageAPI } = await loadStorageAPI();
                     const res = await StorageAPI.getUserInfo(login);
                     const info = {
                         avatar_url: res.avatar_url,
@@ -116,6 +120,7 @@ export const useUserStore = create<UserStore>()(
 
             const getCollaborators = async (repo: string) => {
                 const run = async () => {
+                    const { StorageAPI } = await loadStorageAPI();
                     const res = await StorageAPI.getCollaborators(repo);
                     set(
                         produce((state: UserStore) => {

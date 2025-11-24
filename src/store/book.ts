@@ -4,7 +4,7 @@ import { create } from "zustand";
 import type { PersistOptions } from "zustand/middleware";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type { Book } from "@/api/endpoints/type";
-import { StorageAPI } from "../api/storage";
+import { loadStorageAPI } from "../api/storage/dynamic";
 
 type BookStoreState = {
     currentBookId: string | undefined;
@@ -40,6 +40,7 @@ export const useBookStore = create<BookStore>()(
                     }),
                 );
                 try {
+                    const { StorageAPI } = await loadStorageAPI();
                     const res = await StorageAPI.fetchAllBooks();
                     const allBooks = res;
                     set(
@@ -64,6 +65,7 @@ export const useBookStore = create<BookStore>()(
                 currentBookId: undefined,
                 updateBookList,
                 addBook: async (name) => {
+                    const { StorageAPI } = await loadStorageAPI();
                     await StorageAPI.createBook(name);
                     await updateBookList();
                 },
