@@ -407,6 +407,9 @@
   "wait-synced-tip": "Please wait cloud sync to be finished",
   "are-you-sure-to-delete-this-budget": "Are you sure to delete the budget?",
   "are-you-sure-to-delete-this-filter": "Are you sure to delete this filter?",
-   "budget-promotion-label":"🧮 Start to use Budget",
-   "whats-new-1.1-promotion-label":"✨ Multi-Currency now available, and more!"
+  "budget-promotion-label": "🧮 Start to use Budget",
+  "whats-new-1.1-promotion-label": "✨ Multi-Currency now available, and more!",
+  "quick-add-when-reduce-motion-changed": "Quick add a bill when Reduce Motion changed",
+  "read-bill-from-clipboard": "Read bill from clipboard",
+  "read-clipboard": "Read"
 }

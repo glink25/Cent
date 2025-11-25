@@ -30,6 +30,13 @@ const plugins: PluginOption[] = [
                 { src: "icon.png", sizes: "192x192", type: "image/png" },
                 { src: "icon.png", sizes: "512x512", type: "image/png" },
             ],
+            protocol_handlers: [
+                {
+                    protocol: "cent-accounting",
+                    url: "/add?data=%s",
+                    client_mode: "focus-existing", // 优先聚焦现有窗口
+                } as any,
+            ],
         },
     }),
 ];

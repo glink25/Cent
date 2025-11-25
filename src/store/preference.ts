@@ -10,6 +10,7 @@ type State = {
     locale: LocaleName;
     autoLocateWhenAddBill?: boolean;
     enterAddBillWhenReduceMotionChanged?: boolean;
+    readClipboardWhenReduceMotionChanged?: boolean;
 };
 type Store = State;
 
@@ -24,6 +25,7 @@ export const usePreferenceStore = create<Store>()(
             return {
                 locale: getBrowserLang(),
                 autoLocateWhenAddBill: false,
+                readClipboardWhenReduceMotionChanged: false,
             };
         },
         {
