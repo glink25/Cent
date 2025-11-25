@@ -1,3 +1,2 @@
 /// <reference types="vite/client" />
-
-declare const __BUILD_INFO: { version: string };
+/// <reference types="unplugin-info/client" />
