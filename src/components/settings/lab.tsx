@@ -17,6 +17,11 @@ function Form({ onCancel }: { onCancel?: () => void }) {
         setEnterAddBillWhenReduceMotionChanged,
     ] = usePreference("enterAddBillWhenReduceMotionChanged");
 
+    const [
+        readClipboardWhenReduceMotionChanged,
+        setReadClipboardWhenReduceMotionChanged,
+    ] = usePreference("readClipboardWhenReduceMotionChanged");
+
     return (
         <PopupLayout
             title={t("experimental-functions")}
@@ -58,6 +63,30 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                     <Switch
                         checked={enterAddBillWhenReduceMotionChanged}
                         onCheckedChange={setEnterAddBillWhenReduceMotionChanged}
+                    />
+                </div>
+                <div className="w-full h-10 flex justify-between items-center px-4">
+                    <div className="text-sm">
+                        <div>{t("quick-add-when-reduce-motion-changed")}</div>
+                        <div className="text-xs opacity-60">
+                            {t(
+                                "enter-add-bill-when-reduce-motion-changed-description",
+                            )}
+                            <a
+                                href="https://glink25.github.io/post/Cent-PWA%E5%B0%8F%E6%8A%80%E5%B7%A7/#%E5%BF%AB%E6%8D%B7%E8%AE%B0%E8%B4%A6"
+                                className="underline px-2"
+                                target="_blank"
+                                rel="noopener"
+                            >
+                                Tips
+                            </a>
+                        </div>
+                    </div>
+                    <Switch
+                        checked={readClipboardWhenReduceMotionChanged}
+                        onCheckedChange={
+                            setReadClipboardWhenReduceMotionChanged
+                        }
                     />
                 </div>
             </div>

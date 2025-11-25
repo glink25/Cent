@@ -8,7 +8,7 @@
 		"build": "pnpm run lint && vite build",
 		"analyze": "ANALYZE=true vite build",
 		"lint": "tsc -b && biome check --diagnostic-level error",
-		"preview": "vite preview",
+		"preview": "vite preview --host --port 5173",
 		"check": "biome check --write"
 	},
 	"dependencies": {

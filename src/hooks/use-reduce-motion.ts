@@ -14,6 +14,10 @@ const useRapidReducedMotionChange = (
     const changeCount = useRef<number>(0);
     const timer = useRef<NodeJS.Timeout | null>(null);
 
+    const callbackRef = useRef(callback);
+    callbackRef.current = callback;
+    const isRunning = useRef(false);
+
     useEffect(() => {
         // 确保在浏览器环境下执行
         if (
@@ -29,6 +33,9 @@ const useRapidReducedMotionChange = (
         );
 
         const handleChange = () => {
+            if (isRunning.current) {
+                return;
+            }
             // 如果计时器已存在，则清除它，以重置时间窗口
             if (timer.current) {
                 clearTimeout(timer.current);
@@ -39,7 +46,11 @@ const useRapidReducedMotionChange = (
 
             // 如果变化次数达到阈值，则立即执行回调并重置计数器
             if (changeCount.current >= threshold) {
-                callback();
+                callbackRef.current?.();
+                isRunning.current = true;
+                setTimeout(() => {
+                    isRunning.current = false;
+                }, 2000);
                 changeCount.current = 0; // 重置
             } else {
                 // 未达到阈值，则启动一个计时器。
@@ -62,7 +73,7 @@ const useRapidReducedMotionChange = (
                 clearTimeout(timer.current);
             }
         };
-    }, [callback, threshold, timeout, disable]);
+    }, [threshold, timeout, disable]);
 };
 
 export default useRapidReducedMotionChange;

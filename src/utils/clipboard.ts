@@ -1,3 +1,32 @@
+export function readClipboardSync() {
+    let clipboardText: string | null = null;
+    // 必须在可编辑元素中执行 'paste' 命令
+    const tempTextArea = document.createElement("textarea");
+    tempTextArea.style.position = "fixed";
+    tempTextArea.style.top = "0";
+    tempTextArea.style.left = "0";
+    tempTextArea.style.opacity = "0"; // 隐藏元素
+    document.body.appendChild(tempTextArea);
+    tempTextArea.focus();
+
+    try {
+        // 执行粘贴命令
+        const success = document.execCommand("paste");
+        if (success) {
+            // 粘贴成功，读取内容
+            clipboardText = tempTextArea.value;
+        } else {
+            console.warn("execCommand('paste') 失败，通常是由于安全限制。");
+        }
+    } catch (e) {
+        console.error("execCommand('paste') 抛出异常。", e);
+    } finally {
+        // 移除临时元素
+        document.body.removeChild(tempTextArea);
+    }
+    return clipboardText;
+}
+
 /**
  * 尝试读取剪贴板中的内容，包括文本和文件等。
  *
@@ -88,31 +117,7 @@ export async function readClipboard(): Promise<{
         console.warn(
             "尝试使用 document.execCommand('paste') 降级方案获取文本（仅限文本）。",
         );
-
-        // 必须在可编辑元素中执行 'paste' 命令
-        const tempTextArea = document.createElement("textarea");
-        tempTextArea.style.position = "fixed";
-        tempTextArea.style.top = "0";
-        tempTextArea.style.left = "0";
-        tempTextArea.style.opacity = "0"; // 隐藏元素
-        document.body.appendChild(tempTextArea);
-        tempTextArea.focus();
-
-        try {
-            // 执行粘贴命令
-            const success = document.execCommand("paste");
-            if (success) {
-                // 粘贴成功，读取内容
-                clipboardText = tempTextArea.value;
-            } else {
-                console.warn("execCommand('paste') 失败，通常是由于安全限制。");
-            }
-        } catch (e) {
-            console.error("execCommand('paste') 抛出异常。", e);
-        } finally {
-            // 移除临时元素
-            document.body.removeChild(tempTextArea);
-        }
+        clipboardText = readClipboardSync();
     }
 
     return {
