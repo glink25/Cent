@@ -14,10 +14,16 @@ export type PromotionItem = {
 };
 
 const WhatsNew: (PromotionItem & { action?: () => void })[] = [
-    // {
-    //     id: "whats-new-1.1",
-    //     label: "whats-new-1.1-promotion-label",
-    // },
+    {
+        id: "whats-new-1.1",
+        label: "whats-new-1.1-promotion-label",
+        action: () => {
+            window.open(
+                "https://glink25.github.io/post/Cent-%E5%B7%B2%E6%94%AF%E6%8C%81%E5%A4%9A%E5%B8%81%E7%A7%8D%E8%87%AA%E5%8A%A8%E8%AE%B0%E8%B4%A6/",
+                "_blank",
+            );
+        },
+    },
 ];
 
 export const addPromotion = (item: PromotionItem) => {
@@ -111,7 +117,7 @@ export function Promotion() {
                 {promotions.map((item, index) => (
                     <div
                         key={item.id}
-                        className="relative flex-shrink-0 snap-start rounded-lg border flex items-center justify-between w-full p-2 h-12"
+                        className="relative cursor-pointer flex-shrink-0 snap-start rounded-lg border flex items-center justify-between w-full p-2 h-12"
                         onClick={() => {
                             item?.action?.();
                             setTimeout(() => {

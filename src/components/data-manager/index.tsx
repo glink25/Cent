@@ -18,6 +18,8 @@ import {
 } from "./preview";
 import { SmartImportProvider, showSmartImport } from "./smart-import";
 
+const betaClassName = `relative after:content-['beta'] after:rounded after:bg-yellow-400 after:px-[2px] after:text-[8px] after:block after:absolute after:top-0 after:right-0 after:translate-x-[calc(100%+4px)]`;
+
 function Form({ onCancel }: { onCancel?: () => void }) {
     const t = useIntl();
     const toImport = async () => {
@@ -81,11 +83,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
     };
     return (
         <PopupLayout
-            title={
-                <div className="relative after:content-['beta'] after:rounded after:bg-yellow-400 after:px-[2px] after:text-[8px] after:block after:absolute after:top-0 after:right-0 after:translate-x-[calc(100%+4px)]">
-                    {t("data-manager")}
-                </div>
-            }
+            title={<div className="">{t("data-manager")}</div>}
             onBack={onCancel}
             className="h-full overflow-hidden"
         >
@@ -165,9 +163,7 @@ export default function DataManagerSettingsItem() {
                 <div className="w-full px-4 flex justify-between items-center">
                     <div className="flex items-center gap-2">
                         <i className="icon-[mdi--database-outline] size-5"></i>
-                        <div className="relative after:content-['beta'] after:rounded after:bg-yellow-400 after:px-[2px] after:text-[8px] after:block after:absolute after:top-0 after:right-0 after:translate-x-[calc(100%+4px)]">
-                            {t("data-manager")}
-                        </div>
+                        <div>{t("data-manager")}</div>
                     </div>
                     <i className="icon-[mdi--chevron-right] size-5"></i>
                 </div>

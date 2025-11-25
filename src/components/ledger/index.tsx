@@ -22,6 +22,7 @@ export default function Ledger({
     showTime,
     selectedIds,
     onSelectChange,
+    afterEdit,
 }: {
     bills: OutputType<Bill>[];
     /** 如果传入的列表已按时间降序，则尝试按照日期分隔 */
@@ -30,6 +31,7 @@ export default function Ledger({
     showTime?: boolean;
     selectedIds?: string[];
     onSelectChange?: (id: string) => void;
+    afterEdit?: (bill: Bill) => void;
 }) {
     const parentRef = useRef<HTMLDivElement>(null);
 
@@ -125,7 +127,10 @@ export default function Ledger({
                                     onClick={
                                         enableSelect
                                             ? undefined
-                                            : () => showBillInfo(bill)
+                                            : async () => {
+                                                  await showBillInfo(bill);
+                                                  afterEdit?.(bill);
+                                              }
                                     }
                                     showTime={showTime}
                                 />
