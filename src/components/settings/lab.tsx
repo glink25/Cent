@@ -73,7 +73,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                                 "enter-add-bill-when-reduce-motion-changed-description",
                             )}
                             <a
-                                href="https://glink25.github.io/post/Cent-PWA%E5%B0%8F%E6%8A%80%E5%B7%A7/#%E5%BF%AB%E6%8D%B7%E8%AE%B0%E8%B4%A6"
+                                href="https://glink25.github.io/post/Cent-%E5%B7%B2%E6%94%AF%E6%8C%81%E5%A4%9A%E5%B8%81%E7%A7%8D%E8%87%AA%E5%8A%A8%E8%AE%B0%E8%B4%A6/#iOS%E5%BF%AB%E6%8D%B7%E6%8C%87%E4%BB%A4%E5%BF%AB%E9%80%9F%E8%AE%B0%E8%B4%A6"
                                 className="underline px-2"
                                 target="_blank"
                                 rel="noopener"

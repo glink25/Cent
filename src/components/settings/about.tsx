@@ -1,10 +1,13 @@
 import PopupLayout from "@/layouts/popup-layout";
 import { useIntl } from "@/locale";
+
 import createConfirmProvider from "../confirm";
 import { Button } from "../ui/button";
+import Version from "./version";
 
 function Form({ onCancel }: { onCancel?: () => void }) {
     const t = useIntl();
+
     return (
         <PopupLayout
             title={t("about-cent")}
@@ -20,14 +23,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                         height={80}
                         className="rounded-lg shadow-md aspect-square"
                     />
-                    <div className="flex flex-col justify-center items-center">
-                        <div className="font-semibold">
-                            {t("cent-app-name")}
-                        </div>
-                        <div className="text-xs opacity-60">
-                            {t("version")}: {__BUILD_INFO.version}
-                        </div>
-                    </div>
+                    <Version />
                 </div>
                 <a
                     className="w-full h-10 flex justify-between items-center px-4"

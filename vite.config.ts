@@ -1,17 +1,15 @@
-import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react-swc";
+import Info from "unplugin-info/vite";
 import { defineConfig, type PluginOption } from "vite";
 import { analyzer } from "vite-bundle-analyzer";
 import { VitePWA } from "vite-plugin-pwa";
 
-const packageJSON = readFileSync("./package.json", { encoding: "utf-8" });
-const packageValue = JSON.parse(packageJSON);
-
 const shouldAnalyze = process.env.ANALYZE === "true";
 
 const plugins: PluginOption[] = [
+    Info(),
     react(),
     tailwindcss(),
     VitePWA({
@@ -48,9 +46,6 @@ if (shouldAnalyze) {
 
 // https://vite.dev/config/
 export default defineConfig({
-    define: {
-        __BUILD_INFO: { version: `${packageValue.version}` },
-    },
     plugins,
     resolve: {
         alias: {

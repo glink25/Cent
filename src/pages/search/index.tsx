@@ -398,6 +398,7 @@ export default function Page() {
                     showTime
                     selectedIds={enableSelect ? selectedIds : undefined}
                     onSelectChange={onSelectChange}
+                    afterEdit={toSearch}
                 />
             </div>
             <BatchEditProvider />
