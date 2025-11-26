@@ -59,7 +59,7 @@ export default function useCategory() {
                 prev.categories = BillCategories;
             }
             const id = v4();
-            prev.categories.push({ ...newData, id });
+            prev.categories.push({ ...newData, customName: true, id });
             resolve(id);
             return prev;
         });
@@ -92,15 +92,26 @@ export default function useCategory() {
                 if (index === -1) {
                     return prev;
                 }
+                // 如果是默认分类，并且名称与intl后的名称不同，customName设为true，否则为undefined
+                let customName: boolean | undefined;
+                const defaultCategory = BillCategories.find((c) => c.id === id);
+                if (defaultCategory && defaultCategory) {
+                    customName = t(defaultCategory.name) !== value.name;
+                }
                 prev.categories[index] = {
                     ...prev.categories[index],
                     ...value,
+                    customName,
+                    name:
+                        customName === true
+                            ? value.name!
+                            : (defaultCategory?.name ?? value.name!),
                     id,
                 };
                 return prev;
             });
         },
-        [],
+        [t],
     );
 
     const reorder = useCallback(async (ordered: Pick<BillCategory, "id">[]) => {
