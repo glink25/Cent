@@ -17,6 +17,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import {
     useQuickEntryByClipboard,
+    useQuickEntryByReLayr,
     useQuickGoAdd,
 } from "@/hooks/use-quick-entry";
 import { ThemeProvider } from "@/hooks/use-theme";
@@ -24,6 +25,7 @@ import { ThemeProvider } from "@/hooks/use-theme";
 export default function MainLayout() {
     useQuickGoAdd();
     useQuickEntryByClipboard();
+    useQuickEntryByReLayr();
 
     return (
         <ThemeProvider>
