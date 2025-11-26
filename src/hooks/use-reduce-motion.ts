@@ -8,9 +8,9 @@ import { useEffect, useRef } from "react";
  */
 const useRapidReducedMotionChange = (
     callback: () => void,
-    options?: { disable?: boolean; threshold?: number; timeout?: number },
+    options?: { disabled?: boolean; threshold?: number; timeout?: number },
 ): void => {
-    const { threshold = 2, timeout = 3000, disable } = options || {};
+    const { threshold = 2, timeout = 3000, disabled: disable } = options || {};
     const changeCount = useRef<number>(0);
     const timer = useRef<NodeJS.Timeout | null>(null);
 

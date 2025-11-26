@@ -11,6 +11,9 @@ type State = {
     autoLocateWhenAddBill?: boolean;
     enterAddBillWhenReduceMotionChanged?: boolean;
     readClipboardWhenReduceMotionChanged?: boolean;
+    quickEntryWithReLayr?: boolean;
+    reLayrPort?: string;
+    reLayrKey?: string;
 };
 type Store = State;
 
@@ -26,6 +29,8 @@ export const usePreferenceStore = create<Store>()(
                 locale: getBrowserLang(),
                 autoLocateWhenAddBill: false,
                 readClipboardWhenReduceMotionChanged: false,
+                reLayrKey: "cent",
+                reLayrPort: "2525",
             };
         },
         {

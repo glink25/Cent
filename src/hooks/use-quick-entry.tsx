@@ -9,6 +9,7 @@ import { useLedgerStore } from "@/store/ledger";
 import { usePreferenceStore } from "@/store/preference";
 import { readClipboard } from "@/utils/clipboard";
 import useCategory from "./use-category";
+import { usePageVisibility } from "./use-page-visibility";
 import useRapidReducedMotionChange from "./use-reduce-motion";
 
 export function useQuickGoAdd() {
@@ -19,7 +20,7 @@ export function useQuickGoAdd() {
             afterAddBillPromotion();
         }, []),
         {
-            disable: !enterAddBillWhenReduceMotionChanged,
+            disabled: !enterAddBillWhenReduceMotionChanged,
         },
     );
 }
@@ -78,7 +79,51 @@ export function useQuickEntryByClipboard() {
             handleData(text);
         }, [categories, t, expenses[0]]),
         {
-            disable: !readClipboardWhenReduceMotionChanged,
+            disabled: !readClipboardWhenReduceMotionChanged,
+        },
+    );
+}
+
+export function useQuickEntryByReLayr() {
+    const t = useIntl();
+
+    const { quickEntryWithReLayr, reLayrPort, reLayrKey } =
+        usePreferenceStore();
+    const { categories, expenses } = useCategory();
+    usePageVisibility(
+        useCallback(async () => {
+            const handleData = async (text: string | null) => {
+                if (!text) {
+                    return;
+                }
+                const data = JSON.parse(text) as {
+                    money: number;
+                    category: string;
+                    comment: string;
+                };
+                const category =
+                    categories.find((c) => c.id === data.category) ??
+                    expenses[0];
+                await useLedgerStore.getState().addBill({
+                    categoryId: category.id,
+                    amount: numberToAmount(data.money),
+                    comment: data.comment,
+                    type: "expense",
+                    time: Date.now(),
+                });
+                toast.success(t("quick-entry-success"), { duration: 2000 });
+            };
+            const res = await fetch(
+                `http://localhost:${reLayrPort}?key=${reLayrKey}`,
+            );
+            if (!res.ok) {
+                return;
+            }
+            const text = await res.text();
+            handleData(text);
+        }, [categories, t, expenses[0], reLayrKey, reLayrPort]),
+        {
+            disabled: !quickEntryWithReLayr,
         },
     );
 }
