@@ -85,6 +85,7 @@
 		"vite-bundle-analyzer": "^1.2.3",
 		"vite-plugin-info": "^0.4.1",
 		"vite-plugin-pwa": "^1.0.3",
+		"vite-plugin-svgr": "^4.5.0",
 		"workbox-core": "^7.3.0",
 		"workbox-precaching": "^7.3.0",
 		"workbox-routing": "^7.3.0",

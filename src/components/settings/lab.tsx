@@ -91,12 +91,13 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                         }
                     />
                 </div>
-                <RelayrSettings />
+                {/* <RelayrSettings /> */}
             </div>
         </PopupLayout>
     );
 }
 
+/** @deprecated */
 function RelayrSettings() {
     const t = useIntl();
     const [

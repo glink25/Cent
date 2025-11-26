@@ -84,6 +84,7 @@ export function useQuickEntryByClipboard() {
     );
 }
 
+/** @deprecated */
 export function useQuickEntryByReLayr() {
     const t = useIntl();
 

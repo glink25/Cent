@@ -5,12 +5,14 @@ import Info from "unplugin-info/vite";
 import { defineConfig, type PluginOption } from "vite";
 import { analyzer } from "vite-bundle-analyzer";
 import { VitePWA } from "vite-plugin-pwa";
+import svgr from "vite-plugin-svgr";
 
 const shouldAnalyze = process.env.ANALYZE === "true";
 
 const plugins: PluginOption[] = [
     Info(),
     react(),
+    svgr(),
     tailwindcss(),
     VitePWA({
         strategies: "injectManifest",

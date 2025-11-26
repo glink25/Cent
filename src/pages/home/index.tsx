@@ -2,6 +2,7 @@ import dayjs from "dayjs";
 import { useMemo, useRef } from "react";
 import { useShallow } from "zustand/shallow";
 import { StorageAPI } from "@/api/storage";
+import CloudLoopIcon from "@/assets/icons/cloud-loop.svg?react";
 import AnimatedNumber from "@/components/animated-number";
 import BudgetCard from "@/components/budget/card";
 import { HintTooltip } from "@/components/hint";
@@ -30,7 +31,7 @@ export default function Page() {
         }),
     );
     const { id: userId } = useUserStore();
-    const syncIcon =
+    const syncIconClassName =
         sync === "wait"
             ? "icon-[mdi--cloud-minus-outline]"
             : sync === "syncing"
@@ -141,7 +142,11 @@ export default function Page() {
                             StorageAPI.toSync();
                         }}
                     >
-                        <i className={cn(syncIcon)} />
+                        {sync === "syncing" ? (
+                            <CloudLoopIcon width={16} height={16} />
+                        ) : (
+                            <i className={syncIconClassName}></i>
+                        )}
                     </button>
                 </HintTooltip>
             </div>

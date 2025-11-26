@@ -11,8 +11,11 @@ type State = {
     autoLocateWhenAddBill?: boolean;
     enterAddBillWhenReduceMotionChanged?: boolean;
     readClipboardWhenReduceMotionChanged?: boolean;
+    /** @deprecated */
     quickEntryWithReLayr?: boolean;
+    /** @deprecated */
     reLayrPort?: string;
+    /** @deprecated */
     reLayrKey?: string;
 };
 type Store = State;
