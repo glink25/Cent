@@ -60,7 +60,6 @@ export default function CategoryEditForm({
         if (edit === undefined || edit.id === undefined) {
             return {
                 name: "",
-                customName: true,
                 type: edit?.type ?? "expense",
                 color: "#fff",
                 icon: ICONS[0].icons[0].className,
@@ -109,18 +108,12 @@ export default function CategoryEditForm({
         }
         const originCate = {
             icon: edit.icon,
-            name: edit.customName ? edit.name : t(edit.name),
+            name: edit.name,
             parent: edit.parent,
         };
         const formattedData = {
             ...data,
             icon: category?.icon,
-            customName:
-                edit.customName === true
-                    ? true
-                    : originCate.name !== data.name
-                      ? true
-                      : undefined,
         };
         if (
             originCate.icon === formattedData.icon &&
