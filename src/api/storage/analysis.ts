@@ -11,6 +11,7 @@ export type BillLike = {
     amount: number;
     time: number; // ms
     type: "expense" | "income";
+    comment?: string;
 };
 
 export type AnalysisType = "income" | "expense" | "balance";
@@ -36,6 +37,7 @@ export type AnalysisResult = {
     projected: Detail; // 投影后的统计值（若当前期未结束则投影到完整期）
     previous: Detail; // 上一周期的完整统计（不投影）
     lastYear: Detail; // 去年同期的完整统计（不投影）
+    bills: BillLike[];
 };
 
 /* ---------------- constants & helpers ---------------- */
@@ -144,13 +146,13 @@ export const analysis = async (
         );
         const projectedDetail = buildDetail(projectedTotal, fullDays);
 
-        return { currentDetail, projectedDetail };
+        return { currentDetail, projectedDetail, bills };
     };
 
     // CASE A: analysisUnit not provided -> use dateRange as the period
     if (!analysisUnit) {
         // compute current/projected based on dateRange and referenceMs
-        const { currentDetail, projectedDetail } = await detailForRange(
+        const { currentDetail, projectedDetail, bills } = await detailForRange(
             rangeStartMs,
             rangeEndMs,
         );
@@ -183,6 +185,7 @@ export const analysis = async (
             projected: projectedDetail,
             previous: previousDetail,
             lastYear: lastYearDetail,
+            bills,
         };
     }
 
@@ -201,8 +204,11 @@ export const analysis = async (
     const lastYearEndMs = dayjs(currEndMs).subtract(1, "year").valueOf();
 
     // compute current + projected
-    const { currentDetail: currCurrent, projectedDetail: currProjected } =
-        await detailForRange(currStartMs, currEndMs);
+    const {
+        currentDetail: currCurrent,
+        projectedDetail: currProjected,
+        bills,
+    } = await detailForRange(currStartMs, currEndMs);
 
     // previous: full period stats (previous is in past, so days = full)
     const prevBills = await fetchBills([prevStartMs, prevEndMs]);
@@ -221,5 +227,6 @@ export const analysis = async (
         projected: currProjected,
         previous: previousDetail,
         lastYear: lastYearDetail,
+        bills,
     };
 };
