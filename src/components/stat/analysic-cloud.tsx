@@ -4,6 +4,7 @@ import WordCloud from "wordcloud";
 import { useIntl } from "@/locale";
 import { cn } from "@/utils";
 import { processText } from "@/utils/word";
+import { MysteryLoading } from "../loading/mystery";
 
 const ignoredWords = ["alipay", "wechat", "yy"];
 
@@ -64,12 +65,18 @@ export function AnalysisCloud({ bills }: { bills?: { comment?: string }[] }) {
         processText(texts).then(setWordCut);
     }, [bills]);
     return (
-        <div className="rounded-md border p-2 w-full flex flex-col">
-            <h2 className="font-medium text-lg my-3 text-center">高频词</h2>
+        <div className="rounded-md border p-2 w-full flex flex-col relative">
+            <h2 className="font-medium text-lg my-3 text-center">
+                {t("comment-cloud")}
+            </h2>
             {wordCut === undefined ? (
-                <div>加载中</div>
+                <MysteryLoading className="w-full h-[150px] rounded-md">
+                    <div className="text-[white] text-sm">{t("loading")}</div>
+                </MysteryLoading>
             ) : wordCut.length === 0 ? (
-                "暂无高频"
+                <div className="text-center text-sm">
+                    {t("no-comment-cloud")}
+                </div>
             ) : (
                 <div>
                     <TextCloud data={wordCut} />

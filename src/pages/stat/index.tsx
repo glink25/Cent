@@ -643,6 +643,15 @@ export default function Page() {
                             </div>
                         </div>
                     )}
+                    <AnalysisCloud
+                        bills={
+                            focusType === "expense"
+                                ? filteredExpenseBills
+                                : focusType === "income"
+                                  ? filteredIncomeBills
+                                  : filtered
+                        }
+                    />
                     {analysis && (
                         <div className="rounded-md border p-2 w-full flex flex-col">
                             <h2 className="font-medium text-lg my-3 text-center">
@@ -687,15 +696,6 @@ export default function Page() {
                             </div>
                         )}
                     </div>
-                    <AnalysisCloud
-                        bills={
-                            focusType === "expense"
-                                ? filteredExpenseBills
-                                : focusType === "income"
-                                  ? filteredIncomeBills
-                                  : filtered
-                        }
-                    />
                     <div>
                         <Button variant="ghost" onClick={() => seeDetails()}>
                             {t("see-all-ledgers")}

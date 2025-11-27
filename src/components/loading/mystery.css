@@ -1,0 +1,59 @@
+@keyframes color-shift {
+	0% {
+		background-position: 50% 50%; /* 确保初始多彩区域居中显示 */
+		transform: scale(1) rotate(0deg);
+	}
+	25% {
+		background-position: 0% 100%; /* 扩展移动范围 */
+		transform: scale(1.1) rotate(45deg);
+	}
+	50% {
+		background-position: 100% 0%; /* 扩展移动范围 */
+		transform: scale(1) rotate(90deg);
+	}
+	75% {
+		background-position: 0% 0%; /* 扩展移动范围 */
+		transform: scale(0.9) rotate(135deg);
+	}
+	100% {
+		background-position: 50% 50%; /* 匹配初始位置 */
+		transform: scale(1) rotate(360deg);
+	}
+}
+
+/* 4. 加载文字的跳动动画 */
+@keyframes pulse {
+	0%,
+	100% {
+		transform: scale(1);
+		opacity: 0.8;
+	}
+	50% {
+		transform: scale(1.1);
+		opacity: 1;
+	}
+}
+
+/* 2. 应用星云效果的样式 */
+.nebula-effect {
+	/* 多彩渐变背景 */
+	background: linear-gradient(
+		45deg,
+		#1e3a8a /* 深蓝色 */,
+		#be185d /* 深紫红 */,
+		#7c3aed /* 紫色 */,
+		#f59e0b /* 橙黄 */,
+		#db2777 /* 品红色 */,
+		#059669 /* 翠绿 */,
+		#facc15 /* 亮黄 */,
+		#06b6d4 /* 青色 */,
+		#ef4444 /* 红色 */,
+		#7c3aed /* 再次紫色 */
+	);
+
+	background-size: 400% 400%;
+	filter: blur(80px); /* 关键的模糊效果 */
+
+	/* 应用动画：名称、持续时间、曲线、重复次数 */
+	animation: color-shift 20s ease-in-out infinite alternate;
+}

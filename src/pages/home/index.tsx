@@ -108,7 +108,7 @@ export default function Page() {
                     </div>
                 </div>
             </div>
-            <div className="flex justify-between items-center pl-7 pr-5 py-1">
+            <div className="flex justify-between items-center pl-7 pr-5 py-1 h-8">
                 <button
                     className="cursor-pointer"
                     type="button"

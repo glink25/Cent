@@ -417,5 +417,8 @@
   "quick-add-when-reduce-motion-changed": "【减弱动态效果】变化时读取剪贴板快速记账",
   "quick-entry-success": "快速添加记账成功",
   "read-bill-from-clipboard": "从剪贴板获取记账数据",
-  "read-clipboard": "读取"
+  "read-clipboard": "读取",
+  "comment-cloud": "高频词",
+  "loading": "加载中",
+  "no-comment-cloud": "暂无高频"
 }
