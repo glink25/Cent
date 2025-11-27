@@ -12,17 +12,22 @@ import { BillFilterProvider, showBillFilter } from "@/components/bill-filter";
 import { DateInput } from "@/components/bill-filter/form";
 import { showBillInfo } from "@/components/bill-info";
 import Chart, { type ChartInstance } from "@/components/chart";
-import { DatePicker } from "@/components/date-picker";
 import BillItem from "@/components/ledger/item";
 import { showSortableList } from "@/components/sortable";
+import { AnalysisCloud } from "@/components/stat/analysic-cloud";
+import { AnalysisDetail } from "@/components/stat/analysis-detail";
+import {
+    type FocusType,
+    FocusTypeSelector,
+    FocusTypes,
+} from "@/components/stat/focus-type";
+import { TagItem } from "@/components/stat/tag-item";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import useCategory from "@/hooks/use-category";
 import { useCreators } from "@/hooks/use-creator";
 import { useCustomFilters } from "@/hooks/use-custom-filters";
 import { useTag } from "@/hooks/use-tag";
-import { amountToNumber } from "@/ledger/bill";
-import type { BillFilter } from "@/ledger/type";
+import type { Bill, BillFilter } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
@@ -47,67 +52,6 @@ type Views = {
     label: string;
     filter?: BillFilter;
 };
-
-const FocusTypes = ["income", "expense", "balance"] as const;
-type FocusType = (typeof FocusTypes)[number];
-
-function FocusTypeSelector({
-    value: focusType,
-    onValueChange: setFocusType,
-    money,
-}: {
-    value: FocusType;
-    onValueChange: (v: FocusType) => void;
-    money: number[];
-}) {
-    const t = useIntl();
-    const btnClass = `w-[90px] text-sm py-1 flex items-center justify-center  cursor-pointer transition-all duration-200`;
-    return (
-        <div className="flex items-center rounded-md shadow border border-input overflow-hidden divide-x">
-            <button
-                type="button"
-                className={cn(
-                    btnClass,
-                    focusType === "income" && "!bg-stone-700 !text-white",
-                )}
-                onClick={() => {
-                    setFocusType("income");
-                }}
-            >
-                <div className="flex flex-col items-center justify-center">
-                    {t("income")}
-                    <span className="text-[10px] opacity-60">+{money[0]}</span>
-                </div>
-            </button>
-            <button
-                type="button"
-                className={cn(
-                    btnClass,
-                    focusType === "expense" && "!bg-stone-700 !text-white",
-                )}
-                onClick={() => setFocusType("expense")}
-            >
-                <div className="flex flex-col items-center justify-center">
-                    {t("expense")}
-                    <span className="text-[10px] opacity-60">-{money[1]}</span>
-                </div>
-            </button>
-            <button
-                type="button"
-                className={cn(
-                    btnClass,
-                    focusType === "balance" && "!bg-stone-700 !text-white",
-                )}
-                onClick={() => setFocusType("balance")}
-            >
-                <div className="flex flex-col items-center justify-center">
-                    {t("Balance")}
-                    <span className="text-[10px] opacity-60">{money[2]}</span>
-                </div>
-            </button>
-        </div>
-    );
-}
 
 export default function Page() {
     const t = useIntl();
@@ -197,12 +141,12 @@ export default function Page() {
         setSelectedSlice(slices[0]?.label);
     }, [slices[0]?.label]);
 
-    const [filtered, setFiltered] = useState<typeof bills>([]);
-
     const [customEnd, setCustomEnd] = useState<number | undefined>(undefined);
     const [customStart, setCustomStart] = useState<number | undefined>(
         undefined,
     );
+
+    const [filtered, setFiltered] = useState<typeof bills>([]);
 
     const { updateFilter } = useCustomFilters();
 
@@ -264,6 +208,22 @@ export default function Page() {
             setFiltered(result);
         });
     }, [filter]);
+    const { incomes: filteredIncomeBills, expenses: filteredExpenseBills } =
+        useMemo(() => {
+            const incomes: Bill[] = [];
+            const expenses: Bill[] = [];
+            filtered.forEach((v) => {
+                if (v.type === "expense") {
+                    expenses.push(v);
+                } else {
+                    incomes.push(v);
+                }
+            });
+            return {
+                incomes,
+                expenses,
+            };
+        }, [filtered]);
 
     const navigate = useNavigate();
     const seeDetails = (append?: Partial<BillFilter>) => {
@@ -683,6 +643,15 @@ export default function Page() {
                             </div>
                         </div>
                     )}
+                    <AnalysisCloud
+                        bills={
+                            focusType === "expense"
+                                ? filteredExpenseBills
+                                : focusType === "income"
+                                  ? filteredIncomeBills
+                                  : filtered
+                        }
+                    />
                     {analysis && (
                         <div className="rounded-md border p-2 w-full flex flex-col">
                             <h2 className="font-medium text-lg my-3 text-center">
@@ -700,6 +669,7 @@ export default function Page() {
                             <div className="rounded-md border p-2">
                                 {t("highest-expense")}:
                                 <BillItem
+                                    className="w-full"
                                     bill={dataSources.highestExpenseBill}
                                     showTime
                                     onClick={() =>
@@ -714,6 +684,7 @@ export default function Page() {
                             <div className="rounded-md border p-2">
                                 {t("highest-income")}:
                                 <BillItem
+                                    className="w-full"
                                     bill={dataSources.highestIncomeBill}
                                     showTime
                                     onClick={() =>
@@ -736,167 +707,5 @@ export default function Page() {
             </div>
             <BillFilterProvider />
         </div>
-    );
-}
-
-function TagItem({
-    name,
-    money,
-    total,
-    type,
-    onClick,
-}: {
-    name: string;
-    money: number;
-    total: number;
-    type: FocusType;
-    onClick?: () => void;
-}) {
-    const percent = total === 0 ? 0 : money / total;
-    return (
-        <div
-            className="w-full items-center cursor-pointer table-row h-10 rounded transition-all hover:bg-accent hover:text-accent-foreground"
-            onClick={onClick}
-        >
-            <div className="text-sm truncate text-left table-cell w-[1px] align-middle pl-2">
-                #{name}
-            </div>
-            <div className="table-cell w-auto px-2 align-middle">
-                <Progress
-                    value={percent * 100}
-                    className="h-3 [&_[data-state=indeterminate]]:hidden min-w-[1px]"
-                >
-                    <div
-                        className={cn(
-                            "absolute top-0 text-[8px] px-2 rounded-full min-w-min h-full flex items-center justify-end text-white",
-                            type === "expense"
-                                ? "bg-red-700"
-                                : type === "income"
-                                  ? "bg-green-700"
-                                  : "bg-stone-700",
-                        )}
-                        style={{ width: `${percent * 100}%` }}
-                    >
-                        {(percent * 100).toFixed(2)}%
-                    </div>
-                </Progress>
-            </div>
-            <div className="w-[1px] truncate text-right table-cell align-middle pr-2">
-                <div className="flex items-center w-full">
-                    <div className="flex-1 gap-1">
-                        {type === "expense"
-                            ? "-"
-                            : type === "income"
-                              ? "+"
-                              : ""}
-                        {money}
-                    </div>
-                    <i className="icon-[mdi--arrow-up-right]"></i>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-function AnalysisDetail({
-    analysis,
-    type,
-    unit,
-}: {
-    analysis: AnalysisResult;
-    type: FocusType;
-    unit?: "week" | "month" | "year" | "day";
-}) {
-    const t = useIntl();
-
-    // 1. 准备所有需要格式化和插入到文案中的动态值
-    const formattedValues = {
-        dayAvg: (
-            <span data-state="value" data-type="day">
-                {amountToNumber(analysis.current.dayAvg).toFixed(2)}
-            </span>
-        ),
-        weekAvg: (
-            <span data-state="value" data-type="week">
-                {amountToNumber(analysis.current.weekAvg).toFixed(2)}
-            </span>
-        ),
-        monthAvg: (
-            <span data-state="value" data-type="month">
-                {amountToNumber(analysis.current.monthAvg).toFixed(2)}
-            </span>
-        ),
-        yearAvg: (
-            <span data-state="value" data-type="year">
-                {amountToNumber(analysis.current.yearAvg).toFixed(2)}
-            </span>
-        ),
-        projectedTotal: (
-            <span data-state="value" data-type="predict">
-                {amountToNumber(analysis.projected.total).toFixed(2)}
-            </span>
-        ),
-    };
-
-    // 2. 将对比文案也变成一个独立的、可翻译的部分
-    const previousChange =
-        analysis.previous.total === 0
-            ? 0
-            : (analysis.current.total - analysis.previous.total) /
-              analysis.previous.total;
-    const lastYearChange =
-        analysis.lastYear.total === 0
-            ? 0
-            : (analysis.current.total - analysis.lastYear.total) /
-              analysis.lastYear.total;
-
-    // 辅助函数，用于获取增长/减少的文案片段
-    const getGrowthMessage = (changeValue: number) => {
-        const percentage = (Math.abs(changeValue) * 100).toFixed(2);
-        // 根据数值正负选择不同的翻译ID
-        const messageId =
-            changeValue >= 0
-                ? "analysis.growth.positive"
-                : "analysis.growth.negative";
-        // 使用 intl.formatMessage 生成文案片段
-        return (
-            <span
-                className={changeValue >= 0 ? "text-red-700" : "text-green-700"}
-            >
-                {t(messageId, { p: percentage })}
-            </span>
-        );
-    };
-
-    // 3. 将对比部分的完整句子也抽象成一个翻译ID
-    // 当 unit 为 'day' 时，可能没有“上一周期”的概念，可以不显示
-    const ComparisonSection =
-        unit !== "day" ? (
-            <div className="compare text-xs">
-                {t("analysis.comparison.full", {
-                    // `lastPeriod` 也从语言包获取
-                    lastPeriod: t(`period.${unit}`),
-                    // 将生成的文案片段作为值传入
-                    changeSinceLastPeriod: getGrowthMessage(previousChange),
-                    changeSinceLastYear: getGrowthMessage(lastYearChange),
-                })}
-            </div>
-        ) : null;
-    return (
-        <>
-            <div
-                className={cn(
-                    "common text-sm [&_[data-state=value]]:font-medium pb-2",
-                    type === "expense"
-                        ? "[&_[data-state=value]]:text-green-700"
-                        : type === "income"
-                          ? "[&_[data-state=value]]:text-red-700"
-                          : "",
-                )}
-            >
-                {t(`analysis.summary.${type}.${unit}`, formattedValues)}
-            </div>
-            {ComparisonSection}
-        </>
     );
 }

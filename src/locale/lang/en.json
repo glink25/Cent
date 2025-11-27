@@ -411,5 +411,7 @@
   "whats-new-1.1-promotion-label": "✨ Multi-Currency & Auto-Record now available, and more!",
   "quick-add-when-reduce-motion-changed": "Quick add a bill when Reduce Motion changed",
   "read-bill-from-clipboard": "Read bill from clipboard",
-  "read-clipboard": "Read"
+  "read-clipboard": "Read",
+  "comment-cloud": "Comment Cloud",
+  "no-comment-cloud": "No comment yet"
 }
