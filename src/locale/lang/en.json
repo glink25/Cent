@@ -413,5 +413,8 @@
   "read-bill-from-clipboard": "Read bill from clipboard",
   "read-clipboard": "Read",
   "comment-cloud": "Comment Cloud",
-  "no-comment-cloud": "No comment yet"
+  "no-comment-cloud": "No comment yet",
+  "recommend-comments": "Recommend",
+  "smart-predict": "Smart Predict",
+  "smart-predict-tip": "Recommend category & comments when add new bill"
 }

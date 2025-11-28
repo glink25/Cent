@@ -96,7 +96,6 @@ async function getItem(book: string): Promise<StoredModel | null> {
     const db = await openIDB();
 
     const rec = await db.get(STORE_NAME, book);
-    db.close();
     return rec ?? null;
 }
 
@@ -108,7 +107,6 @@ async function setItem(book: string, value: StoredModel): Promise<void> {
         meta: { updatedAt: Date.now(), ...(value.meta ?? {}) },
     };
     await db.put(STORE_NAME, stored, book);
-    db.close();
 }
 
 function getHourKey(timestamp: number) {

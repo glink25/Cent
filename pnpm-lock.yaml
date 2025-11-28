@@ -237,9 +237,6 @@ importers:
       workbox-core:
         specifier: ^7.3.0
         version: 7.3.0
-      workbox-expiration:
-        specifier: ^7.4.0
-        version: 7.4.0
       workbox-precaching:
         specifier: ^7.3.0
         version: 7.3.0
@@ -4428,9 +4425,6 @@ packages:
 
   workbox-expiration@7.3.0:
     resolution: {integrity: sha512-lpnSSLp2BM+K6bgFCWc5bS1LR5pAwDWbcKt1iL87/eTSJRdLdAwGQznZE+1czLgn/X05YChsrEegTNxjM067vQ==}
-
-  workbox-expiration@7.4.0:
-    resolution: {integrity: sha512-V50p4BxYhtA80eOvulu8xVfPBgZbkxJ1Jr8UUn0rvqjGhLDqKNtfrDfjJKnLz2U8fO2xGQJTx/SKXNTzHOjnHw==}
 
   workbox-google-analytics@7.3.0:
     resolution: {integrity: sha512-ii/tSfFdhjLHZ2BrYgFNTrb/yk04pw2hasgbM70jpZfLk0vdJAXgaiMAWsoE+wfJDNWoZmBYY0hMVI0v5wWDbg==}
@@ -9025,11 +9019,6 @@ snapshots:
     dependencies:
       idb: 7.1.1
       workbox-core: 7.3.0
-
-  workbox-expiration@7.4.0:
-    dependencies:
-      idb: 7.1.1
-      workbox-core: 7.4.0
 
   workbox-google-analytics@7.3.0:
     dependencies:

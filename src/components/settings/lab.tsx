@@ -4,7 +4,7 @@ import { usePreference } from "@/store/preference";
 import createConfirmProvider from "../confirm";
 import { Button } from "../ui/button";
 import { Switch } from "../ui/switch";
-import { PredictSettings } from "./preidct";
+import { PredictSettings } from "./predict";
 
 function Form({ onCancel }: { onCancel?: () => void }) {
     const t = useIntl();
@@ -30,6 +30,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
             className="h-full overflow-hidden"
         >
             <div className="divide-y divide-solid flex flex-col overflow-hidden py-4 gap-2">
+                <PredictSettings />
                 <div className="w-full h-10 flex justify-between items-center px-4">
                     <div className="text-sm">
                         <div>{t("auto-locate-when-add-bill")}</div>
@@ -90,7 +91,6 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                         }
                     />
                 </div>
-                <PredictSettings />
             </div>
         </PopupLayout>
     );

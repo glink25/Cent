@@ -1,11 +1,12 @@
-import { useState } from "react";
 import { StorageDeferredAPI } from "@/api/storage";
+import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
 import { usePreference } from "@/store/preference";
 import { startBackgroundPredict, stopBackgroundPredict } from "@/utils/predict";
 import { Switch } from "../ui/switch";
 
 export function PredictSettings() {
+    const t = useIntl();
     const [smartPredict, setSmartPredict] = usePreference("smartPredict");
     const toggleSmartPredict = (v: boolean) => {
         setSmartPredict(v);
@@ -24,9 +25,9 @@ export function PredictSettings() {
     return (
         <div className="w-full h-10 flex justify-between items-center px-4">
             <div className="text-sm">
-                <div>智能预测</div>
+                <div>{t("smart-predict")}</div>
                 <div className="text-xs opacity-60">
-                    记账时根据时间预测可能的类别和备注
+                    {t("smart-predict-tip")}
                 </div>
             </div>
             <Switch

@@ -2,7 +2,6 @@
 
 import { CacheableResponsePlugin } from "workbox-cacheable-response";
 import { clientsClaim } from "workbox-core";
-import { ExpirationPlugin } from "workbox-expiration";
 import { createHandlerBoundToURL, precacheAndRoute } from "workbox-precaching";
 import { NavigationRoute, registerRoute } from "workbox-routing";
 import { CacheFirst } from "workbox-strategies";
@@ -44,11 +43,6 @@ registerRoute(
     new CacheFirst({
         cacheName: "cdn-jieba-wasm-cache",
         plugins: [
-            // 缓存过期插件
-            new ExpirationPlugin({
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365, // 一年
-            }),
             // 可缓存响应插件 (确保缓存跨域的 Opaque Response)
             new CacheableResponsePlugin({
                 statuses: [0, 200],

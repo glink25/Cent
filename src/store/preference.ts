@@ -33,7 +33,7 @@ export const usePreferenceStore = create<Store>()(
                 locale: getBrowserLang(),
                 autoLocateWhenAddBill: false,
                 readClipboardWhenReduceMotionChanged: false,
-                smartPredict: true,
+                smartPredict: false,
                 reLayrKey: "cent",
                 reLayrPort: "2525",
             };

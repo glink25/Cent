@@ -33,6 +33,7 @@ import {
     SelectValue,
 } from "../ui/select";
 import { goAddBill } from ".";
+import { RemarkHint } from "./remark";
 
 const defaultBill = {
     type: "expense" as Bill["type"],
@@ -75,17 +76,17 @@ export default function EditorForm({
         return category;
     }, [isCreate, allCategories]);
 
-    const predictComment = useMemo(() => {
+    const predictComments = useMemo(() => {
         // 只有新增账单时才展示预测
         if (!isCreate) {
             return;
         }
         const predict = getPredictNow();
-        const pc = predict?.comment?.[0];
+        const pc = predict?.comment;
         return pc;
     }, [isCreate]);
 
-    console.log("predic:", predictCategory, predictComment);
+    console.log("predic:", predictCategory, predictComments);
 
     const [billState, setBillState] = useState(() => {
         const init = {
@@ -272,7 +273,7 @@ export default function EditorForm({
                             >
                                 <div className="flex items-center">
                                     <SelectTrigger className="w-fit outline-none ring-none border-none shadow-none p-0 [&_svg]:hidden">
-                                        <div className="flex items-center text-2xl text-white">
+                                        <div className="flex items-center font-semibold text-2xl text-white">
                                             {targetCurrency?.symbol}
                                         </div>
                                     </SelectTrigger>
@@ -539,21 +540,31 @@ export default function EditorForm({
                                 />
                             </div>
                         </div>
-                        <div className="flex h-full flex-1">
-                            <IOSUnscrolledInput
-                                value={billState.comment}
-                                onChange={(e) => {
-                                    setBillState((v) => ({
-                                        ...v,
-                                        comment: e.target.value,
-                                    }));
-                                }}
-                                type="text"
-                                className="w-full bg-transparent text-white text-right placeholder-opacity-50 outline-none"
-                                placeholder={t("comment")}
-                                enterKeyHint="done"
-                            />
-                        </div>
+                        <RemarkHint
+                            recommends={predictComments}
+                            onSelect={(v) => {
+                                setBillState((prev) => ({
+                                    ...prev,
+                                    comment: `${prev.comment} ${v}`,
+                                }));
+                            }}
+                        >
+                            <div className="flex h-full flex-1">
+                                <IOSUnscrolledInput
+                                    value={billState.comment}
+                                    onChange={(e) => {
+                                        setBillState((v) => ({
+                                            ...v,
+                                            comment: e.target.value,
+                                        }));
+                                    }}
+                                    type="text"
+                                    className="w-full bg-transparent text-white text-right placeholder-opacity-50 outline-none"
+                                    placeholder={t("comment")}
+                                    enterKeyHint="done"
+                                />
+                            </div>
+                        </RemarkHint>
                     </div>
 
                     <button
