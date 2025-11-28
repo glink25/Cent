@@ -2,7 +2,12 @@
 declare const self: DedicatedWorkerGlobalScope;
 
 import { expose, transfer } from "comlink";
-import { clear as clearModels, learn, predict } from "@/api/predict/brain";
+import {
+    clear as clearModels,
+    getPredictModelMeta,
+    learn,
+    predict,
+} from "@/api/predict/linear-predict";
 import { StashBucket } from "@/database/stash";
 import { BillIndexedDBStorage } from "@/database/storage";
 import type { Bill, BillFilter, ExportedJSON, GlobalMeta } from "@/ledger/type";
@@ -93,8 +98,21 @@ const exportToArrayBuffer = async (storeFullName: string) => {
 };
 
 const startLearn = async (storeFullName: string) => {
-    const newBills = await filter(storeFullName, {});
-    await learn(storeFullName, newBills);
+    // 找到新增的账单数据，喂给模型学习
+    const meta = await getPredictModelMeta(storeFullName);
+    const newBills = await (async () => {
+        if (!meta?.timeRange) {
+            return filter(storeFullName, {});
+        }
+        return filter(storeFullName, { start: meta.timeRange[1] + 1 });
+    })();
+    if (newBills.length === 0) {
+        return;
+    }
+    console.log(`start learning new ${newBills.length} bills`);
+    const endTime = newBills[0]?.time;
+    const startTime = newBills[newBills.length - 1]?.time;
+    await learn(storeFullName, newBills, { timeRange: [startTime, endTime] });
 };
 
 const startPredict = async (

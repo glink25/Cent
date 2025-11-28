@@ -1,8 +1,11 @@
 /// <reference lib="webworker" />
 
+import { CacheableResponsePlugin } from "workbox-cacheable-response";
 import { clientsClaim } from "workbox-core";
+import { ExpirationPlugin } from "workbox-expiration";
 import { createHandlerBoundToURL, precacheAndRoute } from "workbox-precaching";
 import { NavigationRoute, registerRoute } from "workbox-routing";
+import { CacheFirst } from "workbox-strategies";
 
 declare const self: ServiceWorkerGlobalScope & {
     __WB_MANIFEST: Array<any>;
@@ -32,3 +35,24 @@ const navigationHandler = async (params: any) => {
 };
 
 registerRoute(new NavigationRoute(navigationHandler));
+
+// 缓存第三方cdn逻辑
+registerRoute(
+    ({ url }) => url.href.startsWith("https://cdn.jsdelivr.net/npm/jieba-wasm"),
+
+    // 缓存策略
+    new CacheFirst({
+        cacheName: "cdn-jieba-wasm-cache",
+        plugins: [
+            // 缓存过期插件
+            new ExpirationPlugin({
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365, // 一年
+            }),
+            // 可缓存响应插件 (确保缓存跨域的 Opaque Response)
+            new CacheableResponsePlugin({
+                statuses: [0, 200],
+            }),
+        ],
+    }),
+);

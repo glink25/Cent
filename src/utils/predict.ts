@@ -12,24 +12,23 @@ let preidctResult:
 let timer: NodeJS.Timeout | undefined;
 
 export const startBackgroundPredict = () => {
+    if (timer) {
+        return;
+    }
     const book = useBookStore.getState().currentBookId;
     if (!book) {
         return;
     }
-    StorageDeferredAPI.learn(book);
-
     const run = () => {
         const now = Date.now();
-        StorageDeferredAPI.predict(book, "category", +16 * 60 * 60 * 1000).then(
-            (predicts) => {
-                preidctResult = {
-                    ...preidctResult,
-                    predictTime: now,
-                    category: predicts,
-                };
-            },
-        );
-        StorageDeferredAPI.predict(book, "comment", now).then((predicts) => {
+        StorageDeferredAPI.predict(book, "category").then((predicts) => {
+            preidctResult = {
+                ...preidctResult,
+                predictTime: now,
+                category: predicts,
+            };
+        });
+        StorageDeferredAPI.predict(book, "comment").then((predicts) => {
             preidctResult = {
                 ...preidctResult,
                 predictTime: now,
@@ -37,8 +36,9 @@ export const startBackgroundPredict = () => {
             };
         });
     };
-    timer = setInterval(run, 60000);
-    run();
+    // 每分钟刷新
+    timer = setInterval(run, 60 * 1000);
+    StorageDeferredAPI.learn(book).then(run);
 };
 
 export const getPredictNow = () => preidctResult;

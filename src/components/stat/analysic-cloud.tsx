@@ -6,8 +6,6 @@ import { cn } from "@/utils";
 import { processText } from "@/utils/word";
 import { MysteryLoading } from "../loading/mystery";
 
-const ignoredWords = ["alipay", "wechat", "yy"];
-
 type WordCut = Awaited<ReturnType<typeof processText>>;
 
 function TextCloud({ data, className }: { data: WordCut; className?: string }) {
@@ -34,7 +32,7 @@ function TextCloud({ data, className }: { data: WordCut; className?: string }) {
         if (!canvas || width === 0 || height === 0) {
             return;
         }
-        const list = data.filter((v) => !ignoredWords.includes(v[0]));
+        const list = data;
         WordCloud(canvas, {
             list,
             gridSize: 8,

@@ -1,8 +1,6 @@
 // 假设用户记账数据结构
 // type Bill = { time: number, categoryId: string, comment: string,location:[number,number] };
 // 🛠️ 预测系统设计概览模块目的依赖PredictionModel核心类，管理并持久化统计数据。LocalStorage (或 IndexedDB)分类预测预测在特定小时最常使用的分类。统计数据：hour_category_counts备注预测预测在特定分类下最常出现的备注关键词。jieba-wasm, 统计数据：category_word_counts增量学习每次用户成功记账后，更新统计数据。
-// 请帮我将其改为使用tensorflow js进行预测，使其能够更精确地扑捉到账单分类、备注和日期直接对联系，能够给出指定时间的合理分类+备注共同结果，对特定时间，例如周末、上午、下午的记账有更高的敏感度，以及可能情况下还能基于地点提升预测准确性等
-// 可以将核心预测算法函数抽象成新的ts文件以供调用
 import { type DBSchema, deleteDB, type IDBPDatabase, openDB } from "idb";
 import type { Bill } from "@/ledger/type";
 import { processText } from "@/utils/word";
@@ -10,6 +8,54 @@ import { processText } from "@/utils/word";
 type CountMap = Record<string, number>;
 type HourCategoryCounts = Record<string, CountMap>;
 type CategoryWordCounts = Record<string, CountMap>;
+
+// 在原文件顶部或合适位置添加这些类型/配置
+type LearnOptions = {
+    /** 半衰期（天），默认 30 天：30 天前权重为 0.5 */
+    halfLifeDays?: number;
+    /** 清理阈值，低于该值的计数会被删除，默认 0.01 */
+    minCountThreshold?: number;
+};
+
+// 辅助：对 hour_category_counts 和 category_word_counts 进行衰减
+function applyDecayToHourCounts(
+    hourCounts: HourCategoryCounts,
+    decayFactor: number,
+    minCountThreshold: number,
+) {
+    for (const hourKey of Object.keys(hourCounts)) {
+        const catMap = hourCounts[hourKey];
+        for (const cat of Object.keys(catMap)) {
+            catMap[cat] = (catMap[cat] || 0) * decayFactor;
+            if (catMap[cat] < minCountThreshold) {
+                delete catMap[cat];
+            }
+        }
+        // 如果 hourKey 下没有任何分类，删除该 hourKey
+        if (Object.keys(catMap).length === 0) {
+            delete hourCounts[hourKey];
+        }
+    }
+}
+
+function applyDecayToCommentCounts(
+    commentCounts: CategoryWordCounts,
+    decayFactor: number,
+    minCountThreshold: number,
+) {
+    for (const category of Object.keys(commentCounts)) {
+        const wordMap = commentCounts[category];
+        for (const w of Object.keys(wordMap)) {
+            wordMap[w] = (wordMap[w] || 0) * decayFactor;
+            if (wordMap[w] < minCountThreshold) {
+                delete wordMap[w];
+            }
+        }
+        if (Object.keys(wordMap).length === 0) {
+            delete commentCounts[category];
+        }
+    }
+}
 
 // IndexedDB config
 const DB_NAME = "cent_predict";
@@ -80,26 +126,64 @@ async function loadModel(book: string): Promise<Required<StoredModel>> {
 }
 
 /**
- * 对指定账本进行学习：对传入的账单数组执行增量学习并持久化。
- * `meta.timeRange` 可用于区分哪些账单是新增（调用方负责传入新增账单或过滤）。
+ * 对指定账本进行学习（带时间加权）
+ * - options.halfLifeDays: 半衰期（天），默认 30
+ * - options.minCountThreshold: 清理阈值，默认 0.01
  */
 export const learn = async (
     book: string,
     bills: Bill[],
     meta?: { timeRange: [number, number] },
+    options?: LearnOptions,
 ) => {
     const model = await loadModel(book);
     const hour_category_counts = model.categoryModel;
     const category_word_counts = model.commentModel;
 
+    const now = Date.now();
+    const halfLifeDays = options?.halfLifeDays ?? 30;
+    const minCountThreshold = options?.minCountThreshold ?? 0.01;
+    const halfLifeMs = halfLifeDays * 24 * 3600 * 1000;
+    const lambda = Math.LN2 / halfLifeMs; // decay rate
+
+    // 取上次更新时间（优先使用 meta.updatedAt，再退回到传入的 meta.timeRange 的结束时间）
+    const lastUpdatedMs =
+        (model.meta && (model.meta.updatedAt as number)) ??
+        (meta && meta.timeRange ? meta.timeRange[1] : undefined) ??
+        now;
+
+    const deltaMs = Math.max(0, now - lastUpdatedMs);
+    const decayFactor = Math.exp(-lambda * deltaMs);
+
+    // 把已有的统计衰减到当前时刻（旧数据权重自动降低）
+    if (deltaMs > 0 && decayFactor < 1) {
+        applyDecayToHourCounts(
+            hour_category_counts,
+            decayFactor,
+            minCountThreshold,
+        );
+        applyDecayToCommentCounts(
+            category_word_counts,
+            decayFactor,
+            minCountThreshold,
+        );
+    }
+
+    // 对每条传入账单，根据账单时间与当前时刻的差距再单独计算权重，然后累加（最近的权重大）
     for (const b of bills) {
         const { time: timestamp, categoryId: category, comment: remark } = b;
         const hourKey = getHourKey(timestamp);
 
+        // 按账单的时间计算权重：越接近 now 权重越接近 1，越久远权重越小
+        const billDeltaMs = Math.max(0, now - timestamp);
+        const billWeight = Math.exp(-lambda * billDeltaMs);
+
+        // 分类小时统计：加上权重（不是简单 +1）
         hour_category_counts[hourKey] = hour_category_counts[hourKey] || {};
         hour_category_counts[hourKey][category] =
-            (hour_category_counts[hourKey][category] || 0) + 1;
+            (hour_category_counts[hourKey][category] || 0) + billWeight;
 
+        // 备注/关键词统计（jieba 返回词频也按权重相乘）
         if (remark) {
             category_word_counts[category] =
                 category_word_counts[category] || {};
@@ -107,14 +191,20 @@ export const learn = async (
                 const wordList = await processText(remark, 150);
                 wordList.forEach(([word, count]) => {
                     if (!word || word.length <= 1) return;
+                    // 词频 count * billWeight
+                    const add = count * billWeight;
                     category_word_counts[category][word] =
-                        (category_word_counts[category][word] || 0) + count;
+                        (category_word_counts[category][word] || 0) + add;
                 });
             } catch (e) {
                 console.error("incrementalLearn: processText error", e);
             }
         }
     }
+
+    // 清理极小值（再次统一清理，避免残留非常小的浮点数）
+    applyDecayToHourCounts(hour_category_counts, 1, minCountThreshold);
+    applyDecayToCommentCounts(category_word_counts, 1, minCountThreshold);
 
     const toSave: StoredModel = {
         meta: model.meta,
@@ -126,6 +216,7 @@ export const learn = async (
         toSave.meta = { ...toSave.meta, ...meta };
     }
 
+    // setItem 会把 meta.updatedAt 设为 Date.now()
     await setItem(book, toSave);
 };
 
