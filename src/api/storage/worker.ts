@@ -2,6 +2,7 @@
 declare const self: DedicatedWorkerGlobalScope;
 
 import { expose, transfer } from "comlink";
+import { clear as clearModels, learn, predict } from "@/api/predict/brain";
 import { StashBucket } from "@/database/stash";
 import { BillIndexedDBStorage } from "@/database/storage";
 import type { Bill, BillFilter, ExportedJSON, GlobalMeta } from "@/ledger/type";
@@ -91,12 +92,28 @@ const exportToArrayBuffer = async (storeFullName: string) => {
     );
 };
 
+const startLearn = async (storeFullName: string) => {
+    const newBills = await filter(storeFullName, {});
+    await learn(storeFullName, newBills);
+};
+
+const startPredict = async (
+    storeFullName: string,
+    target: "category" | "comment",
+    time = Date.now(),
+) => {
+    return predict(storeFullName, target, time);
+};
+
 const exposed = {
     init: (v: any) => {},
     getInfo,
     filter,
     analysis,
     exportToArrayBuffer,
+    learn: startLearn,
+    predict: startPredict,
+    clearModels,
 };
 
 export type Exposed = typeof exposed;

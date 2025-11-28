@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { Outlet } from "react-router";
 import { toast } from "sonner";
 import { BillEditorProvider, goAddBill } from "@/components/bill-editor";
@@ -20,10 +20,19 @@ import {
     useQuickGoAdd,
 } from "@/hooks/use-quick-entry";
 import { ThemeProvider } from "@/hooks/use-theme";
+import { usePreferenceStore } from "@/store/preference";
+import { startBackgroundPredict } from "@/utils/predict";
 
 export default function MainLayout() {
     useQuickGoAdd();
     useQuickEntryByClipboard();
+
+    useEffect(() => {
+        // predict
+        if (usePreferenceStore.getState().smartPredict) {
+            startBackgroundPredict();
+        }
+    }, []);
 
     return (
         <ThemeProvider>

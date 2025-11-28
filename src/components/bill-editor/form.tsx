@@ -14,6 +14,7 @@ import { useIntl, useLocale } from "@/locale";
 import type { EditBill } from "@/store/ledger";
 import { usePreferenceStore } from "@/store/preference";
 import { cn } from "@/utils";
+import { getPredictNow } from "@/utils/predict";
 import { showCategoryList } from "../category";
 import { CategoryItem } from "../category/item";
 import { DatePicker } from "../date-picker";
@@ -56,9 +57,40 @@ export default function EditorForm({
 
     const { baseCurrency, convert } = useCurrency();
 
+    const { incomes, expenses, categories: allCategories } = useCategory();
+
+    const isCreate = edit === undefined;
+
+    const predictCategory = useMemo(() => {
+        // 只有新增账单时才展示预测
+        if (!isCreate) {
+            return;
+        }
+        const predict = getPredictNow();
+        const pc = predict?.category?.[0];
+        if (!pc) {
+            return;
+        }
+        const category = allCategories.find((v) => v.id === pc);
+        return category;
+    }, [isCreate, allCategories]);
+
+    const predictComment = useMemo(() => {
+        // 只有新增账单时才展示预测
+        if (!isCreate) {
+            return;
+        }
+        const predict = getPredictNow();
+        const pc = predict?.comment?.[0];
+        return pc;
+    }, [isCreate]);
+
+    console.log("predic:", predictCategory, predictComment);
+
     const [billState, setBillState] = useState(() => {
         const init = {
             ...defaultBill,
+            categoryId: predictCategory?.id ?? defaultBill.categoryId,
             time: Date.now(),
             ...edit,
         };
@@ -67,11 +99,6 @@ export default function EditorForm({
         }
         return init;
     });
-
-    // useEffect(() => {
-    // 	setBillState({ ...defaultBill, ...edit });
-    // }, [edit]);
-    const { incomes, expenses } = useCategory();
 
     const { tags, add: addTag } = useTag();
 
