@@ -25,6 +25,7 @@ function UserInfo() {
         }
         await Promise.all([
             StorageAPI.logout(),
+            StorageDeferredAPI.clearModels(),
             new Promise<void>((res) => {
                 setTimeout(() => {
                     res();
@@ -34,7 +35,6 @@ function UserInfo() {
         localStorage.clear();
         sessionStorage.clear();
         location.reload();
-        StorageDeferredAPI.clearModels();
     };
     return (
         <div className="flex items-center justify-between gap-2 px-8 py-4">
