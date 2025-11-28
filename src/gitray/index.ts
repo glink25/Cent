@@ -129,7 +129,7 @@ const diffStructure = (
         chunks: [],
     };
     const diffChunkIndex = remote.chunks.findIndex((c, i) => {
-        if (c.sha !== local.chunks[i].sha) {
+        if (c.sha !== local.chunks[i]?.sha) {
             return true;
         }
         return false;
