@@ -86,8 +86,6 @@ export default function EditorForm({
         return pc;
     }, [isCreate]);
 
-    console.log("predic:", predictCategory, predictComments);
-
     const [billState, setBillState] = useState(() => {
         const init = {
             ...defaultBill,
