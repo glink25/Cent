@@ -1,4 +1,4 @@
-import { StorageAPI } from "@/api/storage";
+import { StorageAPI, StorageDeferredAPI } from "@/api/storage";
 import PopupLayout from "@/layouts/popup-layout";
 import { useIntl } from "@/locale";
 import { useUserStore } from "@/store/user";
@@ -34,6 +34,7 @@ function UserInfo() {
         localStorage.clear();
         sessionStorage.clear();
         location.reload();
+        StorageDeferredAPI.clearModels();
     };
     return (
         <div className="flex items-center justify-between gap-2 px-8 py-4">
