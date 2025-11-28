@@ -3,9 +3,8 @@ import { useIntl } from "@/locale";
 import { usePreference } from "@/store/preference";
 import createConfirmProvider from "../confirm";
 import { Button } from "../ui/button";
-import { Input } from "../ui/input";
-import { Label } from "../ui/label";
 import { Switch } from "../ui/switch";
+import { PredictSettings } from "./predict";
 
 function Form({ onCancel }: { onCancel?: () => void }) {
     const t = useIntl();
@@ -31,6 +30,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
             className="h-full overflow-hidden"
         >
             <div className="divide-y divide-solid flex flex-col overflow-hidden py-4 gap-2">
+                <PredictSettings />
                 <div className="w-full h-10 flex justify-between items-center px-4">
                     <div className="text-sm">
                         <div>{t("auto-locate-when-add-bill")}</div>
@@ -91,68 +91,8 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                         }
                     />
                 </div>
-                {/* <RelayrSettings /> */}
             </div>
         </PopupLayout>
-    );
-}
-
-/** @deprecated */
-function RelayrSettings() {
-    const t = useIntl();
-    const [
-        readReLayrWhenReduceMotionChanged,
-        setReadReLayrWhenReduceMotionChanged,
-    ] = usePreference("quickEntryWithReLayr");
-    const [port, setPort] = usePreference("reLayrPort");
-    const [key, setKey] = usePreference("reLayrKey");
-
-    return (
-        <div className="w-full flex flex-col gap-2 px-4">
-            <div className="h-10 flex justify-between items-center ">
-                <div className="text-sm">
-                    <div>通过ReLayr自动记账</div>
-                    <div className="text-xs opacity-60">
-                        <a
-                            href="https://glink25.github.io/post/Cent-%E5%B7%B2%E6%94%AF%E6%8C%81%E5%A4%9A%E5%B8%81%E7%A7%8D%E8%87%AA%E5%8A%A8%E8%AE%B0%E8%B4%A6/#iOS%E5%BF%AB%E6%8D%B7%E6%8C%87%E4%BB%A4%E5%BF%AB%E9%80%9F%E8%AE%B0%E8%B4%A6"
-                            className="underline px-2"
-                            target="_blank"
-                            rel="noopener"
-                        >
-                            了解详情
-                        </a>
-                    </div>
-                </div>
-                <Switch
-                    checked={readReLayrWhenReduceMotionChanged}
-                    onCheckedChange={setReadReLayrWhenReduceMotionChanged}
-                />
-            </div>
-            {readReLayrWhenReduceMotionChanged && (
-                <div className="flex justify-between gap-2">
-                    <Label className="flex flex-col gap-1 text-xs">
-                        <span>端口</span>
-                        <Input
-                            value={port}
-                            onChange={(e) => {
-                                setPort(e.currentTarget.value);
-                            }}
-                            placeholder="2525"
-                        ></Input>
-                    </Label>
-                    <Label className="flex flex-col gap-1 text-xs">
-                        <span>Key</span>
-                        <Input
-                            value={key}
-                            onChange={(e) => {
-                                setKey(e.currentTarget.value);
-                            }}
-                            placeholder={"cent"}
-                        ></Input>
-                    </Label>
-                </div>
-            )}
-        </div>
     );
 }
 
@@ -186,3 +126,62 @@ export default function LabSettingsItem() {
         </div>
     );
 }
+
+/** @deprecated */
+// function RelayrSettings() {
+//     const t = useIntl();
+//     const [
+//         readReLayrWhenReduceMotionChanged,
+//         setReadReLayrWhenReduceMotionChanged,
+//     ] = usePreference("quickEntryWithReLayr");
+//     const [port, setPort] = usePreference("reLayrPort");
+//     const [key, setKey] = usePreference("reLayrKey");
+
+//     return (
+//         <div className="w-full flex flex-col gap-2 px-4">
+//             <div className="h-10 flex justify-between items-center ">
+//                 <div className="text-sm">
+//                     <div>通过ReLayr自动记账</div>
+//                     <div className="text-xs opacity-60">
+//                         <a
+//                             href="https://glink25.github.io/post/Cent-%E5%B7%B2%E6%94%AF%E6%8C%81%E5%A4%9A%E5%B8%81%E7%A7%8D%E8%87%AA%E5%8A%A8%E8%AE%B0%E8%B4%A6/#iOS%E5%BF%AB%E6%8D%B7%E6%8C%87%E4%BB%A4%E5%BF%AB%E9%80%9F%E8%AE%B0%E8%B4%A6"
+//                             className="underline px-2"
+//                             target="_blank"
+//                             rel="noopener"
+//                         >
+//                             了解详情
+//                         </a>
+//                     </div>
+//                 </div>
+//                 <Switch
+//                     checked={readReLayrWhenReduceMotionChanged}
+//                     onCheckedChange={setReadReLayrWhenReduceMotionChanged}
+//                 />
+//             </div>
+//             {readReLayrWhenReduceMotionChanged && (
+//                 <div className="flex justify-between gap-2">
+//                     <Label className="flex flex-col gap-1 text-xs">
+//                         <span>端口</span>
+//                         <Input
+//                             value={port}
+//                             onChange={(e) => {
+//                                 setPort(e.currentTarget.value);
+//                             }}
+//                             placeholder="2525"
+//                         ></Input>
+//                     </Label>
+//                     <Label className="flex flex-col gap-1 text-xs">
+//                         <span>Key</span>
+//                         <Input
+//                             value={key}
+//                             onChange={(e) => {
+//                                 setKey(e.currentTarget.value);
+//                             }}
+//                             placeholder={"cent"}
+//                         ></Input>
+//                     </Label>
+//                 </div>
+//             )}
+//         </div>
+//     );
+// }

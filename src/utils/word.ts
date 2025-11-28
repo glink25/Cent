@@ -8,7 +8,7 @@ type JiebaLib = {
 let jiebaModuleLoaded: Promise<JiebaLib> | undefined;
 
 // 中文停用词列表 (不变)
-const STOP_WORDS = new Set([
+export const STOP_WORDS = new Set([
     "的",
     "了",
     "和",
@@ -70,6 +70,11 @@ const STOP_WORDS = new Set([
     " ",
 ]);
 
+export const ignoredWords = ["alipay", "wechat", "yy"];
+
+const reText = <T extends string | undefined>(v: T) =>
+    ignoredWords.reduce<T>((prev, c) => prev?.replaceAll(c, " ") as T, v);
+
 export async function initializeWasm() {
     if (jiebaModuleLoaded) {
         return jiebaModuleLoaded;
@@ -99,8 +104,8 @@ export async function processText(text: string | string[], topN = 150) {
 
     // 从已存储的模块对象中调用 cut 函数
     const words = Array.isArray(text)
-        ? text.flatMap((txt) => jiebaModule.cut(txt, true))
-        : jiebaModule.cut(text, true);
+        ? text.flatMap((txt) => jiebaModule.cut(reText(txt), true))
+        : jiebaModule.cut(reText(text), true);
 
     // ... (词频统计、过滤和排序逻辑保持不变) ...
     const freqMap = new Map<string, number>();

@@ -420,5 +420,8 @@
   "read-clipboard": "读取",
   "comment-cloud": "高频词",
   "loading": "加载中",
-  "no-comment-cloud": "暂无高频"
+  "no-comment-cloud": "暂无高频",
+  "recommend-comments": "推荐备注：",
+  "smart-predict": "智能预测",
+  "smart-predict-tip": "记账时根据时间预测可能的类别和备注"
 }

@@ -11,6 +11,7 @@ type State = {
     autoLocateWhenAddBill?: boolean;
     enterAddBillWhenReduceMotionChanged?: boolean;
     readClipboardWhenReduceMotionChanged?: boolean;
+    smartPredict?: boolean;
     /** @deprecated */
     quickEntryWithReLayr?: boolean;
     /** @deprecated */
@@ -32,6 +33,7 @@ export const usePreferenceStore = create<Store>()(
                 locale: getBrowserLang(),
                 autoLocateWhenAddBill: false,
                 readClipboardWhenReduceMotionChanged: false,
+                smartPredict: false,
                 reLayrKey: "cent",
                 reLayrPort: "2525",
             };

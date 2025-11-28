@@ -54,4 +54,7 @@ export default defineConfig({
             "@": resolve("./src"),
         },
     },
+    worker: {
+        format: "es",
+    },
 });
