@@ -18,6 +18,7 @@ export type EditBill = Omit<OutputType<Bill>, "id"> & {
 };
 
 type LedgerStoreState = {
+    /** 首次加载时只有前200条数据，如果需要全部数据，必须调用 ledgerStore.refreshBillList() */
     bills: OutputType<Bill>[];
     actions: Action<Bill>[];
     infos?: {
@@ -65,6 +66,8 @@ type LedgerStoreActions = {
 
 type LedgerStore = LedgerStoreState & LedgerStoreActions;
 
+const MIN_SIZE = 200;
+
 export const useLedgerStore = create<LedgerStore>()((set, get) => {
     const getCurrentFullRepoName = () => {
         const id = useBookStore.getState().currentBookId;
@@ -73,12 +76,15 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
         }
         return id;
     };
-    const updateBillList = async () => {
+
+    const updateBillList = async (limit?: number) => {
         const { StorageAPI, StorageDeferredAPI } = await loadStorageAPI();
-        await Promise.resolve();
         const repo = getCurrentFullRepoName();
         const [bills] = await Promise.all([
-            StorageAPI.getAllItems(repo).then((bills) => {
+            (limit
+                ? StorageDeferredAPI.short(repo, limit)
+                : StorageDeferredAPI.filter(repo, {})
+            ).then((bills) => {
                 set(
                     produce((state: LedgerStore) => {
                         state.bills = bills;
@@ -128,13 +134,13 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
             }),
         );
         try {
-            updateBillList();
             const currentBookId = useBookStore.getState().currentBookId;
             if (!currentBookId) {
                 return;
             }
             await StorageAPI.initBook(currentBookId);
-            await updateBillList();
+            // 初始化时先加载100条，后续按需加载全部
+            await updateBillList(MIN_SIZE);
             StorageAPI.toSync();
         } catch (err) {
             if ((err as any)?.status === 404) {
@@ -167,37 +173,35 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
     };
     init();
 
-    // subscribe changes
-    useBookStore.subscribe(async (state, prev) => {
-        const { currentBookId } = state;
-        if (!currentBookId) {
-            return;
-        }
-        if (currentBookId === prev.currentBookId) {
-            return;
-        }
-        set(
-            produce((state: LedgerStoreState) => {
-                state.loading = true;
-            }),
-        );
-        try {
-            const { StorageAPI } = await loadStorageAPI();
-            await StorageAPI.initBook(currentBookId);
-            await updateBillList();
-        } finally {
-            set(
-                produce((state: LedgerStoreState) => {
-                    state.loading = false;
-                }),
-            );
-        }
-    });
+    // no more needed because location.reload subscribe changes
+    // useBookStore.subscribe(async (state, prev) => {
+    //     const { currentBookId } = state;
+    //     if (!currentBookId) {
+    //         return;
+    //     }
+    //     if (currentBookId === prev.currentBookId) {
+    //         return;
+    //     }
+    //     set(
+    //         produce((state: LedgerStoreState) => {
+    //             state.loading = true;
+    //         }),
+    //     );
+    //     try {
+    //         const { StorageAPI } = await loadStorageAPI();
+    //         await StorageAPI.initBook(currentBookId);
+    //         await init();
+    //     } finally {
+    //         set(
+    //             produce((state: LedgerStoreState) => {
+    //                 state.loading = false;
+    //             }),
+    //         );
+    //     }
+    // });
 
     loadStorageAPI().then(({ StorageAPI }) => {
         StorageAPI.onChange(() => {
-            updateBillList();
-
             StorageAPI.getIsNeedSync().then((needSync) => {
                 if (needSync) {
                     set(

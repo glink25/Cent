@@ -23,6 +23,7 @@ export default function Ledger({
     selectedIds,
     onSelectChange,
     afterEdit,
+    onItemShow,
 }: {
     bills: OutputType<Bill>[];
     /** 如果传入的列表已按时间降序，则尝试按照日期分隔 */
@@ -32,6 +33,7 @@ export default function Ledger({
     selectedIds?: string[];
     onSelectChange?: (id: string) => void;
     afterEdit?: (bill: Bill) => void;
+    onItemShow?: (index: number) => void;
 }) {
     const parentRef = useRef<HTMLDivElement>(null);
 
@@ -86,6 +88,7 @@ export default function Ledger({
                                   return lastDate;
                               }
                           })();
+                    onItemShow?.(virtualRow.index);
                     return (
                         <div
                             key={virtualRow.key}

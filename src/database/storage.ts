@@ -99,9 +99,8 @@ export class BillIndexedDBStorage implements StashStorage {
                 await db.clear(name);
                 db.close();
             },
-            toArray: async () => {
+            toArray: async (limit?: number) => {
                 const db = await this.getDB();
-
                 const { store, index } = (() => {
                     if (name === StashBucket.STASH_NAME) {
                         const store = db
@@ -129,6 +128,9 @@ export class BillIndexedDBStorage implements StashStorage {
                 let cursor = await index.openCursor(range, direction);
                 while (cursor) {
                     localItems.push(cursor.value);
+                    if (limit !== undefined && localItems.length >= limit) {
+                        break;
+                    }
                     cursor = await cursor.continue();
                 }
                 db.close();

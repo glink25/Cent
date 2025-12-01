@@ -1,5 +1,6 @@
 import { StorageDeferredAPI } from "@/api/storage";
 import { useBookStore } from "@/store/book";
+import { useUserStore } from "@/store/user";
 
 let preidctResult:
     | {
@@ -36,9 +37,10 @@ export const startBackgroundPredict = () => {
             };
         });
     };
+    const userId = useUserStore.getState().id;
     // 每分钟刷新
     timer = setInterval(run, 60 * 1000);
-    StorageDeferredAPI.learn(book).then(run);
+    StorageDeferredAPI.learn(book, [userId]).then(run);
 };
 
 export const getPredictNow = () => preidctResult;
