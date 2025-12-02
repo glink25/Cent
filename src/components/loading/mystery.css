@@ -21,19 +21,6 @@
 	}
 }
 
-/* 4. 加载文字的跳动动画 */
-@keyframes pulse {
-	0%,
-	100% {
-		transform: scale(1);
-		opacity: 0.8;
-	}
-	50% {
-		transform: scale(1.1);
-		opacity: 1;
-	}
-}
-
 /* 2. 应用星云效果的样式 */
 .nebula-effect {
 	/* 多彩渐变背景 */
