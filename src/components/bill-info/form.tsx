@@ -51,9 +51,9 @@ export default function BillInfo({
             onConfirm?.(true);
         }
     };
-    const toDelete = () => {
+    const toDelete = async () => {
         if (edit?.id) {
-            useLedgerStore.getState().removeBill(edit?.id);
+            await useLedgerStore.getState().removeBill(edit?.id);
             onConfirm?.(false);
         }
     };
@@ -195,31 +195,6 @@ export default function BillInfo({
                     </div>
                 </div>
             </div>
-            {/* <div>
-				<button
-					type="button"
-					onClick={async () => {
-						if (edit?.id) {
-							const newBill = await showBillEditor(edit);
-							await useLedgerStore.getState().updateBill(edit.id, newBill);
-							onConfirm?.(true);
-						}
-					}}
-				>
-					edit
-				</button>
-				<button
-					type="button"
-					onClick={() => {
-						if (edit?.id) {
-							useLedgerStore.getState().removeBill(edit?.id);
-							onConfirm?.(false);
-						}
-					}}
-				>
-					delete
-				</button>
-			</div> */}
         </div>
     );
 }

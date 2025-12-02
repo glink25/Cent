@@ -81,6 +81,7 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
         const { StorageAPI, StorageDeferredAPI } = await loadStorageAPI();
         const repo = getCurrentFullRepoName();
         const [bills] = await Promise.all([
+            // 贪婪更新账单数据
             (limit && limit >= get().bills.length
                 ? StorageDeferredAPI.truncate(repo, limit)
                 : StorageDeferredAPI.filter(repo, {})
@@ -203,8 +204,7 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
 
     loadStorageAPI().then(({ StorageAPI }) => {
         StorageAPI.onChange(() => {
-            updateBillList();
-            console.log("onchange");
+            updateBillList(MIN_SIZE);
             StorageAPI.getIsNeedSync().then((needSync) => {
                 if (needSync) {
                     set(
@@ -319,7 +319,6 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
                     metaValue: newMeta,
                 },
             ]);
-            await updateBillList();
         },
         updatePersonalMeta: async (v) => {
             const { StorageAPI } = await loadStorageAPI();
@@ -341,7 +340,6 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
                     metaValue: newMeta,
                 },
             ]);
-            await updateBillList();
         },
 
         batchImportFromBills: async (
