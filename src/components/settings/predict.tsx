@@ -2,6 +2,7 @@ import { StorageDeferredAPI } from "@/api/storage";
 import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
 import { usePreference } from "@/store/preference";
+import { useUserStore } from "@/store/user";
 import { startBackgroundPredict, stopBackgroundPredict } from "@/utils/predict";
 import { Switch } from "../ui/switch";
 
@@ -15,7 +16,8 @@ export function PredictSettings() {
             if (!book) {
                 return;
             }
-            StorageDeferredAPI.learn(book);
+            const userId = useUserStore.getState().id;
+            StorageDeferredAPI.learn(book, [userId]);
             startBackgroundPredict();
         } else {
             StorageDeferredAPI.clearModels();

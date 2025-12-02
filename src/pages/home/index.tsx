@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { useMemo, useRef } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef } from "react";
 import { useShallow } from "zustand/shallow";
 import { StorageAPI } from "@/api/storage";
 import CloudLoopIcon from "@/assets/icons/cloud-loop.svg?react";
@@ -65,6 +65,23 @@ export default function Page() {
         budgetContainer,
         0,
     );
+
+    const allLoaded = useRef(false);
+    // 有预算时需要加载全部bills
+    useLayoutEffect(() => {
+        if (!allLoaded.current && budgets.length > 0) {
+            useLedgerStore.getState().refreshBillList();
+            allLoaded.current = true;
+        }
+    }, [budgets.length]);
+
+    // 滚动时需要加载全部bills
+    const onItemShow = useCallback((index: number) => {
+        if (!allLoaded.current && index >= 120) {
+            useLedgerStore.getState().refreshBillList();
+            allLoaded.current = true;
+        }
+    }, []);
     return (
         <div className="w-full h-full p-2 flex flex-col overflow-hidden">
             <div className="flex flex-wrap flex-col w-full gap-2">
@@ -158,6 +175,7 @@ export default function Page() {
                             className={cn(bills.length > 0 && "relative")}
                             enableDivideAsOrdered
                             showTime
+                            onItemShow={onItemShow}
                         />
                     ) : (
                         <div className="text-xs p-4 text-center">

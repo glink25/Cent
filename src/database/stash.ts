@@ -53,7 +53,7 @@ export type Arrayable<T extends BaseItem> = {
     put: (...v: T[]) => Promise<void>;
     delete: (...ids: T["id"][]) => Promise<void>;
     clear: () => Promise<void>;
-    toArray: () => Promise<T[]>;
+    toArray: (limit?: number) => Promise<T[]>;
 };
 
 export type FactoryNames =
@@ -131,8 +131,8 @@ export class StashBucket<T extends BaseItem, Meta = any, Config = any> {
         await this.applyStash(localStashes);
     }
 
-    getItems() {
-        return this.itemStorage.toArray();
+    getItems(limit?: number) {
+        return this.itemStorage.toArray(limit);
     }
 
     getStashes() {

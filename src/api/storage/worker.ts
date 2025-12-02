@@ -8,7 +8,7 @@ import {
     learn,
     predict,
 } from "@/api/predict/linear-predict";
-import { StashBucket } from "@/database/stash";
+import { type Full, StashBucket } from "@/database/stash";
 import { BillIndexedDBStorage } from "@/database/storage";
 import type { Bill, BillFilter, ExportedJSON, GlobalMeta } from "@/ledger/type";
 import { isBillMatched } from "@/ledger/utils";
@@ -17,25 +17,58 @@ import { type AnalysisType, analysis as analysisBills } from "./analysis";
 
 const storeMap = new Map<
     string,
-    { itemStorage: BillIndexedDBStorage; itemBucket: StashBucket<Bill> }
+    {
+        itemStorage: BillIndexedDBStorage;
+        itemBucket: StashBucket<Bill>;
+        allBills?: Promise<Full<Bill>[]>;
+    }
 >();
+
 const getDB = (storeFullName: string) => {
+    const stored = storeMap.get(storeFullName);
     const itemStorage =
-        storeMap.get(storeFullName)?.itemStorage ??
+        stored?.itemStorage ??
         new BillIndexedDBStorage(`book-${storeFullName}`);
     const itemBucket =
-        storeMap.get(storeFullName)?.itemBucket ??
+        stored?.itemBucket ??
         new StashBucket(
             itemStorage.createArrayableStorage,
             itemStorage.createStorage,
         );
-    storeMap.set(storeFullName, { itemStorage, itemBucket });
+    storeMap.set(storeFullName, { ...stored, itemStorage, itemBucket });
     return { itemBucket };
 };
 
+/** 获取所有数据，再通过Array.filter过滤 */
 const filter = async (storeFullName: string, rule: BillFilter) => {
-    const items = await getDB(storeFullName).itemBucket.getItems();
+    const items = await (async () => {
+        // 尝试减少indexedDB的读取
+        const allBills = storeMap.get(storeFullName)?.allBills;
+        if (allBills) {
+            return allBills;
+        }
+        const billsLoaded = getDB(storeFullName)
+            .itemBucket.getItems()
+            .catch((err) => {
+                storeMap.set(storeFullName, {
+                    ...storeMap.get(storeFullName)!,
+                    allBills: undefined,
+                });
+                return Promise.reject(err);
+            });
+        storeMap.set(storeFullName, {
+            ...storeMap.get(storeFullName)!,
+            allBills: billsLoaded,
+        });
+        return billsLoaded;
+    })();
     return items.filter((v) => isBillMatched(v, rule));
+};
+
+/** 仅获取前x条数据 */
+const truncate = async (storeFullName: string, limit: number) => {
+    const items = await getDB(storeFullName).itemBucket.getItems(limit);
+    return items;
 };
 
 const getInfo = async (storeFullName: string) => {
@@ -97,14 +130,20 @@ const exportToArrayBuffer = async (storeFullName: string) => {
     );
 };
 
-const startLearn = async (storeFullName: string) => {
+const startLearn = async (
+    storeFullName: string,
+    creators: BillFilter["creators"],
+) => {
     // 找到新增的账单数据，喂给模型学习
     const meta = await getPredictModelMeta(storeFullName);
     const newBills = await (async () => {
         if (!meta?.timeRange) {
-            return filter(storeFullName, {});
+            return filter(storeFullName, { creators });
         }
-        return filter(storeFullName, { start: meta.timeRange[1] + 1 });
+        return filter(storeFullName, {
+            start: meta.timeRange[1] + 1,
+            creators,
+        });
     })();
     if (newBills.length === 0) {
         return;
@@ -132,6 +171,7 @@ const exposed = {
     learn: startLearn,
     predict: startPredict,
     clearModels,
+    truncate,
 };
 
 export type Exposed = typeof exposed;

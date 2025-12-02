@@ -3,9 +3,18 @@ import { MemoryRouter, Route, Routes } from "react-router";
 import Home from "@/pages/home";
 import { LoadingSkeleton } from "./components/loading";
 import MainLayout from "./layouts/main-layout";
+import { useLedgerStore } from "./store/ledger";
 import { lazyWithReload } from "./utils/lazy";
 
-const Stat = lazyWithReload(() => import("@/pages/stat"));
+const Stat = lazyWithReload(
+    async () => {
+        return import("@/pages/stat");
+    },
+    async () => {
+        // 加载stat页面前需要获取全部账单数据
+        await useLedgerStore.getState().refreshBillList();
+    },
+);
 
 const Search = lazyWithReload(() => import("@/pages/search"));
 

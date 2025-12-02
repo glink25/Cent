@@ -33,6 +33,9 @@ export function RemarkHint({
                 align="end"
                 sideOffset={12}
                 className="p-2 px-3 w-fit flex gap-1 items-center text-sm"
+                onOpenAutoFocus={(e) => {
+                    e.preventDefault();
+                }}
             >
                 <div className="opacity-60">{t("recommend-comments")}</div>
                 <div className="flex gap-2">
