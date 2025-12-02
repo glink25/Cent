@@ -81,10 +81,11 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
         const { StorageAPI, StorageDeferredAPI } = await loadStorageAPI();
         const repo = getCurrentFullRepoName();
         const [bills] = await Promise.all([
-            (limit
-                ? StorageDeferredAPI.truncate(repo, limit)
-                : StorageDeferredAPI.filter(repo, {})
-            ).then((bills) => {
+            // (limit && limit >= get().bills.length
+            //     ? StorageDeferredAPI.truncate(repo, limit)
+            //     : StorageDeferredAPI.filter(repo, {})
+            // )
+            StorageAPI.getAllItems(repo).then((bills) => {
                 set(
                     produce((state: LedgerStore) => {
                         state.bills = bills;
@@ -203,6 +204,8 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
 
     loadStorageAPI().then(({ StorageAPI }) => {
         StorageAPI.onChange(() => {
+            updateBillList();
+            console.log("onchange");
             StorageAPI.getIsNeedSync().then((needSync) => {
                 if (needSync) {
                     set(
