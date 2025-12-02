@@ -82,7 +82,7 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
         const repo = getCurrentFullRepoName();
         const [bills] = await Promise.all([
             (limit
-                ? StorageDeferredAPI.short(repo, limit)
+                ? StorageDeferredAPI.truncate(repo, limit)
                 : StorageDeferredAPI.filter(repo, {})
             ).then((bills) => {
                 set(

@@ -39,6 +39,7 @@ const getDB = (storeFullName: string) => {
     return { itemBucket };
 };
 
+/** 获取所有数据，再通过Array.filter过滤 */
 const filter = async (storeFullName: string, rule: BillFilter) => {
     const items = await (async () => {
         // 尝试减少indexedDB的读取
@@ -64,7 +65,8 @@ const filter = async (storeFullName: string, rule: BillFilter) => {
     return items.filter((v) => isBillMatched(v, rule));
 };
 
-const short = async (storeFullName: string, limit: number) => {
+/** 仅获取前x条数据 */
+const truncate = async (storeFullName: string, limit: number) => {
     const items = await getDB(storeFullName).itemBucket.getItems(limit);
     return items;
 };
@@ -169,7 +171,7 @@ const exposed = {
     learn: startLearn,
     predict: startPredict,
     clearModels,
-    short,
+    truncate,
 };
 
 export type Exposed = typeof exposed;
