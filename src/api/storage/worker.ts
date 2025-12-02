@@ -20,7 +20,6 @@ const storeMap = new Map<
     {
         itemStorage: BillIndexedDBStorage;
         itemBucket: StashBucket<Bill>;
-        allBills?: Promise<Full<Bill>[]>;
     }
 >();
 
@@ -41,27 +40,7 @@ const getDB = (storeFullName: string) => {
 
 /** 获取所有数据，再通过Array.filter过滤 */
 const filter = async (storeFullName: string, rule: BillFilter) => {
-    const items = await (async () => {
-        // 尝试减少indexedDB的读取
-        const allBills = storeMap.get(storeFullName)?.allBills;
-        if (allBills) {
-            return allBills;
-        }
-        const billsLoaded = getDB(storeFullName)
-            .itemBucket.getItems()
-            .catch((err) => {
-                storeMap.set(storeFullName, {
-                    ...storeMap.get(storeFullName)!,
-                    allBills: undefined,
-                });
-                return Promise.reject(err);
-            });
-        storeMap.set(storeFullName, {
-            ...storeMap.get(storeFullName)!,
-            allBills: billsLoaded,
-        });
-        return billsLoaded;
-    })();
+    const items = await getDB(storeFullName).itemBucket.getItems();
     return items.filter((v) => isBillMatched(v, rule));
 };
 
