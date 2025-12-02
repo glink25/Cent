@@ -138,6 +138,7 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
             if (!currentBookId) {
                 return;
             }
+            await updateBillList(MIN_SIZE);
             await StorageAPI.initBook(currentBookId);
             // 初始化时先加载100条，后续按需加载全部
             await updateBillList(MIN_SIZE);
