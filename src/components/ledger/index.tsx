@@ -2,7 +2,7 @@
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
 import { useVirtualizer } from "@tanstack/react-virtual";
 import dayjs, { type Dayjs } from "dayjs";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import type { OutputType } from "@/database/stash";
 import type { Bill } from "@/ledger/type";
 import { cn } from "@/utils";
@@ -10,9 +10,14 @@ import { denseDate } from "@/utils/time";
 import { showBillInfo } from "../bill-info";
 import { Checkbox } from "../ui/checkbox";
 import BillItem from "./item";
+import "./style.scss";
 
 function Divider({ date: day }: { date: Dayjs }) {
-    return <div className="pl-12 pr-4 pt-4 pb-2 text-sm">{denseDate(day)}</div>;
+    return (
+        <div className={"pl-12 pr-4 pt-4 pb-2 text-sm divider"}>
+            {denseDate(day)}
+        </div>
+    );
 }
 
 export default function Ledger({
@@ -21,6 +26,7 @@ export default function Ledger({
     className,
     showTime,
     selectedIds,
+    presence,
     onSelectChange,
     afterEdit,
     onItemShow,
@@ -31,6 +37,8 @@ export default function Ledger({
     className?: string;
     showTime?: boolean;
     selectedIds?: string[];
+    /** 是否显示列表首次出场动画 */
+    presence?: boolean;
     onSelectChange?: (id: string) => void;
     afterEdit?: (bill: Bill) => void;
     onItemShow?: (index: number) => void;
@@ -49,6 +57,23 @@ export default function Ledger({
 
     const enableSelect = selectedIds !== undefined;
 
+    useEffect(() => {
+        if (!presence) {
+            return;
+        }
+        const listEl =
+            parentRef.current?.querySelector<HTMLDivElement>(
+                "[data-main-ledger]",
+            );
+        if (!listEl) {
+            return;
+        }
+        listEl.classList.add("animated-bill-list");
+        setTimeout(() => {
+            listEl.classList.remove("animated-bill-list");
+        }, 1600);
+    }, [presence]);
+
     return (
         <div
             ref={parentRef}
@@ -59,6 +84,7 @@ export default function Ledger({
             }}
         >
             <div
+                data-main-ledger
                 className={cn(
                     enableDivideAsOrdered &&
                         "translate-x-0 before:block before:fixed before:top-0 before:left-9 before:w-[1px] before:h-[calc(100%-95px)] before:bg-foreground",
@@ -98,11 +124,9 @@ export default function Ledger({
                             ref={rowVirtualizer.measureElement}
                             style={{
                                 position: "absolute",
-                                top: 0,
+                                top: `${virtualRow.start}px`,
                                 left: 0,
                                 width: "100%",
-                                // 注意：这里不再使用 virtualRow.size，而是让虚拟化器自行计算
-                                transform: `translateY(${virtualRow.start}px)`,
                             }}
                         >
                             {virtualRow.index === 0 &&
@@ -110,7 +134,7 @@ export default function Ledger({
                                     <Divider date={curDate} />
                                 )}
                             <div
-                                className="w-full flex items-center overflow-hidden"
+                                className={`w-full flex items-center overflow-hidden ledger-item item-${virtualRow.index}`}
                                 onClick={
                                     enableSelect
                                         ? () => {

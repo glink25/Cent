@@ -175,3 +175,19 @@ button {
 		@apply bg-background text-foreground;
 	}
 }
+
+.page-show {
+	animation: page-show 0.25s ease forwards;
+}
+
+@keyframes page-show {
+	from {
+		opacity: 0;
+		scale: 0.99;
+	}
+
+	to {
+		opacity: 1;
+		scale: 1;
+	}
+}

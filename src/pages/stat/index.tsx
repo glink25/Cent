@@ -415,7 +415,7 @@ export default function Page() {
     );
     const totalMoneys = FocusTypes.map((t) => dataSources.total[t]);
     return (
-        <div className="w-full h-full p-2 flex flex-col items-center justify-center gap-4 overflow-hidden">
+        <div className="w-full h-full p-2 flex flex-col items-center justify-center gap-4 overflow-hidden page-show">
             <div className="w-full mx-2 max-w-[600px] flex flex-col">
                 <div className="w-full flex flex-col gap-2">
                     <div className="w-full flex">

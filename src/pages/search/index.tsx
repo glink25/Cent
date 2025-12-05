@@ -215,7 +215,7 @@ export default function Page() {
         await toSearch();
     };
     return (
-        <div className="w-full h-full p-2 flex justify-center overflow-hidden">
+        <div className="w-full h-full p-2 flex justify-center overflow-hidden page-show">
             <div className="h-full w-full px-2 max-w-[600px] flex flex-col">
                 <div className="search w-full flex justify-center pt-4">
                     <div className="w-full h-10 shadow-md rounded-sm flex items-center px-4 focus-within:(shadow-lg)">
