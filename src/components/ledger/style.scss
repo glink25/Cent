@@ -1,0 +1,79 @@
+.animated-bill-list {
+	position: relative;
+
+	&::before {
+		animation: ledger-item-fade 1.5s ease-in-out;
+	}
+
+	.end {
+		animation: ledger-item-fade 1s ease-in-out;
+	}
+
+	.end::before {
+		content: "";
+		z-index: -1;
+		width: 10px;
+		height: 10px;
+		border-radius: 10px;
+		border: 1px solid black;
+		background-color: white;
+		bottom: 0;
+		margin: 0 0.8rem;
+	}
+
+	.animated:not(.to-remove) {
+		animation: none !important;
+		opacity: 1 !important;
+	}
+
+	.to-remove {
+		animation: ledger-item-remove 0.5s ease !important;
+	}
+
+	.ledger-item {
+		@for $i from 0 through 10 {
+			&.item-#{$i} {
+				opacity: 0;
+				animation: ledger-item-fly 0.4s ease-in-out $i * 0.05s forwards;
+			}
+		}
+	}
+
+	.divider {
+		animation: ledger-item-fade 1.5s ease-in-out;
+	}
+
+	@keyframes ledger-item-fly {
+		from {
+			opacity: 0;
+			transform: translateY(50vh);
+		}
+
+		to {
+			opacity: 1;
+			transform: translateX(0);
+		}
+	}
+
+	@keyframes ledger-item-fade {
+		from {
+			opacity: 0;
+		}
+
+		to {
+			opacity: 1;
+		}
+	}
+
+	@keyframes ledger-item-remove {
+		from {
+			opacity: 1;
+			transform: translateX(0);
+		}
+
+		to {
+			opacity: 0;
+			transform: translateX(10%);
+		}
+	}
+}
