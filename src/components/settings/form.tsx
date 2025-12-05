@@ -25,7 +25,6 @@ function UserInfo() {
         }
         await Promise.all([
             StorageAPI.logout(),
-            StorageDeferredAPI.clearModels(),
             new Promise<void>((res) => {
                 setTimeout(() => {
                     res();
