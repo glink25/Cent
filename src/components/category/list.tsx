@@ -14,9 +14,10 @@ import { CategoryEditFormProvider, showCategoryEdit } from "./form";
 import { CategoryItem } from "./item";
 
 export default function CategoryList({
+    edit,
     onCancel,
 }: {
-    edit?: any;
+    edit?: BillType;
     onCancel?: () => void;
     onConfirm?: (v: any) => void;
 }) {
@@ -51,7 +52,7 @@ export default function CategoryList({
     const toEditCategory = async (cate: BillCategory) => {
         await showCategoryEdit(cate);
     };
-    const [tab, setTab] = useState("expense");
+    const [tab, setTab] = useState<string>(edit ?? "expense");
     return (
         <PopupLayout
             className="overflow-hidden h-full"

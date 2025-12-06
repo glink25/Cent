@@ -345,7 +345,7 @@ export default function EditorForm({
                                     `rounded-lg border flex-1 py-1 px-2 h-8 flex gap-2 items-center justify-center whitespace-nowrap cursor-pointer`,
                                 )}
                                 onClick={() => {
-                                    showCategoryList();
+                                    showCategoryList(billState.type);
                                 }}
                             >
                                 <i className="icon-[mdi--settings]"></i>
