@@ -3,7 +3,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import useCategory from "@/hooks/use-category";
 import PopupLayout from "@/layouts/popup-layout";
-import type { BillCategory } from "@/ledger/type";
+import type { BillCategory, BillType } from "@/ledger/type";
 import { categoriesGridClassName, treeCategories } from "@/ledger/utils";
 import { useIntl } from "@/locale";
 import { cn } from "@/utils";
@@ -30,8 +30,8 @@ export default function CategoryList({
         categories.filter((v) => v.type === "income"),
     );
     const tabs = [
-        { label: "expense", value: expenses },
-        { label: "income", value: incomes },
+        { label: "expense" as BillType, value: expenses },
+        { label: "income" as BillType, value: incomes },
     ];
     const toAddChildCategory = (parentId: string) => {
         showCategoryEdit({
@@ -41,8 +41,11 @@ export default function CategoryList({
         });
     };
 
-    const toAddCategory = async () => {
-        showCategoryEdit();
+    const toAddCategory = async (type: BillType) => {
+        showCategoryEdit({
+            id: undefined,
+            type,
+        });
     };
 
     const toEditCategory = async (cate: BillCategory) => {
@@ -129,7 +132,7 @@ export default function CategoryList({
                         <Button
                             variant="outline"
                             onClick={() => {
-                                toAddCategory();
+                                toAddCategory(v.label);
                             }}
                         >
                             <i className="icon-[mdi--plus]"></i>
