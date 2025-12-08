@@ -12,6 +12,7 @@ type State = {
     enterAddBillWhenReduceMotionChanged?: boolean;
     readClipboardWhenReduceMotionChanged?: boolean;
     smartPredict?: boolean;
+    multiplyKey?: string;
     /** @deprecated */
     quickEntryWithReLayr?: boolean;
     /** @deprecated */

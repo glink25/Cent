@@ -417,5 +417,9 @@
   "recommend-comments": "Recommend",
   "smart-predict": "Smart Predict",
   "smart-predict-tip": "Recommend category & comments when add new bill",
-  "more-functions": "Advanced"
+  "more-functions": "Advanced",
+  "bill-record-settings": "Bill Record Enhancement",
+  "multiply-key": "Multiply key",
+  "multiply-key-tip": "Quick enter multiple zeros",
+  "off": "Off"
 }
