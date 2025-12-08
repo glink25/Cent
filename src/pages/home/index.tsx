@@ -1,5 +1,11 @@
 import dayjs from "dayjs";
-import { useCallback, useLayoutEffect, useMemo, useRef } from "react";
+import {
+    useCallback,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+} from "react";
 import { useShallow } from "zustand/shallow";
 import { StorageAPI } from "@/api/storage";
 import CloudLoopIcon from "@/assets/icons/cloud-loop.svg?react";
@@ -20,7 +26,7 @@ import { useUserStore } from "@/store/user";
 import { cn } from "@/utils";
 import { filterOrderedBillListByTimeRange } from "@/utils/filter";
 
-let shows = false;
+let ledgerAnimationShows = false;
 
 export default function Page() {
     const t = useIntl();
@@ -86,11 +92,15 @@ export default function Page() {
     }, []);
 
     const presence = useMemo(() => {
-        if (shows) {
+        if (ledgerAnimationShows) {
             return false;
         }
-        shows = true;
         return true;
+    }, []);
+
+    // safari capable
+    useEffect(() => {
+        ledgerAnimationShows = true;
     }, []);
     return (
         <div className="w-full h-full p-2 flex flex-col overflow-hidden page-show">

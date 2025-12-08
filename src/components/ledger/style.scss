@@ -2,23 +2,11 @@
 	position: relative;
 
 	&::before {
-		animation: ledger-item-fade 1.5s ease-in-out;
-	}
-
-	.end {
 		animation: ledger-item-fade 1s ease-in-out;
 	}
 
-	.end::before {
-		content: "";
-		z-index: -1;
-		width: 10px;
-		height: 10px;
-		border-radius: 10px;
-		border: 1px solid black;
-		background-color: white;
-		bottom: 0;
-		margin: 0 0.8rem;
+	.ledger-end {
+		animation: ledger-item-fade 1s ease-in-out;
 	}
 
 	.animated:not(.to-remove) {
@@ -39,8 +27,8 @@
 		}
 	}
 
-	.divider {
-		animation: ledger-item-fade 1.5s ease-in-out;
+	.ledger-divider {
+		animation: ledger-item-fade 1s ease-in-out;
 	}
 
 	@keyframes ledger-item-fly {

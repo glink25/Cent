@@ -157,7 +157,11 @@ export default function BookGuide() {
                                             </div>
                                         </div>
                                     ) : loading ? (
-                                        <Loading>{t("loading-books")}</Loading>
+                                        <div className="flex-1">
+                                            <Loading>
+                                                {t("loading-books")}
+                                            </Loading>
+                                        </div>
                                     ) : (
                                         <div className="flex-1">
                                             {t("no-books-go-create-one")}
