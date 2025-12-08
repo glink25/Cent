@@ -75,19 +75,19 @@ export default function BookGuide() {
                                 </Dialog.Description>
                             </VisuallyHidden.Root>
                             <div className="w-fit h-full flex justify-center items-center pointer-events-auto">
-                                <div className="bg-background w-[350px] h-[480px] py-4 flex flex-col justify-center items-center rounded">
+                                <div className="bg-background w-[350px] h-[480px] max-h-[55vh] py-4 flex flex-col justify-center items-center rounded">
                                     {books.length > 0 ? (
                                         <div className="flex-1 flex flex-col w-full gap-2 h-full overflow-hidden">
                                             <div className="flex gap-2 px-4">
                                                 {t("select-a-book")}
                                                 {loading && <Loading></Loading>}
                                             </div>
-                                            <div className="flex flex-col gap-2 px-4 overflow-y-auto">
+                                            <div className="flex flex-1 flex-col gap-2 px-4 overflow-y-auto">
                                                 {books.map((book) => {
                                                     return (
                                                         <Label
                                                             key={book.id}
-                                                            className="cursor-pointer hover:bg-accent/50 overflow-hidden flex items-center gap-3 rounded-lg border p-3 has-[[aria-checked=true]]:border-blue-600 has-[[aria-checked=true]]:bg-blue-50 dark:has-[[aria-checked=true]]:border-blue-900 dark:has-[[aria-checked=true]]:bg-blue-950"
+                                                            className="flex-shrink-0 cursor-pointer hover:bg-accent/50 overflow-hidden flex items-center gap-3 rounded-lg border p-3 has-[[aria-checked=true]]:border-blue-600 has-[[aria-checked=true]]:bg-blue-50 dark:has-[[aria-checked=true]]:border-blue-900 dark:has-[[aria-checked=true]]:bg-blue-950"
                                                         >
                                                             <Checkbox
                                                                 checked={
@@ -157,7 +157,11 @@ export default function BookGuide() {
                                             </div>
                                         </div>
                                     ) : loading ? (
-                                        <Loading>{t("loading-books")}</Loading>
+                                        <div className="flex-1">
+                                            <Loading>
+                                                {t("loading-books")}
+                                            </Loading>
+                                        </div>
                                     ) : (
                                         <div className="flex-1">
                                             {t("no-books-go-create-one")}

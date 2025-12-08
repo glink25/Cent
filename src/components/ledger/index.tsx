@@ -14,7 +14,7 @@ import "./style.scss";
 
 function Divider({ date: day }: { date: Dayjs }) {
     return (
-        <div className={"pl-12 pr-4 pt-4 pb-2 text-sm divider"}>
+        <div className={"pl-12 pr-4 pt-4 pb-2 text-sm ledger-divider"}>
             {denseDate(day)}
         </div>
     );
@@ -165,7 +165,7 @@ export default function Ledger({
                             {isDivider && <Divider date={isDivider} />}
                             {enableDivideAsOrdered &&
                                 virtualRow.index === bills.length - 1 && (
-                                    <div className="flex items-center py-1 pl-12 text-xs before:absolute before:-translate-x-[15px] before:block before:size-2 before:rounded-full before:border">
+                                    <div className="ledger-end flex items-center py-1 pl-12 text-xs before:absolute before:-translate-x-[15px] before:block before:size-2 before:rounded-full before:border">
                                         The end
                                     </div>
                                 )}

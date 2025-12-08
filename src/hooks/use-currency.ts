@@ -67,7 +67,7 @@ export const useCurrency = () => {
             // 优先通过自定义汇率
             const uid = useUserStore.getState().id;
             const customRates =
-                useLedgerStore.getState().infos?.meta.personal?.[uid].rates;
+                useLedgerStore.getState().infos?.meta.personal?.[uid]?.rates;
             const customRate = (() => {
                 if (customRates?.[target]) {
                     return customRates[target];

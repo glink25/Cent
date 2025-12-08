@@ -5,6 +5,7 @@ import type { ExportedJSON } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
+import { cn } from "@/utils";
 import { download } from "@/utils/download";
 import createConfirmProvider from "../confirm";
 import { FORMAT_BACKUP, showFilePicker } from "../file-picker";
@@ -119,7 +120,10 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                     <div className="flex flex-col px-4 gap-2">
                         <Button
                             variant="outline"
-                            className="py-4"
+                            className={cn(
+                                betaClassName,
+                                "py-4 after:translate-x-[calc(50%-4px)] after:translate-y-[-4px]",
+                            )}
                             onClick={showSmartImport}
                         >
                             {t("smart-import")}

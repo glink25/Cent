@@ -171,8 +171,18 @@ export default function EditorForm({
           ? amountToNumber(billState?.amount)
           : 0;
 
+    const multiplyKey = usePreferenceStore((v) => {
+        if (!v.multiplyKey || v.multiplyKey === "off") {
+            return undefined;
+        }
+        if (v.multiplyKey === "double-zero") {
+            return "double-zero";
+        }
+        return "triple-zero";
+    });
     return (
         <Calculator.Root
+            multiplyKey={multiplyKey}
             initialValue={calculatorInitialValue}
             onValueChange={(n) => {
                 setBillState((v) => {
@@ -573,7 +583,7 @@ export default function EditorForm({
                         <i className="icon-[mdi--check] icon-md"></i>
                     </button>
                     <Calculator.Keyboard
-                        className={cn("flex-1 grid-cols-[2fr_2fr_2fr_1fr_1fr]")}
+                        className={cn("flex-1")}
                         onKey={(v) => {
                             if (v === "r") {
                                 toConfirm();

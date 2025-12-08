@@ -5,6 +5,7 @@ import {
     useCallback,
     useContext,
     useEffect,
+    useMemo,
     useState,
 } from "react";
 import { useIntl } from "@/locale";
@@ -30,31 +31,44 @@ type Formula = [Num] | [Num, Operator] | [Num, Operator, Num];
 type CalculatorContextType = {
     handleButtonClick: (value: ButtonValue) => void;
     formula: Formula;
+    Layout: {
+        label: string;
+        cols: number;
+    }[];
 };
 
 type ButtonValue = string;
 // --- Context ---
 const CalculatorContext = createContext<CalculatorContextType | null>(null);
 
-const Layout = [
-    { label: "1" },
-    { label: "2" },
-    { label: "3" },
-    { label: "c", cols: 2 },
-    { label: "4" },
-    { label: "5" },
-    { label: "6" },
-    { label: "+" },
-    { label: "-" },
-    { label: "7" },
-    { label: "8" },
-    { label: "9" },
-    { label: "x" },
-    { label: "÷" },
-    { label: "r" },
-    { label: "0" },
-    { label: "." },
-    { label: "=", cols: 2 },
+const getLayout = (multiplyKey?: "double-zero" | "triple-zero") => [
+    { label: "1", cols: 2 },
+    { label: "2", cols: 2 },
+    { label: "3", cols: 2 },
+    { label: "c", cols: 4 },
+    { label: "4", cols: 2 },
+    { label: "5", cols: 2 },
+    { label: "6", cols: 2 },
+    { label: "+", cols: 1 },
+    { label: "-", cols: 1 },
+    { label: "7", cols: 2 },
+    { label: "8", cols: 2 },
+    { label: "9", cols: 2 },
+    { label: "x", cols: 1 },
+    { label: "÷", cols: 1 },
+    { label: "r", cols: 2 },
+    ...(multiplyKey
+        ? [
+              { label: "0", cols: 1 },
+              { label: multiplyKey === "double-zero" ? "00" : "000", cols: 2 },
+              { label: ".", cols: 1 },
+          ]
+        : [
+              { label: "0", cols: 2 },
+              { label: ".", cols: 2 },
+          ]),
+
+    { label: "=", cols: 4 },
 ];
 
 const operators = ["+", "-", "x", "÷"];
@@ -176,27 +190,30 @@ export const CalculatorRoot = ({
     onValueChange,
     precision = 3,
     input,
+    multiplyKey,
 }: {
     initialValue?: number;
     onValueChange?: (v: number) => void;
     children: React.ReactNode;
     precision?: number;
     input?: boolean;
+    multiplyKey?: "double-zero" | "triple-zero";
 }) => {
     const [currentFormula, setCurrentFormula] = useState(() =>
         numberToFormula(initialValue ?? 0),
     );
+
+    const Layout = useMemo(() => getLayout(multiplyKey), [multiplyKey]);
 
     const handleButtonClick = useCallback(
         (value: ButtonValue) => {
             if (value === "r") {
                 return;
             }
-
             setCurrentFormula((currentFormula) => {
-                const newFormula = createFormula(
-                    value,
-                    precision,
+                const finalValues = value.split("");
+                const newFormula = finalValues.reduce(
+                    (prev, v) => createFormula(v, precision, prev),
                     currentFormula,
                 );
                 Promise.resolve().then(() => {
@@ -232,11 +249,11 @@ export const CalculatorRoot = ({
                 document.removeEventListener("keydown", onKeydown);
             };
         }
-    }, [input, handleButtonClick]);
+    }, [input, Layout, handleButtonClick]);
 
     return (
         <CalculatorContext.Provider
-            value={{ handleButtonClick, formula: currentFormula }}
+            value={{ handleButtonClick, formula: currentFormula, Layout }}
         >
             {children}
         </CalculatorContext.Provider>
@@ -265,9 +282,9 @@ export const CalculatorKeyboard = ({
     onKey?: (v: string) => void;
 }) => {
     const t = useIntl();
-    const { handleButtonClick } = useContext(CalculatorContext)!;
+    const { handleButtonClick, Layout } = useContext(CalculatorContext)!;
     return (
-        <div className={cn("grid grid-cols-5 gap-2", className)}>
+        <div className={cn("grid grid-cols-8 gap-2", className)}>
             {Layout.map((row) => (
                 <Button
                     variant="ghost"
