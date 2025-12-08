@@ -63,7 +63,8 @@ function SmartImport({ onCancel }: { onCancel?: () => void }) {
         DefaultTransformers.find((v) => v.id === selected),
     );
     const updateTransformerCode = (code: string) => {
-        setCustomTransformers((prev) => {
+        setCustomTransformers(() => {
+            const prev = customTransformers;
             const newValue = code;
             const item = prev?.find((v) => v.id === selected);
             if (!item) {
@@ -79,7 +80,8 @@ function SmartImport({ onCancel }: { onCancel?: () => void }) {
         if (!name) {
             return;
         }
-        setCustomTransformers((prev) => {
+        setCustomTransformers(() => {
+            const prev = customTransformers;
             const newValue = name;
             const item = prev?.find((v) => v.id === selected);
             if (!item) {
@@ -147,7 +149,8 @@ function SmartImport({ onCancel }: { onCancel?: () => void }) {
                 <Button
                     disabled={loading}
                     onClick={() => {
-                        setCustomTransformers((prev) => {
+                        setCustomTransformers(() => {
+                            const prev = customTransformers;
                             const id = `${t("custom-import-transformer-name")}${(prev?.length ?? 0) + 1}`;
                             Promise.resolve().then(() => {
                                 setSelected(id);
