@@ -25,7 +25,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
 
     return (
         <PopupLayout
-            title={t("experimental-functions")}
+            title={t("more-functions")}
             onBack={onCancel}
             className="h-full overflow-hidden"
         >
@@ -117,7 +117,7 @@ export default function LabSettingsItem() {
                 <div className="w-full px-4 flex justify-between items-center">
                     <div className="flex items-center gap-2">
                         <i className="icon-[mdi--flask] size-5"></i>
-                        {t("experimental-functions")}
+                        {t("more-functions")}
                     </div>
                     <i className="icon-[mdi--chevron-right] size-5"></i>
                 </div>

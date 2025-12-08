@@ -82,7 +82,8 @@ const GitVersionChecker: React.FC = () => {
 
     // 截断 Git Hash 以便阅读
     const formatHash = (hash: string) => hash.substring(0, 8);
-    const isLatest = latestHash && CURRENT_GIT_HASH === latestHash;
+    const isLatest =
+        latestHash && formatHash(CURRENT_GIT_HASH) === formatHash(latestHash);
 
     return (
         <div className="text-xs">
