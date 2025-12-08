@@ -158,11 +158,11 @@ function Guide({ className }: { className?: string }) {
     return (
         <div
             className={
-                "w-full flex-1 border-b bg-stone-800 text-white flex flex-col items-center justify-center gap-4 relative"
+                "w-full p-4 flex-1 border-b bg-stone-800 text-white flex flex-col items-center justify-center gap-4 relative"
             }
         >
             <h1 className="text-3xl font-bold">{t("APP_NAME")}</h1>
-            <p className="text-sm">{t("app-introduce")}</p>
+            <p className="text-sm text-center">{t("app-introduce")}</p>
             <div className="text-xs opacity-60">{t("pwa-install-tip")}</div>
             <a
                 className="absolute bottom-4 right-4 text-xs opacity-60 underline"
