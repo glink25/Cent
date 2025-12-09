@@ -203,11 +203,11 @@ export class Gitray<Item extends BaseItem> {
             .split("/");
         const { accessToken } = await this.config.auth();
         const res = await fetch(
-            `/repos/${owner}/${repo}/contents/${paths.join("/")}`,
+            `https://api.github.com/repos/${owner}/${repo}/contents/${paths.join("/")}`,
             {
                 headers: {
                     Authorization: `Bearer ${accessToken}`,
-                    Accept: "application/vnd.github+json",
+                    Accept: "application/vnd.github.v3.raw",
                     "X-GitHub-Api-Version": "2022-11-28",
                 },
             },
