@@ -1,16 +1,16 @@
 import { decode, encode } from "js-base64";
 import { sortBy } from "lodash-es";
 import type { ChangeListener, UserInfo } from "@/api/endpoints/type";
-import { transformAssets } from "../database/assets";
-import { shortId } from "../database/id";
-import { Scheduler } from "../database/scheduler";
-import { asyncSingleton } from "../database/singleton";
+import { transformAssets } from "@/database/assets";
+import { shortId } from "@/database/id";
+import { Scheduler } from "@/database/scheduler";
+import { asyncSingleton } from "@/database/singleton";
 import {
     type Action,
     type BaseItem,
     StashBucket,
     type StashStorage,
-} from "../database/stash";
+} from "@/database/stash";
 
 export type Processor = (finished: Promise<void>) => void;
 
