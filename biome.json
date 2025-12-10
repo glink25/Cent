@@ -12,7 +12,8 @@
 			"!**/dist",
 			"!**/node_modules",
 			"!**/public",
-			"!src/locale/lang/**/*.json"
+			"!src/locale/lang/**/*.json",
+			"!**/*.config.js"
 		]
 	},
 	"formatter": {
