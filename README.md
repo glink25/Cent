@@ -114,6 +114,8 @@ Cent使用Cloudflare Workers部署了一个线上鉴权服务，该服务只针�
 
 Cent 欢迎所有开发者与用户参与贡献，提交代码前请参考[贡献指南](docs/contributing/zh.md)：
 
+> QQ交流群：861180883
+
 ```bash
 # 克隆项目
 git clone https://github.com/glink25/Cent.git
