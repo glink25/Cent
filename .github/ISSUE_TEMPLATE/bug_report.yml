@@ -39,8 +39,7 @@ body:
       description: Cent 极其依赖同步机制，请详细说明您的同步方式
       placeholder: |
         同步方式: Github / WebDAV / Local Only  
-        如果是 WebDAV: 服务商（坚果云、Nextcloud、群晖 NAS、Alist...）  
-        是否开启端到端加密: Yes / No
+        如果是 WebDAV: 服务商（坚果云、Nextcloud、群晖 NAS、Alist...） 
 
   - type: textarea
     id: repro-steps
