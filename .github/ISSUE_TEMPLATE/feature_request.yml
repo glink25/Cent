@@ -1,0 +1,62 @@
+name: "💡 Feature Request"
+description: "提出一个关于 Cent 的新功能或改进建议"
+title: "[Feat] "
+labels:
+  - enhancement
+assignees: ""
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        <!--
+        在提交功能请求前，请先阅读 Cent 的核心理念：
+        Cent 旨在成为完全不受后端服务器束缚的自由记账软件。
+        -->
+
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: "🌟 功能描述"
+      description: "请清楚简洁地描述您想要的功能是什么"
+      placeholder: "例如：希望能够支持 xxx 功能……"
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem-to-solve
+    attributes:
+      label: "🤔 解决了什么问题？"
+      description: "请描述该功能解决了什么用户痛点，或改善了哪些体验"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: core-philosophy
+    attributes:
+      label: "🏗 核心理念自检（必填）"
+      description: "Cent 坚持 Serverless First 原则，请回答以下问题"
+      options:
+        - label: "是否可以在无服务器后端的情况下运行？（即：该功能不依赖特定 API 服务器）"
+          required: true
+        - label: "是否考虑了多设备同步场景？（该功能产生的数据能否顺利同步）"
+          required: true
+
+  - type: textarea
+    id: solution-proposal
+    attributes:
+      label: "🎨 实现思路或方案（可选）"
+      description: "如果您有具体实现思路、流程草图或 UI 设计，请填写"
+      placeholder: "可选项"
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: "🔄 替代方案"
+      description: "您是否考虑过其他方案？为什么它们不可行？"
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: "补充说明"
+      description: "任何额外信息都可以写在这里"

@@ -1,0 +1,83 @@
+name: "🐛 Bug Report"
+description: "创建一个报告以帮助我们修复问题"
+title: "[Bug] "
+labels:
+  - bug
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢您反馈 Bug！  
+        为了能更高效地定位问题，请务必按照以下格式填写。  
+        模糊的描述（如“同步失败了”）会导致需要花费大量时间反复沟通，请提供尽可能多的细节。
+
+  - type: checkboxes
+    id: pre-check
+    attributes:
+      label: ⚠️ 前置检查
+      options:
+        - label: 我已经搜索过现有的 Issue，确保没有重复提交。
+        - label: 我已经阅读了 CONTRIBUTING.md 中的开发与反馈规则。
+
+  - type: textarea
+    id: env-info
+    attributes:
+      label: 💻 环境信息（必填）
+      description: 请提供与你的运行环境相关的信息
+      placeholder: |
+        Cent 版本/Commit ID: 例如 v1.2.0 或 git hash  
+        操作系统: 例如 Windows 11, macOS Sequoia, iOS 17.2  
+        运行平台: 例如 Chrome 浏览器, Safari PWA, Edge  
+        设备类型: 例如 Desktop, iPhone 15, iPad Air
+
+  - type: textarea
+    id: sync-config
+    attributes:
+      label: ☁️ 同步配置（非常重要）
+      description: Cent 极其依赖同步机制，请详细说明您的同步方式
+      placeholder: |
+        同步方式: Github / WebDAV / Local Only  
+        如果是 WebDAV: 服务商（坚果云、Nextcloud、群晖 NAS、Alist...）  
+        是否开启端到端加密: Yes / No
+
+  - type: textarea
+    id: repro-steps
+    attributes:
+      label: 📝 复现步骤
+      description: 请详细描述如何复现该 bug
+      placeholder: |
+        1. 打开页面 '...'
+        2. 点击按钮 '...'
+        3. 滚动到 '...'
+        4. 看到错误
+
+  - type: textarea
+    id: expected-vs-actual
+    attributes:
+      label: 😯 预期结果 vs 实际结果
+      placeholder: |
+        预期结果:  
+        实际结果:
+
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: 📸 截图或录屏
+      description: 如果是 UI 问题，请务必提供截图。可直接粘贴图片。
+
+  - type: textarea
+    id: error-log
+    attributes:
+      label: 📜 错误日志
+      description: |
+        请按 F12 打开控制台 (Console)，将红色报错复制到这里。
+      render: shell
+      placeholder: 在此处粘贴 Log...
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: 补充说明
+      description: 任何其他有助于解决问题的上下文
