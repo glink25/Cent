@@ -112,7 +112,7 @@ Cent使用Cloudflare Workers部署了一个线上鉴权服务，该服务只针�
 
 ## 💬 贡献与反馈
 
-Cent 欢迎所有开发者与用户参与贡献：
+Cent 欢迎所有开发者与用户参与贡献，提交代码前请参考[贡献指南](docs/contributing/zh.md)：
 
 ```bash
 # 克隆项目
@@ -146,6 +146,9 @@ pnpm lint
 
 ---
 
+<details>
+<summary>点击查看</summary>
+
 ### 💰 支付宝 (Alipay)
 
 
@@ -164,6 +167,7 @@ pnpm lint
 <img src="https://glink25.github.io/post-assets/sponsor-alipay.jpg" width="50%" alt="solana">
 
 ---
+</details>
 
  # Cent
 

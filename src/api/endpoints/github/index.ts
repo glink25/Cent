@@ -1,8 +1,8 @@
 import { BillIndexedDBStorage } from "@/database/storage";
-import { Gitray } from "@/gitray";
 import type { Bill } from "@/ledger/type";
 import { t } from "@/locale";
 import type { Book, SyncEndpointFactory } from "../type";
+import { Gitray } from "./gitray";
 import { createLoginAPI } from "./login";
 
 const config = {
