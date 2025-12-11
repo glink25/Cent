@@ -46,7 +46,7 @@ export type SyncEndpoint = {
     getUserInfo: (id?: string) => Promise<UserInfo>;
     getCollaborators: (id: string) => Promise<UserInfo[]>;
 
-    getOnlineAsset?: (src: string) => Promise<Blob | undefined>;
+    getOnlineAsset?: (src: string, store: string) => Promise<Blob | undefined>;
 };
 
 export type SyncEndpointFactory = {

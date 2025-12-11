@@ -1,4 +1,4 @@
-interface FileEntry<V> {
+export interface FileEntry<V> {
     key: string;
     file: File;
     formattedValue: V;

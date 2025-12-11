@@ -1,6 +1,9 @@
 import type { WebDAVEdit } from "@/components/modal/web-dav";
+import { Scheduler } from "@/database/scheduler";
 import { BillIndexedDBStorage } from "@/database/storage";
 import type { Bill } from "@/ledger/type";
+import { createTidal } from "@/tidal";
+import { createWebDAVSyncer } from "@/tidal/web-dav";
 import type { SyncEndpointFactory } from "../type";
 import { WebDAVSync } from "./core";
 
@@ -18,6 +21,10 @@ const getAuth = () => {
     }
     const parsed = JSON.parse(data);
     return parsed as WebDAVEdit;
+};
+
+type WebDAVPrivateMeta = {
+    _webDAVUserAliases?: string[];
 };
 
 export const WebDAVEndpoint: SyncEndpointFactory = {
@@ -55,23 +62,40 @@ export const WebDAVEndpoint: SyncEndpointFactory = {
             throw new Error("web dav auth not found");
         }
         const remote = auth.remote.replace(/\/$/, "");
-        const repo = new WebDAVSync<Bill>({
-            ...config,
-            username: auth.username,
-            password: auth.password,
-            customUserName: auth.customUserName,
-            remoteUrl: remote,
-            proxy: auth.proxy,
-            storage: (name) => new BillIndexedDBStorage(`book-${name}`),
+        const repo = createTidal<Bill>({
+            storageFactory: (name) => new BillIndexedDBStorage(`book-${name}`),
+            entryName: config.entryName,
+            syncerFactory: () =>
+                createWebDAVSyncer({
+                    ...config,
+                    username: auth.username,
+                    password: auth.password,
+                    remoteUrl: remote,
+                    proxy: auth.proxy,
+                }),
         });
         const toBookName = (bookId: string) => {
             return bookId.replace(`${config.repoPrefix}-`, "");
         };
 
+        const getUserAliases = async (storeName: string) => {
+            const meta: WebDAVPrivateMeta | undefined =
+                await repo.getMeta(storeName);
+            if (!meta?._webDAVUserAliases) {
+                return [];
+            }
+            return meta._webDAVUserAliases;
+        };
+
+        const scheduler = new Scheduler(async (signal) => {
+            const [finished, cancel] = repo.sync();
+            signal.onabort = cancel;
+            await finished;
+        });
+
         return {
             logout: async () => {
-                await repo.dangerousClearAll();
-                return;
+                await repo.detach();
             },
             getUserInfo: async () => {
                 const Me = {
@@ -82,7 +106,7 @@ export const WebDAVEndpoint: SyncEndpointFactory = {
                 return Me;
             },
             getCollaborators: async (id) => {
-                const aliases = await repo.getUserAliases(id);
+                const aliases = await getUserAliases(id);
                 const Me = {
                     id: auth.username,
                     name: auth.username,
@@ -100,15 +124,34 @@ export const WebDAVEndpoint: SyncEndpointFactory = {
                 ];
                 return users;
             },
-            getOnlineAsset: async (url) => {
-                return repo.getOnlineAsset(url);
-            },
+            getOnlineAsset: (src, store) => repo.getAsset(src, store),
             fetchAllBooks: async () => {
                 const res = await repo.fetchAllStore();
                 return res.map((v) => ({ id: v, name: toBookName(v) }));
             },
-            createBook: repo.createStore.bind(repo),
-            initBook: repo.initStore.bind(repo),
+            createBook: repo.create,
+            initBook: async (name) => {
+                await repo.init(name);
+                repo.getMeta(name).then((meta?: WebDAVPrivateMeta) => {
+                    const customUserName = auth.customUserName;
+                    if (!customUserName) {
+                        return;
+                    }
+                    if (!meta?._webDAVUserAliases?.includes(customUserName)) {
+                        const newMeta = meta ?? {};
+                        newMeta._webDAVUserAliases = [
+                            ...(meta?._webDAVUserAliases ?? []),
+                            customUserName,
+                        ];
+                        repo.batch(name, [
+                            {
+                                type: "meta",
+                                metaValue: newMeta,
+                            },
+                        ]);
+                    }
+                });
+            },
             deleteBook: async () => {
                 confirm(
                     "Please delete this folder on your Web DAV server/app manually",
@@ -116,14 +159,17 @@ export const WebDAVEndpoint: SyncEndpointFactory = {
             },
             inviteForBook: undefined,
 
-            batch: repo.batch.bind(repo),
-            getMeta: repo.getMeta.bind(repo),
-            getAllItems: repo.getAllItems.bind(repo),
-            onChange: repo.onChange.bind(repo),
+            batch: async (...args) => {
+                await repo.batch(...args);
+                scheduler.schedule();
+            },
+            getMeta: repo.getMeta,
+            getAllItems: repo.getAllItems,
+            onChange: repo.onChange,
 
-            getIsNeedSync: repo.getIsNeedSync.bind(repo),
-            onSync: repo.onSync.bind(repo),
-            toSync: repo.toSync.bind(repo),
+            getIsNeedSync: repo.hasStashes,
+            onSync: scheduler.onProcess,
+            toSync: scheduler.schedule,
         };
     },
 };

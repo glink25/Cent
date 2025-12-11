@@ -1,8 +1,10 @@
+import { Scheduler } from "@/database/scheduler";
 import { BillIndexedDBStorage } from "@/database/storage";
 import type { Bill } from "@/ledger/type";
 import { t } from "@/locale";
-import type { Book, SyncEndpointFactory } from "../type";
-import { Giteeray } from "./giteeray";
+import { createTidal } from "@/tidal";
+import { createGiteeSyncer } from "@/tidal/gitee";
+import type { SyncEndpointFactory } from "../type";
 import { createLoginAPI } from "./login";
 
 const config = {
@@ -29,10 +31,15 @@ export const GiteeEndpoint: SyncEndpointFactory = {
     manuallyLogin,
     init: () => {
         LoginAPI.afterLogin();
-        const repo = new Giteeray<Bill>({
-            ...config,
-            auth: LoginAPI.getToken,
-            storage: (name) => new BillIndexedDBStorage(`book-${name}`),
+        const repo = createTidal<Bill>({
+            storageFactory: (name) => new BillIndexedDBStorage(`book-${name}`),
+            entryName: config.entryName,
+            syncerFactory: () =>
+                createGiteeSyncer({
+                    auth: LoginAPI.getToken,
+                    entryName: config.entryName,
+                    repoPrefix: config.repoPrefix,
+                }),
         });
 
         const toBookName = (bookId: string) => {
@@ -60,30 +67,40 @@ export const GiteeEndpoint: SyncEndpointFactory = {
             return Promise.reject();
         };
 
-        return {
-            logout: repo.dangerousClearAll.bind(repo),
+        const scheduler = new Scheduler(async (signal) => {
+            const [finished, cancel] = repo.sync();
+            signal.onabort = cancel;
+            await finished;
+        });
 
-            getUserInfo: repo.getUserInfo.bind(repo),
-            getCollaborators: repo.getCollaborators.bind(repo),
-            getOnlineAsset: repo.getOnlineAsset.bind(repo),
+        return {
+            logout: async () => {
+                repo.detach();
+            },
+            getUserInfo: repo.getUserInfo,
+            getCollaborators: repo.getCollaborators,
+            getOnlineAsset: (src, store) => repo.getAsset(src, store),
 
             fetchAllBooks: async (...args) => {
                 const res = await repo.fetchAllStore(...args);
                 return res.map((v) => ({ id: v, name: toBookName(v) }));
             },
-            createBook: repo.createStore.bind(repo),
-            initBook: repo.initStore.bind(repo),
+            createBook: repo.create,
+            initBook: repo.init,
             deleteBook,
             inviteForBook,
 
-            batch: repo.batch.bind(repo),
-            getMeta: repo.getMeta.bind(repo),
-            getAllItems: repo.getAllItems.bind(repo),
-            onChange: repo.onChange.bind(repo),
+            batch: async (...args) => {
+                await repo.batch(...args);
+                scheduler.schedule();
+            },
+            getMeta: repo.getMeta,
+            getAllItems: repo.getAllItems,
+            onChange: repo.onChange,
 
-            getIsNeedSync: repo.getIsNeedSync.bind(repo),
-            onSync: repo.onSync.bind(repo),
-            toSync: repo.toSync.bind(repo),
+            getIsNeedSync: repo.hasStashes,
+            onSync: scheduler.onProcess,
+            toSync: scheduler.schedule,
         };
     },
 };
