@@ -7,14 +7,26 @@ import type { OutputType } from "@/database/stash";
 import type { Bill } from "@/ledger/type";
 import { cn } from "@/utils";
 import { denseDate } from "@/utils/time";
+import { goAddBill } from "../bill-editor";
 import { showBillInfo } from "../bill-info";
 import { Checkbox } from "../ui/checkbox";
 import BillItem from "./item";
 import "./style.scss";
 
 function Divider({ date: day }: { date: Dayjs }) {
+    const handleDateClick = async () => {
+        /** 使用点击日期的时间戳作为新账单的时间 **/
+        await goAddBill({
+            time: day.startOf("day").valueOf(),
+        });
+    };
     return (
-        <div className={"pl-12 pr-4 pt-4 pb-2 text-sm ledger-divider"}>
+        <div
+            className={
+                "pl-12 pr-4 pt-4 pb-2 text-sm ledger-divider cursor-pointer hover:opacity-70 transition-opacity"
+            }
+            onClick={handleDateClick}
+        >
             {denseDate(day)}
         </div>
     );

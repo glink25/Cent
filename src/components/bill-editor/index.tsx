@@ -1,3 +1,4 @@
+import type { EditBill } from "@/store/ledger";
 import { useLedgerStore } from "@/store/ledger";
 import createConfirmProvider from "../confirm";
 import EditorForm from "./form";
@@ -11,7 +12,9 @@ export const [BillEditorProvider, showBillEditor] = createConfirmProvider(
     },
 );
 
-export const goAddBill = async () => {
-    const newBill = await showBillEditor();
+export const goAddBill = async (
+    initialData?: Partial<Pick<EditBill, "time">>,
+) => {
+    const newBill = await showBillEditor(initialData as EditBill | undefined);
     await useLedgerStore.getState().addBill(newBill);
 };
