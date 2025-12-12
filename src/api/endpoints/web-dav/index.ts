@@ -3,9 +3,8 @@ import { Scheduler } from "@/database/scheduler";
 import { BillIndexedDBStorage } from "@/database/storage";
 import type { Bill } from "@/ledger/type";
 import { createTidal } from "@/tidal";
-import { createWebDAVSyncer } from "@/tidal/web-dav";
+import { checkWebDAVConfig, createWebDAVSyncer } from "@/tidal/web-dav";
 import type { SyncEndpointFactory } from "../type";
-import { WebDAVSync } from "./core";
 
 const config = {
     repoPrefix: "cent-journal",
@@ -34,7 +33,7 @@ export const WebDAVEndpoint: SyncEndpointFactory = {
         const auth = await modal.webDavAuth({
             check: async (data) => {
                 const remote = data.remote.replace(/\/$/, "");
-                await WebDAVSync.checkConfig({
+                await checkWebDAVConfig({
                     remoteUrl: remote,
                     username: data.username,
                     password: data.password,

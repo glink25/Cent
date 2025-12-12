@@ -320,3 +320,43 @@ export const createWebDAVSyncer = (cfg: WebDAVConfig): Syncer => {
         assetEntryToPath,
     };
 };
+
+export const checkWebDAVConfig = async (
+    config: Pick<WebDAVConfig, "username" | "password" | "remoteUrl" | "proxy">,
+) => {
+    const { remoteUrl, username, password, proxy } = config;
+    const [client, dispose] = await createClient(
+        remoteUrl,
+        {
+            username,
+            password,
+        },
+        proxy,
+    );
+    try {
+        // 尝试列出根目录内容
+        // 这是一个无害的 "ping" 操作
+        await client.getDirectoryContents("/");
+
+        // 如果成功 (即使是 404)，说明认证和 URL 都通过了
+        return true;
+    } catch (e: any) {
+        if (e.status === 404) {
+            // 404 Not Found 是一个有效的响应
+            // 它意味着服务器已连接，认证成功，只是目录还未创建
+            return true;
+        }
+
+        let errorMessage = "Unknown connection error.";
+        if (e.status === 401) {
+            errorMessage =
+                "Authentication failed (401 Unauthorized). Please check username/password or token.";
+        } else if (e.message) {
+            errorMessage = e.message;
+        }
+
+        throw new Error(errorMessage);
+    } finally {
+        dispose();
+    }
+};
