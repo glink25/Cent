@@ -247,13 +247,12 @@ const diffMeta = (prev: any, current: any) => {
 };
 
 export const mergeMeta = (prev: any, diff: any) => {
+    // 如果有用户在更新到最新版本前存在未同步完成的meta stash，那么需要兼容这部分用户
     if (diff.$$meta) {
-        console.log("use patch update");
         const result = merge(prev, diff);
         result.__updated_at = diff.$$meta.timestamp;
         delete result.$$meta;
         return result;
     }
-    console.log("use full update");
     return diff;
 };
