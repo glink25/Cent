@@ -29,10 +29,14 @@ export type StoreDetail = {
 };
 
 export type Syncer = {
-    fetchStructure: (storeFullName: string) => Promise<StoreStructure>;
+    fetchStructure: (
+        storeFullName: string,
+        signal?: AbortSignal,
+    ) => Promise<StoreStructure>;
     fetchContent: (
         storeFullName: string,
         paths: FileLike[],
+        signal?: AbortSignal,
     ) => Promise<FileWithContent[]>;
     uploadContent: (
         storeFullName: string,
@@ -40,6 +44,7 @@ export type Syncer = {
             path: string;
             content: string | undefined;
         }[],
+        signal?: AbortSignal,
     ) => Promise<StoreStructure>;
     transformAsset: (file: File, storeFullName: string) => AssetKey;
     createStore: (name: string) => Promise<{ id: string; name: string }>;
@@ -123,24 +128,32 @@ export const createTidal = <Item extends BaseItem>({
     };
 
     // fetch structure singleton (to avoid many calls)
-    const _fetchStructure = async (storeFullName: string) => {
+    const _fetchStructure = async (
+        storeFullName: string,
+        signal?: AbortSignal,
+    ) => {
         const syncer = getSyncer();
-        return await syncer.fetchStructure(storeFullName);
+        return await syncer.fetchStructure(storeFullName, signal);
     };
     const fetchStructure = asyncSingleton(_fetchStructure);
 
-    const fetchContent = async (storeFullName: string, files: FileLike[]) => {
+    const fetchContent = async (
+        storeFullName: string,
+        files: FileLike[],
+        signal?: AbortSignal,
+    ) => {
         const syncer = getSyncer();
-        return await syncer.fetchContent(storeFullName, files);
+        return await syncer.fetchContent(storeFullName, files, signal);
     };
 
     const fetchStoreDetail = async (
         storeFullName: string,
         _structure?: StoreStructure,
+        signal?: AbortSignal,
     ) => {
         const remoteStructure =
             _structure === undefined
-                ? await fetchStructure(storeFullName)
+                ? await fetchStructure(storeFullName, signal)
                 : _structure;
         const { itemBucket } = getStore(storeFullName);
         const localConfig = (await itemBucket.configStorage.getValue()) as
@@ -252,7 +265,7 @@ export const createTidal = <Item extends BaseItem>({
                         let struct: ReturnType<typeof fetchStructure>;
                         return () => {
                             if (!struct) {
-                                struct = fetchStructure(storeFullName);
+                                struct = fetchStructure(storeFullName, signal);
                             }
                             return struct;
                         };
@@ -262,9 +275,11 @@ export const createTidal = <Item extends BaseItem>({
                     const runMetaStashesHandler = async () => {
                         if (metaStashes.length === 0) return [];
                         const remoteStructure = await getRemoteStructure();
-                        const [remoteMeta] = await fetchContent(storeFullName, [
-                            remoteStructure.meta,
-                        ]);
+                        const [remoteMeta] = await fetchContent(
+                            storeFullName,
+                            [remoteStructure.meta],
+                            signal,
+                        );
                         const content = mergeMeta(
                             remoteMeta.content,
                             metaStashes[0].metaValue,
@@ -299,9 +314,11 @@ export const createTidal = <Item extends BaseItem>({
                         const latestChunk = sortedChunk[sortedChunk.length - 1];
                         const latestChunkContent = latestChunk
                             ? (
-                                  await fetchContent(storeFullName, [
-                                      latestChunk,
-                                  ])
+                                  await fetchContent(
+                                      storeFullName,
+                                      [latestChunk],
+                                      signal,
+                                  )
                               )[0]
                             : undefined;
 
@@ -387,6 +404,7 @@ export const createTidal = <Item extends BaseItem>({
                     const newStructure = await syncer.uploadContent(
                         storeFullName,
                         [...assetFiles, ...filesToUpload],
+                        signal,
                     );
 
                     // after success, delete local stashes & update local meta

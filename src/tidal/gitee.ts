@@ -118,7 +118,10 @@ export const createGiteeSyncer = (config: {
     };
 
     // fetch repo tree/structure
-    const fetchStructure = async (storeFullName: string) => {
+    const fetchStructure = async (
+        storeFullName: string,
+        signal?: AbortSignal,
+    ) => {
         const [owner, repo] = storeFullName.split("/");
         if ([owner, repo].some((v) => v.length === 0))
             throw new Error(`invalid store name: ${storeFullName}`);
@@ -127,6 +130,7 @@ export const createGiteeSyncer = (config: {
         const repoData = await giteeRequest<any>(
             "GET",
             `/repos/${owner}/${repo}`,
+            signal,
         );
         const branch = repoData?.default_branch ?? "master";
 
@@ -134,6 +138,7 @@ export const createGiteeSyncer = (config: {
         const rootList = await giteeRequest<any[]>(
             "GET",
             `/repos/${owner}/${repo}/contents?ref=${branch}`,
+            signal,
         );
 
         // 3. list assets dir if exists
@@ -142,6 +147,7 @@ export const createGiteeSyncer = (config: {
             assetsList = await giteeRequest<any[]>(
                 "GET",
                 `/repos/${owner}/${repo}/contents/assets?ref=${branch}`,
+                signal,
             );
         } catch {
             assetsList = [];
@@ -164,7 +170,11 @@ export const createGiteeSyncer = (config: {
     };
 
     // fetch content by file list (uses contents API to read file content base64)
-    const fetchContent = async (storeFullName: string, files: FileLike[]) => {
+    const fetchContent = async (
+        storeFullName: string,
+        files: FileLike[],
+        signal?: AbortSignal,
+    ) => {
         const [owner, repo] = storeFullName.split("/");
         if ([owner, repo].some((v) => v.length === 0))
             throw new Error(`invalid store name: ${storeFullName}`);
@@ -176,6 +186,7 @@ export const createGiteeSyncer = (config: {
                 `${GITEE_API_BASE}/repos/${owner}/${repo}/contents/${encodeURIComponent(f.path)}`,
                 {
                     headers: { Authorization: `token ${accessToken}` },
+                    signal,
                 },
             );
             if (!res.ok) {
@@ -199,6 +210,7 @@ export const createGiteeSyncer = (config: {
     const uploadContent = async (
         storeFullName: string,
         files: { path: string; content: any }[],
+        signal?: AbortSignal,
     ) => {
         const [owner, repo] = storeFullName.split("/");
         if ([owner, repo].some((v) => v.length === 0))
@@ -219,6 +231,7 @@ export const createGiteeSyncer = (config: {
                 `${GITEE_API_BASE}/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}?ref=${branch}`,
                 {
                     headers: { Authorization: `token ${accessToken}` },
+                    signal,
                 },
             );
             if (!res.ok) return null;
@@ -240,6 +253,7 @@ export const createGiteeSyncer = (config: {
                             sha: remoteSha,
                             branch,
                         },
+                        signal,
                     );
                 }
                 continue;
@@ -266,6 +280,7 @@ export const createGiteeSyncer = (config: {
                 message: `[Giteeray] Update ${storeFullName}`,
                 content: base64Content,
                 branch,
+                signal,
             };
 
             if (!remoteSha) {

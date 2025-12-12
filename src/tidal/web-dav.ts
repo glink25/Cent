@@ -138,12 +138,16 @@ export const createWebDAVSyncer = (cfg: WebDAVConfig): Syncer => {
         return clientInstance;
     };
 
-    const fetchStructure = async (storeFullName: string) => {
+    const fetchStructure = async (
+        storeFullName: string,
+        signal?: AbortSignal,
+    ) => {
         const client = await getClient();
         const storePath = `${config.baseDir}/${storeFullName}`;
         try {
             const files = (await client.getDirectoryContents(storePath, {
                 deep: true,
+                signal,
             })) as FileStat[];
             const structure = fileStatsToStructure(
                 files,
@@ -163,7 +167,11 @@ export const createWebDAVSyncer = (cfg: WebDAVConfig): Syncer => {
         }
     };
 
-    const fetchContent = async (storeFullName: string, files: FileLike[]) => {
+    const fetchContent = async (
+        storeFullName: string,
+        files: FileLike[],
+        signal?: AbortSignal,
+    ) => {
         const client = await getClient();
         const storePath = `${config.baseDir}/${storeFullName}`;
         // 存储结果的数组
@@ -175,6 +183,7 @@ export const createWebDAVSyncer = (cfg: WebDAVConfig): Syncer => {
             try {
                 const content = (await client.getFileContents(filePath, {
                     format: "text",
+                    signal,
                 })) as string;
                 const sha = `${(file as any).etag ?? ""}:${(file as any).lastmod ?? ""}:${(file as any).size ?? 0}`;
                 // 返回 FileWithConentLike 结构，并加入结果数组
@@ -192,6 +201,7 @@ export const createWebDAVSyncer = (cfg: WebDAVConfig): Syncer => {
     const uploadContent = async (
         storeFullName: string,
         files: { path: string; content: any }[],
+        signal?: AbortSignal,
     ) => {
         const client = await getClient();
         const storePath = `${config.baseDir}/${storeFullName}`;

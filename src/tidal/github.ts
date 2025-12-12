@@ -160,6 +160,7 @@ export const createGithubSyncer = (config: {
     const uploadContent = async (
         storeFullName: string,
         files: { path: string; content: any }[],
+        signal?: AbortSignal,
     ) => {
         const octokit = await getOctokit();
 
@@ -199,6 +200,9 @@ export const createGithubSyncer = (config: {
                         repo,
                         content: base64Content,
                         encoding: "base64",
+                        request: {
+                            signal,
+                        },
                     },
                 );
                 return {
@@ -216,15 +220,32 @@ export const createGithubSyncer = (config: {
             {
                 owner,
                 repo,
+                request: {
+                    signal,
+                },
             },
         );
         const { data: refData } = await octokit.request(
             "GET /repos/{owner}/{repo}/git/ref/{ref}",
-            { owner, repo, ref: `heads/${repoData.default_branch}` },
+            {
+                owner,
+                repo,
+                ref: `heads/${repoData.default_branch}`,
+                request: {
+                    signal,
+                },
+            },
         );
         const { data: commitData } = await octokit.request(
             "GET /repos/{owner}/{repo}/git/commits/{commit_sha}",
-            { owner, repo, commit_sha: refData.object.sha },
+            {
+                owner,
+                repo,
+                commit_sha: refData.object.sha,
+                request: {
+                    signal,
+                },
+            },
         );
         const baseTreeSha = commitData.tree.sha;
         const latestCommitSha = refData.object.sha;
@@ -236,6 +257,9 @@ export const createGithubSyncer = (config: {
                 repo,
                 tree: treePayload,
                 base_tree: baseTreeSha,
+                request: {
+                    signal,
+                },
             },
         );
 
@@ -247,6 +271,9 @@ export const createGithubSyncer = (config: {
                 message: `[Tidal] update for ${storeFullName}`,
                 tree: newTree.sha,
                 parents: [latestCommitSha],
+                request: {
+                    signal,
+                },
             },
         );
 
@@ -255,6 +282,9 @@ export const createGithubSyncer = (config: {
             repo,
             ref: `heads/${repoData.default_branch}`,
             sha: newCommit.sha,
+            request: {
+                signal,
+            },
         });
         return treeDateToStructure(newTree.tree, config.entryName);
     };
