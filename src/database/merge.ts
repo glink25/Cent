@@ -44,8 +44,7 @@
 // 请注意，
 // 1，O的初始结构是不固定的，并且在diff时，应该允许传入额外的metadata信息，这些信息不会影响merge的结果
 // 2，数组的变动应该基于元素的id、key、name这些来确定，能够正确处理顺序变动和删改
-// 能否给予jsondiffpatch第三方库帮我实现对于的 diff（ diff(O,A)=patchA ） 和 merge 函数？
-// 增加一个全局变量FullKeys,指定需要特定的key，即指定某些key diff时只保存全量值，不保存增量
+// 能否给予jsondiffpatch第三方库帮我实现对应的 diff（ diff(O,A)=patchA ） 和 merge 函数？
 
 import { create, type DiffPatcher } from "jsondiffpatch";
 import { cloneDeep } from "lodash-es";
@@ -163,20 +162,4 @@ export function merge(
     }
 
     return result;
-}
-
-export function xxdiff(
-    original: AnyObject,
-    modified: AnyObject,
-    meta?: AnyObject,
-): Patch | null {
-    return modified;
-}
-
-export function xxmerge(
-    base: AnyObject,
-    patch: Patch,
-    options?: { preferHigherPriority?: boolean },
-): AnyObject {
-    return patch;
 }

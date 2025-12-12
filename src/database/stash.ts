@@ -248,10 +248,12 @@ const diffMeta = (prev: any, current: any) => {
 
 export const mergeMeta = (prev: any, diff: any) => {
     if (diff.$$meta) {
+        console.log("use patch update");
         const result = merge(prev, diff);
         result.__updated_at = diff.$$meta.timestamp;
         delete result.$$meta;
         return result;
     }
+    console.log("use full update");
     return diff;
 };
