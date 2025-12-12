@@ -57,6 +57,7 @@ pnpm run check
 
 * 📂 src/api  
 * 📂 src/database
+* 📂 src/tidal
 
 **修改规则：**
 

@@ -22,7 +22,7 @@ export class Scheduler {
         this.delay = delay;
     }
 
-    schedule(): void {
+    async schedule() {
         if (this.timer) {
             clearTimeout(this.timer);
             this.timer = null;

@@ -1,4 +1,5 @@
 import { v4 } from "uuid";
+import { diff, merge } from "./merge";
 
 export type BaseItem = {
     id: string;
@@ -139,8 +140,15 @@ export class StashBucket<T extends BaseItem, Meta = any, Config = any> {
         return this.stashStorage.toArray();
     }
 
-    getMeta() {
-        return this.metaStorage.getValue();
+    async getMeta() {
+        const remoteMeta = await this.metaStorage.getValue();
+        const stashes = await this.getStashes();
+        const metaChange = stashes.find((v) => v.type === "meta");
+        if (!metaChange) {
+            return remoteMeta;
+        }
+        const fullMeta = mergeMeta(remoteMeta, metaChange.metaValue);
+        return fullMeta;
     }
 
     async batch(actions: Action<T>[], overlap = false) {
@@ -158,6 +166,14 @@ export class StashBucket<T extends BaseItem, Meta = any, Config = any> {
             ...fullActions,
             ...(overlap ? [] : prevActions),
         ]);
+        const metaOption = densed.find((action) => action.type === "meta");
+        if (metaOption) {
+            const remoteMeta = await this.metaStorage.getValue();
+            metaOption.metaValue = diffMeta(
+                remoteMeta ?? {},
+                metaOption.metaValue,
+            );
+        }
         if (overlap) {
             const now = Date.now();
             densed[0].overlap = now;
@@ -177,21 +193,18 @@ export class StashBucket<T extends BaseItem, Meta = any, Config = any> {
     }
 
     private async applyStash(stashed: FullAction<T>[]) {
-        const { updates, deletes, meta } = stashed.reduce(
+        const { updates, deletes } = stashed.reduce(
             (p, c) => {
                 if (c.type === "update") {
                     p.updates.push(c);
                 } else if (c.type === "delete") {
                     p.deletes.push(c);
-                } else if (c.type === "meta") {
-                    p.meta = c;
                 }
                 return p;
             },
             {
                 updates: [] as Update<T>[],
                 deletes: [] as Delete<T>[],
-                meta: undefined as MetaUpdate | undefined,
             },
         );
         await Promise.all([
@@ -203,11 +216,6 @@ export class StashBucket<T extends BaseItem, Meta = any, Config = any> {
                 })),
             ),
             this.itemStorage.delete(...deletes.map((ac) => ac.value)),
-            meta &&
-                this.metaStorage.setValue({
-                    __update_at: meta.timestamp,
-                    ...meta.metaValue,
-                }),
         ]);
     }
 
@@ -233,3 +241,18 @@ function denseStashes<T extends BaseItem>(stashes: FullAction<T>[]) {
         return true;
     });
 }
+
+const diffMeta = (prev: any, current: any) => {
+    return diff(prev, current, { isDiff: true, timestamp: Date.now() });
+};
+
+export const mergeMeta = (prev: any, diff: any) => {
+    // 如果有用户在更新到最新版本前存在未同步完成的meta stash，那么需要兼容这部分用户
+    if (diff.$$meta) {
+        const result = merge(prev, diff);
+        result.__updated_at = diff.$$meta.timestamp;
+        delete result.$$meta;
+        return result;
+    }
+    return diff;
+};
