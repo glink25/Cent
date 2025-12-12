@@ -16,10 +16,10 @@ export type AssetKey = string;
 export type FileLike = { path: string; sha: string };
 export type FileWithContent = { path: string; sha: string; content: any };
 
-export type StoreStructure = {
-    chunks: (FileLike & { startIndex: number })[];
-    meta: FileLike;
-    assets: FileLike[];
+export type StoreStructure<F = FileLike> = {
+    chunks: (F & { startIndex: number })[];
+    meta: F;
+    assets: F[];
 };
 
 export type StoreDetail = {
@@ -231,7 +231,7 @@ export const createTidal = <Item extends BaseItem>({
 
     // core syncImmediate implementation (single run; supports abort)
     const syncImmediate = async (signal?: AbortSignal) => {
-        const syncer = syncerFactory();
+        const syncer = getSyncer();
         return Promise.all(
             Array.from(storeMap.entries()).map(
                 async ([storeFullName, { itemBucket }]) => {

@@ -168,8 +168,8 @@ export const WebDAVEndpoint: SyncEndpointFactory = {
             onChange: repo.onChange,
 
             getIsNeedSync: repo.hasStashes,
-            onSync: scheduler.onProcess,
-            toSync: scheduler.schedule,
+            onSync: scheduler.onProcess.bind(scheduler),
+            toSync: scheduler.schedule.bind(scheduler),
         };
     },
 };

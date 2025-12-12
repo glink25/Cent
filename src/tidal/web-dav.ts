@@ -1,16 +1,9 @@
-// TODO: Test webdav
 import type { FileStat, WebDAVClient, WebDAVClientOptions } from "webdav";
 import type { UserInfo } from "@/api/endpoints/type";
 import type { FileEntry } from "@/database/assets";
 import { shortId } from "@/database/id";
 import { registerProxy } from "@/utils/fetch-proxy";
-import type {
-    AssetKey,
-    FileLike,
-    FileWithContent,
-    StoreStructure,
-    Syncer,
-} from ".";
+import type { AssetKey, FileLike, StoreStructure, Syncer } from ".";
 
 type WebDAVConfig = {
     remoteUrl: string;
@@ -48,89 +41,85 @@ const createClient = async (
     return [lib.createClient(remoteURL, options), dispose] as const;
 };
 
-/** 将 WebDAV FileStat 映射为 Syncer 期望的结构，并构造 sha */
-const statToFileLike = (file: FileStat, basePathPrefix = ""): FileLike => {
-    // compute a simple sha-like identifier from available metadata
+const fileStatToSha = (file: FileStat) => {
     const etag = file.etag ?? "";
     const lastmod = file.lastmod ?? "";
     const size = file.size ?? 0;
     const sha = `${etag}:${lastmod}:${size}`;
-
-    // derive relative path (strip leading base prefix if provided)
-    const path = basePathPrefix
-        ? file.filename.replace(basePathPrefix, "").replace(/^\//, "")
-        : file.filename;
-
-    return {
-        path,
-        etag: file.etag ?? null,
-        lastmod: file.lastmod ?? "",
-        size: file.size ?? 0,
-        // expose `sha` under the `sha` property to satisfy Syncer expectations
-        // TS: FileLike in repo likely contains sha, but if not, keep as cast
-        ...(Object.create(null) as any),
-        sha,
-    } as unknown as FileLike;
+    return sha;
 };
-
-const treeStatsToStructure = (
+/**
+ * 将 WebDAV 文件列表解析为 StoreStructure
+ * @param files WebDAV client.getDirectoryContents 返回的文件列表
+ * @param entryName 集合名称
+ * @param basePath store 的基础路径 (例如 /webdav-db/my-store)
+ */
+const fileStatsToStructure = (
     files: FileStat[],
     entryName: string,
-    storePathPrefix: string,
-): StoreStructure => {
-    const structure = {
-        chunks: [] as FileLike[],
-        assets: [] as FileLike[],
-        meta: { path: "", sha: "", size: 0 } as any,
-    } as StoreStructure;
+    basePath: string,
+) => {
+    const structure: StoreStructure<{
+        path: string;
+        sha: string;
+        etag?: string;
+        lastmod: string;
+        size: number;
+    }> = {
+        chunks: [],
+        assets: [],
+        meta: { path: "", sha: "", etag: undefined, lastmod: "", size: 0 },
+    };
 
-    for (const f of files) {
-        if (f.type === "directory") continue;
-        const relative = f.filename
-            .replace(storePathPrefix, "")
+    for (const file of files) {
+        if (file.type === "directory") continue;
+
+        // 获取相对于 store 根目录的路径
+        const relativePath = file.filename
+            .split(basePath)[1]
             .replace(/^\//, "");
-        if (relative === "meta.json") {
-            const fl = statToFileLike(
-                { ...f, filename: f.filename },
-                storePathPrefix,
-            );
+
+        if (relativePath === "meta.json") {
             structure.meta = {
-                path: relative,
-                sha: (fl as any).sha,
+                path: relativePath,
+                sha: fileStatToSha(file),
+                etag: file.etag ?? undefined,
+                lastmod: file.lastmod,
+                size: file.size,
             };
-        } else if (relative.startsWith("assets/")) {
-            const fl = statToFileLike(
-                { ...f, filename: f.filename },
-                storePathPrefix,
-            );
-            structure.assets.push({ ...fl, path: relative });
+        } else if (relativePath.startsWith("assets/")) {
+            structure.assets.push({
+                path: relativePath,
+                ...file,
+                sha: fileStatToSha(file),
+                etag: file.etag ?? undefined,
+                lastmod: file.lastmod,
+                size: file.size,
+            });
         } else if (
-            relative.startsWith(`${entryName}-`) &&
-            relative.endsWith(".json")
+            relativePath.startsWith(`${entryName}-`) &&
+            relativePath.endsWith(`.json`)
         ) {
             const startIndex = Number(
-                relative.replace(`${entryName}-`, "").replace(".json", ""),
+                relativePath.replace(`${entryName}-`, "").replace(".json", ""),
             );
-            const fl = statToFileLike(
-                { ...f, filename: f.filename },
-                storePathPrefix,
-            );
-            structure.chunks.push({ ...fl, path: relative, startIndex });
+            structure.chunks.push({
+                ...file,
+                path: relativePath,
+                sha: fileStatToSha(file),
+                etag: file.etag ?? undefined,
+                startIndex,
+            });
         }
     }
-    // sort chunks by startIndex for deterministic order
-    structure.chunks.sort(
-        (a: any, b: any) => (a.startIndex || 0) - (b.startIndex || 0),
-    );
     return structure;
 };
 
 export const createWebDAVSyncer = (cfg: WebDAVConfig): Syncer => {
     const config = {
         baseDir: "cent",
-        repoPrefix: "webdav-db",
-        entryName: "entry",
-        itemsPerChunk: 1000,
+        repoPrefix: "cent-journal",
+        entryName: "ledger",
         ...cfg,
     };
 
@@ -156,7 +145,12 @@ export const createWebDAVSyncer = (cfg: WebDAVConfig): Syncer => {
             const files = (await client.getDirectoryContents(storePath, {
                 deep: true,
             })) as FileStat[];
-            return treeStatsToStructure(files, config.entryName!, storePath);
+            const structure = fileStatsToStructure(
+                files,
+                config.entryName,
+                storePath,
+            );
+            return structure;
         } catch (e: any) {
             if (e?.status === 404) {
                 return {
@@ -172,19 +166,27 @@ export const createWebDAVSyncer = (cfg: WebDAVConfig): Syncer => {
     const fetchContent = async (storeFullName: string, files: FileLike[]) => {
         const client = await getClient();
         const storePath = `${config.baseDir}/${storeFullName}`;
-        return Promise.all(
-            files.map(async (f) => {
-                // f.path is relative (e.g., "entry-0.json")
-                const fullPath = `${storePath}/${f.path}`;
-                const text = (await client.getFileContents(fullPath, {
+        // 存储结果的数组
+        const results = [];
+
+        // 使用 for...of 循环确保对 files 列表中的每一项操作是串行（非并发）的
+        for (const file of files) {
+            const filePath = `${storePath}/${file.path}`;
+            try {
+                const content = (await client.getFileContents(filePath, {
                     format: "text",
                 })) as string;
-                const content = text ? JSON.parse(text) : undefined;
-                // ensure sha computed same way as in structure
-                const sha = `${(f as any).etag ?? ""}:${(f as any).lastmod ?? ""}:${(f as any).size ?? 0}`;
-                return { path: f.path, sha, content } as FileWithContent;
-            }),
-        );
+                const sha = `${(file as any).etag ?? ""}:${(file as any).lastmod ?? ""}:${(file as any).size ?? 0}`;
+                // 返回 FileWithConentLike 结构，并加入结果数组
+                results.push({ ...file, sha, content: JSON.parse(content) });
+            } catch (e) {
+                console.error(`Failed to fetch ${filePath}:`, e);
+                // // 处理文件读取失败，并加入结果数组
+                // results.push({ ...file, content: undefined });
+                throw e;
+            }
+        }
+        return results;
     };
 
     const uploadContent = async (
@@ -227,43 +229,34 @@ export const createWebDAVSyncer = (cfg: WebDAVConfig): Syncer => {
         const filesList = (await client.getDirectoryContents(storePath, {
             deep: true,
         })) as FileStat[];
-        return treeStatsToStructure(filesList, config.entryName!, storePath);
+        return fileStatsToStructure(filesList, config.entryName, storePath);
     };
 
     const transformAsset = (file: File, storeFullName: string) => {
-        return `assets/${shortId()}-${file.name}`;
+        const assetPath = `assets/${shortId()}-${file.name}`;
+        return `${config.baseDir}/${storeFullName}/${assetPath}`;
     };
 
     const assetEntryToPath = (a: FileEntry<string>, storePath: string) => {
         return a.formattedValue
-            .replace(storePath.replace(/^\//, ""), "")
+            .replace(`${config.baseDir}/${storePath}/`.replace(/^\//, ""), "")
             .replace(/^\//, "");
     };
 
     const getAsset = async (fileKey: AssetKey, storeFullName: string) => {
-        // We expect fileKey to be a path/URL pointing to the asset under this server.
-        // If fileKey is a full URL and starts with remoteUrl, extract the path after remoteUrl.
-        const client = await getClient();
-        const prefix = config.remoteUrl.replace(/\/$/, "");
-        let path = String(fileKey);
-        if (path.startsWith(prefix)) {
-            // cut off protocol+host part
-            path = path.replace(prefix, "");
-            path = path.replace(/^\/+/, "");
-        }
-        // If fileKey already is a relative path under store (e.g., "cent/store/assets/xxx"), accept it
+        // 从 URL 中提取路径
+        const path = fileKey;
+
         try {
-            const blob = (await client.getFileContents(path, {
+            const client = await getClient();
+            const arrayBuffer = (await client.getFileContents(path, {
                 format: "binary",
-            })) as unknown as Blob;
+            })) as unknown as ArrayBuffer;
+            const blob = new Blob([arrayBuffer]);
             return blob;
         } catch (e) {
-            // fallback: try under store base path
-            const alt = `${config.baseDir}/${storeFullName}/${String(fileKey).replace(/^\/+/, "")}`;
-            const b = (await client.getFileContents(alt, {
-                format: "binary",
-            })) as unknown as Blob;
-            return b;
+            console.error(`getOnlineAsset failed for path ${path}:`, e);
+            throw e;
         }
     };
 

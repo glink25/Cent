@@ -207,7 +207,7 @@ export const [WebDAVAuthProvider, showWebDAVAuth] = createConfirmProvider(
     {
         dialogTitle: "loading",
         dialogModalClose: true,
-        contentClassName: "w-[350px] h-[480px]",
+        contentClassName: "w-[350px] h-[480px] z-[2]",
         fade: true,
     },
 );
