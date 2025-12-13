@@ -1,12 +1,12 @@
-import { produce } from "immer";
-import { merge } from "lodash-es";
-import { v4 } from "uuid";
-import { create } from "zustand";
 import type { UserInfo } from "@/api/endpoints/type";
 import { loadStorageAPI } from "@/api/storage/dynamic";
 import type { Action, Full, OutputType, Update } from "@/database/stash";
 import type { Bill, GlobalMeta, PersonalMeta } from "@/ledger/type";
 import { t } from "@/locale";
+import { produce } from "immer";
+import { merge } from "lodash-es";
+import { v4 } from "uuid";
+import { create } from "zustand";
 import { useBookStore } from "./book";
 import { useUserStore } from "./user";
 
@@ -143,6 +143,47 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
             await StorageAPI.initBook(currentBookId);
             // 初始化时先加载100条，后续按需加载全部
             await updateBillList(MIN_SIZE);
+
+            // 初始化默认账户
+            const meta = await StorageAPI.getMeta(currentBookId);
+            if (!meta.accounts || meta.accounts.length === 0) {
+                const defaultAccounts = [
+                    {
+                        id: "cash",
+                        name: "现金",
+                        type: "cash" as const,
+                        icon: "account-cash",
+                        color: "#10b981",
+                        isDefault: true,
+                    },
+                    {
+                        id: "bank-card",
+                        name: "银行卡",
+                        type: "bank" as const,
+                        icon: "account-card",
+                        color: "#3b82f6",
+                    },
+                    {
+                        id: "alipay",
+                        name: "支付宝",
+                        type: "digital" as const,
+                        icon: "account-cash",
+                        color: "#0891b2",
+                    },
+                    {
+                        id: "wechat",
+                        name: "微信",
+                        type: "digital" as const,
+                        icon: "account-cash",
+                        color: "#16a34a",
+                    },
+                ];
+                await useLedgerStore.getState().updateGlobalMeta({
+                    ...meta,
+                    accounts: defaultAccounts,
+                });
+            }
+
             StorageAPI.toSync();
         } catch (err) {
             if ((err as any)?.status === 404) {
