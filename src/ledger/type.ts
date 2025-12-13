@@ -44,6 +44,8 @@ export type Bill = {
         // 记账当时填写的金额
         amount: number;
     };
+    /** 虚拟账户ID */
+    accountId?: string;
 };
 
 /** 每笔账单仅可以设置一个BillCategory，用于标记这些支出或者收入项属于某些分类
@@ -77,6 +79,28 @@ export type BillTag = {
     id: string;
     // tag的名称
     name: string;
+};
+
+/** 虚拟账户，用于管理不同资金来源或用途
+ * @example 银行卡、现金、支付宝、信用卡等
+ */
+export type Account = {
+    // 账户的唯一标识符
+    id: string;
+    // 账户名称
+    name: string;
+    // 账户类型
+    type: "bank" | "cash" | "credit" | "digital" | "other";
+    // 账户图标
+    icon?: string;
+    // 账户颜色
+    color?: string;
+    // 账户描述
+    description?: string;
+    // 账户余额（可选，用于显示）
+    balance?: Amount;
+    // 是否为默认账户
+    isDefault?: boolean;
 };
 
 /**
@@ -143,6 +167,8 @@ export type GlobalMeta = {
     tags: BillTag[];
     // 本位货币
     baseCurrency?: string;
+    // 虚拟账户
+    accounts?: Account[];
 };
 
 // 这是最终导出的核心JSON数据结构，使用这个数据结构可以直接被解析成可以识别的数据

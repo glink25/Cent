@@ -1,7 +1,5 @@
-import { Switch } from "radix-ui";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
 import { DefaultCurrencies } from "@/api/currency/currencies";
+import { useAccount } from "@/hooks/use-account";
 import useCategory from "@/hooks/use-category";
 import { useCurrency } from "@/hooks/use-currency";
 import { useTag } from "@/hooks/use-tag";
@@ -10,11 +8,15 @@ import { amountToNumber, numberToAmount } from "@/ledger/bill";
 import { ExpenseBillCategories, IncomeBillCategories } from "@/ledger/category";
 import type { Bill } from "@/ledger/type";
 import { categoriesGridClassName } from "@/ledger/utils";
-import { useIntl, useLocale } from "@/locale";
+import { useIntl } from "@/locale";
 import type { EditBill } from "@/store/ledger";
 import { usePreferenceStore } from "@/store/preference";
 import { cn } from "@/utils";
 import { getPredictNow } from "@/utils/predict";
+import { Switch } from "radix-ui";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+import { goAddBill } from ".";
 import { showCategoryList } from "../category";
 import { CategoryItem } from "../category/item";
 import { DatePicker } from "../date-picker";
@@ -29,10 +31,8 @@ import {
     Select,
     SelectContent,
     SelectItem,
-    SelectTrigger,
-    SelectValue,
+    SelectTrigger
 } from "../ui/select";
-import { goAddBill } from ".";
 import { RemarkHint } from "./remark";
 
 const defaultBill = {
@@ -100,6 +100,7 @@ export default function EditorForm({
     });
 
     const { tags, add: addTag } = useTag();
+    const { accounts, add: addAccount } = useAccount();
 
     const categories = billState.type === "expense" ? expenses : incomes;
 
@@ -440,6 +441,49 @@ export default function EditorForm({
                     >
                         <i className="icon-[mdi--tag-plus-outline]"></i>
                         {t("add-tag")}
+                    </button>
+                </div>
+                {/* accounts */}
+                <div className="w-full h-[40px] flex-shrink-0 flex-grow-0 flex gap-1 py-1 items-center overflow-x-auto px-2 text-sm font-medium scrollbar-hidden">
+                    {accounts.map((account) => (
+                        <Tag
+                            key={account.id}
+                            checked={billState.accountId === account.id}
+                            onCheckedChange={(checked) => {
+                                setBillState((prev) => ({
+                                    ...prev,
+                                    accountId: checked ? account.id : undefined,
+                                }));
+                            }}
+                        >
+                            <i className={`icon-[mdi--${account.icon || 'account'}] mr-1`}></i>
+                            {account.name}
+                        </Tag>
+                    ))}
+                    <button
+                        type="button"
+                        className={cn(
+                            `rounded-lg border py-1 px-2 my-1 mr-1 h-8 flex gap-2 items-center justify-center whitespace-nowrap cursor-pointer`,
+                        )}
+                        onClick={async () => {
+                            try {
+                                const accountName = prompt(t("input-new-account-name"));
+                                if (accountName === null || accountName === undefined) {
+                                    return;
+                                }
+                                await addAccount({
+                                    name: accountName,
+                                    type: "cash",
+                                    icon: "account-cash",
+                                    color: "#10b981"
+                                });
+                            } catch (error) {
+                                toast.error((error as any).message);
+                            }
+                        }}
+                    >
+                        <i className="icon-[mdi--account-plus-outline]"></i>
+                        {t("add-account")}
                     </button>
                 </div>
 

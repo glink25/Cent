@@ -1,4 +1,5 @@
 import dayjs from "dayjs";
+import localCurrencyData from "./data.json";
 
 interface Response {
     success: boolean;
@@ -39,29 +40,42 @@ export const fetchCurrency = async (base: string, date?: Date | number) => {
 
     // 创建新的请求 Promise
     const promise = (async () => {
-        const isToday = day.isSameOrAfter(dayjs());
-        const dateParam = (() => {
-            if (!date) {
-                return "";
-            }
-            // 如果日期是今天或者将来，则不传日期以获取到最新的汇率
-            if (isToday) {
-                return "";
-            }
-            return `/${dateStr}`;
-        })();
-        const res = await fetch(
-            `${LOGIN_API_HOST}/api/currency/${base}${dateParam}`,
-        );
-
-        if (!res.ok) {
-            throw new Error(
-                `Failed to fetch currency rates: ${res.status} ${res.statusText}`,
+        try {
+            const isToday = day.isSameOrAfter(dayjs());
+            const dateParam = (() => {
+                if (!date) {
+                    return "";
+                }
+                // 如果日期是今天或者将来，则不传日期以获取到最新的汇率
+                if (isToday) {
+                    return "";
+                }
+                return `/${dateStr}`;
+            })();
+            const res = await fetch(
+                `${LOGIN_API_HOST}/api/currency/${base}${dateParam}`,
             );
-        }
 
-        const json: Response = await res.json();
-        return json.rates;
+            if (!res.ok) {
+                throw new Error(
+                    `Failed to fetch currency rates: ${res.status} ${res.statusText}`,
+                );
+            }
+
+            const json: Response = await res.json();
+            return json.rates;
+        } catch (error) {
+            console.warn(`Failed to fetch currency rates from remote API, falling back to local data:`, error);
+            // 如果远程API失败，使用本地数据
+            if (localCurrencyData.base === base) {
+                return localCurrencyData.rates;
+            } else {
+                // 如果本地数据的base货币与请求的不同，需要进行转换
+                // 这里简化处理，直接返回本地数据（假设本地数据是CNY基准）
+                console.warn(`Local currency data base (${localCurrencyData.base}) doesn't match requested base (${base}), using local data as-is`);
+                return localCurrencyData.rates;
+            }
+        }
     })();
 
     // 将 Promise 存入缓存
