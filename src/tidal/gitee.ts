@@ -125,11 +125,11 @@ export const createGiteeSyncer = (config: {
         const [owner, repo] = storeFullName.split("/");
         if ([owner, repo].some((v) => v.length === 0))
             throw new Error(`invalid store name: ${storeFullName}`);
-
         // 1. repo info to get default branch
         const repoData = await giteeRequest<any>(
             "GET",
             `/repos/${owner}/${repo}`,
+            undefined,
             signal,
         );
         const branch = repoData?.default_branch ?? "master";
@@ -138,6 +138,7 @@ export const createGiteeSyncer = (config: {
         const rootList = await giteeRequest<any[]>(
             "GET",
             `/repos/${owner}/${repo}/contents?ref=${branch}`,
+            undefined,
             signal,
         );
 
@@ -147,6 +148,7 @@ export const createGiteeSyncer = (config: {
             assetsList = await giteeRequest<any[]>(
                 "GET",
                 `/repos/${owner}/${repo}/contents/assets?ref=${branch}`,
+                undefined,
                 signal,
             );
         } catch {
@@ -288,12 +290,14 @@ export const createGiteeSyncer = (config: {
                     "POST",
                     `/repos/${owner}/${repo}/contents/${encodeURIComponent(f.path)}`,
                     body,
+                    signal,
                 );
             } else {
                 await giteeRequest(
                     "PUT",
                     `/repos/${owner}/${repo}/contents/${encodeURIComponent(f.path)}`,
                     { ...body, sha: remoteSha },
+                    signal,
                 );
             }
         }
