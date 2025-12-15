@@ -243,7 +243,9 @@ function denseStashes<T extends BaseItem>(stashes: FullAction<T>[]) {
 }
 
 const diffMeta = (prev: any, current: any) => {
-    return diff(prev, current, { isDiff: true, timestamp: Date.now() });
+    // FIXME: 不启用差量更新，有严重bug
+    return current;
+    // return diff(prev, current, { isDiff: true, timestamp: Date.now() });
 };
 
 export const mergeMeta = (prev: any, diff: any) => {
