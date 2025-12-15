@@ -6,10 +6,7 @@ export const lazyWithReload = (
 ) => {
     const safeLoad = async () => {
         await guard?.();
-        return preload().catch((err) => {
-            window.location.reload();
-            return Promise.reject(err);
-        });
+        return preload();
     };
 
     // 预加载
