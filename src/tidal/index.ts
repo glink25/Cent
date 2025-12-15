@@ -450,8 +450,8 @@ export const createTidal = <Item extends BaseItem>({
         const storeNames = stores ?? Array.from(storeMap.keys());
         return Promise.all(
             storeNames.map(async (name) => {
-                const s = storageFactory(name);
-                await s.dangerousClearAll();
+                const s = storeMap.get(name);
+                await s?.storage.dangerousClearAll();
                 storeMap.delete(name);
             }),
         );
