@@ -161,12 +161,7 @@ export class StashBucket<T extends BaseItem, Meta = any, Config = any> {
                     timestamp: ac.timestamp ?? now,
                 }) as FullAction<T>,
         );
-        const prevActions = await this.getStashes();
-        const densed = denseStashes([
-            ...fullActions,
-            ...(overlap ? [] : prevActions),
-        ]);
-        const metaOption = densed.find((action) => action.type === "meta");
+        const metaOption = fullActions.find((action) => action.type === "meta");
         if (metaOption) {
             const remoteMeta = await this.metaStorage.getValue();
             metaOption.metaValue = diffMeta(
@@ -174,6 +169,12 @@ export class StashBucket<T extends BaseItem, Meta = any, Config = any> {
                 metaOption.metaValue,
             );
         }
+        const prevActions = await this.getStashes();
+        const densed = denseStashes([
+            ...fullActions,
+            ...(overlap ? [] : prevActions),
+        ]);
+
         if (overlap) {
             const now = Date.now();
             densed[0].overlap = now;
@@ -243,9 +244,8 @@ function denseStashes<T extends BaseItem>(stashes: FullAction<T>[]) {
 }
 
 const diffMeta = (prev: any, current: any) => {
-    // FIXME: 不启用差量更新，有严重bug
-    return current;
-    // return diff(prev, current, { isDiff: true, timestamp: Date.now() });
+    const diffs = diff(prev, current, { isDiff: true, timestamp: Date.now() });
+    return diffs;
 };
 
 export const mergeMeta = (prev: any, diff: any) => {
