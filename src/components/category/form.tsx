@@ -210,9 +210,10 @@ export default function CategoryEditForm({
                             control={form.control}
                             name="parent"
                             render={({ field }) => {
+                                const fieldValue = form.getValues("parent");
                                 const selectValue =
-                                    field.value === undefined ||
-                                    field.value === null
+                                    fieldValue === undefined ||
+                                    fieldValue === null
                                         ? NO_PARENT
                                         : field.value;
                                 return (
