@@ -251,7 +251,7 @@ export const createGiteeSyncer = (config: {
                         "DELETE",
                         `/repos/${owner}/${repo}/contents/${encodeURIComponent(f.path)}`,
                         {
-                            message: `[Giteeray] Delete ${f.path}`,
+                            message: `[Tidal] Delete ${f.path}`,
                             sha: remoteSha,
                             branch,
                         },
@@ -279,7 +279,7 @@ export const createGiteeSyncer = (config: {
             }
 
             const body = {
-                message: `[Giteeray] Update ${storeFullName}`,
+                message: `[Tidal] Update ${storeFullName}`,
                 content: base64Content,
                 branch,
                 signal,
