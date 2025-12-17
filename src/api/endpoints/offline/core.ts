@@ -95,7 +95,9 @@ export class OfflineStorage {
         await itemBucket.batch(actions, overlap);
         this.notifyChange(storeFullName);
         const newMeta = actions.find((v) => v.type === "meta");
-        await itemBucket.metaStorage.setValue(newMeta?.metaValue);
+        if (newMeta) {
+            await itemBucket.metaStorage.setValue(newMeta?.metaValue);
+        }
         this.toSync();
     }
 
