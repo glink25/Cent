@@ -45,7 +45,6 @@ export default function BillItem({
         bill.currency?.target === baseCurrency.id
             ? undefined
             : allCurrencies.find((c) => c.id === bill.currency?.target);
-    console.log(bill.currency, "cccc", allCurrencies);
     return (
         <button
             type="button"

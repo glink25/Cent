@@ -22,23 +22,26 @@ export default function BudgetCard({
     const t = useIntl();
     const { bills } = useLedgerStore();
     const { total, currentRange } = useBudgetDetail(budget);
+    const { categories } = useCategory();
     const encountered = useMemo(
         () =>
             currentRange
-                ? budgetEncountered(budget, bills, currentRange)
+                ? budgetEncountered(budget, bills, currentRange, categories)
                 : undefined,
-        [budget, bills, currentRange],
+        [budget, bills, currentRange, categories],
     );
 
     const todayEncountered = useMemo(
         () =>
             currentRange
-                ? budgetEncountered(budget, bills, [
-                      dayjs().startOf("day"),
-                      dayjs().endOf("day"),
-                  ])
+                ? budgetEncountered(
+                      budget,
+                      bills,
+                      [dayjs().startOf("day"), dayjs().endOf("day")],
+                      categories,
+                  )
                 : undefined,
-        [budget, bills, currentRange],
+        [budget, bills, currentRange, categories],
     );
 
     const time = useMemo(() => {
@@ -54,7 +57,6 @@ export default function BudgetCard({
         return { percent: spend / duration, leftDays, totalDays };
     }, [currentRange]);
 
-    const { categories } = useCategory();
     if (!encountered) {
         return (
             <div

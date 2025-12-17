@@ -1,6 +1,7 @@
 import type { Dayjs } from "dayjs";
 import { amountToNumber } from "@/ledger/bill";
-import type { Bill } from "@/ledger/type";
+import type { Bill, BillCategory } from "@/ledger/type";
+import { isSameOrChildCategory } from "@/ledger/utils";
 import { filterOrderedBillListByTimeRange } from "@/utils/filter";
 import { toDayjs } from "@/utils/time";
 import type { EditBudget } from "./type";
@@ -71,10 +72,12 @@ export const budgetRange = (
     return [ranges, currentRange];
 };
 
+/** 计算某个周期内预算的使用情况和分类使用情况 */
 export const budgetEncountered = (
     budget: EditBudget,
     bills: Bill[],
     currentRange: [Dayjs, Dayjs],
+    allCategories: BillCategory[],
 ) => {
     const filtered = filterOrderedBillListByTimeRange(bills, currentRange);
     let totalUsed = 0;
@@ -99,7 +102,9 @@ export const budgetEncountered = (
             return;
         }
         totalUsed += bill.amount;
-        const found = categoriesUsed?.find((c) => c.id === bill.categoryId);
+        const found = categoriesUsed?.find((c) =>
+            isSameOrChildCategory(c.id, bill.categoryId, allCategories),
+        );
         if (found) {
             found.used += bill.amount;
         }
@@ -113,12 +118,19 @@ export const budgetEncountered = (
     };
 };
 
+/** 获取预算的达成情况 */
 export const budgetReached = (
     budget: EditBudget,
     bills: Bill[],
     currentRange: [Dayjs, Dayjs],
+    allCategories: BillCategory[],
 ) => {
-    const encountered = budgetEncountered(budget, bills, currentRange);
+    const encountered = budgetEncountered(
+        budget,
+        bills,
+        currentRange,
+        allCategories,
+    );
     const total = budgetTotal(budget);
     return [
         ["total", encountered.totalUsed <= total],
