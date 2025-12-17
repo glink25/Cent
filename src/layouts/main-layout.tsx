@@ -13,6 +13,7 @@ import { ModalProvider } from "@/components/modal";
 import Navigation from "@/components/navigation";
 import { Settings } from "@/components/settings";
 import { SortableListProvider } from "@/components/sortable";
+import { SortableGroupProvider } from "@/components/sortable/group";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import {
@@ -44,6 +45,7 @@ export default function MainLayout() {
                 <BillEditorProvider />
                 <BillInfoProvider />
                 <SortableListProvider />
+                <SortableGroupProvider />
                 <Settings />
                 <CurrencyListProvider />
                 <BookGuide />

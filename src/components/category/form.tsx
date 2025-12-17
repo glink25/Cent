@@ -34,9 +34,11 @@ const NO_PARENT = "__noparent";
 
 export const createFormSchema = (t: any) =>
     z.object({
-        name: z
-            .string()
-            .check(z.maxLength(50, { message: t("max-name-length-limit") })),
+        name: z.string().check(
+            z.maxLength(50, {
+                message: t("max-name-length-limit", { n: 50 }),
+            }),
+        ),
 
         // 可选字符串
         parent: z.optional(z.string()),
