@@ -143,6 +143,15 @@ export type GlobalMeta = {
     tags: BillTag[];
     // 本位货币
     baseCurrency?: string;
+    customCurrencies?: CustomCurrency[];
+    quickCurrencies?: string[];
+};
+
+export type CustomCurrency = {
+    id: string;
+    name: string;
+    symbol: string;
+    rateToBase: number;
 };
 
 // 这是最终导出的核心JSON数据结构，使用这个数据结构可以直接被解析成可以识别的数据

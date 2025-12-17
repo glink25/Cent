@@ -7,6 +7,7 @@ import { useIntl } from "@/locale";
 import { useGuideStore } from "@/store/guide";
 import { useLedgerStore } from "@/store/ledger";
 import { showBudget } from "../budget";
+import { showCurrencyList } from "../currency";
 
 export type PromotionItem = {
     id: string;
@@ -14,6 +15,13 @@ export type PromotionItem = {
 };
 
 const WhatsNew: (PromotionItem & { action?: () => void })[] = [
+    {
+        id: "currency-update-v2",
+        label: "currency-update-v2-hint",
+        action: () => {
+            showCurrencyList({ openQuickEntry: true });
+        },
+    },
     {
         id: "whats-new-1.1",
         label: "whats-new-1.1-promotion-label",

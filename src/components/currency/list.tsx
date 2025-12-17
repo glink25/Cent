@@ -1,29 +1,43 @@
 /** biome-ignore-all lint/security/noDangerouslySetInnerHtml: <explanation> */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import {
-    DefaultCurrencies,
-    DefaultCurrencyId,
-} from "@/api/currency/currencies";
+import { DefaultCurrencies } from "@/api/currency/currencies";
 import { useCurrency } from "@/hooks/use-currency";
 import PopupLayout from "@/layouts/popup-layout";
+import type { CustomCurrency } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import { cn } from "@/utils";
 import modal from "../modal";
+import { showSortableGroup } from "../sortable/group";
 import { Button } from "../ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "../ui/select";
+import { EditCurrencyProvider, showEditCurrency } from "./edit";
 
 export default function CurrencyListForm({
+    edit,
     onCancel,
 }: {
-    edit?: any;
+    edit?: { openQuickEntry?: boolean };
     onCancel?: () => void;
     onConfirm?: (v: any) => void;
 }) {
     const t = useIntl();
-    const { baseCurrency, setBaseCurrency, convert, setRate, refresh } =
-        useCurrency();
+    const {
+        baseCurrency,
+        setBaseCurrency,
+        convert,
+        setRate,
+        refresh,
+
+        customCurrencies,
+        updateCustomCurrency,
+        deleteCustomCurrency,
+
+        allCurrencies,
+        quickCurrencies,
+        updateQuickCurrencies,
+    } = useCurrency();
 
     const rates = useMemo(() => {
         return DefaultCurrencies.map((currency) => {
@@ -77,11 +91,72 @@ export default function CurrencyListForm({
             setLoading(false);
         }
     };
+
+    const toUpdateCurrency = async (currency?: CustomCurrency) => {
+        const newCurrency = await showEditCurrency(currency);
+        if (!newCurrency) {
+            return;
+        }
+        if (typeof newCurrency === "string") {
+            if (currency?.id) {
+                deleteCustomCurrency(currency.id);
+            }
+            return;
+        }
+        updateCustomCurrency(newCurrency);
+    };
+
+    const toReOrder = async () => {
+        const others = allCurrencies.filter((c) =>
+            quickCurrencies.every((v) => v.id !== c.id),
+        );
+        const group = [
+            {
+                id: "quick",
+                label: `${t("quick-currencies")}`,
+                items: quickCurrencies.map((c) => ({
+                    id: c.id,
+                    label: c.label,
+                })),
+                empty: t("quick-entry-empty"),
+            },
+            {
+                id: "others",
+                label: t("Other"),
+                items: others.map((c) => ({
+                    id: c.id,
+                    label: c.label,
+                })),
+            },
+        ];
+        const newOrder = await showSortableGroup({ group });
+        const newQuickItems =
+            newOrder.find((v) => v.id === "quick")?.items ?? [];
+        updateQuickCurrencies(newQuickItems.map((v) => v.id));
+    };
+
+    const toReorderRef = useRef(toReOrder);
+    toReorderRef.current = toReOrder;
+    useEffect(() => {
+        if (edit?.openQuickEntry) {
+            toReorderRef.current();
+        }
+    }, [edit?.openQuickEntry]);
     return (
         <PopupLayout
             onBack={onCancel}
             title={t("currency-manager")}
             className="flex flex-col h-full overflow-hidden"
+            right={
+                <div className="flex gap-2 items-center">
+                    <Button variant="secondary" onClick={toReOrder}>
+                        {t("quick-currencies")}
+                    </Button>
+                    <Button onClick={() => toUpdateCurrency()}>
+                        <i className="icon-[mdi--add]"></i>
+                    </Button>
+                </div>
+            }
         >
             <div className="flex justify-between px-4 border-b py-4">
                 <Popover>
@@ -102,7 +177,7 @@ export default function CurrencyListForm({
                 </Popover>
                 <Select value={baseCurrency.id} onValueChange={setBaseCurrency}>
                     <SelectTrigger className="w-fit">
-                        <div>{t(baseCurrency.labelKey)}</div>
+                        <div>{baseCurrency.label}</div>
                     </SelectTrigger>
                     <SelectContent>
                         {DefaultCurrencies.map((currency) => {
@@ -161,6 +236,30 @@ export default function CurrencyListForm({
             </div>
             <div className="flex-1 overflow-y-auto">
                 <div className="px-4">
+                    {customCurrencies.map((currency) => {
+                        const rate = currency.rateToBase;
+                        return (
+                            <button
+                                key={currency.id}
+                                type="button"
+                                className="py-2 border-b w-full flex justify-between items-center cursor-pointer"
+                                onClick={() => toUpdateCurrency(currency)}
+                            >
+                                <div className="flex items-center gap-2">
+                                    <div className="text-xl"></div>
+                                    <div className="text-left">
+                                        <div>{currency.name}</div>
+                                        <div className="text-xs opacity-60">
+                                            {`(${currency.symbol})`}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="text-sm">{rate.toFixed(6)}</div>
+                            </button>
+                        );
+                    })}
+                </div>
+                <div className="px-4">
                     {DefaultCurrencies.map((currency) => {
                         const rate = rates.find((r) => r.id === currency.id);
                         return (
@@ -191,6 +290,7 @@ export default function CurrencyListForm({
                     })}
                 </div>
             </div>
+            <EditCurrencyProvider />
         </PopupLayout>
     );
 }

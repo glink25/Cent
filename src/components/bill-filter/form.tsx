@@ -1,7 +1,7 @@
 import { type Dispatch, type SetStateAction, useMemo } from "react";
-import { DefaultCurrencies } from "@/api/currency/currencies";
 import useCategory from "@/hooks/use-category";
 import { useCreators } from "@/hooks/use-creator";
+import { useCurrency } from "@/hooks/use-currency";
 import { useTag } from "@/hooks/use-tag";
 import type { BillCategory, BillFilter, BillType } from "@/ledger/type";
 import { useIntl } from "@/locale";
@@ -133,13 +133,13 @@ export default function BillFilterForm({
             .join(",");
     };
 
-    const allCurrencies = DefaultCurrencies;
+    const { allCurrencies } = useCurrency();
     const formatCurrencies = (ids?: (number | string)[]) => {
         if (ids === undefined || ids.length === 0) {
             return t("unlimited");
         }
         return ids
-            .map((id) => t(allCurrencies.find((v) => v.id === id)!.labelKey))
+            .map((id) => allCurrencies.find((v) => v.id === id)!.label)
             .join(",");
     };
     return (
@@ -384,7 +384,7 @@ export default function BillFilterForm({
                                     });
                                 }}
                             >
-                                {t(item.labelKey)}
+                                {item.label}
                             </DropdownMenuCheckboxItem>
                         ))}
                     </DropdownMenuContent>

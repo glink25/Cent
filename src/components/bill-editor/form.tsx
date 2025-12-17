@@ -1,7 +1,6 @@
 import { Switch } from "radix-ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { DefaultCurrencies } from "@/api/currency/currencies";
 import useCategory from "@/hooks/use-category";
 import { useCurrency } from "@/hooks/use-currency";
 import { useTag } from "@/hooks/use-tag";
@@ -56,7 +55,8 @@ export default function EditorForm({
         onCancel?.();
     };
 
-    const { baseCurrency, convert } = useCurrency();
+    const { baseCurrency, convert, quickCurrencies, allCurrencies } =
+        useCurrency();
 
     const { incomes, expenses, categories: allCategories } = useCategory();
 
@@ -161,7 +161,7 @@ export default function EditorForm({
         }
     }, [monitorFocused, toConfirm]);
 
-    const targetCurrency = DefaultCurrencies.find(
+    const targetCurrency = allCurrencies.find(
         (c) => c.id === (billState.currency?.target ?? baseCurrency.id),
     )!;
 
@@ -243,61 +243,66 @@ export default function EditorForm({
                             </Switch.Root>
                         </div>
                         <div className="flex-1 flex bg-stone-400 focus:outline rounded-lg ml-2 px-2 relative">
-                            <Select
-                                value={targetCurrency.id}
-                                onValueChange={(newCurrencyId) => {
-                                    setBillState((prev) => {
-                                        if (newCurrencyId === baseCurrency.id) {
+                            {quickCurrencies.length > 0 && (
+                                <Select
+                                    value={targetCurrency.id}
+                                    onValueChange={(newCurrencyId) => {
+                                        setBillState((prev) => {
+                                            if (
+                                                newCurrencyId ===
+                                                baseCurrency.id
+                                            ) {
+                                                return {
+                                                    ...prev,
+                                                    amount:
+                                                        prev.currency?.amount ??
+                                                        prev.amount,
+                                                    currency: undefined,
+                                                };
+                                            }
+                                            const { predict } = convert(
+                                                amountToNumber(
+                                                    prev.currency?.amount ??
+                                                        prev.amount,
+                                                ),
+                                                newCurrencyId,
+                                                baseCurrency.id,
+                                                prev.time,
+                                            );
                                             return {
                                                 ...prev,
-                                                amount:
-                                                    prev.currency?.amount ??
-                                                    prev.amount,
-                                                currency: undefined,
+                                                amount: numberToAmount(predict),
+                                                currency: {
+                                                    base: baseCurrency.id,
+                                                    target: newCurrencyId,
+                                                    amount:
+                                                        prev.currency?.amount ??
+                                                        prev.amount,
+                                                },
                                             };
-                                        }
-                                        const { predict } = convert(
-                                            amountToNumber(
-                                                prev.currency?.amount ??
-                                                    prev.amount,
-                                            ),
-                                            newCurrencyId,
-                                            baseCurrency.id,
-                                            prev.time,
-                                        );
-                                        return {
-                                            ...prev,
-                                            amount: numberToAmount(predict),
-                                            currency: {
-                                                base: baseCurrency.id,
-                                                target: newCurrencyId,
-                                                amount:
-                                                    prev.currency?.amount ??
-                                                    prev.amount,
-                                            },
-                                        };
-                                    });
-                                }}
-                            >
-                                <div className="flex items-center">
-                                    <SelectTrigger className="w-fit outline-none ring-none border-none shadow-none p-0 [&_svg]:hidden">
-                                        <div className="flex items-center font-semibold text-2xl text-white">
-                                            {targetCurrency?.symbol}
-                                        </div>
-                                    </SelectTrigger>
-                                </div>
-                                <SelectContent>
-                                    {DefaultCurrencies.map((currency) => (
-                                        <SelectItem
-                                            key={currency.id}
-                                            value={currency.id}
-                                        >
-                                            {t(currency.labelKey)}
-                                            {`(${currency.symbol})`}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                                        });
+                                    }}
+                                >
+                                    <div className="flex items-center">
+                                        <SelectTrigger className="w-fit outline-none ring-none border-none shadow-none p-0 [&_svg]:hidden">
+                                            <div className="flex items-center font-semibold text-2xl text-white">
+                                                {targetCurrency?.symbol}
+                                            </div>
+                                        </SelectTrigger>
+                                    </div>
+                                    <SelectContent>
+                                        {quickCurrencies.map((currency) => (
+                                            <SelectItem
+                                                key={currency.id}
+                                                value={currency.id}
+                                            >
+                                                {currency.label}
+                                                {`(${currency.symbol})`}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            )}
                             <button
                                 ref={monitorRef}
                                 type="button"
@@ -313,7 +318,7 @@ export default function EditorForm({
                                     <div className="absolute text-white text-[8px] top-0">
                                         ≈ {baseCurrency.symbol}{" "}
                                         {amountToNumber(billState.amount)}{" "}
-                                        {t(baseCurrency.labelKey)}
+                                        {baseCurrency.label}
                                     </div>
                                 )}
                                 <Calculator.Value className="text-white text-3xl font-semibold text-right bg-transparent"></Calculator.Value>

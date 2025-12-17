@@ -1,4 +1,3 @@
-import { DefaultCurrencies } from "@/api/currency/currencies";
 import useCategory from "@/hooks/use-category";
 import { useCreators } from "@/hooks/use-creator";
 import { useCurrency } from "@/hooks/use-currency";
@@ -24,7 +23,7 @@ export default function BillInfo({
     const t = useIntl();
     const { id: curUserId } = useUserStore();
     const { categories } = useCategory();
-    const { baseCurrency } = useCurrency();
+    const { baseCurrency, allCurrencies } = useCurrency();
 
     const creators = useCreators();
     const creator = creators.find((c) => c.id === edit?.creatorId);
@@ -64,7 +63,7 @@ export default function BillInfo({
     const currency =
         edit.currency?.target === baseCurrency.id
             ? undefined
-            : DefaultCurrencies.find((c) => c.id === edit.currency?.target);
+            : allCurrencies.find((c) => c.id === edit.currency?.target);
     return (
         <div>
             <div className="min-h-[320px] p-4 flex flex-col w-full h-full">
@@ -117,7 +116,7 @@ export default function BillInfo({
                                 <div>
                                     {currency.symbol}
                                     {amountToNumber(edit.currency!.amount)}{" "}
-                                    {t(currency.labelKey)}
+                                    {currency.label}
                                 </div>
                             </div>
                         )}

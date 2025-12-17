@@ -121,4 +121,71 @@ export const DefaultCurrencies = [
         symbol: "₺",
         icon: "🇹🇷",
     },
+    {
+        id: "BGN",
+        labelKey: "c-bgn", // 保加利亚列弗
+        symbol: "лв",
+        icon: "🇧🇬",
+    },
+    {
+        id: "CZK",
+        labelKey: "c-czk", // 捷克克朗
+        symbol: "Kč",
+        icon: "🇨🇿",
+    },
+    {
+        id: "HUF",
+        labelKey: "c-huf", // 匈牙利福林
+        symbol: "Ft",
+        icon: "🇭🇺",
+    },
+    {
+        id: "PLN",
+        labelKey: "c-pln", // 波兰兹罗提
+        symbol: "zł",
+        icon: "🇵🇱",
+    },
+    {
+        id: "RON",
+        labelKey: "c-ron", // 罗马尼亚列伊
+        symbol: "lei",
+        icon: "🇷🇴",
+    },
+    {
+        id: "ISK",
+        labelKey: "c-isk", // 冰岛克朗
+        symbol: "kr",
+        icon: "🇮🇸",
+    },
+    {
+        id: "IDR",
+        labelKey: "c-idr", // 印度尼西亚盾
+        symbol: "Rp",
+        icon: "🇮🇩",
+    },
+    {
+        id: "ILS",
+        labelKey: "c-ils", // 以色列新谢克尔
+        symbol: "₪",
+        icon: "🇮🇱",
+    },
+    {
+        id: "MYR",
+        labelKey: "c-myr", // 马来西亚林吉特
+        symbol: "RM",
+        icon: "🇲🇾",
+    },
+    {
+        id: "PHP",
+        labelKey: "c-php", // 菲律宾比索
+        symbol: "₱",
+        icon: "🇵🇭",
+    },
+    {
+        id: "THB",
+        labelKey: "c-thb", // 泰铢
+        symbol: "฿",
+        icon: "🇹🇭",
+    },
+    // --- 新增货币结束 ---
 ];
