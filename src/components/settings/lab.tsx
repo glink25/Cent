@@ -31,6 +31,9 @@ function Form({ onCancel }: { onCancel?: () => void }) {
     ] = usePreference("readClipboardWhenReduceMotionChanged");
 
     const [multiplyKey, setMultiplyKey] = usePreference("multiplyKey");
+    const [showAttachmentsInList, setShowAttachmentsInList] = usePreference(
+        "showAttachmentsInList",
+    );
 
     return (
         <PopupLayout
@@ -76,6 +79,18 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                                 <SelectItem value="triple-zero">000</SelectItem>
                             </SelectContent>
                         </Select>
+                    </div>
+                    <div className="w-full h-10 flex justify-between items-center px-4">
+                        <div className="text-sm">
+                            <div>{t("show-attachments-in-list")}</div>
+                            <div className="text-xs opacity-60">
+                                {t("show-attachments-in-list-description")}
+                            </div>
+                        </div>
+                        <Switch
+                            checked={showAttachmentsInList}
+                            onCheckedChange={setShowAttachmentsInList}
+                        />
                     </div>
                 </div>
 

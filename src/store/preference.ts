@@ -1,14 +1,16 @@
+import { getBrowserLang, type LocaleName } from "@/locale/utils";
 import { create, type StateCreator } from "zustand";
 import {
     createJSONStorage,
-    type PersistOptions,
     persist,
+    type PersistOptions,
 } from "zustand/middleware";
-import { getBrowserLang, type LocaleName } from "@/locale/utils";
 
 type State = {
     locale: LocaleName;
     autoLocateWhenAddBill?: boolean;
+    /** 在首页条目中显示附件缩略图 */
+    showAttachmentsInList?: boolean;
     enterAddBillWhenReduceMotionChanged?: boolean;
     readClipboardWhenReduceMotionChanged?: boolean;
     smartPredict?: boolean;
@@ -33,6 +35,7 @@ export const usePreferenceStore = create<Store>()(
             return {
                 locale: getBrowserLang(),
                 autoLocateWhenAddBill: false,
+                    showAttachmentsInList: false,
                 readClipboardWhenReduceMotionChanged: false,
                 smartPredict: false,
                 reLayrKey: "cent",

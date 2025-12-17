@@ -433,6 +433,8 @@
   "multiply-key": "Multiply key",
   "multiply-key-tip": "Quick enter multiple zeros",
   "off": "Off",
+  "show-attachments-in-list": "Show attachments in list",
+  "show-attachments-in-list-description": "Show small thumbnails of attachments between the comment and amount in list entries",
   "app-introduce": "Open-Source, Free, Collaborative Accounting App",
   "add-new-currency": "Add new currency",
   "edit-currency": "Edit currency",

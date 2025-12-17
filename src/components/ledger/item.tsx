@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import useCategory from "@/hooks/use-category";
 import { useCreators } from "@/hooks/use-creator";
 import { useCurrency } from "@/hooks/use-currency";
@@ -6,10 +5,13 @@ import { useTag } from "@/hooks/use-tag";
 import { amountToNumber } from "@/ledger/bill";
 import type { Bill } from "@/ledger/type";
 import { useIntl } from "@/locale";
+import { usePreference } from "@/store/preference";
 import { useUserStore } from "@/store/user";
 import { cn } from "@/utils";
-import { denseTime, shortTime } from "@/utils/time";
+import { denseTime } from "@/utils/time";
+import { useMemo } from "react";
 import CategoryIcon from "../category/icon";
+import SmartImage from "../image";
 
 interface BillItemProps {
     bill: Bill;
@@ -25,6 +27,7 @@ export default function BillItem({
     showTime,
 }: BillItemProps) {
     const t = useIntl();
+    const [showAttachmentsInList] = usePreference("showAttachmentsInList");
     const { categories } = useCategory();
     const { tags: allTags } = useTag();
     const category = useMemo(
@@ -87,7 +90,19 @@ export default function BillItem({
                         )}
                     </div>
                 </div>
+
+    {showAttachmentsInList && (bill.images?.length ?? 0) > 0 && (
+                <div className="flex-shrink-0 px-2">
+                    <SmartImage
+                        source={bill.images![0]}
+                        alt=""
+                        className="w-10 h-10  object-cover rounded"
+                    />
+                </div>
+            )}
             </div>
+
+        
 
             {/* 金额 */}
             <div className="text-right">
