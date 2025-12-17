@@ -133,6 +133,20 @@ export const treeCategories = (categories: BillCategory[]) => {
     );
 };
 
+/** 检查target 分类是否与source分类相同，或者是source的子类 */
+export const isSameOrChildCategory = (
+    source: string,
+    target: string,
+    allCategories: BillCategory[],
+) => {
+    const targetCategory = allCategories.find((c) => c.id === target);
+    if (!targetCategory || !targetCategory.parent) {
+        return source === target;
+    }
+
+    return source === targetCategory.parent;
+};
+
 export const intlCategory = <
     T extends Pick<BillCategory, "customName" | "name"> | undefined,
 >(

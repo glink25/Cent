@@ -61,14 +61,15 @@ function BudgetProgress({
 }) {
     const p = used / total;
     const tp = (todayUsed ?? 0) / total;
+
     return (
         <div className="w-full flex items-center h-4 relative">
             <div className="relative w-full h-2 rounded-full outer bg-gray-300 flex items-center overflow-hidden">
                 <div
                     className="inner h-2 rounded-full bg-amber-500 absolute top-0"
                     style={{
-                        left: `calc(${p * 100}% - 16px)`,
-                        width: `${tp * 100}%`,
+                        left: `0px`,
+                        width: `${(tp + p) * 100}%`,
                     }}
                 ></div>
                 <div
@@ -180,7 +181,7 @@ function BudgetDetail({
 
             const active = latestTime >= range[0].unix() * 1000;
             const totalReached = active
-                ? budgetReached(budget, bills, range)
+                ? budgetReached(budget, bills, range, categories)
                 : undefined;
 
             return {
@@ -195,7 +196,7 @@ function BudgetDetail({
                 ),
             };
         });
-    }, [allRanges, bills, budget]);
+    }, [allRanges, bills, budget, categories]);
     const reachedCount =
         budgetRanges.filter((b) => b.reached?.every((r) => r)).length - 1;
 
@@ -204,9 +205,9 @@ function BudgetDetail({
     const encountered = useMemo(
         () =>
             selectedRange
-                ? budgetEncountered(budget, bills, selectedRange)
+                ? budgetEncountered(budget, bills, selectedRange, categories)
                 : undefined,
-        [budget, bills, selectedRange],
+        [budget, bills, selectedRange, categories],
     );
 
     const time = useMemo(
@@ -225,12 +226,14 @@ function BudgetDetail({
     const todayEncountered = useMemo(
         () =>
             isTodayInRange && currentRange
-                ? budgetEncountered(budget, bills, [
-                      dayjs().startOf("day"),
-                      dayjs().endOf("day"),
-                  ])
+                ? budgetEncountered(
+                      budget,
+                      bills,
+                      [dayjs().startOf("day"), dayjs().endOf("day")],
+                      categories,
+                  )
                 : undefined,
-        [isTodayInRange, currentRange, bills, budget],
+        [isTodayInRange, currentRange, bills, budget, categories],
     );
 
     return (
