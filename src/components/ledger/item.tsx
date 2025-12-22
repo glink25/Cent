@@ -97,6 +97,7 @@ export default function BillItem({
                         source={bill.images![0]}
                         alt=""
                         className="w-10 h-10  object-cover rounded"
+                        compressWidth={80}
                     />
                 </div>
             )}
