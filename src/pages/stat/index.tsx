@@ -108,6 +108,7 @@ export default function Page() {
             return [];
         }
         const { unit, labelThis, labelLast, format, max } = labels;
+        // Make sure end is the very end of the period
         let end = END;
         let start = end.startOf(unit);
         const s = [];
@@ -120,8 +121,9 @@ export default function Page() {
         let i = 0;
         while (true && i < (max ?? Infinity)) {
             i += 1;
-            end = start;
-            start = end.subtract(1, unit);
+            // End of previous period is 1ms before start of current period
+            end = start.subtract(1, 'ms');
+            start = end.startOf(unit);
             if (end.isAfter(START)) {
                 s.push({
                     end,
