@@ -1,5 +1,3 @@
-import { StorageAPI } from "@/api/storage";
-import { useBookStore } from "@/store/book";
 import {
     type CSSProperties,
     useCallback,
@@ -7,6 +5,8 @@ import {
     useRef,
     useState,
 } from "react";
+import { StorageAPI } from "@/api/storage";
+import { useBookStore } from "@/store/book";
 
 class ImageCache {
     private cache = new Map<string, string>();
@@ -60,7 +60,7 @@ export default function SmartImage({
 }) {
     const [status, setStatus] = useState("loading");
     const [url, setUrl] = useState<string>("");
-    
+
     // We only need this ref to cleanup if we created a blob URL *internally* without cache,
     // or if we decide to enforce cleanup on unmount for non-cached items.
     // However, with our caching strategy, the cache largely owns the URLs.
@@ -82,9 +82,9 @@ export default function SmartImage({
                 return;
             }
         }
-        
+
         const book = useBookStore.getState().currentBookId;
-        
+
         const loadAndProcess = async () => {
             let fileOrUrl: File | Blob | string = source;
 
@@ -92,14 +92,17 @@ export default function SmartImage({
             if (typeof source === "string" && !source.startsWith("blob:")) {
                 // Try to get online asset if it's a path/id
                 if (StorageAPI.getOnlineAsset && book) {
-                   try {
-                        const file = await StorageAPI.getOnlineAsset(source, book);
+                    try {
+                        const file = await StorageAPI.getOnlineAsset(
+                            source,
+                            book,
+                        );
                         if (file) {
-                             fileOrUrl = file;
+                            fileOrUrl = file;
                         }
-                   } catch {
-                       // ignore, treat source as direct URL
-                   }
+                    } catch {
+                        // ignore, treat source as direct URL
+                    }
                 }
             }
 
@@ -108,8 +111,11 @@ export default function SmartImage({
                 compressWidth &&
                 (fileOrUrl instanceof File || fileOrUrl instanceof Blob)
             ) {
-                 try {
-                    const compressedUrl = await compressImage(fileOrUrl, compressWidth);
+                try {
+                    const compressedUrl = await compressImage(
+                        fileOrUrl,
+                        compressWidth,
+                    );
                     setUrl(compressedUrl);
                     setStatus("loaded");
                     if (cacheKey) {
@@ -121,19 +127,19 @@ export default function SmartImage({
                     // Fallback to original processing
                 }
             }
-            
+
             // 4. Default handling (no compression or compression failed)
             if (fileOrUrl instanceof File || fileOrUrl instanceof Blob) {
-                 const objectUrl = URL.createObjectURL(fileOrUrl);
-                 objectUrlRef.current = objectUrl;
-                 setUrl(objectUrl);
-                 // We can optionally cache this too if we want to avoid re-creating object URLs for the same file object,
-                 // but typically File objects change identity. If cacheKey exists (string source), we can cache it.
-                 if (cacheKey) {
-                      globalImageCache.set(cacheKey, objectUrl);
-                 }
+                const objectUrl = URL.createObjectURL(fileOrUrl);
+                objectUrlRef.current = objectUrl;
+                setUrl(objectUrl);
+                // We can optionally cache this too if we want to avoid re-creating object URLs for the same file object,
+                // but typically File objects change identity. If cacheKey exists (string source), we can cache it.
+                if (cacheKey) {
+                    globalImageCache.set(cacheKey, objectUrl);
+                }
             } else {
-                 setUrl(fileOrUrl as string);
+                setUrl(fileOrUrl as string);
             }
         };
 
@@ -141,7 +147,7 @@ export default function SmartImage({
 
         return () => {
             // If we created a local object URL that wasn't cached (or if we want to be safe),
-            // typically we rely on the cache to revoke. 
+            // typically we rely on the cache to revoke.
             // If the cache owns it, we SHOULD NOT revoke it here because other components (virtual list) might use it.
             // ONLY Revoke if we didn't use the global cache or if it's a one-off.
             // For this implementation, we rely on LRU eviction to revoke.
@@ -171,7 +177,10 @@ export default function SmartImage({
 }
 
 // Utility to compress image
-async function compressImage(file: File | Blob, maxWidth: number): Promise<string> {
+async function compressImage(
+    file: File | Blob,
+    maxWidth: number,
+): Promise<string> {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
@@ -196,20 +205,24 @@ async function compressImage(file: File | Blob, maxWidth: number): Promise<strin
                     reject(new Error("Could not get canvas context"));
                     return;
                 }
-                
+
                 // Better quality for downsampling
                 ctx.imageSmoothingEnabled = true;
                 ctx.imageSmoothingQuality = "high";
                 ctx.drawImage(img, 0, 0, width, height);
-                
+
                 // Convert to blob/url
-                canvas.toBlob((blob) => {
-                    if (blob) {
-                        resolve(URL.createObjectURL(blob));
-                    } else {
-                        reject(new Error("Canvas toBlob failed"));
-                    }
-                }, file.type || "image/jpeg", 0.8); // 0.8 quality
+                canvas.toBlob(
+                    (blob) => {
+                        if (blob) {
+                            resolve(URL.createObjectURL(blob));
+                        } else {
+                            reject(new Error("Canvas toBlob failed"));
+                        }
+                    },
+                    file.type || "image/jpeg",
+                    0.8,
+                ); // 0.8 quality
             };
             img.onerror = (e) => reject(e);
         };

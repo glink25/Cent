@@ -1,10 +1,10 @@
-import { getBrowserLang, type LocaleName } from "@/locale/utils";
 import { create, type StateCreator } from "zustand";
 import {
     createJSONStorage,
-    persist,
     type PersistOptions,
+    persist,
 } from "zustand/middleware";
+import { getBrowserLang, type LocaleName } from "@/locale/utils";
 
 type State = {
     locale: LocaleName;
@@ -35,7 +35,7 @@ export const usePreferenceStore = create<Store>()(
             return {
                 locale: getBrowserLang(),
                 autoLocateWhenAddBill: false,
-                    showAttachmentsInList: false,
+                showAttachmentsInList: false,
                 readClipboardWhenReduceMotionChanged: false,
                 smartPredict: false,
                 reLayrKey: "cent",

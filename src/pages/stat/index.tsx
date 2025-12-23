@@ -122,7 +122,7 @@ export default function Page() {
         while (true && i < (max ?? Infinity)) {
             i += 1;
             // End of previous period is 1ms before start of current period
-            end = start.subtract(1, 'ms');
+            end = start.subtract(1, "ms");
             start = end.startOf(unit);
             if (end.isAfter(START)) {
                 s.push({

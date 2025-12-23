@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import useCategory from "@/hooks/use-category";
 import { useCreators } from "@/hooks/use-creator";
 import { useCurrency } from "@/hooks/use-currency";
@@ -9,7 +10,6 @@ import { usePreference } from "@/store/preference";
 import { useUserStore } from "@/store/user";
 import { cn } from "@/utils";
 import { denseTime } from "@/utils/time";
-import { useMemo } from "react";
 import CategoryIcon from "../category/icon";
 import SmartImage from "../image";
 
@@ -91,19 +91,17 @@ export default function BillItem({
                     </div>
                 </div>
 
-    {showAttachmentsInList && (bill.images?.length ?? 0) > 0 && (
-                <div className="flex-shrink-0 px-2">
-                    <SmartImage
-                        source={bill.images![0]}
-                        alt=""
-                        className="w-10 h-10  object-cover rounded"
-                        compressWidth={80}
-                    />
-                </div>
-            )}
+                {showAttachmentsInList && (bill.images?.length ?? 0) > 0 && (
+                    <div className="flex-shrink-0 px-2">
+                        <SmartImage
+                            source={bill.images![0]}
+                            alt=""
+                            className="w-10 h-10  object-cover rounded"
+                            compressWidth={80}
+                        />
+                    </div>
+                )}
             </div>
-
-        
 
             {/* 金额 */}
             <div className="text-right">
