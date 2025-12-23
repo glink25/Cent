@@ -445,5 +445,21 @@
   "quick-currencies": "Quick Entry",
   "quick-currencies-desc": "Quick switch currencies when add bill",
   "currency-update-v2-hint": "Custom currencies & Re-Order quick Entry Support Now",
-  "quick-entry-empty": "Darg currencies here to enable quick switch currencies on add bill"
+  "quick-entry-empty": "Darg currencies here to enable quick switch currencies on add bill",
+  "add-new-tag": "Create Tag",
+  "edit-tag": "Edit tag",
+  "tag-name": "Tag Name",
+  "tag-color": "Color",
+  "is-single-select": "Single Select",
+  "add-new-tag-group": "Add Tag Group",
+  "edit-tag-group": "Edit Tag Group",
+  "tag-group-name": "Tag Group Name",
+  "tag-group-color": "Tag Group Color",
+  "single-select-desc": "Only one tag in a group can be selected when enabled",
+  "required-select-desc": "Auto select first tag in group when enabled",
+  "prefer-currency": "Prefer Currency",
+  "prefer-currency-desc": "Auto switch to prefer currency when select tag",
+  "group-tags": "Include Tags",
+  "more-tag-settings": "More",
+  "un-grouped": "Un-group"
 }

@@ -452,5 +452,22 @@
   "quick-currencies-desc": "在记账页面快速切换币种",
   "currency-update-v2-hint": "自定义币种 & 币种自定义排序现已支持",
   "group-no-items": "暂无项目",
-  "quick-entry-empty": "拖动货币到此处，在记账时即可切换多币种"
+  "quick-entry-empty": "拖动货币到此处，在记账时即可切换多币种",
+  "add-new-tag": "创建标签",
+  "edit-tag": "编辑标签",
+  "tag-name": "标签名称",
+  "tag-color": "标签颜色",
+  "is-single-select": "是否单选",
+  "add-new-tag-group": "新建标签组",
+  "edit-tag-group": "编辑标签组",
+  "tag-group-name": "标签组名称",
+  "tag-group-color": "标签组颜色",
+  "is-required-select": "是否必选",
+  "single-select-desc": "开启后一个标签组中只能选中一个标签",
+  "required-select-desc": "开启默认选中第一个标签",
+  "prefer-currency": "偏好币种",
+  "prefer-currency-desc": "记账时选中标签时会自动切换到对应币种",
+  "group-tags": "包含标签",
+  "more-tag-settings": "更多设置",
+  "un-grouped": "未分组"
 }
