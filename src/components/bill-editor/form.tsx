@@ -14,6 +14,7 @@ import type { EditBill } from "@/store/ledger";
 import { usePreferenceStore } from "@/store/preference";
 import { cn } from "@/utils";
 import { getPredictNow } from "@/utils/predict";
+import { showTagList } from "../bill-tag";
 import { showCategoryList } from "../category";
 import { CategoryItem } from "../category/item";
 import { DatePicker } from "../date-picker";
@@ -33,6 +34,7 @@ import {
 } from "../ui/select";
 import { goAddBill } from ".";
 import { RemarkHint } from "./remark";
+import TagGroupSelector from "./tag-group";
 
 const defaultBill = {
     type: "expense" as Bill["type"],
@@ -99,7 +101,7 @@ export default function EditorForm({
         return init;
     });
 
-    const { tags, add: addTag } = useTag();
+    const { grouped } = useTag();
 
     const categories = billState.type === "expense" ? expenses : incomes;
 
@@ -161,9 +163,36 @@ export default function EditorForm({
         }
     }, [monitorFocused, toConfirm]);
 
-    const targetCurrency = allCurrencies.find(
-        (c) => c.id === (billState.currency?.target ?? baseCurrency.id),
-    )!;
+    const targetCurrency =
+        allCurrencies.find(
+            (c) => c.id === (billState.currency?.target ?? baseCurrency.id),
+        ) ?? baseCurrency;
+
+    const changeCurrency = (newCurrencyId: string) =>
+        setBillState((prev) => {
+            if (newCurrencyId === baseCurrency.id) {
+                return {
+                    ...prev,
+                    amount: prev.currency?.amount ?? prev.amount,
+                    currency: undefined,
+                };
+            }
+            const { predict } = convert(
+                amountToNumber(prev.currency?.amount ?? prev.amount),
+                newCurrencyId,
+                baseCurrency.id,
+                prev.time,
+            );
+            return {
+                ...prev,
+                amount: numberToAmount(predict),
+                currency: {
+                    base: baseCurrency.id,
+                    target: newCurrencyId,
+                    amount: prev.currency?.amount ?? prev.amount,
+                },
+            };
+        });
 
     const calculatorInitialValue = billState?.currency
         ? amountToNumber(billState.currency.amount)
@@ -245,42 +274,9 @@ export default function EditorForm({
                         <div className="flex-1 flex bg-stone-400 focus:outline rounded-lg ml-2 px-2 relative">
                             {quickCurrencies.length > 0 && (
                                 <Select
-                                    value={targetCurrency.id}
+                                    value={targetCurrency?.id}
                                     onValueChange={(newCurrencyId) => {
-                                        setBillState((prev) => {
-                                            if (
-                                                newCurrencyId ===
-                                                baseCurrency.id
-                                            ) {
-                                                return {
-                                                    ...prev,
-                                                    amount:
-                                                        prev.currency?.amount ??
-                                                        prev.amount,
-                                                    currency: undefined,
-                                                };
-                                            }
-                                            const { predict } = convert(
-                                                amountToNumber(
-                                                    prev.currency?.amount ??
-                                                        prev.amount,
-                                                ),
-                                                newCurrencyId,
-                                                baseCurrency.id,
-                                                prev.time,
-                                            );
-                                            return {
-                                                ...prev,
-                                                amount: numberToAmount(predict),
-                                                currency: {
-                                                    base: baseCurrency.id,
-                                                    target: newCurrencyId,
-                                                    amount:
-                                                        prev.currency?.amount ??
-                                                        prev.amount,
-                                                },
-                                            };
-                                        });
+                                        changeCurrency(newCurrencyId);
                                     }}
                                 >
                                     <div className="flex items-center">
@@ -400,51 +396,30 @@ export default function EditorForm({
                 </div>
                 {/* tags */}
                 <div className="w-full h-[40px] flex-shrink-0 flex-grow-0 flex gap-1 py-1 items-center overflow-x-auto px-2 text-sm font-medium scrollbar-hidden">
-                    {tags.map((tag) => (
-                        <Tag
-                            key={tag.id}
-                            checked={billState.tagIds?.includes(tag.id)}
-                            onCheckedChange={(checked) => {
-                                setBillState((prev) => {
-                                    const newV = { ...prev };
-                                    if (checked) {
-                                        newV.tagIds = Array.from(
-                                            new Set([
-                                                ...(newV.tagIds ?? []),
-                                                tag.id,
-                                            ]),
-                                        );
-                                    } else {
-                                        newV.tagIds = newV.tagIds?.filter(
-                                            (t) => t !== tag.id,
-                                        );
-                                    }
-                                    return newV;
-                                });
-                            }}
-                        >
-                            #{tag.name}
-                        </Tag>
-                    ))}
+                    <TagGroupSelector
+                        isCreate={isCreate}
+                        selectedTags={billState.tagIds}
+                        onSelectChange={(newTagIds, extra) => {
+                            setBillState((prev) => ({
+                                ...prev,
+                                tagIds: newTagIds,
+                            }));
+                            if (extra?.preferCurrency) {
+                                changeCurrency(extra.preferCurrency);
+                            }
+                        }}
+                    />
                     <button
                         type="button"
                         className={cn(
                             `rounded-lg border py-1 px-2 my-1 mr-1 h-8 flex gap-2 items-center justify-center whitespace-nowrap cursor-pointer`,
                         )}
-                        onClick={async () => {
-                            try {
-                                const tagName = prompt(t("input-new-tag-name"));
-                                if (tagName === null || tagName === undefined) {
-                                    return;
-                                }
-                                await addTag({ name: tagName });
-                            } catch (error) {
-                                toast.error((error as any).message);
-                            }
+                        onClick={() => {
+                            showTagList();
                         }}
                     >
-                        <i className="icon-[mdi--tag-plus-outline]"></i>
-                        {t("add-tag")}
+                        <i className="icon-[mdi--tag-text-outline]"></i>
+                        {t("edit-tags")}
                     </button>
                 </div>
 

@@ -1,79 +1,130 @@
-import { useCallback } from "react";
-import { v4 } from "uuid";
+import { useCallback, useMemo } from "react";
 import { useShallow } from "zustand/shallow";
 import type { BillTag } from "@/components/bill-tag/type";
-import { useBookStore } from "@/store/book";
+import type { BillTagGroup } from "@/ledger/type";
+import { t } from "@/locale";
 import { useLedgerStore } from "@/store/ledger";
+import { useUserStore } from "@/store/user";
 
 export function useTag() {
-    const tags = useLedgerStore(
-        useShallow((state) => state.infos?.meta.tags ?? []),
+    const [tags = [], tagGroups = []] = useLedgerStore(
+        useShallow((state) => {
+            const userId = useUserStore.getState().id;
+            return [
+                state.infos?.meta.tags,
+                state.infos?.meta.personal?.[userId].tagGroups,
+            ];
+        }),
     );
-    const add = useCallback(async (newTag: Omit<BillTag, "id">) => {
-        const { promise, resolve, reject } = Promise.withResolvers<string>();
-        const book = useBookStore.getState().currentBookId;
-        if (!book) {
-            reject("no book");
-            return promise;
-        }
-        await useLedgerStore.getState().updateGlobalMeta((prev) => {
-            if (prev.tags?.some((t) => t.name === newTag.name)) {
-                reject("tag name already exist");
-                return prev;
-            }
-            if (prev.tags === undefined) {
-                prev.tags = [];
-            }
-            const id = v4();
-            prev.tags.push({ ...newTag, id });
-            resolve(id);
-            return prev;
-        });
-        return promise;
-    }, []);
 
-    const update = useCallback(
-        async (id: string, value?: Omit<BillTag, "id">) => {
-            const book = useBookStore.getState().currentBookId;
-            if (!book) {
-                return;
-            }
-            await useLedgerStore.getState().updateGlobalMeta((prev) => {
-                if (prev.tags === undefined) {
-                    return prev;
-                }
-                if (value === undefined) {
+    const updateTag = useCallback(
+        (
+            id: string,
+            newTag: (Omit<BillTag, "id"> & { id?: string }) | undefined,
+        ) => {
+            return useLedgerStore.getState().updateGlobalMeta((prev) => {
+                if (newTag === undefined) {
                     prev.tags = prev.tags.filter((v) => v.id !== id);
                     return prev;
                 }
-                const index = prev.tags.findIndex((v) => v.id === id);
+                const index = prev.tags?.findIndex((v) => v.id === id) ?? -1;
                 if (index === -1) {
-                    return prev;
+                    return {
+                        ...prev,
+                        tags: [
+                            ...(prev.tags ?? []),
+                            {
+                                ...newTag,
+                                id,
+                            },
+                        ],
+                    };
                 }
-                prev.tags[index] = { id, ...value };
+                prev.tags[index] = { ...newTag, id };
                 return prev;
             });
         },
         [],
     );
 
-    const reorder = useCallback(async (orderedTags: Pick<BillTag, "id">[]) => {
-        await useLedgerStore.getState().updateGlobalMeta((prev) => {
-            const newTags = orderedTags
-                .map((t) => prev.tags.find((v) => v.id === t.id))
-                .filter((v) => v !== undefined);
-            if (newTags.length !== prev.tags.length) {
-                throw new Error("invalid tag length");
+    const grouped = useMemo(() => {
+        const group = tagGroups.map((group) => {
+            return {
+                ...group,
+                tags: (
+                    group.tagIds?.map((tid) =>
+                        tags.find((v) => v.id === tid),
+                    ) ?? []
+                ).filter((v) => v !== undefined),
+            };
+        });
+        const unGroup = tags.filter((v) =>
+            tagGroups.every((g) => !g.tagIds?.includes(v.id)),
+        );
+        return [
+            ...group,
+            {
+                name: t("un-grouped"),
+                id: "un-group",
+                tags: unGroup,
+                color: "gray",
+                tagIds: unGroup.map((v) => v.id),
+            },
+        ];
+    }, [tagGroups, tags]);
+
+    const updateGroup = useCallback(
+        (
+            id: string,
+            newGroup: (Omit<BillTagGroup, "id"> & { id?: string }) | undefined,
+        ) => {
+            return useLedgerStore.getState().updatePersonalMeta((prev) => {
+                if (newGroup === undefined) {
+                    prev.tagGroups = prev.tagGroups?.filter((v) => v.id !== id);
+                    return prev;
+                }
+                const index =
+                    prev.tagGroups?.findIndex((v) => v.id === id) ?? -1;
+                if (index === -1) {
+                    return {
+                        ...prev,
+                        tagGroups: [
+                            ...(prev.tagGroups ?? []),
+                            {
+                                ...newGroup,
+                                id,
+                            },
+                        ],
+                    };
+                }
+                const newGroups = prev.tagGroups ?? [];
+                newGroups[index] = { ...newGroup, id };
+                return prev;
+            });
+        },
+        [],
+    );
+
+    const topUpGroup = useCallback((groupId: string) => {
+        return useLedgerStore.getState().updatePersonalMeta((prev) => {
+            const target = prev.tagGroups?.find((v) => v.id === groupId);
+            if (!target) {
+                return prev;
             }
-            prev.tags = newTags;
-            return prev;
+            const newGroups = [
+                target,
+                ...(prev.tagGroups?.filter((v) => v.id !== groupId) ?? []),
+            ];
+            return { ...prev, tagGroups: newGroups };
         });
     }, []);
 
     return {
         tags,
-        add,
-        update,
-        reorder,
+        updateTag,
+        grouped,
+        updateGroup,
+        topUpGroup,
     };
 }
+export type BillTagGroupDetail = BillTagGroup & { tags: BillTag[] };

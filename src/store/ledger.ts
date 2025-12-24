@@ -325,15 +325,19 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
             const repo = getCurrentFullRepoName();
             const prevMeta = await StorageAPI.getMeta(repo);
             const uid = useUserStore.getState().id;
-            const personalMeta =
+            const personalMeta: PersonalMeta =
                 (prevMeta as GlobalMeta | undefined)?.personal?.[uid] ?? {};
             const newPersonalMeta =
                 typeof v === "function"
                     ? v(personalMeta)
-                    : merge(personalMeta, v);
-            const newMeta = merge(prevMeta, {
-                personal: { [uid]: newPersonalMeta },
-            });
+                    : { ...personalMeta, ...v };
+            const newMeta = {
+                ...prevMeta,
+                personal: {
+                    ...prevMeta.personal,
+                    [uid]: newPersonalMeta,
+                },
+            };
             await StorageAPI.batch(repo, [
                 {
                     type: "meta",

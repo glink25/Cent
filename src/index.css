@@ -191,3 +191,50 @@ button {
 		scale: 1;
 	}
 }
+
+/* Tag基础变量定义 (Light Mode) */
+:root {
+	--tag-red: #ff5f57;
+	--tag-orange: #ffbd2e;
+	--tag-yellow: #b28200;
+	--tag-green: #28c941;
+	--tag-blue: #007aff;
+	--tag-purple: #a550a7;
+	--tag-gray: #8e8e93;
+}
+
+/* Tag深色模式变量覆盖 (Dark Mode) */
+@media (prefers-color-scheme: dark) {
+	:root {
+		--tag-red: #ff6961;
+		--tag-orange: #ffb340;
+		--tag-yellow: #ffd426;
+		--tag-green: #32d74b;
+		--tag-blue: #0a84ff;
+		--tag-purple: #bf5af2;
+		--tag-gray: #98989d;
+	}
+}
+
+/* Tag功能类实现：通过组合类名自动映射变量 */
+.with-tag-color.tag-red {
+	--current-tag-color: var(--tag-red);
+}
+.with-tag-color.tag-orange {
+	--current-tag-color: var(--tag-orange);
+}
+.with-tag-color.tag-yellow {
+	--current-tag-color: var(--tag-yellow);
+}
+.with-tag-color.tag-green {
+	--current-tag-color: var(--tag-green);
+}
+.with-tag-color.tag-blue {
+	--current-tag-color: var(--tag-blue);
+}
+.with-tag-color.tag-purple {
+	--current-tag-color: var(--tag-purple);
+}
+.with-tag-color.tag-gray {
+	--current-tag-color: var(--tag-gray);
+}

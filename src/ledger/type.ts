@@ -1,5 +1,15 @@
 // @annotation: Full 在这里并无实际作用，只是用于拓展一些额外内容，无需考虑，Full<T> 可视为等价于 T
 import type { Full } from "@/database/stash";
+// @annotation: 其他工具type，无需考虑
+import type {
+    BillFilter,
+    BillTagGroup,
+    Budget,
+    CustomCurrency,
+    PersonalMeta,
+} from "./extra-type";
+
+export type { CustomCurrency, PersonalMeta, BillFilter, Budget, BillTagGroup };
 
 /** 账单类型，代表收入或者支出 */
 export type BillType = "income" | "expense";
@@ -77,56 +87,8 @@ export type BillTag = {
     id: string;
     // tag的名称
     name: string;
-};
-
-/**
- * 预算，不需要转换预算，可以略过
- */
-export type Budget = {
-    id: string;
-    title: string;
-    start: number;
-    end?: number;
-    repeat: {
-        unit: "week" | "day" | "month" | "year";
-        value: number;
-    };
-    joiners: (string | number)[];
-    totalBudget: number;
-    categoriesBudget?: {
-        id: string;
-        budget: number;
-    }[];
-    onlyTags?: string[];
-    excludeTags?: string[];
-};
-
-/**
- * 过滤器，不需要转换，可以略过
- */
-export type BillFilter = Partial<{
-    comment: string;
-    recent?: {
-        value: number;
-        unit: "year" | "month" | "week" | "day";
-    };
-    start: number;
-    end: number;
-    type: BillType | undefined;
-    creators: (string | number)[];
-    categories: string[];
-    minAmountNumber: number;
-    maxAmountNumber: number;
-    assets?: boolean;
-    tags?: string[];
-    baseCurrency: string;
-    currencies?: string[];
-}>;
-
-// 个人配置，不需要转换，可以略过
-export type PersonalMeta = {
-    names?: Record<string, string>;
-    rates?: Record<string, number>;
+    /** 在编辑账单页选中该标签时，将自动切换金额为对应的币种 */
+    preferCurrency?: string;
 };
 
 // 全局文件配置
@@ -145,13 +107,6 @@ export type GlobalMeta = {
     baseCurrency?: string;
     customCurrencies?: CustomCurrency[];
     quickCurrencies?: string[];
-};
-
-export type CustomCurrency = {
-    id: string;
-    name: string;
-    symbol: string;
-    rateToBase: number;
 };
 
 // 这是最终导出的核心JSON数据结构，使用这个数据结构可以直接被解析成可以识别的数据
