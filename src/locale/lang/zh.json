@@ -470,5 +470,6 @@
   "group-tags": "包含标签",
   "more-tag-settings": "更多设置",
   "un-grouped": "未分组",
-  "empty-currency-quick-entries": "请先在币种设置中添加快捷入口"
+  "empty-currency-quick-entries": "请先在币种设置中添加快捷入口",
+  "default-filter-name": "默认"
 }
