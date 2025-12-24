@@ -1,66 +1,65 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fff" />
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#fff" />
-    <!-- <link rel="apple-touch-icon-precomposed" sizes="256x256" href="/icon.png" /> -->
-    <link
-      rel="apple-touch-icon-precomposed"
-      sizes="144x144"
-      href="https://s3.bmp.ovh/imgs/2022/10/23/85185ded3707afb9.png" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Cent" />
-    <meta name="msapplication-TileColor" content="#000000" />
-    <meta
-      name="viewport"
-      content="width=device-width,initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <link rel="icon" href="/favicon.ico" />
-    <title>Cent</title>
-    %VITE_GTAG_SCRIPT%
-    <script>
-      // handle login authorized
-      // github login
-      if (location.href.includes("github_authorized")) {
-        localStorage.setItem("_oauth_res", JSON.stringify({ type: "github", url: location.href }));
-        localStorage.setItem("SYNC_ENDPOINT", "github");
-        setTimeout(() => {
-          location.replace(window.origin);
-        }, 1);
-      } else if (location.href.includes("gitee_authorized")) {
-        localStorage.setItem("_oauth_res", JSON.stringify({ type: "gitee", url: location.href }));
-        localStorage.setItem("SYNC_ENDPOINT", "gitee");
-        setTimeout(() => {
-          location.replace(window.origin);
-        }, 1);
-      }
-    </script>
-    <script>
-      (function () {
-        try {
-          const stored = localStorage.getItem("theme"); // 'dark' | 'light' | 'system' | null
-          if (stored === "dark") {
-            document.documentElement.classList.add("dark");
-          } else if (stored === "light") {
-            document.documentElement.classList.remove("dark");
-          } else {
-            // 没有显式偏好，按系统决定
-            const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-            if (prefersDark) document.documentElement.classList.add("dark");
-            else document.documentElement.classList.remove("dark");
-          }
-        } catch (e) {
-          // localStorage 可能被禁用，安全降级：按系统
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fff" />
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#fff" />
+  <!-- <link rel="apple-touch-icon-precomposed" sizes="256x256" href="/icon.png" /> -->
+  <link rel="apple-touch-icon-precomposed" sizes="144x144"
+    href="https://s3.bmp.ovh/imgs/2022/10/23/85185ded3707afb9.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Cent" />
+  <meta name="msapplication-TileColor" content="#000000" />
+  <meta name="viewport"
+    content="width=device-width,initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <link rel="icon" href="/favicon.ico" />
+  <title>Cent</title>
+  <script>
+    // handle login authorized
+    // github login
+    if (location.href.includes("github_authorized")) {
+      localStorage.setItem("_oauth_res", JSON.stringify({ type: "github", url: location.href }));
+      localStorage.setItem("SYNC_ENDPOINT", "github");
+      setTimeout(() => {
+        location.replace(window.origin);
+      }, 1);
+    } else if (location.href.includes("gitee_authorized")) {
+      localStorage.setItem("_oauth_res", JSON.stringify({ type: "gitee", url: location.href }));
+      localStorage.setItem("SYNC_ENDPOINT", "gitee");
+      setTimeout(() => {
+        location.replace(window.origin);
+      }, 1);
+    }
+  </script>
+  <script>
+    (function () {
+      try {
+        const stored = localStorage.getItem("theme"); // 'dark' | 'light' | 'system' | null
+        if (stored === "dark") {
+          document.documentElement.classList.add("dark");
+        } else if (stored === "light") {
+          document.documentElement.classList.remove("dark");
+        } else {
+          // 没有显式偏好，按系统决定
           const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
           if (prefersDark) document.documentElement.classList.add("dark");
+          else document.documentElement.classList.remove("dark");
         }
-      })();
-    </script>
-  </head>
-  <body tabindex="1">
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+      } catch (e) {
+        // localStorage 可能被禁用，安全降级：按系统
+        const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+        if (prefersDark) document.documentElement.classList.add("dark");
+      }
+    })();
+  </script>
+</head>
+
+<body tabindex="1">
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>

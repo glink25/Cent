@@ -251,6 +251,8 @@
   "experimental-functions": "实验性功能",
   "auto-locate-when-add-bill": "新增记账时自动记录位置",
   "auto-locate-when-add-bill-description": "需要先手动授权位置权限后生效",
+  "show-attachments-in-list": "在列表中显示附件",
+  "show-attachments-in-list-description": "在首页条目中于备注与金额之间显示附件缩略图",
   "enter-add-bill-when-reduce-motion-changed": "【减弱动态效果】变化时进入新增记账页",
   "enter-add-bill-when-reduce-motion-changed-description": "配合 iOS 快捷指令使用",
   "location": "位置",
