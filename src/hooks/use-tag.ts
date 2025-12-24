@@ -12,7 +12,7 @@ export function useTag() {
             const userId = useUserStore.getState().id;
             return [
                 state.infos?.meta.tags,
-                state.infos?.meta.personal?.[userId].tagGroups,
+                state.infos?.meta.personal?.[userId]?.tagGroups,
             ];
         }),
     );
