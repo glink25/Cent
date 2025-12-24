@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Collapsible } from "radix-ui";
 import { useMemo } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod/mini";
@@ -8,7 +9,6 @@ import { useIntl } from "@/locale";
 import { cn } from "@/utils";
 import createConfirmProvider from "../confirm";
 import { Button } from "../ui/button";
-import { Checkbox } from "../ui/checkbox";
 import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
@@ -25,6 +25,7 @@ import {
 } from "../ui/form";
 import { Input } from "../ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "../ui/select";
+import { Switch } from "../ui/switch";
 
 export const createFormSchema = (t: any) =>
     z.object({
@@ -103,7 +104,13 @@ const EditTagGroupForm = ({
         form.handleSubmit(onSubmit)();
     };
 
-    const formatTagName = (tagIds: string[]) => "标签";
+    const formatTagName = (tagIds?: string[]) => {
+        const names = tagIds
+            ?.map((tagId) => tags.find((v) => v.id === tagId))
+            .filter((v) => v !== undefined)
+            .map((v) => v.name);
+        return names?.join(",") ?? t("none");
+    };
     return (
         <Form {...form}>
             <div className="w-full h-full flex flex-col">
@@ -131,8 +138,10 @@ const EditTagGroupForm = ({
                         name="tagIds"
                         render={({ field }) => {
                             return (
-                                <FormItem>
-                                    <FormLabel>{t("group-tags")}</FormLabel>
+                                <FormItem className="flex justify-between items-center">
+                                    <FormLabel className="m-0">
+                                        {t("group-tags")}
+                                    </FormLabel>
                                     <FormControl>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
@@ -140,7 +149,11 @@ const EditTagGroupForm = ({
                                                     variant="outline"
                                                     className="px-2 md:px-4 py-2 text-xs md:text-sm"
                                                 >
-                                                    {formatTagName(field.value)}
+                                                    <div className=" max-w-[200px] truncate">
+                                                        {formatTagName(
+                                                            field.value,
+                                                        )}
+                                                    </div>
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent
@@ -150,6 +163,9 @@ const EditTagGroupForm = ({
                                                 {tags.map((item) => (
                                                     <DropdownMenuCheckboxItem
                                                         key={item.id}
+                                                        onSelect={(e) =>
+                                                            e.preventDefault()
+                                                        }
                                                         checked={field.value?.some(
                                                             (v) =>
                                                                 v === item.id,
@@ -189,93 +205,88 @@ const EditTagGroupForm = ({
                         name="color"
                         render={({ field }) => {
                             return (
-                                <FormItem>
-                                    <FormLabel>
+                                <FormItem className="flex justify-between items-center">
+                                    <FormLabel className="m-0">
                                         {t("tag-group-color")}
                                     </FormLabel>
+
                                     <FormControl>
-                                        <Select
+                                        <ColorPicker
                                             value={field.value}
-                                            onValueChange={field.onChange}
-                                        >
-                                            <SelectTrigger>
-                                                <div
-                                                    className={cn(
-                                                        "w-4 h-4 with-tag-color bg-[var(--current-tag-color)]",
-                                                        `tag-${field.value}`,
-                                                    )}
-                                                ></div>
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {colors.map(
-                                                    ({ name, light, dark }) => {
-                                                        return (
-                                                            <SelectItem
-                                                                key={name}
-                                                                value={name}
-                                                            >
-                                                                <div
-                                                                    className={cn(
-                                                                        "w-4 h-4 with-tag-color bg-[var(--current-tag-color)]",
-                                                                        `tag-${name}`,
-                                                                    )}
-                                                                ></div>
-                                                            </SelectItem>
-                                                        );
-                                                    },
-                                                )}
-                                            </SelectContent>
-                                        </Select>
+                                            onChange={field.onChange}
+                                        />
                                     </FormControl>
                                 </FormItem>
                             );
                         }}
                     ></FormField>
 
-                    <FormField
-                        control={form.control}
-                        name="singleSelect"
-                        render={({ field }) => {
-                            return (
-                                <FormItem>
-                                    <FormLabel>
-                                        {t("is-single-select")}
-                                    </FormLabel>
-                                    <FormDescription>
-                                        {t("single-select-desc")}
-                                    </FormDescription>
-                                    <FormControl>
-                                        <Checkbox
-                                            checked={field.value ?? false}
-                                            onCheckedChange={field.onChange}
-                                        />
-                                    </FormControl>
-                                </FormItem>
-                            );
-                        }}
-                    ></FormField>
-                    <FormField
-                        control={form.control}
-                        name="required"
-                        render={({ field }) => {
-                            return (
-                                <FormItem>
-                                    <FormLabel>
-                                        {t("is-required-select")}
-                                    </FormLabel>
-                                    <FormDescription>
-                                        {t("required-select-desc")}
-                                    </FormDescription>
-                                    <FormControl>
-                                        <Checkbox
-                                            checked={field.value ?? false}
-                                            onCheckedChange={field.onChange}
-                                        />
-                                    </FormControl>
-                                </FormItem>
-                            );
-                        }}
-                    ></FormField>
+                    <Collapsible.Root className="group">
+                        <Collapsible.Trigger>
+                            <div className="text-xs opacity-60 flex items-center gap-1">
+                                {t("more-tag-settings")}
+                                <i className="w-4 h-4 icon-[mdi--chevron-right] transition-all rotate-90 group-[[data-state=closed]]:rotate-0"></i>
+                            </div>
+                        </Collapsible.Trigger>
+                        <Collapsible.CollapsibleContent>
+                            <FormField
+                                control={form.control}
+                                name="singleSelect"
+                                render={({ field }) => {
+                                    return (
+                                        <FormItem className="flex justify-between items-center">
+                                            <div>
+                                                <FormLabel>
+                                                    {t("is-single-select")}
+                                                </FormLabel>
+                                                <FormDescription>
+                                                    {t("single-select-desc")}
+                                                </FormDescription>
+                                            </div>
+                                            <FormControl>
+                                                <Switch
+                                                    checked={
+                                                        field.value ?? false
+                                                    }
+                                                    onCheckedChange={
+                                                        field.onChange
+                                                    }
+                                                />
+                                            </FormControl>
+                                        </FormItem>
+                                    );
+                                }}
+                            ></FormField>
+                            <FormField
+                                control={form.control}
+                                name="required"
+                                render={({ field }) => {
+                                    return (
+                                        <FormItem className="flex justify-between items-center">
+                                            <div>
+                                                <FormLabel>
+                                                    {t("is-required-select")}
+                                                </FormLabel>
+                                                <FormDescription>
+                                                    {t("required-select-desc")}
+                                                </FormDescription>
+                                            </div>
+                                            <FormControl>
+                                                <Switch
+                                                    checked={
+                                                        field.value ?? false
+                                                    }
+                                                    onCheckedChange={
+                                                        field.onChange
+                                                    }
+                                                />
+                                            </FormControl>
+                                        </FormItem>
+                                    );
+                                }}
+                            ></FormField>
+                        </Collapsible.CollapsibleContent>
+                    </Collapsible.Root>
                 </div>
                 <div className="flex justify-between items-center px-4">
                     <div>
@@ -299,6 +310,35 @@ const EditTagGroupForm = ({
         </Form>
     );
 };
+
+function ColorPicker({
+    className,
+    value,
+    onChange,
+}: {
+    value: string;
+    className?: string;
+    onChange?: (color: string) => void;
+}) {
+    return (
+        <div className={cn("flex gap-3", className)}>
+            {colors.map((color) => {
+                return (
+                    <button
+                        key={color.name}
+                        type="button"
+                        onClick={() => onChange?.(color.name)}
+                        className={cn(
+                            "w-4 h-4 rounded-full cursor-pointer with-tag-color bg-[var(--current-tag-color)] ring-2 ring-transparent",
+                            `tag-${color.name}`,
+                            value === color.name && "ring-foreground",
+                        )}
+                    ></button>
+                );
+            })}
+        </div>
+    );
+}
 
 export const [EditTagGroupProvider, showEditTagGroup] = createConfirmProvider(
     EditTagGroupForm,

@@ -4,11 +4,9 @@ import { useMemo } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod/mini";
 import { useCurrency } from "@/hooks/use-currency";
-import type { CustomCurrency } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import createConfirmProvider from "../confirm";
 import { Button } from "../ui/button";
-import { Checkbox } from "../ui/checkbox";
 import {
     Form,
     FormControl,
@@ -78,10 +76,11 @@ const EditTagForm = ({
                             );
                         }}
                     ></FormField>
-                    <Collapsible.Root>
+                    <Collapsible.Root className="group">
                         <Collapsible.Trigger>
-                            <div className="text-sm opacity-60">
+                            <div className="text-xs opacity-60 flex items-center gap-1">
                                 {t("more-tag-settings")}
+                                <i className="w-4 h-4 icon-[mdi--chevron-right] transition-all rotate-90 group-[[data-state=closed]]:rotate-0"></i>
                             </div>
                         </Collapsible.Trigger>
                         <Collapsible.CollapsibleContent>
@@ -90,13 +89,15 @@ const EditTagForm = ({
                                 name="preferCurrency"
                                 render={({ field }) => {
                                     return (
-                                        <FormItem>
-                                            <FormLabel>
-                                                {t("prefer-currency")}
-                                            </FormLabel>
-                                            <FormDescription>
-                                                {t("prefer-currency-desc")}
-                                            </FormDescription>
+                                        <FormItem className="flex items-center justify-between">
+                                            <div className="max-w-[50%]">
+                                                <FormLabel>
+                                                    {t("prefer-currency")}
+                                                </FormLabel>
+                                                <FormDescription>
+                                                    {t("prefer-currency-desc")}
+                                                </FormDescription>
+                                            </div>
                                             <FormControl>
                                                 <Select
                                                     value={field.value}
@@ -142,7 +143,9 @@ const EditTagForm = ({
                                                             )
                                                         ) : (
                                                             <div className="text-sm opacity-60">
-                                                                请先在币种设置中添加快捷入口
+                                                                {t(
+                                                                    "empty-currency-quick-entries",
+                                                                )}
                                                             </div>
                                                         )}
                                                     </SelectContent>

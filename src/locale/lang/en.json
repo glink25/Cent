@@ -461,5 +461,6 @@
   "prefer-currency-desc": "Auto switch to prefer currency when select tag",
   "group-tags": "Include Tags",
   "more-tag-settings": "More",
-  "un-grouped": "Un-group"
+  "un-grouped": "Un-group",
+  "empty-currency-quick-entries": "Add quick entries in Currency Settings first"
 }

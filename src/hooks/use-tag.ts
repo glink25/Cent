@@ -2,6 +2,7 @@ import { useCallback, useMemo } from "react";
 import { useShallow } from "zustand/shallow";
 import type { BillTag } from "@/components/bill-tag/type";
 import type { BillTagGroup } from "@/ledger/type";
+import { t } from "@/locale";
 import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
 
@@ -63,7 +64,7 @@ export function useTag() {
         return [
             ...group,
             {
-                name: "Ungroup",
+                name: t("un-grouped"),
                 id: "un-group",
                 tags: unGroup,
                 color: "gray",

@@ -469,5 +469,6 @@
   "prefer-currency-desc": "记账时选中标签时会自动切换到对应币种",
   "group-tags": "包含标签",
   "more-tag-settings": "更多设置",
-  "un-grouped": "未分组"
+  "un-grouped": "未分组",
+  "empty-currency-quick-entries": "请先在币种设置中添加快捷入口"
 }

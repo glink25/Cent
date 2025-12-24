@@ -45,7 +45,7 @@ function TagGroup({
                     </div>
                 </div>
             </DropdownMenuTrigger>
-            <DropdownMenuContent>
+            <DropdownMenuContent align="start">
                 {group.tags.map((tag) => {
                     return (
                         <DropdownMenuCheckboxItem
