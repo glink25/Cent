@@ -15,6 +15,7 @@ export type DateSlicedProps = {
     onCustomValueChange?: (
         value: [number | undefined, number | undefined],
     ) => void;
+    onClickSettings?: () => void;
     children?: ReactNode;
 };
 
@@ -106,6 +107,7 @@ export function DateSliced({
     onValueChange,
     onCustomValueChange,
     children,
+    onClickSettings,
 }: DateSlicedProps) {
     const t = useIntl();
     const selectedViewId =
@@ -144,6 +146,18 @@ export function DateSliced({
                             {t(view.label)}
                         </Button>
                     ))}
+                </div>
+
+                <div className="h-9">
+                    {onClickSettings && (
+                        <Button
+                            variant="ghost"
+                            onClick={onClickSettings}
+                            className="text-primary/50"
+                        >
+                            <i className="icon-[mdi--mixer-settings] size-4"></i>
+                        </Button>
+                    )}
                 </div>
             </div>
             <div className="flex gap-2 items-center h-9">

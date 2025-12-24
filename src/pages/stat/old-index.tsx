@@ -8,7 +8,10 @@ import { useNavigate, useParams } from "react-router";
 import { useShallow } from "zustand/shallow";
 import { StorageDeferredAPI } from "@/api/storage";
 import type { AnalysisResult } from "@/api/storage/analysis";
-import { BillFilterProvider, showBillFilter } from "@/components/bill-filter";
+import {
+    BillFilterViewProvider,
+    showBillFilterView,
+} from "@/components/bill-filter";
 import { DateInput } from "@/components/bill-filter/form";
 import { showBillInfo } from "@/components/bill-info";
 import Chart, { type ChartInstance } from "@/components/chart";
@@ -492,10 +495,12 @@ export default function Page() {
                                             return;
                                         }
                                         const id = selectedViewId;
-                                        const action = await showBillFilter({
-                                            filter,
-                                            name: viewName,
-                                        });
+                                        const action = await showBillFilterView(
+                                            {
+                                                filter,
+                                                name: viewName,
+                                            },
+                                        );
                                         if (action === "delete") {
                                             await updateFilter(id);
                                             setSelectedViewId("monthly");
@@ -705,7 +710,7 @@ export default function Page() {
                     <div className="w-full h-20 flex-shrink-0"></div>
                 </div>
             </div>
-            <BillFilterProvider />
+            <BillFilterViewProvider />
         </div>
     );
 }

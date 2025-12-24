@@ -8,7 +8,7 @@ import BillFilterForm from "./form";
 
 export default BillFilterForm;
 
-function BillFilterFormed({
+function BillFilterView({
     edit,
     onCancel,
     onConfirm,
@@ -24,8 +24,8 @@ function BillFilterFormed({
     const [name, setName] = useState(edit?.name ?? "");
     const t = useIntl();
     return (
-        <div className="flex flex-col p-4 gap-2">
-            <label className="outline rounded px-2 py-1 w-fit">
+        <div className="flex flex-col p-2 gap-2 h-[55vh] overflow-hidden">
+            <label className="outline rounded px-4 py-1 w-fit">
                 <input
                     className="w-min outline-none font-semibold text-lg"
                     value={name}
@@ -35,12 +35,14 @@ function BillFilterFormed({
                 ></input>
                 <i className="icon-[mdi--edit-outline]"></i>
             </label>
-            <BillFilterForm
-                form={form}
-                setForm={setForm}
-                className="text-xs md:text-sm"
-            />
-            <div className="w-full flex justify-between gap-2">
+            <div className="flex-1 px-2 overflow-y-auto">
+                <BillFilterForm
+                    form={form}
+                    setForm={setForm}
+                    className="text-xs md:text-sm border-none"
+                />
+            </div>
+            <div className="w-full px-4 flex justify-between gap-2">
                 <Button
                     variant="destructive"
                     onClick={() => {
@@ -75,11 +77,10 @@ function BillFilterFormed({
     );
 }
 
-export const [BillFilterProvider, showBillFilter] = createConfirmProvider(
-    BillFilterFormed,
-    {
+export const [BillFilterViewProvider, showBillFilterView] =
+    createConfirmProvider(BillFilterView, {
         dialogTitle: "Edit Bill Filter",
         fade: true,
         swipe: false,
-    },
-);
+        contentClassName: "overflow-hidden",
+    });

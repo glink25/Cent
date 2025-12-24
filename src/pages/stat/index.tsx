@@ -5,6 +5,10 @@ import { useNavigate, useParams } from "react-router";
 import { useShallow } from "zustand/shallow";
 import { StorageDeferredAPI } from "@/api/storage";
 import type { AnalysisResult } from "@/api/storage/analysis";
+import {
+    BillFilterViewProvider,
+    showBillFilterView,
+} from "@/components/bill-filter";
 import { showBillInfo } from "@/components/bill-info";
 import BillItem from "@/components/ledger/item";
 import { AnalysisCloud } from "@/components/stat/analysic-cloud";
@@ -18,6 +22,7 @@ import {
 } from "@/components/stat/focus-type";
 import { TagItem } from "@/components/stat/tag-item";
 import { Button } from "@/components/ui/button";
+import { useCustomFilters } from "@/hooks/use-custom-filters";
 import { useTag } from "@/hooks/use-tag";
 import type { BillFilter } from "@/ledger/extra-type";
 import type { Bill } from "@/ledger/type";
@@ -38,7 +43,7 @@ export default function Page() {
         useShallow((state) => state.infos?.meta.customFilters),
     );
 
-    const allFilters = useMemo(() => {
+    const allFilterViews = useMemo(() => {
         if (customFilters?.some((f) => f.id === "default-filter")) {
             return customFilters;
         }
@@ -52,9 +57,14 @@ export default function Page() {
         ];
     }, [t, customFilters]);
 
-    const [filterId, setFilterId] = useState(id ?? allFilters[0].id);
+    const [filterViewId, setFilterViewId] = useState(
+        id ?? allFilterViews[0].id,
+    );
 
-    const selectedFilter = allFilters.find((v) => v.id === filterId)?.filter;
+    const selectedFilterView = allFilterViews.find(
+        (v) => v.id === filterViewId,
+    );
+    const selectedFilter = selectedFilterView?.filter;
     const fullRange = [
         selectedFilter?.start ?? startTime,
         selectedFilter?.end ?? endTime,
@@ -182,28 +192,50 @@ export default function Page() {
         });
     }, [analysisUnit, focusType, realRange[0], realRange[1]]);
 
+    const { updateFilter } = useCustomFilters();
+    const toChangeFilter =
+        filterViewId === "default-filter"
+            ? undefined
+            : async () => {
+                  console.log(selectedFilterView, "sss");
+                  if (!selectedFilterView) {
+                      return;
+                  }
+                  const id = selectedFilterView.id;
+                  console.log(selectedFilterView, "ssssdsd");
+                  const action = await showBillFilterView({
+                      filter: selectedFilterView.filter,
+                      name: selectedFilterView.name,
+                  });
+                  if (action === "delete") {
+                      await updateFilter(id);
+                      setFilterViewId(allFilterViews[0].id);
+                      return;
+                  }
+                  await updateFilter(id, {
+                      filter: action.filter,
+                      name: action.name,
+                  });
+              };
     return (
         <div className="w-full h-full p-2 flex flex-col items-center justify-center gap-4 overflow-hidden page-show">
             <div className="w-full mx-2 max-w-[600px] flex flex-col gap-2">
                 <div className="w-full flex flex-col gap-2">
                     <div className="w-full flex">
                         <div className="flex-1 flex gap-2 overflow-x-auto scrollbar-hidden">
-                            {allFilters.map((filter) => (
+                            {allFilterViews.map((filter) => (
                                 <Button
                                     key={filter.id}
                                     size={"sm"}
                                     className={cn(
-                                        filterId !== filter.id &&
-                                            "text-primary/50",
+                                        filterViewId !== filter.id
+                                            ? "text-primary/50"
+                                            : "relative after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:rounded-full after:bg-primary/20",
                                     )}
-                                    variant={
-                                        filterId === filter.id
-                                            ? "default"
-                                            : "ghost"
-                                    }
+                                    variant="ghost"
                                     onClick={() => {
                                         setSliceId(undefined);
-                                        setFilterId(filter.id);
+                                        setFilterViewId(filter.id);
                                     }}
                                 >
                                     {filter.name}
@@ -212,7 +244,10 @@ export default function Page() {
                         </div>
                     </div>
                 </div>
-                <DateSliced {...dateSlicedProps}>
+                <DateSliced
+                    {...dateSlicedProps}
+                    onClickSettings={toChangeFilter}
+                >
                     <div className="flex items-center pr-2 relative">
                         <Switch.Root
                             checked={dimension === "user"}
@@ -342,6 +377,7 @@ export default function Page() {
                     <div className="w-full h-20 flex-shrink-0"></div>
                 </div>
             </div>
+            <BillFilterViewProvider />
         </div>
     );
 }
