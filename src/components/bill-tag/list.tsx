@@ -1,3 +1,5 @@
+import { AnimatePresence, motion, type Transition } from "motion/react";
+import { useState } from "react";
 import { v4 } from "uuid";
 import { useTag } from "@/hooks/use-tag";
 import PopupLayout from "@/layouts/popup-layout";
@@ -8,6 +10,13 @@ import Tag from "../tag";
 import { Button } from "../ui/button";
 import { type EditTag, EditTagProvider, showEditTag } from "./tag";
 import { EditTagGroupProvider, showEditTagGroup } from "./tag-group";
+
+const ListTransition: Transition = {
+    layout: {
+        duration: 0.2,
+        ease: "easeInOut",
+    },
+};
 
 export default function TagList({
     onCancel,
@@ -41,6 +50,7 @@ export default function TagList({
         await updateTag(tag?.id ?? v4(), newTag);
     };
 
+    const [animate, setAnimate] = useState(false);
     return (
         <PopupLayout
             onBack={onCancel}
@@ -63,63 +73,75 @@ export default function TagList({
                 </div>
             </div>
             <div className="flex flex-wrap items-center p-2 gap-2">
-                {grouped.map((group) => {
-                    return (
-                        <div
-                            key={group.id}
-                            className="border rounded-md w-full text-sm"
-                        >
-                            <div
-                                className={cn(
-                                    "flex justify-between items-center with-tag-color px-2 py-1 rounded-t-md bg-[var(--current-tag-color)]",
-                                    `tag-${group.color}`,
-                                )}
+                <AnimatePresence initial={false}>
+                    {grouped.map((group, index) => {
+                        return (
+                            <motion.div
+                                key={group.id}
+                                className="border rounded-md w-full text-sm bg-background"
+                                layout="position"
+                                initial={false}
+                                transition={
+                                    animate ? ListTransition : { duration: 0 }
+                                }
                             >
-                                <div className="">
-                                    {group.id === "un-group"
-                                        ? t("un-grouped")
-                                        : group.name}
-                                </div>
-                                <div className="flex items-center gap-1">
-                                    {group.id !== "un-group" && (
-                                        <>
-                                            <Button
-                                                variant="ghost"
-                                                size={"sm"}
-                                                onClick={() =>
-                                                    toUpdateTagGroup(group)
-                                                }
-                                            >
-                                                <i className="icon-[mdi--settings]"></i>
-                                            </Button>
-
-                                            <Button
-                                                size={"sm"}
-                                                variant="ghost"
-                                                onClick={() =>
-                                                    topUpGroup(group.id)
-                                                }
-                                            >
-                                                <i className="icon-[mdi--arrow-collapse-up]"></i>
-                                            </Button>
-                                        </>
+                                <div
+                                    className={cn(
+                                        "flex justify-between items-center with-tag-color px-2 py-1 rounded-t-md bg-[var(--current-tag-color)]",
+                                        `tag-${group.color}`,
                                     )}
+                                >
+                                    <div className="">
+                                        {group.id === "un-group"
+                                            ? t("un-grouped")
+                                            : group.name}
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        {group.id !== "un-group" && (
+                                            <>
+                                                {index !== 0 && (
+                                                    <Button
+                                                        size={"sm"}
+                                                        variant="ghost"
+                                                        onClick={async () => {
+                                                            setAnimate(true);
+                                                            await Promise.resolve();
+                                                            topUpGroup(
+                                                                group.id,
+                                                            );
+                                                        }}
+                                                    >
+                                                        <i className="icon-[mdi--arrow-collapse-up]"></i>
+                                                    </Button>
+                                                )}
+                                                <Button
+                                                    variant="ghost"
+                                                    size={"sm"}
+                                                    onClick={() =>
+                                                        toUpdateTagGroup(group)
+                                                    }
+                                                >
+                                                    <i className="icon-[mdi--settings]"></i>
+                                                </Button>
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="flex flex-wrap items-center p-2 gap-2">
-                                {group.tags.map((tag) => (
-                                    <Tag
-                                        key={tag.id}
-                                        className="gap-1 cursor-grab active:cursor-grabbing"
-                                        onClick={() => toUpdateTag(tag)}
-                                    >
-                                        <span>#{tag.name}</span>
-                                    </Tag>
-                                ))}
-                            </div>
-                        </div>
-                    );
-                })}
+                                <div className="flex flex-wrap items-center p-2 gap-2">
+                                    {group.tags.map((tag) => (
+                                        <Tag
+                                            key={tag.id}
+                                            className="gap-1 cursor-grab active:cursor-grabbing"
+                                            onClick={() => toUpdateTag(tag)}
+                                        >
+                                            <span>#{tag.name}</span>
+                                        </Tag>
+                                    ))}
+                                </div>
+                            </motion.div>
+                        );
+                    })}
+                </AnimatePresence>
             </div>
             <EditTagProvider />
             <EditTagGroupProvider />
