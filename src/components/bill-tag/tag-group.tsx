@@ -24,7 +24,6 @@ import {
     FormLabel,
 } from "../ui/form";
 import { Input } from "../ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger } from "../ui/select";
 import { Switch } from "../ui/switch";
 
 export const createFormSchema = (t: any) =>
