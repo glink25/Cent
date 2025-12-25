@@ -1,4 +1,6 @@
-import { useEffect, useRef } from "react";
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
+import { type ReactNode, useCallback, useEffect, useRef } from "react";
 import { type BillTagGroupDetail, useTag } from "@/hooks/use-tag";
 import { cn } from "@/utils";
 import {
@@ -7,6 +9,40 @@ import {
     DropdownMenuContent,
     DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
+
+function TagTrigger({
+    children,
+    selected,
+    color,
+    onClick,
+}: {
+    children?: ReactNode;
+    selected?: boolean;
+    color?: string;
+    onClick?: () => void;
+}) {
+    return (
+        <div
+            onClick={onClick}
+            className={cn(
+                "flex flex-shrink-0 items-center justify-center gap-2 with-tag-color border border-input px-2 py-1 rounded-md cursor-pointer",
+                `tag-${color}`,
+            )}
+        >
+            <div
+                className={cn(
+                    "w-3 h-3 bg-[var(--current-tag-color)] rounded-full",
+                    selected ? "" : "opacity-40",
+                )}
+            ></div>
+            <div
+                className={`${selected ? "text-[var(--current-tag-color)]" : "opacity-40"}`}
+            >
+                {children}
+            </div>
+        </div>
+    );
+}
 
 function TagGroup({
     selected,
@@ -24,26 +60,39 @@ function TagGroup({
             : groupSelected.length === 1
               ? `#${groupSelected[0].name}`
               : `#${groupSelected[0].name} +${groupSelected.length - 1}`;
+
+    // 如果标签组只包含一个标签，那么无需展开弹窗，可以点击直接选中/取消选中该标签
+    if (group.tagIds?.length === 1) {
+        const singleTagId = group.tagIds[0];
+        const selected = groupSelected.some((v) => v.id === singleTagId);
+        return (
+            <TagTrigger
+                color={group.color}
+                selected={selected}
+                onClick={() => {
+                    if (selected) {
+                        onSelectChange(
+                            group.tagIds?.filter((v) => v !== singleTagId) ??
+                                [],
+                        );
+                    } else {
+                        onSelectChange([...(group.tagIds ?? []), singleTagId]);
+                    }
+                }}
+            >
+                {formatValue}
+            </TagTrigger>
+        );
+    }
     return (
         <DropdownMenu>
-            <DropdownMenuTrigger>
-                <div
-                    className={cn(
-                        "flex items-center justify-center gap-2 with-tag-color border border-input px-2 py-1 rounded-md",
-                        `tag-${group.color}`,
-                    )}
+            <DropdownMenuTrigger className="flex-shrink-0">
+                <TagTrigger
+                    color={group.color}
+                    selected={groupSelected.length > 0}
                 >
-                    <div
-                        className={cn(
-                            "w-3 h-3 bg-[var(--current-tag-color)] rounded-full",
-                        )}
-                    ></div>
-                    <div
-                        className={`${groupSelected.length > 0 ? "text-[var(--current-tag-color)]" : ""}`}
-                    >
-                        {formatValue}
-                    </div>
-                </div>
+                    {formatValue}
+                </TagTrigger>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
                 {group.tags.map((tag) => {
@@ -107,7 +156,7 @@ function TagGroup({
 
 export default function TagGroupSelector({
     selectedTags,
-    onSelectChange,
+    onSelectChange: onChange,
     isCreate,
 }: {
     selectedTags?: string[];
@@ -115,6 +164,12 @@ export default function TagGroupSelector({
     isCreate: boolean;
 }) {
     const { grouped } = useTag();
+
+    // 统一去重
+    const onSelectChange: typeof onChange = useCallback(
+        (v: string[], ...args) => onChange(Array.from(new Set(v)), ...args),
+        [onChange],
+    );
 
     // 进入记账页面后自动选中标签
     const autoSelect = () => {

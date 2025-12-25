@@ -91,7 +91,7 @@ export default function TagList({
                                         `tag-${group.color}`,
                                     )}
                                 >
-                                    <div className="">
+                                    <div className="text-white">
                                         {group.id === "un-group"
                                             ? t("un-grouped")
                                             : group.name}
@@ -137,6 +137,9 @@ export default function TagList({
                                             <span>#{tag.name}</span>
                                         </Tag>
                                     ))}
+                                    {group.tags.length === 0 && (
+                                        <div>{t("none")}</div>
+                                    )}
                                 </div>
                             </motion.div>
                         );
