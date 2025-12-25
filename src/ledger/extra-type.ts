@@ -53,6 +53,7 @@ export type BillFilter = Partial<{
     maxAmountNumber: number;
     assets?: boolean;
     tags?: string[];
+    excludeTags?: string[];
     baseCurrency: string;
     currencies?: string[];
 }>;

@@ -464,5 +464,7 @@
   "un-grouped": "Un-group",
   "empty-currency-quick-entries": "Add quick entries in Currency Settings first",
   "default-filter-name": "Default",
-  "new-filter-name": "New Filter"
+  "new-filter-name": "New Filter",
+  "tags-excluded-short": "Exclude",
+  "tags-include-short": "Include"
 }

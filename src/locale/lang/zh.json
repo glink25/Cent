@@ -472,5 +472,7 @@
   "un-grouped": "未分组",
   "empty-currency-quick-entries": "请先在币种设置中添加快捷入口",
   "default-filter-name": "默认",
-  "new-filter-name": "新过滤器"
+  "new-filter-name": "新过滤器",
+  "tags-include-short": "包含",
+  "tags-excluded-short": "排除"
 }

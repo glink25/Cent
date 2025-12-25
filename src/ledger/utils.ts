@@ -87,6 +87,13 @@ const isTagsMatched = (bill: Bill, tagIds?: string[]) => {
         : true;
 };
 
+const isExcludeTagsMatched = (bill: Bill, tagIds?: string[]) => {
+    if ((tagIds?.length ?? 0) === 0) {
+        return true;
+    }
+    return tagIds?.every((excludeTag) => !bill.tagIds?.includes(excludeTag));
+};
+
 const isCurrenciesMatched = (
     bill: Bill,
     base: string,
@@ -111,7 +118,8 @@ export const isBillMatched = (bill: Bill, filter: BillFilter) => {
             bill,
             filter.baseCurrency ?? DefaultBaseCurrencyId,
             filter.currencies,
-        )
+        ) &&
+        isExcludeTagsMatched(bill, filter.excludeTags)
     );
 };
 
