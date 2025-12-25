@@ -54,6 +54,7 @@ export default function TagList({
     return (
         <PopupLayout
             onBack={onCancel}
+            className="overflow-hidden h-full"
             title={t("edit-tags")}
             right={
                 <div className="flex items-center gap-2">
@@ -72,7 +73,7 @@ export default function TagList({
                     {t("click-tag-to-edit")}
                 </div>
             </div>
-            <div className="flex flex-wrap items-center p-2 gap-2">
+            <div className="flex-1 overflow-y-auto flex flex-wrap items-center p-2 gap-2">
                 <AnimatePresence initial={false}>
                     {grouped.map((group, index) => {
                         return (
