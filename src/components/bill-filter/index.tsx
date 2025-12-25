@@ -13,7 +13,7 @@ function BillFilterView({
     onCancel,
     onConfirm,
 }: {
-    edit?: { filter: BillFilter; name?: string };
+    edit?: { filter: BillFilter; name?: string; hideDelete?: boolean };
     onCancel?: () => void;
     onConfirm?: (v: "delete" | { filter: BillFilter; name?: string }) => void;
 }) {
@@ -43,20 +43,24 @@ function BillFilterView({
                 />
             </div>
             <div className="w-full px-4 flex justify-between gap-2">
-                <Button
-                    variant="destructive"
-                    onClick={() => {
-                        const ok = confirm(
-                            t("are-you-sure-to-delete-this-filter"),
-                        );
-                        if (!ok) {
-                            return;
-                        }
-                        onConfirm?.("delete");
-                    }}
-                >
-                    {t("delete")}
-                </Button>
+                <div>
+                    {!edit?.hideDelete && (
+                        <Button
+                            variant="destructive"
+                            onClick={() => {
+                                const ok = confirm(
+                                    t("are-you-sure-to-delete-this-filter"),
+                                );
+                                if (!ok) {
+                                    return;
+                                }
+                                onConfirm?.("delete");
+                            }}
+                        >
+                            {t("delete")}
+                        </Button>
+                    )}
+                </div>
                 <div className="flex items-center gap-2">
                     <Button variant="ghost" onClick={() => onCancel?.()}>
                         {t("cancel")}
