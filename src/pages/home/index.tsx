@@ -66,7 +66,9 @@ export default function Page() {
     }, [todayBills]);
 
     const { budgets: allBudgets } = useBudget();
-    const budgets = allBudgets.filter((b) => b.joiners.includes(userId));
+    const budgets = allBudgets.filter((b) => {
+        return b.joiners.includes(userId) && b.start < Date.now();
+    });
 
     const budgetContainer = useRef<HTMLDivElement>(null);
     const { count: budgetCount, index: curBudgetIndex } = useSnap(

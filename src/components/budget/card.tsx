@@ -75,6 +75,31 @@ export default function BudgetCard({
             </div>
         );
     }
+
+    const CategoryBudgetDetails = (
+        <>
+            {encountered?.categoriesUsed?.map((v) => {
+                const category = categories.find((c) => c.id === v.id);
+                const total =
+                    budget.categoriesBudget?.find((c) => c.id === v.id)
+                        ?.budget ?? 0;
+                const td = todayEncountered?.categoriesUsed?.find(
+                    (c) => c.id === v.id,
+                );
+                return (
+                    <div key={v.id}>
+                        {category?.name}
+                        <BudgetBar
+                            total={total}
+                            used={v.used}
+                            todayUsed={td?.used}
+                            time={time}
+                        />
+                    </div>
+                );
+            })}
+        </>
+    );
     return (
         <div
             className={cn(
@@ -100,51 +125,34 @@ export default function BudgetCard({
                         )}
                     </div>
                 </div>
-                <div className="flex flex-col">
-                    <BudgetBar
-                        total={total}
-                        used={encountered.totalUsed}
-                        todayUsed={todayEncountered?.totalUsed}
-                        time={time}
-                    />
-                    <div>
-                        {(encountered?.categoriesUsed?.length ?? 0) > 0 && (
-                            <Collapsible.Trigger
-                                className="h-4 flex justify-end w-full group"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                }}
-                            >
-                                <i className=" group-[[data-state=open]]:icon-[mdi--chevron-down] group-[[data-state=closed]]:icon-[mdi--chevron-up]" />
-                            </Collapsible.Trigger>
-                        )}
+                {budget.totalBudget !== 0 &&
+                encountered?.categoriesUsed?.length === 1 ? (
+                    <div className="flex flex-col">
+                        <BudgetBar
+                            total={total}
+                            used={encountered.totalUsed}
+                            todayUsed={todayEncountered?.totalUsed}
+                            time={time}
+                        />
+                        <div>
+                            {(encountered?.categoriesUsed?.length ?? 0) > 0 && (
+                                <Collapsible.Trigger
+                                    className="h-4 flex justify-end w-full group"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                    }}
+                                >
+                                    <i className=" group-[[data-state=open]]:icon-[mdi--chevron-down] group-[[data-state=closed]]:icon-[mdi--chevron-up]" />
+                                </Collapsible.Trigger>
+                            )}
+                        </div>
+                        <Collapsible.Content className="data-[state=open]:animate-collapse-open data-[state=closed]:animate-collapse-close data-[state=closed]:overflow-hidden">
+                            {CategoryBudgetDetails}
+                        </Collapsible.Content>
                     </div>
-                    <Collapsible.Content className="data-[state=open]:animate-collapse-open data-[state=closed]:animate-collapse-close data-[state=closed]:overflow-hidden">
-                        {encountered?.categoriesUsed?.map((v) => {
-                            const category = categories.find(
-                                (c) => c.id === v.id,
-                            );
-                            const total =
-                                budget.categoriesBudget?.find(
-                                    (c) => c.id === v.id,
-                                )?.budget ?? 0;
-                            const td = todayEncountered?.categoriesUsed?.find(
-                                (c) => c.id === v.id,
-                            );
-                            return (
-                                <div key={v.id}>
-                                    {category?.name}
-                                    <BudgetBar
-                                        total={total}
-                                        used={v.used}
-                                        todayUsed={td?.used}
-                                        time={time}
-                                    />
-                                </div>
-                            );
-                        })}
-                    </Collapsible.Content>
-                </div>
+                ) : (
+                    CategoryBudgetDetails
+                )}
             </Collapsible.Root>
         </div>
     );
