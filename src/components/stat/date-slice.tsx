@@ -85,8 +85,8 @@ function calcDateSlice(
     let i = 0;
     while (true && i < (max ?? Infinity)) {
         i += 1;
-        end = start;
-        start = end.subtract(1, unit);
+        end = start.subtract(1, "ms");
+        start = end.startOf(unit);
         if (end.isAfter(START)) {
             s.push({
                 end,
