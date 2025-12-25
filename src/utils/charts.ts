@@ -377,7 +377,7 @@ export function processBillDataForCharts(
     total.income = amountToNumber(total.income);
     total.balance = amountToNumber(total.balance);
 
-    tagStructure.values().forEach((v) => {
+    Array.from(tagStructure.values()).forEach((v) => {
         v.income = amountToNumber(v.income);
         v.expense = amountToNumber(v.expense);
     });
