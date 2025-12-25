@@ -25,7 +25,7 @@ import { TagItem } from "@/components/stat/tag-item";
 import { Button } from "@/components/ui/button";
 import { useCustomFilters } from "@/hooks/use-custom-filters";
 import { useTag } from "@/hooks/use-tag";
-import type { BillFilter } from "@/ledger/extra-type";
+import type { BillFilter, BillFilterView } from "@/ledger/extra-type";
 import type { Bill } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
@@ -51,9 +51,9 @@ export default function Page() {
         return [
             {
                 id: "default-filter",
-                filter: {} as BillFilter,
+                filter: {},
                 name: t("default-filter-name"),
-            },
+            } as BillFilterView,
             ...(customFilters ?? []),
         ];
     }, [t, customFilters]);
@@ -70,9 +70,10 @@ export default function Page() {
         selectedFilter?.start ?? startTime,
         selectedFilter?.end ?? endTime,
     ] as [number, number];
+
     const {
         sliceRange,
-        viewType: selectedViewId,
+        viewType,
         props: dateSlicedProps,
         setSliceId,
     } = useDateSliced({
@@ -80,8 +81,8 @@ export default function Page() {
         selectCustomSliceWhenInitial: Boolean(id),
     });
     const realRange = [
-        sliceRange?.[0] ?? startTime,
-        sliceRange?.[1] ?? endTime,
+        sliceRange?.[0] ?? selectedFilter?.start ?? startTime,
+        sliceRange?.[1] ?? selectedFilter?.end ?? endTime,
     ];
 
     const navigate = useNavigate();
@@ -121,11 +122,12 @@ export default function Page() {
     const [dimension, setDimension] = useState<"category" | "user">("category");
 
     const { dataSources, Part, setSelectedCategoryName } = useChartPart({
-        selectedViewId,
+        viewType,
         seeDetails,
         focusType,
         filtered,
         dimension,
+        displayCurrency: selectedFilterView?.displayCurrency,
     });
 
     const totalMoneys = FocusTypes.map((t) => dataSources.total[t]);
@@ -166,11 +168,11 @@ export default function Page() {
         }, [filtered]);
     const [analysis, setAnalysis] = useState<AnalysisResult>();
     const analysisUnit =
-        selectedViewId === "yearly"
+        viewType === "yearly"
             ? "year"
-            : selectedViewId === "monthly"
+            : viewType === "monthly"
               ? "month"
-              : selectedViewId === "weekly"
+              : viewType === "weekly"
                 ? "week"
                 : "day";
     useEffect(() => {
@@ -202,18 +204,15 @@ export default function Page() {
                       return;
                   }
                   const id = selectedFilterView.id;
-                  const action = await showBillFilterView({
-                      filter: selectedFilterView.filter,
-                      name: selectedFilterView.name,
-                  });
+                  const action = await showBillFilterView(selectedFilterView);
                   if (action === "delete") {
                       await updateFilter(id);
                       setFilterViewId(allFilterViews[0].id);
                       return;
                   }
                   await updateFilter(id, {
-                      filter: action.filter,
-                      name: action.name,
+                      ...action,
+                      name: action.name ?? selectedFilterView.name,
                   });
               };
     const toReOrder = async () => {
@@ -237,7 +236,7 @@ export default function Page() {
         if (newFilter === "delete" || !newFilter.name) {
             return;
         }
-        const id = await addFilter(newFilter.name, newFilter.filter);
+        const id = await addFilter(newFilter.name, newFilter);
         if (!id) {
             return;
         }

@@ -3,6 +3,7 @@ import { merge } from "lodash-es";
 import type { ECOption } from "@/components/chart";
 import { amountToNumber } from "@/ledger/bill";
 import type { Bill, BillType } from "@/ledger/type";
+import { toFixed } from "./number";
 import { formatDate } from "./time";
 
 /**
@@ -33,6 +34,8 @@ export interface ProcessBillDataOptions {
         name: string;
     };
     gap?: OpUnitType;
+    displayCurrency?: string;
+    rateToDisplayCurrency?: number;
 }
 
 // --- 定义我们函数的输出结构 ---
@@ -147,7 +150,11 @@ export function processBillDataForCharts(
     // 2. 一次循环遍历，使用整数进行聚合
     for (const bill of bills) {
         // 【修正】直接使用整数 amount
-        const amount = bill.amount;
+        const amount = transformToDisplayCurrencyAmount(
+            bill,
+            options.displayCurrency,
+            options.rateToDisplayCurrency,
+        );
         const dateStr = formatDate(bill.time, gap);
         const creatorId = String(bill.creatorId);
 
@@ -184,7 +191,15 @@ export function processBillDataForCharts(
             userTotals.get(creatorId)!.income += amount;
 
             // 比较仍然基于整数，是准确的
-            if (!highestIncomeBill || amount > highestIncomeBill.amount) {
+            if (
+                !highestIncomeBill ||
+                amount >
+                    transformToDisplayCurrencyAmount(
+                        highestIncomeBill,
+                        options.displayCurrency,
+                        options.rateToDisplayCurrency,
+                    )
+            ) {
                 highestIncomeBill = bill;
             }
         } else {
@@ -204,7 +219,15 @@ export function processBillDataForCharts(
                 userTotals.set(creatorId, { income: 0, expense: 0 });
             userTotals.get(creatorId)!.expense += amount;
 
-            if (!highestExpenseBill || amount > highestExpenseBill.amount) {
+            if (
+                !highestExpenseBill ||
+                amount >
+                    transformToDisplayCurrencyAmount(
+                        highestExpenseBill,
+                        options.displayCurrency,
+                        options.rateToDisplayCurrency,
+                    )
+            ) {
                 highestExpenseBill = bill;
             }
         }
@@ -530,3 +553,17 @@ export const structureOption = (dataset: any[], options?: ECOption) =>
         },
         options,
     );
+
+const transformToDisplayCurrencyAmount = (
+    bill: Bill,
+    displayCurrency?: string,
+    rateToDisplayCurrency?: number,
+) => {
+    if (displayCurrency === undefined) {
+        return bill.amount;
+    }
+    if (bill.currency?.target === displayCurrency) {
+        return bill.currency.amount;
+    }
+    return toFixed(bill.amount / (rateToDisplayCurrency ?? 1), 2);
+};

@@ -58,6 +58,13 @@ export type BillFilter = Partial<{
     currencies?: string[];
 }>;
 
+export type BillFilterView = {
+    id: string;
+    filter: BillFilter;
+    name: string;
+    displayCurrency?: string;
+};
+
 // 个人配置，不需要转换，可以略过
 export type PersonalMeta = {
     names?: Record<string, string>;
