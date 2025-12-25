@@ -23,6 +23,7 @@ import {
 } from "@/components/stat/focus-type";
 import { TagItem } from "@/components/stat/tag-item";
 import { Button } from "@/components/ui/button";
+import { useCurrency } from "@/hooks/use-currency";
 import { useCustomFilters } from "@/hooks/use-custom-filters";
 import { useTag } from "@/hooks/use-tag";
 import type { BillFilter, BillFilterView } from "@/ledger/extra-type";
@@ -66,6 +67,7 @@ export default function Page() {
         (v) => v.id === filterViewId,
     );
     const selectedFilter = selectedFilterView?.filter;
+
     const fullRange = [
         selectedFilter?.start ?? startTime,
         selectedFilter?.end ?? endTime,
@@ -243,30 +245,43 @@ export default function Page() {
         setSliceId(undefined);
         setFilterViewId(id);
     };
+
+    const { allCurrencies, baseCurrency } = useCurrency();
     return (
         <div className="w-full h-full p-2 flex flex-col items-center justify-center gap-4 overflow-hidden page-show">
             <div className="w-full mx-2 max-w-[600px] flex flex-col gap-2">
                 <div className="w-full flex flex-col gap-2">
                     <div className="w-full flex">
                         <div className="flex-1 flex gap-2 overflow-x-auto scrollbar-hidden">
-                            {allFilterViews.map((filter) => (
-                                <Button
-                                    key={filter.id}
-                                    size={"sm"}
-                                    className={cn(
-                                        filterViewId !== filter.id
-                                            ? "text-primary/50"
-                                            : "relative after:absolute after:bottom-[2px] after:left-3 after:w-[calc(100%-24px)] after:h-[2px] after:rounded-full after:bg-primary/20",
-                                    )}
-                                    variant="ghost"
-                                    onClick={() => {
-                                        setSliceId(undefined);
-                                        setFilterViewId(filter.id);
-                                    }}
-                                >
-                                    {filter.name}
-                                </Button>
-                            ))}
+                            {allFilterViews.map((filter) => {
+                                const displayCurrency =
+                                    filter.displayCurrency === baseCurrency.id
+                                        ? undefined
+                                        : allCurrencies.find(
+                                              (v) =>
+                                                  v.id ===
+                                                  filter.displayCurrency,
+                                          );
+                                return (
+                                    <Button
+                                        key={filter.id}
+                                        size={"sm"}
+                                        className={cn(
+                                            filterViewId !== filter.id
+                                                ? "text-primary/50"
+                                                : "relative after:absolute after:bottom-[2px] after:left-3 after:w-[calc(100%-24px)] after:h-[2px] after:rounded-full after:bg-primary/20",
+                                        )}
+                                        variant="ghost"
+                                        onClick={() => {
+                                            setSliceId(undefined);
+                                            setFilterViewId(filter.id);
+                                        }}
+                                    >
+                                        {displayCurrency?.symbol}
+                                        {filter.name}
+                                    </Button>
+                                );
+                            })}
                         </div>
                         <div className="">
                             <Button

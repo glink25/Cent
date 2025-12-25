@@ -58,19 +58,21 @@ function BillFilterView({
                     setForm={setForm}
                     className="text-xs md:text-sm border-none"
                 />
-                <div className="text-xs opacity-60 pb-2">过滤器设置</div>
+                <div className="text-xs opacity-60 pb-2">
+                    {t("stat-view-settings")}
+                </div>
                 <div className="text-xs md:text-sm flex justify-between items-center">
                     <div>
                         <Popover>
                             <PopoverTrigger>
                                 <div className="flex gap-1 items-center">
-                                    <div>结算币种</div>
+                                    <div>{t("display-currency")}</div>
                                     <i className="icon-[mdi--question-mark-circle-outline]" />
                                 </div>
                             </PopoverTrigger>
-                            <PopoverContent side="bottom">
+                            <PopoverContent side="bottom" className="p-1">
                                 <div className="text-xs opacity-60">
-                                    选择在计算时以何种币种为单位，如果筛选后的账单内存在不同币种，会以最新汇率进行换算，结果可能会有差异
+                                    {t("display-currency-desc")}
                                 </div>
                             </PopoverContent>
                         </Popover>
