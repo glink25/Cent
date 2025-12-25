@@ -108,7 +108,7 @@ export default function Page() {
         if (!book) {
             return;
         }
-        const id = await addFilter(name, form);
+        const id = await addFilter(name, { filter: form });
         navigate(`/stat/${id}`);
     }, [addFilter, form, navigate, t]);
 

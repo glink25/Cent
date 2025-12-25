@@ -3,6 +3,7 @@ import type { Full } from "@/database/stash";
 // @annotation: 其他工具type，无需考虑
 import type {
     BillFilter,
+    BillFilterView,
     BillTagGroup,
     Budget,
     CustomCurrency,
@@ -94,7 +95,7 @@ export type BillTag = {
 // 全局文件配置
 export type GlobalMeta = {
     // 自定义过滤器，可以略过
-    customFilters?: { id: string; filter: BillFilter; name: string }[];
+    customFilters?: BillFilterView[];
     // 自定义预算，可以略过
     budgets?: Budget[];
     // 用户自定义配置，可以略过

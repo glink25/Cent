@@ -472,5 +472,10 @@
   "un-grouped": "未分组",
   "empty-currency-quick-entries": "请先在币种设置中添加快捷入口",
   "default-filter-name": "默认",
-  "new-filter-name": "新过滤器"
+  "new-filter-name": "新过滤器",
+  "tags-include-short": "包含",
+  "tags-excluded-short": "排除",
+  "stat-view-settings": "分析视图设置",
+  "display-currency": "结算币种",
+  "display-currency-desc": "选择在计算时以何种币种为单位，如果筛选后的账单内存在不同币种，会以最新汇率进行换算，结果可能会有差异"
 }

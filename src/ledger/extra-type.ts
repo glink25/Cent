@@ -53,9 +53,17 @@ export type BillFilter = Partial<{
     maxAmountNumber: number;
     assets?: boolean;
     tags?: string[];
+    excludeTags?: string[];
     baseCurrency: string;
     currencies?: string[];
 }>;
+
+export type BillFilterView = {
+    id: string;
+    filter: BillFilter;
+    name: string;
+    displayCurrency?: string;
+};
 
 // 个人配置，不需要转换，可以略过
 export type PersonalMeta = {

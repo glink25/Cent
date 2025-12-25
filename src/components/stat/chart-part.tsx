@@ -2,6 +2,7 @@ import type { ECElementEvent } from "echarts/core";
 import { useCallback, useMemo, useRef, useState } from "react";
 import useCategory from "@/hooks/use-category";
 import { useCreators } from "@/hooks/use-creator";
+import { useCurrency } from "@/hooks/use-currency";
 import type { BillFilter } from "@/ledger/extra-type";
 import type { Bill } from "@/ledger/type";
 import { useIntl } from "@/locale";
@@ -16,25 +17,35 @@ import { Button } from "../ui/button";
 import type { FocusType } from "./focus-type";
 
 export function useChartPart({
-    selectedViewId,
+    viewType,
     seeDetails,
     focusType,
     filtered,
     dimension,
+    displayCurrency,
 }: {
-    selectedViewId: string;
+    viewType: string;
     seeDetails: (append?: Partial<BillFilter>) => void;
     focusType: FocusType;
     filtered: Bill[];
     dimension: "category" | "user";
+    displayCurrency?: string;
 }) {
     const t = useIntl();
+
+    const { convert, baseCurrency } = useCurrency();
+    const rateToDisplayCurrency = useMemo(() => {
+        return displayCurrency
+            ? convert(1, displayCurrency, baseCurrency.id).predict
+            : 1;
+    }, [displayCurrency, baseCurrency.id, convert]);
 
     const trendChart = useRef<ChartInstance>(undefined);
 
     const [selectedCategoryName, setSelectedCategoryName] = useState<string>();
     const { categories } = useCategory();
     const creators = useCreators();
+
     const dataSources = useMemo(
         () =>
             processBillDataForCharts(
@@ -60,11 +71,21 @@ export function useChartPart({
                                 `${id}`,
                         };
                     },
-                    gap: selectedViewId === "yearly" ? "month" : undefined,
+                    gap: viewType === "yearly" ? "month" : undefined,
+                    displayCurrency,
+                    rateToDisplayCurrency,
                 },
                 t,
             ),
-        [filtered, selectedViewId, categories, creators, t],
+        [
+            filtered,
+            viewType,
+            categories,
+            creators,
+            displayCurrency,
+            rateToDisplayCurrency,
+            t,
+        ],
     );
     const charts = useMemo(() => {
         if (dimension === "category") {
