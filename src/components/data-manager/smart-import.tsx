@@ -6,7 +6,6 @@ import { BillCategories } from "@/ledger/category";
 import type { ExportedJSON } from "@/ledger/type";
 import { t, useIntl } from "@/locale";
 import { readClipboard } from "@/utils/clipboard";
-import createConfirmProvider from "../confirm";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import {
@@ -17,7 +16,7 @@ import {
     SelectValue,
 } from "../ui/select";
 import { promptText } from "./llm-prompt";
-import { importFromPreviewResult, showImportPreview } from "./preview";
+import { importFromPreviewResult, showImportPreview } from "./preview-form";
 import AlipayCode from "./schemas/alipay.js?raw";
 import WechatCode from "./schemas/wechat.js?raw";
 
@@ -42,7 +41,7 @@ const getDefaultTransformers = () => [
 
 const CUSTOM_TRANSFORMERS_KEY = "custom-import-transformers";
 
-function SmartImport({ onCancel }: { onCancel?: () => void }) {
+export function SmartImport({ onCancel }: { onCancel?: () => void }) {
     const t = useIntl();
 
     const [selected, setSelected] = useState(
@@ -98,7 +97,6 @@ function SmartImport({ onCancel }: { onCancel?: () => void }) {
     const [file, setFile] = useState<File>();
     const [errorInfo, setErrorInfo] = useState<string>();
     const [, copy] = useCopyToClipboard();
-
     const [loading, setLoading] = useState(false);
 
     const toImport = async () => {
@@ -393,12 +391,3 @@ const checkJSON = (v: unknown) => {
     }
     return v as ExportedJSON;
 };
-
-export const [SmartImportProvider, showSmartImport] = createConfirmProvider(
-    SmartImport,
-    {
-        dialogTitle: "Smart Import",
-        contentClassName:
-            "h-full w-full max-h-full max-w-full rounded-none sm:rounded-md sm:max-h-[55vh] sm:w-[90vw] sm:max-w-[500px]",
-    },
-);

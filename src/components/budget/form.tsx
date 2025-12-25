@@ -44,7 +44,7 @@ import {
 } from "../ui/dropdown-menu";
 import type { Budget } from "./type";
 
-export const createFormSchema = (t: any) =>
+const createFormSchema = (t: any) =>
     z.object({
         title: z.string(),
 

@@ -8,8 +8,9 @@ import { useIntl } from "@/locale";
 import { cn } from "@/utils";
 import Tag from "../tag";
 import { Button } from "../ui/button";
-import { type EditTag, EditTagProvider, showEditTag } from "./tag";
-import { EditTagGroupProvider, showEditTagGroup } from "./tag-group";
+import type { EditTag } from "./tag";
+import { EditTagProvider, showEditTag } from "./tag-form";
+import { EditTagGroupProvider, showEditTagGroup } from "./tag-group-form";
 
 const ListTransition: Transition = {
     layout: {
@@ -73,7 +74,7 @@ export default function TagList({
                     {t("click-tag-to-edit")}
                 </div>
             </div>
-            <div className="flex-1 overflow-y-auto flex flex-wrap items-center p-2 gap-2">
+            <div className="flex-1 overflow-y-auto flex flex-col p-2 gap-2">
                 <AnimatePresence initial={false}>
                     {grouped.map((group, index) => {
                         return (

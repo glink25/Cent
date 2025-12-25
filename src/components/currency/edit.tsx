@@ -5,12 +5,11 @@ import * as z from "zod/mini";
 import { useCurrency } from "@/hooks/use-currency";
 import type { CustomCurrency } from "@/ledger/type";
 import { useIntl } from "@/locale";
-import createConfirmProvider from "../confirm";
 import { Button } from "../ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "../ui/form";
 import { Input } from "../ui/input";
 
-export const createFormSchema = (t: any) =>
+const createFormSchema = (t: any) =>
     z.object({
         name: z.string().check(
             z.maxLength(50, {
@@ -30,7 +29,7 @@ export const createFormSchema = (t: any) =>
 
 type CurrencyEdit = Omit<CustomCurrency, "id"> & { id?: string };
 
-const EditCurrencyForm = ({
+export const EditCurrencyForm = ({
     edit,
     onConfirm,
     onCancel,
@@ -152,14 +151,3 @@ const EditCurrencyForm = ({
         </Form>
     );
 };
-
-export const [EditCurrencyProvider, showEditCurrency] = createConfirmProvider(
-    EditCurrencyForm,
-    {
-        dialogTitle: "Edit Currency",
-        dialogModalClose: false,
-        fade: true,
-        swipe: false,
-        contentClassName: "w-[350px] h-[480px] max-h-[55vh] py-4",
-    },
-);

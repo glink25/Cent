@@ -110,7 +110,7 @@ export default function BillInfo({
                             <div>{t("time")}:</div>
                             <div>{formatTime(edit.time)}</div>
                         </div>
-                        {currency && (
+                        {currency !== undefined && (
                             <div className="flex justify-between items-center my-1 gap-2">
                                 <div>币种:</div>
                                 <div>
@@ -126,7 +126,7 @@ export default function BillInfo({
                                 <div>{`(${edit.location.latitude.toFixed(4)},${edit.location.longitude.toFixed(4)})`}</div>
                             </div>
                         )}
-                        {tags?.length && (
+                        {(tags?.length ?? 0) > 0 && (
                             <div className="flex justify-between items-start my-1">
                                 <div>{t("tags")}:</div>
                                 <div className="flex flex-wrap gap-1 justify-end max-w-[80%]">

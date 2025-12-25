@@ -8,8 +8,10 @@ import useCategory from "@/hooks/use-category";
 import { useIntl } from "@/locale";
 import { useLedgerStore } from "@/store/ledger";
 import { cn } from "@/utils";
-import { BudgetBar, showBudgetDetail, useBudgetDetail } from "./detail";
+import { showBudgetDetail } from "./detail";
+import { BudgetBar } from "./detail-form";
 import type { Budget } from "./type";
+import { useBudgetDetail } from "./use-budget-detail";
 import { budgetEncountered } from "./util";
 
 export default function BudgetCard({

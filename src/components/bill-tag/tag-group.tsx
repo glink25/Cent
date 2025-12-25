@@ -7,7 +7,6 @@ import { useTag } from "@/hooks/use-tag";
 import type { BillTagGroup } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import { cn } from "@/utils";
-import createConfirmProvider from "../confirm";
 import { Button } from "../ui/button";
 import {
     DropdownMenu,
@@ -26,7 +25,7 @@ import {
 import { Input } from "../ui/input";
 import { Switch } from "../ui/switch";
 
-export const createFormSchema = (t: any) =>
+const createFormSchema = (t: any) =>
     z.object({
         name: z.string().check(
             z.maxLength(50, {
@@ -78,7 +77,7 @@ const colors = [
     },
 ];
 
-const EditTagGroupForm = ({
+export const EditTagGroupForm = ({
     edit,
     onConfirm,
     onCancel,
@@ -338,14 +337,3 @@ function ColorPicker({
         </div>
     );
 }
-
-export const [EditTagGroupProvider, showEditTagGroup] = createConfirmProvider(
-    EditTagGroupForm,
-    {
-        dialogTitle: "Edit Tag Group",
-        dialogModalClose: false,
-        fade: true,
-        swipe: false,
-        contentClassName: "w-[350px] h-[480px] max-h-[55vh] py-4",
-    },
-);

@@ -1,10 +1,10 @@
 import createConfirmProvider from "../confirm";
-import { BudgetDetailForm } from "./detail-form";
+import CurrencyListForm from "./list";
 
-export const [BudgetDetailProvider, showBudgetDetail] = createConfirmProvider(
-    BudgetDetailForm,
+export const [CurrencyListProvider, showCurrencyList] = createConfirmProvider(
+    CurrencyListForm,
     {
-        dialogTitle: "Budget Detail",
+        dialogTitle: "Currency",
         dialogModalClose: true,
         contentClassName:
             "h-full w-full max-h-full max-w-full rounded-none sm:rounded-md sm:max-h-[55vh] sm:w-[90vw] sm:max-w-[500px]",
