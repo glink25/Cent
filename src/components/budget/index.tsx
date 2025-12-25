@@ -1,27 +1,11 @@
 import { useIntl } from "@/locale";
-import createConfirmProvider from "../confirm";
 import { Button } from "../ui/button";
-import BudgetEditForm from "./form";
-import BudgetListForm from "./list";
+import { BudgetEditProvider, showBudgetEdit } from "./budget-form";
+import { BudgetProvider, showBudget } from "./list-form";
 
-export const [BudgetProvider, showBudget] = createConfirmProvider(
-    BudgetListForm,
-    {
-        dialogTitle: "Budget",
-        dialogModalClose: true,
-        contentClassName:
-            "h-full w-full max-h-full max-w-full rounded-none sm:rounded-md sm:max-h-[55vh] sm:w-[90vw] sm:max-w-[500px]",
-    },
-);
+export { BudgetProvider, showBudget };
 
-export const [BudgetEditProvider, showBudgetEdit] = createConfirmProvider(
-    BudgetEditForm,
-    {
-        dialogTitle: "Budget Edit",
-        contentClassName:
-            "h-full w-full max-h-full max-w-full rounded-none sm:rounded-md sm:max-h-[55vh] sm:w-[90vw] sm:max-w-[500px]",
-    },
-);
+export { BudgetEditProvider, showBudgetEdit };
 
 export default function Budget() {
     const t = useIntl();

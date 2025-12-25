@@ -5,7 +5,6 @@ import { useForm } from "react-hook-form";
 import * as z from "zod/mini";
 import { useCurrency } from "@/hooks/use-currency";
 import { useIntl } from "@/locale";
-import createConfirmProvider from "../confirm";
 import { Button } from "../ui/button";
 import {
     Form,
@@ -19,7 +18,7 @@ import { Input } from "../ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "../ui/select";
 import type { BillTag } from "./type";
 
-export const createFormSchema = (t: any) =>
+const createFormSchema = (t: any) =>
     z.object({
         name: z.string().check(
             z.maxLength(50, {
@@ -31,7 +30,7 @@ export const createFormSchema = (t: any) =>
 
 export type EditTag = Omit<BillTag, "id"> & { id?: string };
 
-const EditTagForm = ({
+export const EditTagForm = ({
     edit,
     onConfirm,
     onCancel,
@@ -180,14 +179,3 @@ const EditTagForm = ({
         </Form>
     );
 };
-
-export const [EditTagProvider, showEditTag] = createConfirmProvider(
-    EditTagForm,
-    {
-        dialogTitle: "Edit Tag Group",
-        dialogModalClose: false,
-        fade: true,
-        swipe: false,
-        contentClassName: "w-[350px] h-[480px] max-h-[55vh] py-4",
-    },
-);

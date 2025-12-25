@@ -10,7 +10,7 @@ import { cn } from "@/utils";
 import { showSortableList } from "../sortable";
 import { Button } from "../ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { CategoryEditFormProvider, showCategoryEdit } from "./form";
+import { CategoryEditFormProvider, showCategoryEdit } from "./edit";
 import { CategoryItem } from "./item";
 
 export default function CategoryList({

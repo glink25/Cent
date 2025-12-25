@@ -44,7 +44,7 @@ import {
 } from "../ui/dropdown-menu";
 import type { Budget } from "./type";
 
-export const createFormSchema = (t: any) =>
+const createFormSchema = (t: any) =>
     z.object({
         title: z.string(),
 
@@ -154,7 +154,6 @@ export default function BudgetEditForm({
             start: data.start.getTime(),
             end: data.end ? data.end.getTime() : undefined,
         };
-        console.log(formattedData);
         onConfirm?.(formattedData);
     }
     return (
@@ -232,11 +231,15 @@ export default function BudgetEditForm({
                                                     selected={field.value}
                                                     onSelect={field.onChange}
                                                     disabled={(date) =>
-                                                        date > new Date() ||
                                                         date <
-                                                            new Date(
-                                                                "1900-01-01",
-                                                            )
+                                                        new Date("1900-01-01")
+                                                    }
+                                                    endMonth={
+                                                        new Date(
+                                                            new Date().getFullYear() +
+                                                                10,
+                                                            11,
+                                                        )
                                                     }
                                                     initialFocus
                                                 />
@@ -289,6 +292,13 @@ export default function BudgetEditForm({
                                                     className="min-w-[240px] rounded-md p-0"
                                                     selected={field.value}
                                                     onSelect={field.onChange}
+                                                    endMonth={
+                                                        new Date(
+                                                            new Date().getFullYear() +
+                                                                10,
+                                                            11,
+                                                        )
+                                                    }
                                                     disabled={(date) =>
                                                         date <
                                                         form.getValues("start")

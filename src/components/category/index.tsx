@@ -1,17 +1,8 @@
 import { useIntl } from "@/locale";
-import createConfirmProvider from "../confirm";
 import { Button } from "../ui/button";
-import CategoryList from "./list";
+import { CategoryListProvider, showCategoryList } from "./list-form";
 
-export const [CategoryListProvider, showCategoryList] = createConfirmProvider(
-    CategoryList,
-    {
-        dialogTitle: "Category",
-        dialogModalClose: true,
-        contentClassName:
-            "h-full w-full max-h-full max-w-full rounded-none sm:rounded-md sm:max-h-[55vh] sm:w-[90vw] sm:max-w-[500px]",
-    },
-);
+export { CategoryListProvider, showCategoryList };
 
 export default function CategorySettingsItem() {
     const t = useIntl();

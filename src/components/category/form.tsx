@@ -32,7 +32,7 @@ import { ICONS } from "./icons";
 
 const NO_PARENT = "__noparent";
 
-export const createFormSchema = (t: any) =>
+const createFormSchema = (t: any) =>
     z.object({
         name: z.string().check(
             z.maxLength(50, {
@@ -392,10 +392,3 @@ export default function CategoryEditForm({
         </Form>
     );
 }
-
-export const [CategoryEditFormProvider, showCategoryEdit] =
-    createConfirmProvider(CategoryEditForm, {
-        dialogTitle: "Category Edit",
-        contentClassName:
-            "h-full w-full max-h-full max-w-full rounded-none sm:rounded-md sm:max-h-[55vh] sm:w-[90vw] sm:max-w-[500px]",
-    });

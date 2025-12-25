@@ -1,5 +1,5 @@
 import { VisuallyHidden } from "radix-ui";
-import { type ReactNode, useCallback } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo } from "react";
 import { useShallow } from "zustand/shallow";
 import { cn } from "@/utils";
 import {
@@ -10,7 +10,7 @@ import {
     DialogPortal,
     DialogTitle,
 } from "../ui/dialog";
-import { confirmStoreFactory } from "./state";
+import { useGlobalConfirmStore } from "./state"; // 引入上面创建的全局 store
 
 export default function createConfirmProvider<Value, Returned = Value>(
     Form: (props: {
@@ -34,39 +34,45 @@ export default function createConfirmProvider<Value, Returned = Value>(
         swipe?: boolean;
     },
 ) {
-    const useStore = confirmStoreFactory<Value, Returned>();
+    // 1. 为每个 Provider 实例生成一个唯一的 ID (在闭包中唯一)
+    const instanceId = `confirm_${Math.random().toString(36).slice(2, 9)}`;
+
     function Confirm() {
-        const [visible, editBill, controller] = useStore(
-            useShallow((state) => {
-                return [state.visible, state.edit, state.controller];
-            }),
+        // 2. 仅监听属于自己 ID 的那部分状态
+        const state = useGlobalConfirmStore(
+            useShallow((s) => s.instances[instanceId]),
         );
-        // if (!visible) {
-        // 	return null;
-        // }
+
+        // 3. 组件卸载时清理全局 Store 中的数据，避免内存泄漏
+        useEffect(() => {
+            return () => useGlobalConfirmStore.getState().remove(instanceId);
+        }, []);
+        // 如果该实例还未初始化（从未调用过 open），则不渲染
+        if (!state) return null;
+
+        const { visible, edit, controller } = state;
 
         const onCancel = () => {
             controller?.reject();
-            useStore
-                .getState()
-                .update({ visible: false, controller: undefined });
+            useGlobalConfirmStore.getState().update(instanceId, {
+                visible: false,
+                controller: undefined,
+            });
         };
+
         const onConfirm = (v: Returned) => {
             controller?.resolve(v);
-            useStore
-                .getState()
-                .update({ visible: false, controller: undefined });
+            useGlobalConfirmStore.getState().update(instanceId, {
+                visible: false,
+                controller: undefined,
+            });
         };
+
         return (
             <Dialog
                 open={visible}
                 onOpenChange={(v) => {
-                    // if (dialogModalClose && !v) {
-                    //     onCancel();
-                    // }
-                    if (!v) {
-                        onCancel();
-                    }
+                    if (!v) onCancel();
                 }}
             >
                 <DialogPortal>
@@ -79,20 +85,15 @@ export default function createConfirmProvider<Value, Returned = Value>(
                                 "pointer-events-auto bg-background max-h-[55vh] w-[90vw] max-w-[500px] rounded-md overflow-y-auto",
                                 contentClassName,
                             )}
-                            onOpenAutoFocus={useCallback((e: Event) => {
+                            onOpenAutoFocus={(e) => {
                                 (
                                     document.activeElement as HTMLElement
                                 )?.blur?.();
                                 e.preventDefault();
-                            }, [])}
-                            onInteractOutside={useCallback(
-                                (e: Event) => {
-                                    if (!dialogModalClose) {
-                                        e.preventDefault();
-                                    }
-                                },
-                                [dialogModalClose],
-                            )}
+                            }}
+                            onInteractOutside={(e) => {
+                                if (!dialogModalClose) e.preventDefault();
+                            }}
                         >
                             <VisuallyHidden.Root>
                                 <DialogTitle>{dialogTitle}</DialogTitle>
@@ -101,7 +102,7 @@ export default function createConfirmProvider<Value, Returned = Value>(
                                 </DialogDescription>
                             </VisuallyHidden.Root>
                             <Form
-                                edit={editBill}
+                                edit={edit}
                                 onCancel={onCancel}
                                 onConfirm={onConfirm}
                             />
@@ -112,7 +113,11 @@ export default function createConfirmProvider<Value, Returned = Value>(
         );
     }
 
-    const confirm = useStore.getState().open;
+    // 4. 暴露的 open 方法封装了 instanceId
+    const confirm = (value?: Value) =>
+        useGlobalConfirmStore
+            .getState()
+            .open<Value, Returned>(instanceId, value);
 
     return [Confirm, confirm] as const;
 }

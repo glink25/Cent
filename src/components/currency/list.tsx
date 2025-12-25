@@ -12,7 +12,7 @@ import { showSortableGroup } from "../sortable/group";
 import { Button } from "../ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "../ui/select";
-import { EditCurrencyProvider, showEditCurrency } from "./edit";
+import { EditCurrencyProvider, showEditCurrency } from "./edit-form";
 
 export default function CurrencyListForm({
     edit,
