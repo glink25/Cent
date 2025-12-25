@@ -150,11 +150,7 @@ export function DateSliced({
 
                 <div className="h-9">
                     {onClickSettings && (
-                        <Button
-                            variant="ghost"
-                            onClick={onClickSettings}
-                            className="text-primary/50"
-                        >
+                        <Button variant="ghost" onClick={onClickSettings}>
                             <i className="icon-[mdi--mixer-settings] size-4"></i>
                         </Button>
                     )}
