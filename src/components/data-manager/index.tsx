@@ -132,7 +132,10 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                     <div className="flex flex-col px-4 gap-2">
                         <Button
                             variant="outline"
-                            className="py-4"
+                            className={cn(
+                                betaClassName,
+                                "py-4 after:translate-x-[calc(50%-4px)] after:translate-y-[-4px]",
+                            )}
                             onClick={toShrinkData}
                         >
                             {t("bill-compression")}
