@@ -2,6 +2,7 @@ import { decode, encode } from "js-base64";
 import type { UserInfo } from "@/api/endpoints/type";
 import type { FileEntry } from "@/database/assets";
 import { shortId } from "@/database/id";
+import { assetCache } from "@/utils/asset-cache";
 import type {
     AssetKey,
     FileLike,
@@ -319,6 +320,13 @@ export const createGiteeSyncer = (config: {
         if (!fileKey.startsWith("https://gitee.com")) {
             throw new Error("Unsupported asset key");
         }
+
+        // Try to get from cache first
+        const cachedBlob = await assetCache.get(fileKey);
+        if (cachedBlob) {
+            return cachedBlob;
+        }
+
         // raw url format: https://gitee.com/{owner}/{repo}/raw/{branch}/{path...}
         const splitted = fileKey.split("/");
         const owner = splitted[3];
@@ -333,6 +341,14 @@ export const createGiteeSyncer = (config: {
         );
         if (!res.ok) throw new Error("Failed to fetch asset");
         const blob = await res.blob();
+
+        // Cache the blob for future use
+        try {
+            await assetCache.set(fileKey, blob, fileKey);
+        } catch (cacheError) {
+            console.warn("Failed to cache asset:", cacheError);
+        }
+
         return blob;
     };
 

@@ -1,4 +1,4 @@
-import { StorageAPI, StorageDeferredAPI } from "@/api/storage";
+import { StorageAPI } from "@/api/storage";
 import PopupLayout from "@/layouts/popup-layout";
 import { useIntl } from "@/locale";
 import { useUserStore } from "@/store/user";
@@ -10,6 +10,7 @@ import CurrencySettingsItem from "../currency";
 import DataManagerSettingsItem from "../data-manager";
 import { Button } from "../ui/button";
 import AboutSettingsItem from "./about";
+import CacheSettingsItem from "./cache";
 import LabSettingsItem from "./lab";
 import LanguageSettingsItem from "./language";
 import ThemeSettingsItem from "./theme";
@@ -106,6 +107,7 @@ export default function SettingsForm({
                     <CurrencySettingsItem />
                     <UserSettingsItem />
                     <DataManagerSettingsItem />
+                    <CacheSettingsItem />
                     <LabSettingsItem />
                     <AboutSettingsItem />
                     <ThemeSettingsItem />

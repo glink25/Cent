@@ -3,6 +3,7 @@ import type { UserInfo } from "@/api/endpoints/type";
 import type { FileEntry } from "@/database/assets";
 import { shortId } from "@/database/id";
 import { registerProxy } from "@/utils/fetch-proxy";
+import { assetCache } from "@/utils/asset-cache";
 import type { AssetKey, FileLike, StoreStructure, Syncer } from ".";
 
 type WebDAVConfig = {
@@ -254,6 +255,15 @@ export const createWebDAVSyncer = (cfg: WebDAVConfig): Syncer => {
     };
 
     const getAsset = async (fileKey: AssetKey, storeFullName: string) => {
+        // Create a unique cache key for WebDAV assets
+        const cacheKey = `webdav:${storeFullName}:${fileKey}`;
+
+        // Try to get from cache first
+        const cachedBlob = await assetCache.get(cacheKey);
+        if (cachedBlob) {
+            return cachedBlob;
+        }
+
         // 从 URL 中提取路径
         const path = fileKey;
 
@@ -263,6 +273,14 @@ export const createWebDAVSyncer = (cfg: WebDAVConfig): Syncer => {
                 format: "binary",
             })) as unknown as ArrayBuffer;
             const blob = new Blob([arrayBuffer]);
+
+            // Cache the blob for future use
+            try {
+                await assetCache.set(cacheKey, blob, path);
+            } catch (cacheError) {
+                console.warn("Failed to cache WebDAV asset:", cacheError);
+            }
+
             return blob;
         } catch (e) {
             console.error(`getOnlineAsset failed for path ${path}:`, e);

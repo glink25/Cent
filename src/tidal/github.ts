@@ -3,6 +3,7 @@ import type { Octokit } from "octokit";
 import type { UserInfo } from "@/api/endpoints/type";
 import type { FileEntry } from "@/database/assets";
 import { shortId } from "@/database/id";
+import { assetCache } from "@/utils/asset-cache";
 import type {
     AssetKey,
     FileLike,
@@ -301,6 +302,14 @@ export const createGithubSyncer = (config: {
         if (!fileKey.startsWith("https://raw.githubusercontent.com")) {
             throw new Error("Unsupported asset key");
         }
+
+        // Try to get from cache first
+        const cachedBlob = await assetCache.get(fileKey);
+        if (cachedBlob) {
+            return cachedBlob;
+        }
+
+        // Not in cache, fetch from network
         const [owner, repo, ref, ...paths] = fileKey
             .replace("https://raw.githubusercontent.com/", "")
             .replace("HEAD/", "")
@@ -317,11 +326,15 @@ export const createGithubSyncer = (config: {
             },
         );
         const blob = await res.blob();
-        // Convert blob to File so caller can use it
-        const name = pathToName(paths.join("/"));
+
+        // Cache the blob for future use
+        try {
+            await assetCache.set(fileKey, blob, fileKey);
+        } catch (cacheError) {
+            console.warn("Failed to cache asset:", cacheError);
+        }
+
         return blob;
-        // const file = new File([blob], name);
-        // return file;
     };
 
     const assetEntryToPath = (a: FileEntry<string>) => {
