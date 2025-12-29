@@ -105,7 +105,7 @@ const Ledger = forwardRef<
                     onVisibleDateChange?.(curDate);
                 }
             };
-            el.addEventListener("scroll", handleScroll);
+            el.addEventListener("scroll", handleScroll, { passive: true });
             // 初始调用
             handleScroll();
             return () => el.removeEventListener("scroll", handleScroll);
