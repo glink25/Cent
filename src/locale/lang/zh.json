@@ -481,5 +481,5 @@
   "clear-attachment-cache": "清空附件缓存",
   "cache-cleared": "缓存已清空",
   "cache-clear-failed": "清空缓存失败",
-  "cache-stats": "已缓存 {{count}} 个文件，共 {{size}}"
+  "cache-stats": "已缓存 {count} 个文件，共 {size}"
 }

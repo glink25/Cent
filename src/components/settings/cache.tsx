@@ -57,7 +57,7 @@ export default function CacheSettingsItem() {
                     <div className="flex items-center gap-2">
                         <i className="icon-[mdi--cached] size-5"></i>
                         <div>
-                            <div>{t("clear-attachment-cache")}</div>
+                            <div className="text-left">{t("clear-attachment-cache")}</div>
                             {stats && (
                                 <div className="text-xs text-muted-foreground mt-1">
                                     {t("cache-stats", {

@@ -472,5 +472,5 @@
   "clear-attachment-cache": "Clear Attachment Cache",
   "cache-cleared": "Cache cleared",
   "cache-clear-failed": "Failed to clear cache",
-  "cache-stats": "{{count}} files cached, {{size}} total"
+  "cache-stats": "{count} files cached, {size} total"
 }
