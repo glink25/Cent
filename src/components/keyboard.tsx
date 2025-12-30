@@ -263,7 +263,7 @@ export const CalculatorRoot = ({
 export const CalculatorValue = ({ className }: { className?: string }) => {
     const { formula } = useContext(CalculatorContext)!;
     return (
-        <div className={cn(className)}>
+        <div data-calculator-value className={cn(className)}>
             {toText(formula)
                 .split("")
                 .map((v, i) => (

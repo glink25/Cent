@@ -2,6 +2,7 @@ import type { AnalysisResult } from "@/api/storage/analysis";
 import { amountToNumber } from "@/ledger/bill";
 import { useIntl } from "@/locale";
 import { cn } from "@/utils";
+import Money from "../money";
 import type { FocusType } from "./focus-type";
 
 export function AnalysisDetail({
@@ -19,27 +20,27 @@ export function AnalysisDetail({
     const formattedValues = {
         dayAvg: (
             <span data-state="value" data-type="day">
-                {amountToNumber(analysis.current.dayAvg).toFixed(2)}
+                <Money value={amountToNumber(analysis.current.dayAvg)} />
             </span>
         ),
         weekAvg: (
             <span data-state="value" data-type="week">
-                {amountToNumber(analysis.current.weekAvg).toFixed(2)}
+                <Money value={amountToNumber(analysis.current.weekAvg)} />
             </span>
         ),
         monthAvg: (
             <span data-state="value" data-type="month">
-                {amountToNumber(analysis.current.monthAvg).toFixed(2)}
+                <Money value={amountToNumber(analysis.current.monthAvg)} />
             </span>
         ),
         yearAvg: (
             <span data-state="value" data-type="year">
-                {amountToNumber(analysis.current.yearAvg).toFixed(2)}
+                <Money value={amountToNumber(analysis.current.yearAvg)} />
             </span>
         ),
         projectedTotal: (
             <span data-state="value" data-type="predict">
-                {amountToNumber(analysis.projected.total).toFixed(2)}
+                <Money value={amountToNumber(analysis.projected.total)} />
             </span>
         ),
     };

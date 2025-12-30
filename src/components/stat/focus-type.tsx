@@ -1,6 +1,7 @@
 import { useIntl } from "@/locale";
 import { cn } from "@/utils";
-import { toFixed } from "@/utils/number";
+import { toFixed, toThousand } from "@/utils/number";
+import Money from "../money";
 
 export const FocusTypes = ["income", "expense", "balance"] as const;
 export type FocusType = (typeof FocusTypes)[number];
@@ -31,7 +32,7 @@ export function FocusTypeSelector({
             >
                 <div className="flex flex-col items-center justify-center">
                     <span className="text-green-700">
-                        +{toFixed(money[0], 4)}
+                        +<Money value={money[0]} />
                     </span>
                     <div className="text-[10px] opacity-60"> {t("income")}</div>
                 </div>
@@ -47,7 +48,7 @@ export function FocusTypeSelector({
             >
                 <div className="flex flex-col items-center justify-center">
                     <span className="text-red-700">
-                        -{toFixed(money[1], 4)}
+                        -<Money value={money[1]} />
                     </span>
                     <div className="text-[10px] opacity-60">{t("expense")}</div>
                 </div>
@@ -61,7 +62,9 @@ export function FocusTypeSelector({
                 onClick={() => setFocusType("balance")}
             >
                 <div className="flex flex-col items-center justify-center">
-                    <span>{toFixed(money[2], 4)}</span>
+                    <span>
+                        <Money value={money[2]} />
+                    </span>
                     <div className="text-[10px] opacity-60">{t("Balance")}</div>
                 </div>
             </button>

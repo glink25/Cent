@@ -308,7 +308,7 @@ export default function EditorForm({
                                 onBlur={() => {
                                     setMonitorFocused(false);
                                 }}
-                                className="flex-1 flex flex-col justify-center items-end overflow-x-scroll"
+                                className="flex-1 flex flex-col justify-center items-end overflow-x-scroll outline-none"
                             >
                                 {billState.currency && (
                                     <div className="absolute text-white text-[8px] top-0">
@@ -317,7 +317,13 @@ export default function EditorForm({
                                         {baseCurrency.label}
                                     </div>
                                 )}
-                                <Calculator.Value className="text-white text-3xl font-semibold text-right bg-transparent"></Calculator.Value>
+                                <Calculator.Value
+                                    className={cn(
+                                        "text-white text-3xl font-semibold text-right bg-transparent after:inline-block after:content-['|'] after:opacity-0 after:font-thin after:translate-y-[-3px] ",
+                                        monitorFocused &&
+                                            "after:animate-caret-blink",
+                                    )}
+                                ></Calculator.Value>
                                 {billState.amount < 0 && (
                                     <div className="absolute text-red-700 text-[8px] bottom-0">
                                         {t("bill-negative-tip")}
