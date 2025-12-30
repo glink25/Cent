@@ -46,6 +46,7 @@ export interface ProcessBillDataOptions {
 export interface PieChartDataItem {
     value: number;
     name: string;
+    id: string;
 }
 
 /**
@@ -329,22 +330,33 @@ export function processBillDataForCharts(
     }
 
     const expenseStructure: PieChartDataItem[] = Array.from(
-        expenseCategoryTotals.values(),
-    ).map((item) => ({ name: item.name, value: amountToNumber(item.total) }));
+        expenseCategoryTotals.entries(),
+    ).map(([categoryId, item]) => ({
+        name: item.name,
+        value: amountToNumber(item.total),
+        id: categoryId,
+    }));
 
     const incomeStructure: PieChartDataItem[] = Array.from(
-        incomeCategoryTotals.values(),
-    ).map((item) => ({ name: item.name, value: amountToNumber(item.total) }));
+        incomeCategoryTotals.entries(),
+    ).map(([categoryId, item]) => ({
+        name: item.name,
+        value: amountToNumber(item.total),
+        id: categoryId,
+    }));
     const subCategoryStructure: Record<string, PieChartDataItem[]> =
         Object.fromEntries(
             Array.from(subCategoryTotals.entries()).map(
                 ([majorCategoryId, totals]) => {
                     return [
                         majorCategoryId,
-                        Array.from(Object.values(totals)).map((item) => ({
-                            name: item.name,
-                            value: amountToNumber(item.total),
-                        })),
+                        Array.from(Object.entries(totals)).map(
+                            ([categoryId, item]) => ({
+                                name: item.name,
+                                value: amountToNumber(item.total),
+                                id: categoryId,
+                            }),
+                        ),
                     ];
                 },
             ),
@@ -360,14 +372,17 @@ export function processBillDataForCharts(
         userIncomeStructure.push({
             name,
             value: amountToNumber(totals.income),
+            id: userId,
         });
         userExpenseStructure.push({
             name,
             value: amountToNumber(totals.expense),
+            id: userId,
         });
         userBalanceStructure.push({
             name,
             value: amountToNumber(totals.income - totals.expense),
+            id: userId,
         });
     }
 
