@@ -11,6 +11,7 @@ import {
     SelectValue,
 } from "../ui/select";
 import { Switch } from "../ui/switch";
+import KeyboardHeightSettings from "./keyboard";
 import { PredictSettings } from "./predict";
 
 function Form({ onCancel }: { onCancel?: () => void }) {
@@ -77,6 +78,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                             </SelectContent>
                         </Select>
                     </div>
+                    <KeyboardHeightSettings />
                 </div>
 
                 <div className="text-xs opacity-60 px-4 py-1 pt-4">

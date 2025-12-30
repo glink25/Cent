@@ -13,6 +13,8 @@ type State = {
     readClipboardWhenReduceMotionChanged?: boolean;
     smartPredict?: boolean;
     multiplyKey?: string;
+    /** 键盘高度百分比（基于最大和最小高度） */
+    keyboardHeight?: number;
     /** @deprecated */
     quickEntryWithReLayr?: boolean;
     /** @deprecated */
@@ -30,6 +32,24 @@ type Persist<S> = (
 export const usePreferenceStore = create<Store>()(
     (persist as Persist<Store>)(
         (set, get) => {
+            const init = async () => {
+                await Promise.resolve();
+                const registerKeyboardHeight = () => {
+                    const h = get().keyboardHeight;
+                    document.body.style.setProperty(
+                        "--bekh",
+                        h ? `${h / 100}` : "0.5",
+                    );
+                };
+
+                usePreferenceStore.subscribe((current, prev) => {
+                    if (prev.keyboardHeight !== current.keyboardHeight) {
+                        registerKeyboardHeight();
+                    }
+                });
+                registerKeyboardHeight();
+            };
+            init();
             return {
                 locale: getBrowserLang(),
                 autoLocateWhenAddBill: false,

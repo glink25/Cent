@@ -468,5 +468,8 @@
   "tags-excluded-short": "Exclude",
   "tags-include-short": "Include",
   "display-currency": "Display Currency",
-  "display-currency-desc": "Choose the base currency for calculation. If the filtered bills contain multiple currencies, they will be converted using the latest exchange rates; please note that the results may vary."
+  "display-currency-desc": "Choose the base currency for calculation. If the filtered bills contain multiple currencies, they will be converted using the latest exchange rates; please note that the results may vary.",
+  "income-details": "Income Details",
+  "expense-details": "Expense Details",
+  "keyboard-height": "Keyboard Height"
 }
