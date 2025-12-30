@@ -1,5 +1,11 @@
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
+
+// 为非严格模式，行为如下：
+// 1，选中父元素时，依旧会选中全部子元素
+// 2，取消选中父元素时，依旧会取消选中全部子元素
+// 3，子元素选中变动不再影响父元素的选中，包括在子元素中选择全选
+
 import { ChevronRight } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
