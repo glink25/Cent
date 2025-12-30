@@ -430,7 +430,12 @@ export default function EditorForm({
                 </div>
 
                 {/* keyboard area */}
-                <div className="keyboard-field min-h-[max(min(calc(100%-264px),480px),362px)] max-h-[calc(100%-264px)] sm:min-h-[max(min(calc(100%-264px),380px),362px)] flex gap-2 flex-col justify-start bg-stone-900 sm:rounded-b-md text-[white] p-2 pb-[max(env(safe-area-inset-bottom),8px)]">
+                <div
+                    className={cn(
+                        "h-[calc(480px+160px*(var(--bekh,0.5)-0.5))] min-h-[264px] max-h-[calc(100%-124px)]",
+                        "keyboard-field flex gap-2 flex-col justify-start bg-stone-900 sm:rounded-b-md text-[white] p-2 pb-[max(env(safe-area-inset-bottom),8px)]",
+                    )}
+                >
                     <div className="flex justify-between items-center">
                         <div className="flex gap-2 items-center h-10">
                             <div className="flex items-center h-full">
