@@ -1,16 +1,16 @@
 import { Dialog, VisuallyHidden } from "radix-ui";
 import { useState } from "react";
-import { useShallow } from "zustand/shallow";
 import type { Book } from "@/api/endpoints/type";
 import { StorageAPI } from "@/api/storage";
 import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
-import { useIsLogin, useUserStore } from "@/store/user";
+import { useIsLogin } from "@/store/user";
 import { cn } from "@/utils";
 import Loading from "../loading";
 import { Button } from "../ui/button";
 import { Checkbox } from "../ui/checkbox";
 import { Label } from "../ui/label";
+import { showBookGuide } from "./util";
 
 export default function BookGuide() {
     const t = useIntl();
@@ -47,7 +47,10 @@ export default function BookGuide() {
             open={visible || currentBookId === undefined}
             onOpenChange={(v) => {
                 if (!v) {
-                    useBookStore.setState((v) => ({ ...v, visible: false }));
+                    useBookStore.setState((v) => ({
+                        ...v,
+                        visible: false,
+                    }));
                 }
             }}
         >
@@ -209,10 +212,7 @@ export function BookSettings() {
         <div className="backup">
             <Button
                 onClick={() => {
-                    useBookStore.setState((prev) => ({
-                        ...prev,
-                        visible: true,
-                    }));
+                    showBookGuide();
                 }}
                 variant="ghost"
                 className="w-full py-4 rounded-none h-auto"

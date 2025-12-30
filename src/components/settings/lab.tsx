@@ -33,6 +33,11 @@ function Form({ onCancel }: { onCancel?: () => void }) {
 
     const [multiplyKey, setMultiplyKey] = usePreference("multiplyKey");
 
+    const [
+        disableHashModeOnAndroidStandaloneMode,
+        setDisableHashModeOnAndroidStandaloneMode,
+    ] = usePreference("disableHashModeOnAndroidStandaloneMode");
+
     return (
         <PopupLayout
             title={t("more-functions")}
@@ -134,6 +139,20 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                             checked={readClipboardWhenReduceMotionChanged}
                             onCheckedChange={
                                 setReadClipboardWhenReduceMotionChanged
+                            }
+                        />
+                    </div>
+                    <div className="w-full h-10 flex justify-between items-center px-4">
+                        <div className="text-sm">
+                            <div>{t("disable-android-hash-mode")}</div>
+                            <div className="text-xs opacity-60">
+                                {t("disable-android-hash-mode-description")}
+                            </div>
+                        </div>
+                        <Switch
+                            checked={disableHashModeOnAndroidStandaloneMode}
+                            onCheckedChange={
+                                setDisableHashModeOnAndroidStandaloneMode
                             }
                         />
                     </div>

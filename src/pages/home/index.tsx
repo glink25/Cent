@@ -11,6 +11,7 @@ import { useShallow } from "zustand/shallow";
 import { StorageAPI } from "@/api/storage";
 import CloudLoopIcon from "@/assets/icons/cloud-loop.svg?react";
 import AnimatedNumber from "@/components/animated-number";
+import { showBookGuide } from "@/components/book/util";
 import BudgetCard from "@/components/budget/card";
 import { HintTooltip } from "@/components/hint";
 import { PaginationIndicator } from "@/components/indicator";
@@ -138,10 +139,7 @@ export default function Page() {
                             type="button"
                             className="absolute bottom-2 left-4 text-xs opacity-60 flex items-center gap-1 cursor-pointer"
                             onClick={() => {
-                                useBookStore.setState((prev) => ({
-                                    ...prev,
-                                    visible: true,
-                                }));
+                                showBookGuide();
                             }}
                         >
                             <i className="icon-[mdi--book]"></i>
