@@ -224,7 +224,9 @@ export function useChartPart({
                     {asList ? (
                         <div className="w-full">
                             <div className="py-4 flex justify-center font-semibold text-lg">
-                                支出详情
+                                {focusType === "income"
+                                    ? t("income-details")
+                                    : t("expense-details")}
                             </div>
                             <div className="table w-full border-collapse">
                                 <div className="table-row-group divide-y">
