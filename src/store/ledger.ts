@@ -4,6 +4,7 @@ import { v4 } from "uuid";
 import { create } from "zustand";
 import type { UserInfo } from "@/api/endpoints/type";
 import { loadStorageAPI } from "@/api/storage/dynamic";
+import { showBookGuide } from "@/components/book/util";
 import type { Action, Full, OutputType, Update } from "@/database/stash";
 import type { Bill, GlobalMeta, PersonalMeta } from "@/ledger/type";
 import { t } from "@/locale";
@@ -156,10 +157,7 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
                         action: {
                             label: t("Go"),
                             onClick: () => {
-                                useBookStore.setState((prev) => ({
-                                    ...prev,
-                                    visible: true,
-                                }));
+                                showBookGuide();
                             },
                         },
                     },

@@ -480,5 +480,7 @@
   "display-currency-desc": "选择在计算时以何种币种为单位，如果筛选后的账单内存在不同币种，会以最新汇率进行换算，结果可能会有差异",
   "income-details": "收入详情",
   "expense-details": "支出详情",
-  "keyboard-height": "键盘高度"
+  "keyboard-height": "键盘高度",
+  "disable-android-hash-mode": "PWA模式下禁用路由返回",
+  "disable-android-hash-mode-description": "在支持系统级返回的设备（安卓）上，可以通过返回按钮来关闭弹窗"
 }

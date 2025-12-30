@@ -5,6 +5,7 @@ import { BillEditorProvider, goAddBill } from "@/components/bill-editor";
 import { BillInfoProvider } from "@/components/bill-info";
 import { TagListProvider } from "@/components/bill-tag";
 import BookGuide from "@/components/book";
+import { BookConfirmProvider } from "@/components/book/util";
 import { BudgetEditProvider, BudgetProvider } from "@/components/budget";
 import { BudgetDetailProvider } from "@/components/budget/detail";
 import { CategoryListProvider } from "@/components/category";
@@ -49,6 +50,7 @@ export default function MainLayout() {
                 <Settings />
                 <CurrencyListProvider />
                 <BookGuide />
+                <BookConfirmProvider />
                 <BudgetProvider />
                 <BudgetEditProvider />
                 <BudgetDetailProvider />
