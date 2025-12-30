@@ -1,6 +1,8 @@
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
 import { cn } from "@/utils";
+import { toFixed } from "@/utils/number";
+import Money from "../money";
 import { Progress } from "../ui/progress";
 import type { FocusType } from "./focus-type";
 
@@ -42,7 +44,7 @@ export function TagItem({
                         )}
                         style={{ width: `${percent * 100}%` }}
                     >
-                        {(percent * 100).toFixed(2)}%
+                        {toFixed(percent * 100, 2)}%
                     </div>
                 </Progress>
             </div>
@@ -54,7 +56,7 @@ export function TagItem({
                             : type === "income"
                               ? "+"
                               : ""}
-                        {money}
+                        <Money value={money} />
                     </div>
                     <i className="icon-[mdi--arrow-up-right]"></i>
                 </div>
