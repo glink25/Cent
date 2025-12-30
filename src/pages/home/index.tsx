@@ -48,7 +48,7 @@ export default function Page() {
               ? "icon-[line-md--cloud-alt-print-loop]"
               : sync === "success"
                 ? "icon-[mdi--cloud-check-outline]"
-                : "icon-[mdi--cloud-remove-outline]";
+                : "icon-[mdi--cloud-remove-outline] text-red-600";
 
     const [currentDate, setCurrentDate] = useState(dayjs());
     const ledgerRef = useRef<any>(null);
@@ -169,7 +169,7 @@ export default function Page() {
             </div>
             <div className="flex justify-between items-center pl-7 pr-5 py-1 h-8">
                 <button
-                    className="cursor-pointer"
+                    className="cursor-pointer flex items-center"
                     type="button"
                     onClick={() => {
                         if (loading) {
@@ -179,7 +179,7 @@ export default function Page() {
                     }}
                 >
                     <div className={cn("opacity-0", loading && "opacity-100")}>
-                        <Loading />
+                        <Loading className="[&_i]:size-[18px]" />
                     </div>
                 </button>
                 <div>
@@ -196,15 +196,17 @@ export default function Page() {
                 >
                     <button
                         type="button"
-                        className="cursor-pointer"
+                        className="cursor-pointer flex items-center"
                         onClick={() => {
                             StorageAPI.toSync();
                         }}
                     >
                         {sync === "syncing" ? (
-                            <CloudLoopIcon width={16} height={16} />
+                            <CloudLoopIcon width={18} height={18} />
                         ) : (
-                            <i className={syncIconClassName}></i>
+                            <i
+                                className={cn(syncIconClassName, "size-[18px]")}
+                            ></i>
                         )}
                     </button>
                 </HintTooltip>

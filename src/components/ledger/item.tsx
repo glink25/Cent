@@ -10,6 +10,7 @@ import { useUserStore } from "@/store/user";
 import { cn } from "@/utils";
 import { denseTime, shortTime } from "@/utils/time";
 import CategoryIcon from "../category/icon";
+import Money from "../money";
 
 interface BillItemProps {
     bill: Bill;
@@ -100,12 +101,14 @@ export default function BillItem({
                               : ""
                     }`}
                 >
-                    {amountToNumber(bill.amount)}
+                    <Money value={amountToNumber(bill.amount)} />
 
                     {currency && (
                         <div className="text-xs">
                             {currency.symbol}
-                            {amountToNumber(bill.currency!.amount)}
+                            <Money
+                                value={amountToNumber(bill.currency!.amount)}
+                            />
                         </div>
                     )}
                 </div>
