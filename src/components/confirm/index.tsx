@@ -1,5 +1,5 @@
 import { VisuallyHidden } from "radix-ui";
-import { type ReactNode, useCallback, useEffect, useMemo } from "react";
+import { type ReactNode, useEffect } from "react";
 import { useShallow } from "zustand/shallow";
 import { cn } from "@/utils";
 import {
@@ -53,11 +53,7 @@ export default function createConfirmProvider<Value, Returned = Value>(
         const { visible, edit, controller } = state;
 
         const onCancel = () => {
-            controller?.reject();
-            useGlobalConfirmStore.getState().update(instanceId, {
-                visible: false,
-                controller: undefined,
-            });
+            controller?.cancel();
         };
 
         const onConfirm = (v: Returned) => {
@@ -114,10 +110,12 @@ export default function createConfirmProvider<Value, Returned = Value>(
     }
 
     // 4. 暴露的 open 方法封装了 instanceId
-    const confirm = (value?: Value) =>
-        useGlobalConfirmStore
+    const confirm = (value?: Value) => {
+        const [promise, cancel] = useGlobalConfirmStore
             .getState()
             .open<Value, Returned>(instanceId, value);
+        return promise;
+    };
 
     return [Confirm, confirm] as const;
 }

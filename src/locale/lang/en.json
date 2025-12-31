@@ -473,4 +473,7 @@
   "cache-cleared": "Cache cleared",
   "cache-clear-failed": "Failed to clear cache",
   "cache-stats": "{count} files cached, {size} total"
+  "income-details": "Income Details",
+  "expense-details": "Expense Details",
+  "keyboard-height": "Keyboard Height"
 }

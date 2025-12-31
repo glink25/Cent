@@ -1,9 +1,16 @@
 import type { ReactNode } from "react";
+import { cn } from "@/utils";
 import { Skeleton } from "./ui/skeleton";
 
-export default function Loading({ children }: { children?: ReactNode }) {
+export default function Loading({
+    children,
+    className,
+}: {
+    children?: ReactNode;
+    className?: string;
+}) {
     return (
-        <div className="flex items-center gap-2">
+        <div className={cn("flex items-center gap-2", className)}>
             <i className="icon-[mdi--loading] animate-spin"></i>
             {children}
         </div>

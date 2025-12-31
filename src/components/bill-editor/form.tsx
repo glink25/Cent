@@ -308,7 +308,7 @@ export default function EditorForm({
                                 onBlur={() => {
                                     setMonitorFocused(false);
                                 }}
-                                className="flex-1 flex flex-col justify-center items-end overflow-x-scroll"
+                                className="flex-1 flex flex-col justify-center items-end overflow-x-scroll outline-none"
                             >
                                 {billState.currency && (
                                     <div className="absolute text-white text-[8px] top-0">
@@ -317,7 +317,13 @@ export default function EditorForm({
                                         {baseCurrency.label}
                                     </div>
                                 )}
-                                <Calculator.Value className="text-white text-3xl font-semibold text-right bg-transparent"></Calculator.Value>
+                                <Calculator.Value
+                                    className={cn(
+                                        "text-white text-3xl font-semibold text-right bg-transparent after:inline-block after:content-['|'] after:opacity-0 after:font-thin after:translate-y-[-3px] ",
+                                        monitorFocused &&
+                                            "after:animate-caret-blink",
+                                    )}
+                                ></Calculator.Value>
                                 {billState.amount < 0 && (
                                     <div className="absolute text-red-700 text-[8px] bottom-0">
                                         {t("bill-negative-tip")}
@@ -424,7 +430,12 @@ export default function EditorForm({
                 </div>
 
                 {/* keyboard area */}
-                <div className="keyboard-field min-h-[max(min(calc(100%-264px),480px),362px)] max-h-[calc(100%-264px)] sm:min-h-[max(min(calc(100%-264px),380px),362px)] flex gap-2 flex-col justify-start bg-stone-900 sm:rounded-b-md text-[white] p-2 pb-[max(env(safe-area-inset-bottom),8px)]">
+                <div
+                    className={cn(
+                        "h-[calc(480px+160px*(var(--bekh,0.5)-0.5))] sm:h-[calc(380px+160px*(var(--bekh,0.5)-0.5))] min-h-[264px] max-h-[calc(100%-124px)]",
+                        "keyboard-field flex gap-2 flex-col justify-start bg-stone-900 sm:rounded-b-md text-[white] p-2 pb-[max(env(safe-area-inset-bottom),8px)]",
+                    )}
+                >
                     <div className="flex justify-between items-center">
                         <div className="flex gap-2 items-center h-10">
                             <div className="flex items-center h-full">

@@ -1,6 +1,7 @@
 import { type HTMLMotionProps, motion, useSpring } from "motion/react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
+import { toFixed, toThousand } from "@/utils/number";
 
 type AnimatedNumberProps = {
     value: number;
@@ -31,10 +32,10 @@ const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
 
             if (isInteger) {
                 // 如果 value 是整数，只显示整数
-                setDisplayValue(Math.round(latest).toString());
+                setDisplayValue(toThousand(Math.round(latest)).toString());
             } else {
                 // 如果 value 是小数，使用自动计算的精度
-                setDisplayValue(latest.toFixed(precision));
+                setDisplayValue(toThousand(toFixed(latest, precision)));
             }
         });
 
@@ -45,7 +46,12 @@ const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
         previousValueRef.current = value;
     });
 
-    return <motion.span {...restProps}>{displayValue}</motion.span>;
+    return (
+        <motion.span {...restProps}>
+            {/* <Money value={springValue.get()} /> */}
+            {displayValue}
+        </motion.span>
+    );
 };
 
 export default AnimatedNumber;

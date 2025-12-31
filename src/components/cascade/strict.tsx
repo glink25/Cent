@@ -1,11 +1,5 @@
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
-
-// 为非严格模式，行为如下：
-// 1，选中父元素时，依旧会选中全部子元素
-// 2，取消选中父元素时，依旧会取消选中全部子元素
-// 3，子元素选中变动不再影响父元素的选中，包括在子元素中选择全选
-
 import { ChevronRight } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
@@ -22,7 +16,7 @@ import {
 import { useIntl } from "@/locale";
 
 type Align = "start" | "center" | "end";
-
+// 类型定义 (保持不变)
 type ListItem = {
     id: string;
     name: string;
@@ -38,7 +32,7 @@ type Props = {
     align?: Align;
 };
 
-// 辅助函数: 递归获取所有后代 ID
+// 辅助函数: 递归获取所有后代 ID (保持不变)
 const getAllChildIds = (item: ListItem): string[] => {
     let ids: string[] = [];
     if (item.children) {
@@ -50,6 +44,10 @@ const getAllChildIds = (item: ListItem): string[] => {
     return ids;
 };
 
+// --------------------------------------------------
+// 优化点 1: 批量更新函数类型
+// --------------------------------------------------
+// 不再是 (id, checked)，而是 (ids, checked)
 type BatchChangeFn = (ids: string[], checked: boolean) => void;
 
 const CascaderMenuItem = ({
@@ -63,15 +61,30 @@ const CascaderMenuItem = ({
     onBatchChange: BatchChangeFn;
     align?: Align;
 }) => {
-    // 规则 3 落实点：
-    // 仅判断自身是否被选中，不再根据子元素计算 indeterminate 状态
-    // 也不再因为子元素全满而自动变为 true
     const isSelected = selectedIds.has(item.id);
     const hasChildren = item.children && item.children.length > 0;
 
+    const checked = (() => {
+        if (!item.children || item.children.length === 0) {
+            return isSelected;
+        }
+        const selectedChild = item.children.filter((c) =>
+            selectedIds.has(c.id),
+        );
+        if (selectedChild.length === item.children.length) {
+            return true;
+        }
+        if (selectedChild.length === 0) {
+            return false;
+        }
+        return "indeterminate";
+    })();
+
     const handleSelect = () => {
-        // 规则 1 & 2 落实点：
-        // 点击父元素时，获取自身及所有后代 ID，统一设置为当前相反的状态
+        // --------------------------------------------------
+        // 优化点 2: 总是计算自身和所有后代的 ID
+        // --------------------------------------------------
+        // 然后将它们作为一个整体进行批量更新
         const idsToUpdate = [item.id, ...getAllChildIds(item)];
         onBatchChange(idsToUpdate, !isSelected);
     };
@@ -83,8 +96,8 @@ const CascaderMenuItem = ({
         >
             <Checkbox
                 id={`checkbox-${item.id}`}
-                checked={isSelected} // 直接使用 isSelected
-                className="mr-2 pointer-events-none"
+                checked={checked}
+                className="mr-2 pointer-events-none" // checkbox 本身不响应点击，由父 div 处理
             />
             <label
                 htmlFor={`checkbox-${item.id}`}
@@ -123,7 +136,7 @@ const CascaderMenuItem = ({
                     <CascaderLevel
                         levelItems={item.children || []}
                         selectedIds={selectedIds}
-                        onBatchChange={onBatchChange}
+                        onBatchChange={onBatchChange} // 传递批量更新函数
                     />
                 </DropdownMenuContent>
             </DropdownMenuPortal>
@@ -145,7 +158,6 @@ const CascaderLevel = ({
     const checkboxRef = useRef<HTMLButtonElement>(null);
     const t = useIntl();
 
-    // 获取当前层级下所有受控的 ID（包括递归子级，用于全选逻辑）
     const levelAllIds = useMemo(
         () =>
             levelItems
@@ -158,8 +170,6 @@ const CascaderLevel = ({
         [levelItems],
     );
 
-    // 计算当前层级是否全选/半选，仅用于控制 "全选" 按钮自身的 UI 显示
-    // 这不影响父级菜单的状态
     const selectedInLevelCount = useMemo(
         () => levelAllIds.filter((id) => selectedIds.has(id)).length,
         [levelAllIds, selectedIds],
@@ -184,8 +194,10 @@ const CascaderLevel = ({
     }, [isPartiallySelected, isAllSelected]);
 
     const handleSelectAll = () => {
-        // 这里的全选逻辑保持不变：控制当前层级及其下属所有元素
-        // 但由于 onBatchChange 逻辑已修改，这里不会向上冒泡影响父级
+        // --------------------------------------------------
+        // 优化点 3: 全选事件也调用批量更新
+        // --------------------------------------------------
+        // 如果已经是全选，则全部取消；否则，全部选中。
         const shouldSelectAll = !isAllSelected;
         onBatchChange(levelAllIds, shouldSelectAll);
     };
@@ -204,7 +216,7 @@ const CascaderLevel = ({
                                 : isAllSelected || isPartiallySelected
                         }
                         id={`select-all-${levelItems[0]?.id}`}
-                        className="mr-2 pointer-events-none"
+                        className="mr-2 pointer-events-none" // checkbox 本身不响应点击
                     />
                     <label
                         htmlFor={`select-all-${levelItems[0]?.id}`}
@@ -226,7 +238,7 @@ const CascaderLevel = ({
                         align={align}
                         item={item}
                         selectedIds={selectedIds}
-                        onBatchChange={onBatchChange}
+                        onBatchChange={onBatchChange} // 传递批量更新函数
                     />
                 ),
             )}
@@ -234,7 +246,7 @@ const CascaderLevel = ({
     );
 };
 
-export const CascadeMultipleSelect = ({
+export const StrictCascadeMultipleSelect = ({
     list,
     value,
     onValueChange,
@@ -244,9 +256,11 @@ export const CascadeMultipleSelect = ({
     const selectedIds = useMemo(() => new Set(value), [value]);
 
     // --------------------------------------------------
-    // 核心逻辑修改：非严格模式
+    // 优化点 4: 核心批量处理逻辑
     // --------------------------------------------------
+    // 这个函数负责接收一批ID，一次性地更新状态，并且只调用 onValueChange 一次。
     const handleBatchChange: BatchChangeFn = (ids, checked) => {
+        // 复制当前的 Set，避免直接修改 state
         const newSelectedIds = new Set(selectedIds);
 
         if (checked) {
@@ -255,10 +269,19 @@ export const CascadeMultipleSelect = ({
             ids.forEach((id) => newSelectedIds.delete(id));
         }
 
-        // 规则 3 落实点：
-        // 移除了之前此处存在的 "检查父元素子集是否全选/全不选以同步更新父元素 ID" 的逻辑。
-        // 现在 ID 的变动完全由用户的点击行为决定，不做自动推导。
+        // 如果父组件的子元素没有完全被选中，则删除父元素id
+        list.forEach((parent) => {
+            if ((parent.children?.length ?? 0) === 0) {
+            } else if (
+                parent.children?.some((c) => !newSelectedIds.has(c.id))
+            ) {
+                newSelectedIds.delete(parent.id);
+            } else if (!parent.asGroupLabel) {
+                newSelectedIds.add(parent.id);
+            }
+        });
 
+        // 最后，将新的 Set 转换为数组，并调用一次 onValueChange
         onValueChange(Array.from(newSelectedIds));
     };
 
@@ -273,7 +296,7 @@ export const CascadeMultipleSelect = ({
                         align={align}
                         levelItems={list}
                         selectedIds={selectedIds}
-                        onBatchChange={handleBatchChange}
+                        onBatchChange={handleBatchChange} // 将批量更新函数传递下去
                     />
                 </DropdownMenuContent>
             </DropdownMenuPortal>

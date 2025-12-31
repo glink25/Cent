@@ -1,6 +1,7 @@
 import PopupLayout from "@/layouts/popup-layout";
 import { useIntl } from "@/locale";
-import { usePreference } from "@/store/preference";
+import { getEnableHashMode, usePreference } from "@/store/preference";
+import { cn } from "@/utils";
 import createConfirmProvider from "../confirm";
 import { Button } from "../ui/button";
 import {
@@ -11,6 +12,7 @@ import {
     SelectValue,
 } from "../ui/select";
 import { Switch } from "../ui/switch";
+import KeyboardHeightSettings from "./keyboard";
 import { PredictSettings } from "./predict";
 
 function Form({ onCancel }: { onCancel?: () => void }) {
@@ -32,6 +34,12 @@ function Form({ onCancel }: { onCancel?: () => void }) {
 
     const [multiplyKey, setMultiplyKey] = usePreference("multiplyKey");
 
+    const [
+        disableHashModeOnAndroidStandaloneMode,
+        setDisableHashModeOnAndroidStandaloneMode,
+    ] = usePreference("disableHashModeOnAndroidStandaloneMode");
+
+    const hashModeStatus = getEnableHashMode();
     return (
         <PopupLayout
             title={t("more-functions")}
@@ -77,6 +85,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                             </SelectContent>
                         </Select>
                     </div>
+                    <KeyboardHeightSettings />
                 </div>
 
                 <div className="text-xs opacity-60 px-4 py-1 pt-4">
@@ -132,6 +141,30 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                             checked={readClipboardWhenReduceMotionChanged}
                             onCheckedChange={
                                 setReadClipboardWhenReduceMotionChanged
+                            }
+                        />
+                    </div>
+                    <div className="w-full h-10 flex justify-between items-center px-4">
+                        <div className="text-sm">
+                            <div className="flex items-center gap-1">
+                                {t("disable-android-hash-mode")}{" "}
+                                <div
+                                    className={cn(
+                                        "w-2 h-2 rounded-full",
+                                        hashModeStatus
+                                            ? "bg-green-500"
+                                            : "bg-foreground/60",
+                                    )}
+                                ></div>
+                            </div>
+                            <div className="text-xs opacity-60">
+                                {t("disable-android-hash-mode-description")}
+                            </div>
+                        </div>
+                        <Switch
+                            checked={disableHashModeOnAndroidStandaloneMode}
+                            onCheckedChange={
+                                setDisableHashModeOnAndroidStandaloneMode
                             }
                         />
                     </div>

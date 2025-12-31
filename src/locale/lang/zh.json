@@ -482,4 +482,9 @@
   "cache-cleared": "缓存已清空",
   "cache-clear-failed": "清空缓存失败",
   "cache-stats": "已缓存 {count} 个文件，共 {size}"
+  "income-details": "收入详情",
+  "expense-details": "支出详情",
+  "keyboard-height": "键盘高度",
+  "disable-android-hash-mode": "PWA模式下禁用路由返回",
+  "disable-android-hash-mode-description": "在支持系统级返回的设备（安卓）上，可以通过返回按钮来关闭弹窗"
 }

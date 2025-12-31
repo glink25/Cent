@@ -21,7 +21,7 @@ import {
     FocusTypeSelector,
     FocusTypes,
 } from "@/components/stat/focus-type";
-import { TagItem } from "@/components/stat/tag-item";
+import { TagItem } from "@/components/stat/static-item";
 import { Button } from "@/components/ui/button";
 import { useCurrency } from "@/hooks/use-currency";
 import { useCustomFilters } from "@/hooks/use-custom-filters";
@@ -123,7 +123,7 @@ export default function Page() {
     const [focusType, setFocusType] = useState<FocusType>("expense");
     const [dimension, setDimension] = useState<"category" | "user">("category");
 
-    const { dataSources, Part, setSelectedCategoryName } = useChartPart({
+    const { dataSources, Part, setSelectedCategoryId } = useChartPart({
         viewType,
         seeDetails,
         focusType,
@@ -330,12 +330,12 @@ export default function Page() {
                 value={focusType}
                 onValueChange={(v) => {
                     setFocusType(v);
-                    setSelectedCategoryName(undefined);
+                    setSelectedCategoryId(undefined);
                 }}
                 money={totalMoneys}
             />
             <div className="w-full flex-1 flex justify-center overflow-y-auto">
-                <div className="w-full mx-2 max-w-[600px] flex flex-col items-center gap-4">
+                <div className="w-full mx-2 max-w-[600px] flex flex-col items-center gap-4 relative">
                     {Part}
                     {tagStructure.length > 0 && (
                         <div className="rounded-md border p-2 w-full flex flex-col">
