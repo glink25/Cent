@@ -103,3 +103,26 @@ export default function AboutSettingsItem() {
         </div>
     );
 }
+
+export function AdvancedGuideItem() {
+    const t = useIntl();
+    return (
+        <div className="lab">
+            <a
+                href="https://glink25.github.io/post/Cent%E9%AB%98%E7%BA%A7%E8%AE%B0%E8%B4%A6%E6%8C%87%E5%8D%97/"
+                target="_blank"
+                className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium hover:bg-accent hover:text-accent-foreground w-full p-4 rounded-none h-auto"
+                rel="noopener"
+            >
+                <div className="w-full px-4 flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                        <i className="icon-[mdi--book-open-blank-variant-outline] size-5 shrink-0"></i>
+                        {t("advance-billings-label")}
+                    </div>
+                    <i className="icon-[mdi--chevron-right] size-5"></i>
+                </div>
+            </a>
+            <AboutSettingsProvider />
+        </div>
+    );
+}

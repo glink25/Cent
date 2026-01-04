@@ -482,5 +482,6 @@
   "expense-details": "支出详情",
   "keyboard-height": "键盘高度",
   "disable-android-hash-mode": "PWA模式下禁用路由返回",
-  "disable-android-hash-mode-description": "在支持系统级返回的设备（安卓）上，可以通过返回按钮来关闭弹窗"
+  "disable-android-hash-mode-description": "在支持系统级返回的设备（安卓）上，可以通过返回按钮来关闭弹窗",
+  "advance-billings-label": "准备好了解Cent的高级记账功能"
 }
