@@ -10,7 +10,6 @@ import { Checkbox } from "../ui/checkbox";
 import { Label } from "../ui/label";
 
 export function BookForm() {
-    console.log("bookfo");
     const t = useIntl();
     const isLogin = useIsLogin();
     const { books, currentBookId, loading } = useBookStore();
