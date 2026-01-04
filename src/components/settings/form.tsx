@@ -9,7 +9,7 @@ import CategorySettingsItem from "../category";
 import CurrencySettingsItem from "../currency";
 import DataManagerSettingsItem from "../data-manager";
 import { Button } from "../ui/button";
-import AboutSettingsItem from "./about";
+import AboutSettingsItem, { AdvancedGuideItem } from "./about";
 import LabSettingsItem from "./lab";
 import LanguageSettingsItem from "./language";
 import ThemeSettingsItem from "./theme";
@@ -110,6 +110,7 @@ export default function SettingsForm({
                     <AboutSettingsItem />
                     <ThemeSettingsItem />
                     <LanguageSettingsItem />
+                    <AdvancedGuideItem />
                 </div>
             </div>
         </PopupLayout>

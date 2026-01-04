@@ -98,7 +98,7 @@ export default function TagList({
                                             ? t("un-grouped")
                                             : group.name}
                                     </div>
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex items-center gap-1 text-white">
                                         {group.id !== "un-group" && (
                                             <>
                                                 {index !== 0 && (
