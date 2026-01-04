@@ -17,6 +17,7 @@ import {
     DropdownMenuContent,
     DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
+import { Input } from "../ui/input";
 import {
     Select,
     SelectContent,
@@ -29,10 +30,13 @@ export default function BillFilterForm({
     form,
     setForm,
     className,
+    showComment,
 }: {
     form: BillFilter;
     setForm: Dispatch<SetStateAction<BillFilter>>;
     className?: string;
+    /** 是否展示备注输入表单 */
+    showComment?: boolean;
 }) {
     const t = useIntl();
     const dateType = form.recent === undefined ? "date" : "recent";
@@ -237,6 +241,25 @@ export default function BillFilterForm({
                     </div>
                 )}
             </div>
+            {/* comment */}
+            {showComment && (
+                <div className="w-full flex justify-between items-center">
+                    <div className="flex items-center gap-1">
+                        <i className="icon-[mdi--comment-processing-outline]"></i>
+                        {t("comment")}:
+                    </div>
+                    <div>
+                        <Input
+                            className="text-right"
+                            value={form.comment ?? ""}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                setForm((v) => ({ ...v, comment: value }));
+                            }}
+                        />
+                    </div>
+                </div>
+            )}
             {/* type selector */}
             <div className="w-full flex justify-between items-center">
                 <div className="flex items-center gap-1">

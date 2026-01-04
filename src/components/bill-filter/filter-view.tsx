@@ -54,6 +54,7 @@ export default function BillFilterView({
                     form={form}
                     setForm={setForm}
                     className="text-xs md:text-sm border-none"
+                    showComment
                 />
                 <div className="text-xs opacity-60 pb-2">
                     {t("stat-view-settings")}
