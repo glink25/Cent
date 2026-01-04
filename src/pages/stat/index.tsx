@@ -24,7 +24,10 @@ import {
 import { TagItem } from "@/components/stat/static-item";
 import { Button } from "@/components/ui/button";
 import { useCurrency } from "@/hooks/use-currency";
-import { useCustomFilters } from "@/hooks/use-custom-filters";
+import {
+    DefaultFilterViewId,
+    useCustomFilters,
+} from "@/hooks/use-custom-filters";
 import { useTag } from "@/hooks/use-tag";
 import type { BillFilter, BillFilterView } from "@/ledger/extra-type";
 import type { Bill } from "@/ledger/type";
@@ -46,12 +49,12 @@ export default function Page() {
     );
 
     const allFilterViews = useMemo(() => {
-        if (customFilters?.some((f) => f.id === "default-filter")) {
+        if (customFilters?.some((f) => f.id === DefaultFilterViewId)) {
             return customFilters;
         }
         return [
             {
-                id: "default-filter",
+                id: DefaultFilterViewId,
                 filter: {},
                 name: t("default-filter-name"),
             } as BillFilterView,
@@ -198,25 +201,25 @@ export default function Page() {
     }, [analysisUnit, focusType, realRange[0], realRange[1]]);
 
     const { updateFilter, addFilter } = useCustomFilters();
-    const toChangeFilter =
-        filterViewId === "default-filter"
-            ? undefined
-            : async () => {
-                  if (!selectedFilterView) {
-                      return;
-                  }
-                  const id = selectedFilterView.id;
-                  const action = await showBillFilterView(selectedFilterView);
-                  if (action === "delete") {
-                      await updateFilter(id);
-                      setFilterViewId(allFilterViews[0].id);
-                      return;
-                  }
-                  await updateFilter(id, {
-                      ...action,
-                      name: action.name ?? selectedFilterView.name,
-                  });
-              };
+    const toChangeFilter = async () => {
+        if (!selectedFilterView) {
+            return;
+        }
+        const id = selectedFilterView.id;
+        const action = await showBillFilterView({
+            ...selectedFilterView,
+            // hideDelete: id === DefaultFilterViewId,
+        });
+        if (action === "delete") {
+            await updateFilter(id);
+            setFilterViewId(allFilterViews[0].id);
+            return;
+        }
+        await updateFilter(id, {
+            ...action,
+            name: action.name ?? selectedFilterView.name,
+        });
+    };
     const toReOrder = async () => {
         if ((customFilters?.length ?? 0) === 0) {
             return;
