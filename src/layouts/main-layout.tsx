@@ -1,7 +1,6 @@
-import { useCallback, useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Outlet } from "react-router";
-import { toast } from "sonner";
-import { BillEditorProvider, goAddBill } from "@/components/bill-editor";
+import { BillEditorProvider } from "@/components/bill-editor";
 import { BillInfoProvider } from "@/components/bill-info";
 import { TagListProvider } from "@/components/bill-tag";
 import BookGuide from "@/components/book";
@@ -12,6 +11,10 @@ import { CategoryListProvider } from "@/components/category";
 import { CurrencyListProvider } from "@/components/currency";
 import { ModalProvider } from "@/components/modal";
 import Navigation from "@/components/navigation";
+import {
+    ScheduledEditProvider,
+    ScheduledProvider,
+} from "@/components/scheduled";
 import { Settings } from "@/components/settings";
 import { SortableListProvider } from "@/components/sortable";
 import { SortableGroupProvider } from "@/components/sortable/group";
@@ -21,6 +24,7 @@ import {
     useQuickEntryByClipboard,
     useQuickGoAdd,
 } from "@/hooks/use-quick-entry";
+import { useScheduled } from "@/hooks/use-scheduled";
 import { ThemeProvider } from "@/hooks/use-theme";
 import { usePreferenceStore } from "@/store/preference";
 import { startBackgroundPredict } from "@/utils/predict";
@@ -34,6 +38,14 @@ export default function MainLayout() {
         if (usePreferenceStore.getState().smartPredict) {
             startBackgroundPredict();
         }
+    }, []);
+
+    // 自动周期记账
+    const { applyScheduled } = useScheduled();
+    const applyScheduledRef = useRef(applyScheduled);
+    applyScheduledRef.current = applyScheduled;
+    useEffect(() => {
+        applyScheduledRef.current();
     }, []);
 
     return (
@@ -54,6 +66,8 @@ export default function MainLayout() {
                 <BudgetProvider />
                 <BudgetEditProvider />
                 <BudgetDetailProvider />
+                <ScheduledProvider />
+                <ScheduledEditProvider />
                 <TagListProvider />
                 <CategoryListProvider />
                 <ModalProvider />

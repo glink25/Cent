@@ -584,6 +584,15 @@ export default function BillFilterForm({
                 </div>
                 <div className="flex-1 flex justify-end overflow-y-scroll gap-3 py-1">
                     <Tag
+                        checked={form.scheduled}
+                        onCheckedChange={(v) => {
+                            setForm((prev) => ({ ...prev, scheduled: v }));
+                        }}
+                        className="text-xs bg-transparent shadow-md"
+                    >
+                        {t("by-scheduled")}
+                    </Tag>
+                    <Tag
                         checked={form.assets}
                         onCheckedChange={(v) => {
                             setForm((prev) => ({ ...prev, assets: v }));

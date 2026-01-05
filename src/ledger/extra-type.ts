@@ -1,4 +1,4 @@
-import type { BillType } from "./type";
+import type { Bill, BillType } from "./type";
 
 /** 标签组可以快捷收纳标签，可以略过
  */
@@ -52,6 +52,7 @@ export type BillFilter = Partial<{
     minAmountNumber: number;
     maxAmountNumber: number;
     assets?: boolean;
+    scheduled?: boolean;
     tags?: string[];
     excludeTags?: string[];
     baseCurrency: string;
@@ -65,11 +66,28 @@ export type BillFilterView = {
     displayCurrency?: string;
 };
 
+/** 周期记账配置 */
+export type Scheduled = {
+    id: string;
+    title: string;
+    start: number;
+    end?: number;
+    template: Omit<Bill, "id" | "creatorId">;
+    enabled?: boolean;
+    repeat: {
+        unit: "week" | "day" | "month" | "year";
+        value: number;
+    };
+    // 最新一条自动记账记录的时间
+    latest?: number;
+};
+
 // 个人配置，不需要转换，可以略过
 export type PersonalMeta = {
     names?: Record<string, string>;
     rates?: Record<string, number>;
     tagGroups?: BillTagGroup[];
+    scheduleds?: Scheduled[];
 };
 
 export type CustomCurrency = {

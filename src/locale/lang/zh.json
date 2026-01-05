@@ -488,5 +488,20 @@
   "show-assets-in-ledger": "在账单列表中直接展示附件",
   "clear-assets-cache": "清理附件缓存",
   "clear-cache": "清除",
-  "calculating": "计算中..."
+  "calculating": "计算中...",
+  "scheduled-manager": "周期记账",
+  "scheduled-description": "根据定时自动记账，例如订阅、自动续费等",
+  "add-a-scheduled": "新增周期记账",
+  "scheduled-edit": "编辑周期记账",
+  "scheduled-name": "名称",
+  "new-scheduled": "新订阅",
+  "set-scheduled-period": "设定周期",
+  "scheduled-enabled": "是否启用",
+  "scheduled-template": "账单模版",
+  "scheduled-template-validate": "模版不能为空",
+  "scheduled-lack-bills": "计算出此前还缺少{n}条账单，是否需要添加？",
+  "by-scheduled": "周期记账",
+  "scheduled-delete-warning": "确定要删除该周期记账吗？此前自动记录的账单不会被删除",
+  "from-scheduled": "来自周期记账",
+  "next-schedule-date-at": "下一条将在{date}录入"
 }

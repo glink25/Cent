@@ -476,5 +476,19 @@
   "assets-settings": "Assets",
   "clear-assets-cache": "Clear assets cache",
   "clear-cache": "Clear",
-  "calculating": "Caculating..."
+  "calculating": "Caculating...",
+  "scheduled-manager": "Scheduled",
+  "scheduled-description": "Auto add bill by time period",
+  "add-a-scheduled": "Add",
+  "scheduled-edit": "Edit Schedued",
+  "scheduled-name": "Name",
+  "new-scheduled": "Subscription",
+  "set-scheduled-period": "set period",
+  "scheduled-enabled": "Enabled",
+  "scheduled-template": "Bill Template",
+  "scheduled-template-validate": "Template required",
+  "scheduled-lack-bills": "{b} bills dismissed previously, should re-add them?",
+  "by-scheduled": "scheduled",
+  "scheduled-delete-warning": "Are you sure to delete this Scheduled? BIlls recorded by this will NOT be delete.",
+  "next-schedule-date-at": "Next record will be {date}"
 }

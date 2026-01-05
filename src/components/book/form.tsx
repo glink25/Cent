@@ -35,7 +35,7 @@ export function BookForm() {
     };
     const toInvite = async (book: Book) => {
         const { StorageAPI } = await loadStorageAPI();
-        StorageAPI.initBook?.(book.id);
+        StorageAPI.inviteForBook?.(book.id);
     };
 
     const toDelete = async (book: Book) => {

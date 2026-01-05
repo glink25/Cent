@@ -8,6 +8,7 @@ import Budget from "../budget";
 import CategorySettingsItem from "../category";
 import CurrencySettingsItem from "../currency";
 import DataManagerSettingsItem from "../data-manager";
+import ScheduledSettingsItems from "../scheduled/settings-item";
 import { Button } from "../ui/button";
 import AboutSettingsItem, { AdvancedGuideItem } from "./about";
 import LabSettingsItem from "./lab";
@@ -103,6 +104,7 @@ export default function SettingsForm({
                     <CategorySettingsItem />
                     <TagSettingsItem />
                     <Budget />
+                    <ScheduledSettingsItems />
                     <CurrencySettingsItem />
                     <UserSettingsItem />
                     <DataManagerSettingsItem />
