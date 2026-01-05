@@ -8,9 +8,17 @@ import type {
     Budget,
     CustomCurrency,
     PersonalMeta,
+    Scheduled,
 } from "./extra-type";
 
-export type { CustomCurrency, PersonalMeta, BillFilter, Budget, BillTagGroup };
+export type {
+    CustomCurrency,
+    PersonalMeta,
+    BillFilter,
+    Budget,
+    BillTagGroup,
+    Scheduled,
+};
 
 /** 账单类型，代表收入或者支出 */
 export type BillType = "income" | "expense";
@@ -54,6 +62,10 @@ export type Bill = {
         target: string;
         // 记账当时填写的金额
         amount: number;
+    };
+    /** 其他额外信息 */
+    extra?: {
+        scheduledId?: string;
     };
 };
 

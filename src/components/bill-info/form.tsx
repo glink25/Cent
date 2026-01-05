@@ -2,6 +2,7 @@
 import useCategory from "@/hooks/use-category";
 import { useCreators } from "@/hooks/use-creator";
 import { useCurrency } from "@/hooks/use-currency";
+import { useScheduled } from "@/hooks/use-scheduled";
 import { useTag } from "@/hooks/use-tag";
 import { amountToNumber } from "@/ledger/bill";
 import { useIntl } from "@/locale";
@@ -36,6 +37,8 @@ export default function BillInfo({
     const { id: selfId } = useUserStore();
     const isMe = id === selfId;
 
+    const { scheduleds } = useScheduled();
+
     if (!edit) {
         return null;
     }
@@ -65,6 +68,10 @@ export default function BillInfo({
         edit.currency?.target === baseCurrency.id
             ? undefined
             : allCurrencies.find((c) => c.id === edit.currency?.target);
+
+    const schedule = edit.extra?.scheduledId
+        ? scheduleds.find((v) => v.id === edit.extra?.scheduledId)
+        : undefined;
     return (
         <div>
             <div className="min-h-[320px] p-4 flex flex-col w-full h-full">
@@ -149,6 +156,12 @@ export default function BillInfo({
                                     className="max-h-[200px] object-cover rounded min-w-24 min-h-24 data-[state=loading]:animate-pulse bg-primary/10"
                                 />
                             ))}
+                        </div>
+                    )}
+
+                    {edit.extra?.scheduledId && (
+                        <div className="text-xs opacity-60 text-right">
+                            {t("from-scheduled")} {schedule?.title}
                         </div>
                     )}
                 </div>

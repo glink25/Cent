@@ -81,6 +81,10 @@ const isAssetsMatched = (bill: Bill, assets?: boolean) => {
     return assets === true ? bill.images?.some((img) => Boolean(img)) : true;
 };
 
+const isScheduledMatched = (bill: Bill, scheduled?: boolean) => {
+    return scheduled === true ? bill.extra?.scheduledId : true;
+};
+
 const isTagsMatched = (bill: Bill, tagIds?: string[]) => {
     return tagIds?.length
         ? tagIds.some((c) => bill.tagIds?.some((t) => t === c))
@@ -112,6 +116,7 @@ export const isBillMatched = (bill: Bill, filter: BillFilter) => {
         isMoneyMatched(bill, filter.minAmountNumber, filter.maxAmountNumber) &&
         isTimeMatched(bill, filter.start, filter.end, filter.recent) &&
         isAssetsMatched(bill, filter.assets) &&
+        isScheduledMatched(bill, filter.scheduled) &&
         isCommentMatched(bill, filter.comment) &&
         isTagsMatched(bill, filter.tags) &&
         isCurrenciesMatched(

@@ -40,6 +40,7 @@ type LedgerStoreState = {
 
 type LedgerStoreActions = {
     addBill: (entry: Omit<Bill, "id" | "creatorId">) => Promise<void>;
+    addBills: (entries: Omit<Bill, "id" | "creatorId">[]) => Promise<void>;
     removeBills: (ids: Bill["id"][]) => Promise<void>;
     removeBill: (id: Bill["id"]) => Promise<void>;
     updateBill: (
@@ -273,6 +274,26 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
         );
     };
 
+    const addBills: LedgerStoreActions["addBills"] = async (entries) => {
+        const { StorageAPI } = await loadStorageAPI();
+        const repo = getCurrentFullRepoName();
+        const creatorId = useUserStore.getState().id;
+        StorageAPI.batch(
+            repo,
+            entries.map((v) => {
+                return {
+                    type: "update",
+                    value: {
+                        ...v,
+                        amount: Math.abs(v.amount),
+                        creatorId,
+                        id: v4(),
+                    },
+                };
+            }),
+        );
+    };
+
     return {
         loading: false,
         sync: "success" as LedgerStore["sync"],
@@ -285,22 +306,10 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
         removeBill: async (id) => {
             return removeBills([id]);
         },
-        addBill: async (v) => {
-            const { StorageAPI } = await loadStorageAPI();
-            const repo = getCurrentFullRepoName();
-            const creatorId = useUserStore.getState().id;
-            StorageAPI.batch(repo, [
-                {
-                    type: "update",
-                    value: {
-                        ...v,
-                        amount: Math.abs(v.amount),
-                        creatorId,
-                        id: v4(),
-                    },
-                },
-            ]);
+        addBill: (v) => {
+            return addBills([v]);
         },
+        addBills,
         updateBills,
         updateBill: async (id, entry) => {
             return updateBills([{ id, entry }]);
