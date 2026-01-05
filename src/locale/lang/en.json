@@ -472,5 +472,9 @@
   "income-details": "Income Details",
   "expense-details": "Expense Details",
   "keyboard-height": "Keyboard Height",
-   "advance-billings-label": "Ready to label advanced Cent abilities"
+  "advance-billings-label": "Ready to label advanced Cent abilities",
+  "assets-settings": "Assets",
+  "clear-assets-cache": "Clear assets cache",
+  "clear-cache": "Clear",
+  "calculating": "Caculating..."
 }

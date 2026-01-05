@@ -7,6 +7,8 @@ import {
 } from "react";
 import { StorageAPI } from "@/api/storage";
 import { useBookStore } from "@/store/book";
+import { cacheInDB } from "@/utils/cache";
+import { GetOnlineAssetsCacheKey } from "@/utils/constant";
 
 export default function SmartImage({
     source,
@@ -33,7 +35,10 @@ export default function SmartImage({
         if (!(source instanceof File)) {
             // 普通字符串 url
             if (StorageAPI.getOnlineAsset) {
-                StorageAPI.getOnlineAsset?.(source, book).then((file) => {
+                cacheInDB(StorageAPI.getOnlineAsset, GetOnlineAssetsCacheKey)?.(
+                    source,
+                    book,
+                ).then((file) => {
                     if (file === undefined) {
                         setUrl(source);
                         return;

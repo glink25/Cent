@@ -483,5 +483,10 @@
   "keyboard-height": "键盘高度",
   "disable-android-hash-mode": "PWA模式下禁用路由返回",
   "disable-android-hash-mode-description": "在支持系统级返回的设备（安卓）上，可以通过返回按钮来关闭弹窗",
-  "advance-billings-label": "准备好了解Cent的高级记账功能"
+  "advance-billings-label": "准备好了解Cent的高级记账功能",
+  "assets-settings": "附件设置",
+  "show-assets-in-ledger": "在账单列表中直接展示附件",
+  "clear-assets-cache": "清理附件缓存",
+  "clear-cache": "清除",
+  "calculating": "计算中..."
 }
