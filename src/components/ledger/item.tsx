@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
 import { useMemo } from "react";
 import useCategory from "@/hooks/use-category";
 import { useCreators } from "@/hooks/use-creator";
@@ -10,6 +11,7 @@ import { useUserStore } from "@/store/user";
 import { cn } from "@/utils";
 import { denseTime, shortTime } from "@/utils/time";
 import CategoryIcon from "../category/icon";
+import SmartImage from "../image";
 import Money from "../money";
 
 interface BillItemProps {
@@ -17,6 +19,7 @@ interface BillItemProps {
     onClick?: () => void;
     className?: string;
     showTime?: boolean;
+    showAssets?: boolean;
 }
 
 export default function BillItem({
@@ -24,6 +27,7 @@ export default function BillItem({
     className,
     onClick,
     showTime,
+    showAssets,
 }: BillItemProps) {
     const t = useIntl();
     const { categories } = useCategory();
@@ -60,7 +64,7 @@ export default function BillItem({
                 <div className="rounded-full bg-background border w-10 h-10 flex items-center justify-center">
                     {category?.icon && <CategoryIcon icon={category.icon} />}
                 </div>
-                <div className="flex-1 flex flex-col px-4 overflow-hidden">
+                <div className="flex flex-col px-4 overflow-hidden">
                     <div className="flex text-md gap-1 h-6">
                         <div className="flex-shrink-0 font-semibold">
                             {category ? category.name : ""}
@@ -88,12 +92,23 @@ export default function BillItem({
                         )}
                     </div>
                 </div>
+                <div className="flex-1 flex gap-2">
+                    {showAssets &&
+                        bill.images?.map((img, i) => (
+                            <SmartImage
+                                key={i}
+                                source={img}
+                                alt=""
+                                className="w-8 h-8 object-cover rounded data-[state=loading]:animate-pulse bg-primary/10"
+                            />
+                        ))}
+                </div>
             </div>
 
             {/* 金额 */}
             <div className="text-right">
                 <div
-                    className={`text-lg font-bold truncate flex-shrink-0 flex flex-col ${
+                    className={`text-lg font-bold truncate flex-shrink-0 flex flex-col items-end ${
                         bill.type === "expense"
                             ? "text-red-700"
                             : bill.type === "income"

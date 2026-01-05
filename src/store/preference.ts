@@ -17,6 +17,8 @@ type State = {
     disableHashModeOnAndroidStandaloneMode?: boolean;
     /** 键盘高度百分比（基于最大和最小高度） */
     keyboardHeight?: number;
+    /** 在账单列表中直接展示附件图片 */
+    showAssetsInLedger?: boolean;
     /** @deprecated */
     quickEntryWithReLayr?: boolean;
     /** @deprecated */

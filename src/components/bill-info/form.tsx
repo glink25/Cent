@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
 import useCategory from "@/hooks/use-category";
 import { useCreators } from "@/hooks/use-creator";
 import { useCurrency } from "@/hooks/use-currency";
@@ -142,19 +143,10 @@ export default function BillInfo({
                         <div className="flex-1 py-2 flex gap-2 items-center justify-center max-w-full overflow-x-auto hidden-scrollbar">
                             {edit.images.map((img, i) => (
                                 <SmartImage
-                                    // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
                                     key={i}
                                     source={img}
                                     alt=""
-                                    className="max-h-[200px] object-cover rounded min-w-24 min-h-24 data-[state=loading]:animate-dynamic-bg"
-                                    style={
-                                        {
-                                            "--color-start":
-                                                "color-mix(in oklab, var(--primary) 10%, transparent)",
-                                            "--color-end":
-                                                "color-mix(in oklab, var(--primary) 80%, transparent)",
-                                        } as any
-                                    }
+                                    className="max-h-[200px] object-cover rounded min-w-24 min-h-24 data-[state=loading]:animate-pulse bg-primary/10"
                                 />
                             ))}
                         </div>

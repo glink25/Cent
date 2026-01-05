@@ -457,6 +457,13 @@ export const createTidal = <Item extends BaseItem>({
         );
     };
 
+    const forceNeedSync = async (storeFullName: string) => {
+        const { itemBucket } = getStore(storeFullName);
+        await itemBucket.configStorage.setValue({
+            structure: undefined,
+        });
+    };
+
     return {
         init,
         create,
@@ -473,6 +480,7 @@ export const createTidal = <Item extends BaseItem>({
         fetchAllStore: () => getSyncer().fetchAllStore(),
         onChange,
         hasStashes,
+        forceNeedSync,
     };
 };
 

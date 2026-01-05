@@ -101,6 +101,8 @@ export const GithubEndpoint: SyncEndpointFactory = {
             getIsNeedSync: repo.hasStashes,
             onSync: scheduler.onProcess.bind(scheduler),
             toSync: scheduler.schedule.bind(scheduler),
+
+            forceNeedSync: repo.forceNeedSync,
         };
     },
 };

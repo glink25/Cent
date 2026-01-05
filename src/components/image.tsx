@@ -7,6 +7,8 @@ import {
 } from "react";
 import { StorageAPI } from "@/api/storage";
 import { useBookStore } from "@/store/book";
+import { cacheInDB } from "@/utils/cache";
+import { GetOnlineAssetsCacheKey } from "@/utils/constant";
 
 export default function SmartImage({
     source,
@@ -33,15 +35,23 @@ export default function SmartImage({
         if (!(source instanceof File)) {
             // 普通字符串 url
             if (StorageAPI.getOnlineAsset) {
-                StorageAPI.getOnlineAsset?.(source, book).then((file) => {
-                    if (file === undefined) {
-                        setUrl(source);
-                        return;
-                    }
-                    const objectUrl = URL.createObjectURL(file);
-                    objectUrlRef.current = objectUrl;
-                    setUrl(objectUrl);
-                });
+                cacheInDB(StorageAPI.getOnlineAsset, GetOnlineAssetsCacheKey)?.(
+                    source,
+                    book,
+                )
+                    .then((file) => {
+                        if (file === undefined) {
+                            setUrl(source);
+                            return;
+                        }
+                        const objectUrl = URL.createObjectURL(file);
+                        objectUrlRef.current = objectUrl;
+                        setUrl(objectUrl);
+                    })
+                    .catch((error) => {
+                        console.error(error);
+                        setStatus("error");
+                    });
                 return;
             }
             setUrl(source);
@@ -64,9 +74,6 @@ export default function SmartImage({
     const onLoad = useCallback(() => {
         setStatus("loaded");
     }, []);
-    const onError = useCallback(() => {
-        setStatus("error");
-    }, []);
 
     if (url === "") return null;
     return (
@@ -77,7 +84,6 @@ export default function SmartImage({
             alt={alt}
             style={style}
             onLoad={onLoad}
-            onError={onError}
         />
     );
 }
