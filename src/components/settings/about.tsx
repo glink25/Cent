@@ -122,7 +122,6 @@ export function AdvancedGuideItem() {
                     <i className="icon-[mdi--chevron-right] size-5"></i>
                 </div>
             </a>
-            <AboutSettingsProvider />
         </div>
     );
 }
