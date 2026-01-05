@@ -38,15 +38,20 @@ export default function SmartImage({
                 cacheInDB(StorageAPI.getOnlineAsset, GetOnlineAssetsCacheKey)?.(
                     source,
                     book,
-                ).then((file) => {
-                    if (file === undefined) {
-                        setUrl(source);
-                        return;
-                    }
-                    const objectUrl = URL.createObjectURL(file);
-                    objectUrlRef.current = objectUrl;
-                    setUrl(objectUrl);
-                });
+                )
+                    .then((file) => {
+                        if (file === undefined) {
+                            setUrl(source);
+                            return;
+                        }
+                        const objectUrl = URL.createObjectURL(file);
+                        objectUrlRef.current = objectUrl;
+                        setUrl(objectUrl);
+                    })
+                    .catch((error) => {
+                        console.error(error);
+                        setStatus("error");
+                    });
                 return;
             }
             setUrl(source);
@@ -69,9 +74,6 @@ export default function SmartImage({
     const onLoad = useCallback(() => {
         setStatus("loaded");
     }, []);
-    const onError = useCallback(() => {
-        setStatus("error");
-    }, []);
 
     if (url === "") return null;
     return (
@@ -82,7 +84,6 @@ export default function SmartImage({
             alt={alt}
             style={style}
             onLoad={onLoad}
-            onError={onError}
         />
     );
 }

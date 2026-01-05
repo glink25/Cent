@@ -36,24 +36,24 @@ type LedgerRef = {
     scrollToIndex: (index: number) => void;
 };
 
-const Ledger = forwardRef<
-    LedgerRef,
-    {
-        bills: OutputType<Bill>[];
-        /** 如果传入的列表已按时间降序，则尝试按照日期分隔 */
-        enableDivideAsOrdered?: boolean;
-        className?: string;
-        showTime?: boolean;
-        selectedIds?: string[];
-        /** 是否显示列表首次出场动画 */
-        presence?: boolean;
-        onSelectChange?: (id: string) => void;
-        afterEdit?: (bill: Bill) => void;
-        onItemShow?: (index: number) => void;
-        onVisibleDateChange?: (date: Dayjs) => void;
-        onDateClick?: (date: Dayjs) => void;
-    }
->(
+type LedgerProps = {
+    bills: OutputType<Bill>[];
+    /** 如果传入的列表已按时间降序，则尝试按照日期分隔 */
+    enableDivideAsOrdered?: boolean;
+    className?: string;
+    showTime?: boolean;
+    selectedIds?: string[];
+    /** 是否显示列表首次出场动画 */
+    presence?: boolean;
+    onSelectChange?: (id: string) => void;
+    afterEdit?: (bill: Bill) => void;
+    onItemShow?: (index: number) => void;
+    onVisibleDateChange?: (date: Dayjs) => void;
+    onDateClick?: (date: Dayjs) => void;
+    showAssets?: boolean;
+};
+
+const Ledger = forwardRef<LedgerRef, LedgerProps>(
     (
         {
             bills,
@@ -67,6 +67,7 @@ const Ledger = forwardRef<
             onItemShow,
             onVisibleDateChange,
             onDateClick,
+            showAssets,
         },
         ref,
     ) => {
@@ -223,6 +224,7 @@ const Ledger = forwardRef<
                                                   }
                                         }
                                         showTime={showTime}
+                                        showAssets={showAssets}
                                     />
                                 </div>
                                 {isDivider && (

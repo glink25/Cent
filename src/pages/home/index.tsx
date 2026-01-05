@@ -24,6 +24,7 @@ import { amountToNumber } from "@/ledger/bill";
 import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
+import { usePreferenceStore } from "@/store/preference";
 import { useUserStore } from "@/store/user";
 import { cn } from "@/utils";
 import { filterOrderedBillListByTimeRange } from "@/utils/filter";
@@ -40,6 +41,9 @@ export default function Page() {
             const { currentBookId, books } = state;
             return books.find((b) => b.id === currentBookId);
         }),
+    );
+    const showAssets = usePreferenceStore(
+        useShallow((state) => state.showAssetsInLedger),
     );
     const { id: userId } = useUserStore();
     const syncIconClassName =
@@ -222,6 +226,7 @@ export default function Page() {
                             onVisibleDateChange={setCurrentDate}
                             onDateClick={onDateClick}
                             presence={presence}
+                            showAssets={showAssets}
                         />
                     ) : (
                         <div className="text-xs p-4 text-center">

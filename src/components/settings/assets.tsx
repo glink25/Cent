@@ -86,7 +86,7 @@ export function AssetsSettings() {
                         <div>{t("show-assets-in-ledger")}</div>
                     </div>
                     <Switch
-                        checked={showAssetsInLedger}
+                        checked={showAssetsInLedger ?? false}
                         onCheckedChange={setShowAssetsInLedger}
                     />
                 </div>

@@ -2,6 +2,7 @@ import { orderBy, sortBy } from "lodash-es";
 import { Collapsible } from "radix-ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
+import { useShallow } from "zustand/shallow";
 import { StorageDeferredAPI } from "@/api/storage";
 import BillFilterForm from "@/components/bill-filter";
 import Clearable from "@/components/clearable";
@@ -21,6 +22,7 @@ import type { Bill, BillFilter } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
+import { usePreferenceStore } from "@/store/preference";
 import { cn } from "@/utils";
 
 const SORTS = [
@@ -83,6 +85,10 @@ export default function Page() {
     const toReset = useCallback(() => {
         setForm({});
     }, []);
+
+    const showAssets = usePreferenceStore(
+        useShallow((state) => state.showAssetsInLedger),
+    );
 
     const [list, setList] = useState<Bill[]>([]);
     const [searched, setSearched] = useState(false);
@@ -399,6 +405,7 @@ export default function Page() {
                     selectedIds={enableSelect ? selectedIds : undefined}
                     onSelectChange={onSelectChange}
                     afterEdit={toSearch}
+                    showAssets={showAssets}
                 />
             </div>
             <BatchEditProvider />
