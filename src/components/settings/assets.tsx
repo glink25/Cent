@@ -81,7 +81,7 @@ export function AssetsSettings() {
                 {t("assets-settings")}
             </div>
             <div className="flex-shrink-0 divide-y divide-solid flex flex-col overflow-hidden gap-2">
-                <div className="w-full h-10 flex justify-between items-center px-4">
+                <div className="w-full min-h-10 pb-2 flex justify-between items-center px-4">
                     <div className="text-sm">
                         <div>{t("show-assets-in-ledger")}</div>
                     </div>
@@ -90,7 +90,7 @@ export function AssetsSettings() {
                         onCheckedChange={setShowAssetsInLedger}
                     />
                 </div>
-                <div className="w-full h-10 flex justify-between items-center px-4">
+                <div className="w-full min-h-10 pb-2 flex justify-between items-center px-4">
                     <div className="text-sm">
                         <div>{t("clear-assets-cache")}</div>
                         <div className="text-xs opacity-60">
