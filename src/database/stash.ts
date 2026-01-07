@@ -1,5 +1,5 @@
 import { v4 } from "uuid";
-import { diff, merge } from "./merge";
+import { diff, merge } from "./patch";
 
 export type BaseItem = {
     id: string;
@@ -244,18 +244,15 @@ function denseStashes<T extends BaseItem>(stashes: FullAction<T>[]) {
 }
 
 const diffMeta = (prev: any, current: any) => {
-    // FIXME: diff算法不严谨，需要重新设计
-    return current;
-    // const diffs = diff(prev, current, { isDiff: true, timestamp: Date.now() });
-    // return diffs;
+    const diffs = diff(prev, current, { timestamp: Date.now() });
+    return diffs;
 };
 
 export const mergeMeta = (prev: any, diff: any) => {
-    // 如果有用户在更新到最新版本前存在未同步完成的meta stash，那么需要兼容这部分用户
-    if (diff.$$meta) {
+    if (diff.$$patch) {
         const result = merge(prev, diff);
-        result.__updated_at = diff.$$meta.timestamp;
-        delete result.$$meta;
+        result.__updated_at = diff.$$patch.timestamp;
+        delete result.$$patch;
         return result;
     }
     return diff;
