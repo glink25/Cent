@@ -503,6 +503,7 @@ export default function EditorForm({
                             </div>
                             <div className="rounded-full transition-all hover:(bg-stone-700) active:(bg-stone-500)">
                                 <DatePicker
+                                    fixedTime
                                     value={billState.time}
                                     onChange={(time) => {
                                         setBillState((prev) => {

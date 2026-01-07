@@ -15,6 +15,8 @@ type Props = {
     children?: React.ReactNode;
     onBlur?: () => void;
     type?: "datetime-local" | "date";
+    /** 切换日期时不将时间重置为00:00 */
+    fixedTime?: boolean;
 };
 
 const Hours = Array.from({ length: 24 }, (_, i) => ({
@@ -70,6 +72,7 @@ export function DatePicker({
     onChange,
     children,
     onBlur,
+    fixedTime,
     type = "datetime-local",
 }: Props) {
     const t = useIntl();
@@ -114,7 +117,12 @@ export function DatePicker({
                     selected={current.toDate()}
                     onSelect={(v) => {
                         if (v) {
-                            onChange?.(v.getTime());
+                            const x = new Date(v);
+                            if (fixedTime) {
+                                x.setHours(current.hour());
+                                x.setMinutes(current.minute());
+                            }
+                            onChange?.(x.getTime());
                         }
                     }}
                 />

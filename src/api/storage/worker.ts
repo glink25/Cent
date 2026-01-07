@@ -13,6 +13,7 @@ import { BillIndexedDBStorage } from "@/database/storage";
 import type { Bill, BillFilter, ExportedJSON, GlobalMeta } from "@/ledger/type";
 import { isBillMatched } from "@/ledger/utils";
 import { blobToBase64 } from "@/utils/file";
+import { filterOrderedBillListByTimeRangeAnd } from "@/utils/filter";
 import { type AnalysisType, analysis as analysisBills } from "./analysis";
 
 const storeMap = new Map<
@@ -41,7 +42,17 @@ const getDB = (storeFullName: string) => {
 /** 获取所有数据，再通过Array.filter过滤 */
 const filter = async (storeFullName: string, rule: BillFilter) => {
     const items = await getDB(storeFullName).itemBucket.getItems();
-    return items.filter((v) => isBillMatched(v, rule));
+    // 提升筛选性能
+    const filtered = filterOrderedBillListByTimeRangeAnd(items, {
+        range: [rule.start, rule.end],
+        interval: "[]",
+        customFilter: (v) =>
+            Boolean(
+                isBillMatched(v, { ...rule, start: undefined, end: undefined }),
+            ),
+    });
+    // const filtered = items.filter((v) => isBillMatched(v, rule));
+    return filtered;
 };
 
 /** 仅获取前x条数据 */
