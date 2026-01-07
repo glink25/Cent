@@ -1,4 +1,6 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
+
+import { DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu";
 import useCategory from "@/hooks/use-category";
 import { useCreators } from "@/hooks/use-creator";
 import { useCurrency } from "@/hooks/use-currency";
@@ -12,6 +14,14 @@ import { formatTime } from "@/utils/time";
 import { showBillEditor } from "../bill-editor";
 import CategoryIcon from "../category/icon";
 import SmartImage from "../image";
+import { Button } from "../ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuGroup,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+} from "../ui/dropdown-menu";
 
 export default function BillInfo({
     edit,
@@ -170,13 +180,14 @@ export default function BillInfo({
                 <div className="footer flex justify-between items-center">
                     <div className="flex">
                         {canEdit && (
-                            <button
-                                type="button"
-                                className="buttoned px-2 rounded-md text-red-600 cursor-pointer"
-                                onClick={toDelete}
-                            >
-                                {t("delete")}
-                            </button>
+                            // <button
+                            //     type="button"
+                            //     className="buttoned px-2 rounded-md text-red-600 cursor-pointer"
+                            //     onClick={toDelete}
+                            // >
+                            //     {t("delete")}
+                            // </button>
+                            <MoreAction onDelete={toDelete} />
                         )}
                     </div>
                     <div className="flex">
@@ -200,5 +211,51 @@ export default function BillInfo({
                 </div>
             </div>
         </div>
+    );
+}
+
+function MoreAction({
+    onDelete,
+    onSplit,
+    onDuplicate,
+}: {
+    onDelete?: () => void;
+    onSplit?: () => void;
+    onDuplicate?: () => void;
+}) {
+    const t = useIntl();
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button
+                    variant={"ghost"}
+                    className="text-base font-normal cursor-pointer"
+                >
+                    {t("more-actions")}
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+                <DropdownMenuGroup>
+                    <DropdownMenuItem onClick={onDuplicate}>
+                        <i className="icon-[mdi--content-copy]"></i>
+                        {t("duplicate")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={onSplit}>
+                        <i className="icon-[mdi--format-page-split]"></i>
+                        {t("split-action")}
+                    </DropdownMenuItem>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                    <DropdownMenuItem
+                        className="text-red-600"
+                        onClick={onDelete}
+                    >
+                        <i className="icon-[mdi--trash-can-outline]"></i>
+                        {t("delete")}
+                    </DropdownMenuItem>
+                </DropdownMenuGroup>
+            </DropdownMenuContent>
+        </DropdownMenu>
     );
 }

@@ -42,7 +42,7 @@
   "total": "total",
   "creator": "creator",
   "time": "time",
-  "delete": "delete",
+  "delete": "Delete",
   "edit": "edit",
   "cancel": "Cancel",
   "year": "Year",
@@ -490,5 +490,8 @@
   "scheduled-lack-bills": "{b} bills dismissed previously, should re-add them?",
   "by-scheduled": "scheduled",
   "scheduled-delete-warning": "Are you sure to delete this Scheduled? BIlls recorded by this will NOT be delete.",
-  "next-schedule-date-at": "Next record will be {date}"
+  "next-schedule-date-at": "Next record will be {date}",
+  "duplicate": "Duplicate",
+  "split-action": "Split",
+  "more-actions": "More"
 }
