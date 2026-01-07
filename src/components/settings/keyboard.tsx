@@ -39,7 +39,6 @@ export default function KeyboardHeightSettings() {
                     min="1"
                     max="100"
                     step={1}
-                    className="h-[180px]"
                     value={keyboardHeight}
                     onInput={(v) => {
                         setKeyboardHeight(
