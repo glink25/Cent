@@ -27,7 +27,7 @@ export default function KeyboardHeightSettings() {
         };
     }, []);
     return (
-        <div className="w-full h-10 flex justify-between items-center px-4">
+        <div className="w-full min-h-10 pb-2 flex justify-between items-center px-4">
             <div className="text-sm">
                 <div>{t("keyboard-height")}</div>
             </div>

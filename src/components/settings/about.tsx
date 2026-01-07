@@ -26,7 +26,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                     <Version />
                 </div>
                 <a
-                    className="w-full h-10 flex justify-between items-center px-4"
+                    className="w-full min-h-10 pb-2 flex justify-between items-center px-4"
                     target="_blank"
                     href="https://github.com/glink25/Cent/issues/new"
                     rel="noopener"
@@ -38,7 +38,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                     <i className="icon-[mdi--arrow-top-right]"></i>
                 </a>
                 <a
-                    className="w-full h-10 flex justify-between items-center px-4"
+                    className="w-full min-h-10 pb-2 flex justify-between items-center px-4"
                     target="_blank"
                     href="https://glink25.github.io/tag/Cent/"
                     rel="noopener"
@@ -50,7 +50,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                     <i className="icon-[mdi--arrow-top-right]"></i>
                 </a>
                 <a
-                    className="w-full h-10 flex justify-between items-center px-4"
+                    className="w-full min-h-10 pb-2 flex justify-between items-center px-4"
                     target="_blank"
                     href="https://github.com/glink25/Cent"
                     rel="noopener"
@@ -61,7 +61,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                     </div>
                     <i className="icon-[mdi--arrow-top-right]"></i>
                 </a>
-                {/* <div className="w-full h-10 flex justify-between items-center px-4 opacity-60">
+                {/* <div className="w-full min-h-10 pb-2 flex justify-between items-center px-4 opacity-60">
                     <div className="flex items-center gap-2">
                         <i className="icon-[mdi--github] size-5"></i>
                         <div className="text-sm">Github</div>

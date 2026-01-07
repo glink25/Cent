@@ -53,7 +53,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                 </div>
                 <div className="flex-shrink-0 divide-y divide-solid flex flex-col overflow-hidden gap-2">
                     <PredictSettings />
-                    <div className="w-full h-10 flex justify-between items-center px-4">
+                    <div className="w-full min-h-10 pb-2 flex justify-between items-center px-4">
                         <div className="text-sm">
                             <div>{t("auto-locate-when-add-bill")}</div>
                             <div className="text-xs opacity-60">
@@ -65,7 +65,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                             onCheckedChange={setAutoLocateWhenAddBill}
                         />
                     </div>
-                    <div className="w-full h-10 flex justify-between items-center px-4">
+                    <div className="w-full min-h-10 pb-2 flex justify-between items-center px-4">
                         <div className="text-sm">
                             <div>{t("multiply-key")}</div>
                             <div className="text-xs opacity-60">
@@ -93,7 +93,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                     {t("experimental-functions")}
                 </div>
                 <div className="flex-shrink-0 divide-y divide-solid flex flex-col overflow-hidden gap-2">
-                    <div className="w-full h-10 flex justify-between items-center px-4">
+                    <div className="w-full min-h-10 pb-2 flex justify-between items-center px-4">
                         <div className="text-sm">
                             <div>
                                 {t("enter-add-bill-when-reduce-motion-changed")}
@@ -119,7 +119,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                             }
                         />
                     </div>
-                    <div className="w-full h-10 flex justify-between items-center px-4">
+                    <div className="w-full min-h-10 pb-2 flex justify-between items-center px-4">
                         <div className="text-sm">
                             <div>
                                 {t("quick-add-when-reduce-motion-changed")}
@@ -145,7 +145,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                             }
                         />
                     </div>
-                    <div className="w-full h-10 flex justify-between items-center px-4">
+                    <div className="w-full min-h-10 pb-2 flex justify-between items-center px-4">
                         <div className="text-sm">
                             <div className="flex items-center gap-1">
                                 {t("disable-android-hash-mode")}{" "}
@@ -218,7 +218,7 @@ export default function LabSettingsItem() {
 
 //     return (
 //         <div className="w-full flex flex-col gap-2 px-4">
-//             <div className="h-10 flex justify-between items-center ">
+//             <div className="min-h-10 pb-2 flex justify-between items-center ">
 //                 <div className="text-sm">
 //                     <div>通过ReLayr自动记账</div>
 //                     <div className="text-xs opacity-60">
