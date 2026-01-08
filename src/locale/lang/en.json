@@ -445,7 +445,7 @@
   "quick-currencies": "Quick Entry",
   "quick-currencies-desc": "Quick switch currencies when add bill",
   "currency-update-v2-hint": "Custom currencies & Re-Order quick Entry Support Now",
-  "quick-entry-empty": "Darg currencies here to enable quick switch currencies on add bill",
+  "quick-entry-empty": "Move currencies here to enable quick switch currencies on add bill",
   "add-new-tag": "Create Tag",
   "edit-tag": "Edit tag",
   "tag-name": "Tag Name",
@@ -494,5 +494,6 @@
   "duplicate": "Duplicate",
   "split-action": "Split",
   "more-actions": "More",
-  "split-action-tip": "The current amount will be deducted from the original bill"
+  "split-action-tip": "The current amount will be deducted from the original bill",
+  "other-currencies": "Other currencies"
 }

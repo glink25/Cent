@@ -1,4 +1,5 @@
 import dayjs from "dayjs";
+import { fetchCurrency as fetchKurrency } from "./kurrency";
 
 interface Response {
     success: boolean;
@@ -10,7 +11,7 @@ interface Response {
 
 export type Rates = Record<string, number>;
 
-const LOGIN_API_HOST = import.meta.env.VITE_LOGIN_API_HOST;
+const RATE_API_HOST = import.meta.env.VITE_RATE_API_HOST;
 
 // 缓存同时进行的请求，避免重复请求
 const requestCache = new Map<string, Promise<Rates>>();
@@ -50,17 +51,24 @@ export const fetchCurrency = async (base: string, date?: Date | number) => {
             }
             return `/${dateStr}`;
         })();
-        const res = await fetch(
-            `${LOGIN_API_HOST}/api/currency/${base}${dateParam}`,
-        );
+        const json = await (async () => {
+            if (RATE_API_HOST) {
+                const res = await fetch(
+                    `${RATE_API_HOST}/api/currency/${base}${dateParam}`,
+                );
 
-        if (!res.ok) {
-            throw new Error(
-                `Failed to fetch currency rates: ${res.status} ${res.statusText}`,
-            );
-        }
+                if (!res.ok) {
+                    throw new Error(
+                        `Failed to fetch currency rates: ${res.status} ${res.statusText}`,
+                    );
+                }
 
-        const json: Response = await res.json();
+                const json: Response = await res.json();
+                return json;
+            }
+            const json = await fetchKurrency(base, date);
+            return json;
+        })();
         return json.rates;
     })();
 

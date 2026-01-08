@@ -29,7 +29,7 @@ const WhatsNew: (PromotionItem & { action?: () => void })[] = [
         id: "currency-update-v2",
         label: "currency-update-v2-hint",
         action: () => {
-            showCurrencyList({ openQuickEntry: true });
+            showCurrencyList();
         },
     },
     {

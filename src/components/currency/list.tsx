@@ -1,14 +1,15 @@
 /** biome-ignore-all lint/security/noDangerouslySetInnerHtml: <explanation> */
-import { useEffect, useMemo, useRef, useState } from "react";
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { DefaultCurrencies } from "@/api/currency/currencies";
+import { type Currency, DefaultCurrencies } from "@/api/currency/currencies";
 import { useCurrency } from "@/hooks/use-currency";
 import PopupLayout from "@/layouts/popup-layout";
 import type { CustomCurrency } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import { cn } from "@/utils";
 import modal from "../modal";
-import { showSortableGroup } from "../sortable/group";
 import { Button } from "../ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "../ui/select";
@@ -18,7 +19,7 @@ export default function CurrencyListForm({
     edit,
     onCancel,
 }: {
-    edit?: { openQuickEntry?: boolean };
+    edit?: any;
     onCancel?: () => void;
     onConfirm?: (v: any) => void;
 }) {
@@ -38,6 +39,19 @@ export default function CurrencyListForm({
         quickCurrencies,
         updateQuickCurrencies,
     } = useCurrency();
+
+    const others = allCurrencies.filter((c) =>
+        quickCurrencies.every((v) => v.id !== c.id),
+    );
+
+    /**
+     * 判断是否为自定义货币类型 (CustomCurrency)
+     */
+    const isCustomCurrency = (
+        v: CustomCurrency | Currency,
+    ): v is CustomCurrency => {
+        return customCurrencies.some((c) => c.id === v.id);
+    };
 
     const rates = useMemo(() => {
         return DefaultCurrencies.map((currency) => {
@@ -106,42 +120,6 @@ export default function CurrencyListForm({
         updateCustomCurrency(newCurrency);
     };
 
-    const toReOrder = async () => {
-        const others = allCurrencies.filter((c) =>
-            quickCurrencies.every((v) => v.id !== c.id),
-        );
-        const group = [
-            {
-                id: "quick",
-                label: `${t("quick-currencies")}`,
-                items: quickCurrencies.map((c) => ({
-                    id: c.id,
-                    label: c.label,
-                })),
-                empty: t("quick-entry-empty"),
-            },
-            {
-                id: "others",
-                label: t("Other"),
-                items: others.map((c) => ({
-                    id: c.id,
-                    label: c.label,
-                })),
-            },
-        ];
-        const newOrder = await showSortableGroup({ group });
-        const newQuickItems =
-            newOrder.find((v) => v.id === "quick")?.items ?? [];
-        updateQuickCurrencies(newQuickItems.map((v) => v.id));
-    };
-
-    const toReorderRef = useRef(toReOrder);
-    toReorderRef.current = toReOrder;
-    useEffect(() => {
-        if (edit?.openQuickEntry) {
-            toReorderRef.current();
-        }
-    }, [edit?.openQuickEntry]);
     return (
         <PopupLayout
             onBack={onCancel}
@@ -149,9 +127,6 @@ export default function CurrencyListForm({
             className="flex flex-col h-full overflow-hidden"
             right={
                 <div className="flex gap-2 items-center">
-                    <Button variant="secondary" onClick={toReOrder}>
-                        {t("quick-currencies")}
-                    </Button>
                     <Button onClick={() => toUpdateCurrency()}>
                         <i className="icon-[mdi--add]"></i>
                     </Button>
@@ -234,63 +209,175 @@ export default function CurrencyListForm({
                     </Button>
                 </div>
             </div>
-            <div className="flex-1 overflow-y-auto">
-                <div className="px-4">
-                    {customCurrencies.map((currency) => {
-                        const rate = currency.rateToBase;
-                        return (
-                            <button
-                                key={currency.id}
-                                type="button"
-                                className="py-2 border-b w-full flex justify-between items-center cursor-pointer"
-                                onClick={() => toUpdateCurrency(currency)}
-                            >
-                                <div className="flex items-center gap-2">
-                                    <div className="text-xl"></div>
-                                    <div className="text-left">
-                                        <div>{currency.name}</div>
-                                        <div className="text-xs opacity-60">
-                                            {`(${currency.symbol})`}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="text-sm">{rate.toFixed(6)}</div>
-                            </button>
-                        );
-                    })}
+            <div className="flex-1 overflow-y-auto pb-4">
+                <div className="border rounded-md px-2 mx-2 mb-4">
+                    <div className="text-xs opacity-60 py-2">
+                        {t("quick-currencies")}
+                    </div>
+                    <div>
+                        {quickCurrencies.length === 0 ? (
+                            <div className="text-center text-xs opacity-60 py-4">
+                                {t("quick-entry-empty")}{" "}
+                            </div>
+                        ) : (
+                            quickCurrencies.map((currency) => {
+                                const tail = (
+                                    <>
+                                        <Button
+                                            size={"sm"}
+                                            variant="ghost"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                updateQuickCurrencies(
+                                                    quickCurrencies
+                                                        .filter(
+                                                            (v) =>
+                                                                v.id !==
+                                                                currency.id,
+                                                        )
+                                                        .map((v) => v.id),
+                                                );
+                                            }}
+                                        >
+                                            <i className="icon-[mdi--close]"></i>
+                                        </Button>
+                                    </>
+                                );
+                                if (isCustomCurrency(currency)) {
+                                    const rate = currency.rateToBase;
+                                    return (
+                                        <CurrencyItem
+                                            key={currency.id}
+                                            name={currency.name}
+                                            symbol={currency.symbol}
+                                            rate={rate}
+                                            onClick={() =>
+                                                toUpdateCurrency(currency)
+                                            }
+                                        >
+                                            {tail}
+                                        </CurrencyItem>
+                                    );
+                                }
+                                const rate = rates.find(
+                                    (r) => r.id === currency.id,
+                                );
+                                return (
+                                    <CurrencyItem
+                                        key={currency.id}
+                                        name={t(currency.labelKey)}
+                                        symbol={currency.symbol}
+                                        icon={currency.icon}
+                                        rate={rate?.predict}
+                                        onClick={() =>
+                                            toManuallyUpdate(currency)
+                                        }
+                                    >
+                                        {tail}
+                                    </CurrencyItem>
+                                );
+                            })
+                        )}
+                    </div>
                 </div>
-                <div className="px-4">
-                    {DefaultCurrencies.map((currency) => {
-                        const rate = rates.find((r) => r.id === currency.id);
-                        return (
-                            <button
-                                key={currency.id}
-                                type="button"
-                                disabled={currency.id === baseCurrency.id}
-                                className="py-2 border-b w-full flex justify-between items-center"
-                                onClick={() => toManuallyUpdate(currency)}
-                            >
-                                <div className="flex items-center gap-2">
-                                    <div className="text-xl">
-                                        {currency.icon}
-                                    </div>
-                                    <div className="text-left">
-                                        <div>{t(currency.labelKey)}</div>
-                                        <div className="text-xs opacity-60">
-                                            {currency.id}
-                                            {`(${currency.symbol})`}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="text-sm">
-                                    {rate?.predict.toFixed(6)}
-                                </div>
-                            </button>
-                        );
-                    })}
+                <div className="border rounded-md px-2 mx-2">
+                    <div className="text-xs opacity-60 py-2">
+                        {t("other-currencies")}
+                    </div>
+                    <div>
+                        {others.map((currency) => {
+                            const tail = (
+                                <>
+                                    <Button
+                                        size={"sm"}
+                                        variant="ghost"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            updateQuickCurrencies([
+                                                currency.id,
+                                                ...quickCurrencies.map(
+                                                    (v) => v.id,
+                                                ),
+                                            ]);
+                                        }}
+                                    >
+                                        <i className="icon-[mdi--arrow-collapse-up]"></i>
+                                    </Button>
+                                </>
+                            );
+                            if (isCustomCurrency(currency)) {
+                                const rate = currency.rateToBase;
+                                return (
+                                    <CurrencyItem
+                                        key={currency.id}
+                                        name={currency.name}
+                                        symbol={currency.symbol}
+                                        rate={rate}
+                                        onClick={() =>
+                                            toUpdateCurrency(currency)
+                                        }
+                                    >
+                                        {tail}
+                                    </CurrencyItem>
+                                );
+                            }
+                            const rate = rates.find(
+                                (r) => r.id === currency.id,
+                            );
+                            return (
+                                <CurrencyItem
+                                    key={currency.id}
+                                    name={t(currency.labelKey)}
+                                    symbol={currency.symbol}
+                                    icon={currency.icon}
+                                    rate={rate?.predict}
+                                    onClick={() => toManuallyUpdate(currency)}
+                                >
+                                    {tail}
+                                </CurrencyItem>
+                            );
+                        })}
+                    </div>
                 </div>
             </div>
             <EditCurrencyProvider />
         </PopupLayout>
+    );
+}
+
+function CurrencyItem({
+    name,
+    icon,
+    symbol,
+    rate,
+    children,
+    onClick,
+}: {
+    name: string;
+    symbol: string;
+    icon?: ReactNode;
+    rate?: number;
+    children?: ReactNode;
+    onClick?: () => void;
+}) {
+    return (
+        <div
+            className="py-2 border-b w-full flex justify-between items-center cursor-pointer"
+            onClick={onClick}
+        >
+            <div className="flex items-center gap-2">
+                {icon && <div className="text-xl">{icon}</div>}
+                <div className="text-left">
+                    <div>{name}</div>
+                    <div className="text-xs opacity-60">{`(${symbol})`}</div>
+                </div>
+            </div>
+            <div className="flex items-center gap-2">
+                <div className="text-sm">{rate?.toFixed(6)}</div>
+                {children}
+            </div>
+        </div>
     );
 }

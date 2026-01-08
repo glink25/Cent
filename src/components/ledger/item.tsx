@@ -116,13 +116,14 @@ export default function BillItem({
                               : ""
                     }`}
                 >
-                    <Money value={amountToNumber(bill.amount)} />
+                    <Money value={amountToNumber(bill.amount)} accurate />
 
                     {currency && (
                         <div className="text-xs">
                             {currency.symbol}
                             <Money
                                 value={amountToNumber(bill.currency!.amount)}
+                                accurate
                             />
                         </div>
                     )}
