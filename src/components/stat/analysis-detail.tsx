@@ -99,9 +99,9 @@ export function AnalysisDetail({
                 className={cn(
                     "common text-sm [&_[data-state=value]]:font-medium pb-2",
                     type === "expense"
-                        ? "[&_[data-state=value]]:text-semantic-income"
+                        ? "[&_[data-state=value]]:text-semantic-expense"
                         : type === "income"
-                          ? "[&_[data-state=value]]:text-semantic-expense"
+                          ? "[&_[data-state=value]]:text-semantic-income"
                           : "",
                 )}
             >
