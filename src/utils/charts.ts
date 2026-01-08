@@ -1,8 +1,9 @@
 import dayjs, { type OpUnitType } from "dayjs";
-import { merge } from "lodash-es";
+import { merge, sortBy } from "lodash-es";
 import type { ECOption } from "@/components/chart";
 import { amountToNumber } from "@/ledger/bill";
 import type { Bill, BillType } from "@/ledger/type";
+import { categoryColors, createColorSet, getCSSVariable } from "./color";
 import { toFixed } from "./number";
 import { formatDate } from "./time";
 
@@ -476,11 +477,19 @@ export const overallTrendOption = (
             // 系列列表，定义了图表中的每一条线（或其他图形）
             series: [
                 // ECharts 会自动将 dataset 的第二列('收入')映射到第一个系列
-                { type: "line", smooth: true },
+                {
+                    type: "line",
+                    smooth: true,
+                    color: getCSSVariable("--color-income"),
+                },
                 // 第三列('支出')映射到第二个系列
-                { type: "line", smooth: true },
+                {
+                    type: "line",
+                    smooth: true,
+                    color: getCSSVariable("--color-expense"),
+                },
                 // 第四列('结余')映射到第三个系列
-                { type: "line", smooth: true },
+                { type: "line", smooth: true, color: "black" },
             ],
         },
         options,
@@ -519,44 +528,50 @@ export const userTrendOption = (
     return merge(baseOption, options);
 };
 
-export const structureOption = (dataset: any[], options?: ECOption) =>
-    merge(
+export const structureOption = (dataset: any[], options?: ECOption) => {
+    // 处理数据，为每一项注入基于 name 的固定颜色
+    const coloredData = sortBy(dataset, (v) => v.value).map((item) => ({
+        ...item,
+        itemStyle: {
+            // 根据 name 生成/获取固定颜色
+            color: categoryColors(item.id),
+        },
+    }));
+
+    return merge(
         {
             title: {
                 text: "支出结构",
-                left: "center", // 标题居中
+                left: "center",
             },
-            // 提示框，'item' 表示鼠标悬浮在数据项（扇区）上时触发
             tooltip: {
                 trigger: "item",
-                // 格式化提示内容：a(系列名), b(数据项名), c(数值), d(百分比)
                 formatter: "{b}: {c} ({d}%)",
             },
             legend: {
-                orient: "vertical", // 图例垂直排列
-                left: "left", // 靠左放置
+                orient: "vertical",
+                left: "left",
             },
             series: [
                 {
-                    name: "支出类型", // 系列名称，会在 tooltip 中显示
+                    name: "支出类型",
                     type: "pie",
                     center: ["55%", "50%"],
-                    radius: "55%", // 饼图半径
+                    radius: "55%",
                     labelLine: {
                         show: true,
-                        length: 10, // 第一段（直线段）长度 20px 或 20（单位取决于版本 / 语法上下文）
-                        length2: 10, // 第二段（拐弯 / 水平延伸）长度 30px
+                        length: 10,
+                        length2: 10,
                         lineStyle: {
                             width: 1,
                             type: "solid",
                             color: "#aaa",
                         },
-                        smooth: 0.2, // 可选，让折线有点圆弧过渡
+                        smooth: 0.2,
                     },
-                    // 直接使用我们生成的 { name, value } 格式的数据
-                    data: dataset,
+                    // 使用处理后的带颜色数据
+                    data: coloredData,
                     emphasis: {
-                        // 高亮状态下的样式
                         itemStyle: {
                             shadowBlur: 10,
                             shadowOffsetX: 0,
@@ -568,6 +583,7 @@ export const structureOption = (dataset: any[], options?: ECOption) =>
         },
         options,
     );
+};
 
 const transformToDisplayCurrencyAmount = (
     bill: Bill,
