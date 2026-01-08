@@ -7,6 +7,7 @@ import {
     type MotionValue,
     motion,
     type PanInfo,
+    type ResolvedValues,
     type Transition,
     useDragControls,
     useMotionValue,
@@ -77,17 +78,29 @@ function Dialog(props: DialogProps) {
     });
     const [progress, setProgress] = useState<number>();
 
+    const onOpenChange = useCallback(
+        (v: boolean) => {
+            setIsOpen(v);
+            if (!v) {
+                setProgress(0);
+            }
+        },
+        [setIsOpen],
+    );
+
     return (
-        <DialogProvider value={{ isOpen, setIsOpen, progress, setProgress }}>
+        <DialogProvider
+            value={{
+                isOpen,
+                setIsOpen,
+                progress,
+                setProgress,
+            }}
+        >
             <DialogPrimitive.Root
                 data-slot="dialog"
                 {...props}
-                onOpenChange={(v) => {
-                    setIsOpen(v);
-                    if (!v) {
-                        setProgress(undefined);
-                    }
-                }}
+                onOpenChange={onOpenChange}
             />
         </DialogProvider>
     );
@@ -281,6 +294,18 @@ function DialogContent({
         [onClose, x],
     );
 
+    const onUpdate = useCallback(
+        (e: ResolvedValues) => {
+            const p = fade
+                ? 1 - Number(e.opacity)
+                : isDesktop
+                  ? toPx(`${e.y}`) / window.innerHeight
+                  : toPx(`${e.x}`) / window.innerWidth;
+            setProgress(Number(p.toFixed(2)));
+        },
+        [isDesktop, fade, setProgress],
+    );
+
     return (
         <DialogPrimitive.Content
             asChild
@@ -315,14 +340,7 @@ function DialogContent({
                 animate={currentVariant.animate}
                 exit={currentVariant.exit}
                 transition={transition}
-                onUpdate={(e) => {
-                    const p = fade
-                        ? 1 - Number(e.opacity)
-                        : isDesktop
-                          ? toPx(`${e.y}`) / window.innerHeight
-                          : toPx(`${e.x}`) / window.innerWidth;
-                    setProgress(Number(p.toFixed(2)));
-                }}
+                onUpdate={onUpdate}
                 {...props}
             />
         </DialogPrimitive.Content>

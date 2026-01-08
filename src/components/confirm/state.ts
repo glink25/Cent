@@ -39,13 +39,20 @@ export const useGlobalConfirmStore = create<
         if (controller) return [controller.promise, controller.cancel] as const;
 
         const { promise, reject, resolve } = Promise.withResolvers<any>();
+
+        let cancelled = false;
         const innerCancel = () => {
+            if (cancelled) {
+                return;
+            }
+            cancelled = true;
             reject();
             get().update(id, {
                 visible: false,
                 controller: undefined,
             });
         };
+
         let cancel: () => void;
         const enableHash = getEnableHashMode();
         if (enableHash) {

@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { toast } from "sonner";
+import { useShallow } from "zustand/shallow";
 import { goAddBill } from "@/components/bill-editor";
 import { afterAddBillPromotion } from "@/components/promotion";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,9 @@ import { usePageVisibility } from "./use-page-visibility";
 import useRapidReducedMotionChange from "./use-reduce-motion";
 
 export function useQuickGoAdd() {
-    const { enterAddBillWhenReduceMotionChanged } = usePreferenceStore();
+    const enterAddBillWhenReduceMotionChanged = usePreferenceStore(
+        useShallow((state) => state.enterAddBillWhenReduceMotionChanged),
+    );
     useRapidReducedMotionChange(
         useCallback(() => {
             goAddBill();
@@ -28,7 +31,9 @@ export function useQuickGoAdd() {
 export function useQuickEntryByClipboard() {
     const t = useIntl();
 
-    const { readClipboardWhenReduceMotionChanged } = usePreferenceStore();
+    const readClipboardWhenReduceMotionChanged = usePreferenceStore(
+        useShallow((state) => state.readClipboardWhenReduceMotionChanged),
+    );
     const { categories, expenses } = useCategory();
     useRapidReducedMotionChange(
         useCallback(async () => {
