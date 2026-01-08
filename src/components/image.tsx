@@ -1,7 +1,9 @@
 import {
     type CSSProperties,
+    type ReactNode,
     useCallback,
     useEffect,
+    useLayoutEffect,
     useRef,
     useState,
 } from "react";
@@ -10,17 +12,32 @@ import { useBookStore } from "@/store/book";
 import { cacheInDB } from "@/utils/cache";
 import { GetOnlineAssetsCacheKey } from "@/utils/constant";
 
-export default function SmartImage({
-    source,
-    className,
-    alt,
-    style,
-}: {
+// 降低弹窗过渡动画时图片渲染时的抖动
+function Delayed({ children }: { children: ReactNode }) {
+    const [visible, setVisible] = useState(false);
+    useLayoutEffect(() => {
+        setTimeout(() => {
+            setVisible(true);
+        }, 200);
+    }, []);
+    if (!visible) {
+        return null;
+    }
+    return children;
+}
+
+type SmartImageCoreProps = {
     source: string | File;
     className?: string;
     alt?: string;
     style?: CSSProperties;
-}) {
+};
+export function SmartImageCore({
+    source,
+    className,
+    alt,
+    style,
+}: SmartImageCoreProps) {
     const [status, setStatus] = useState("loading");
     const [url, setUrl] = useState<string>(
         typeof source === "string" ? source : "",
@@ -85,5 +102,13 @@ export default function SmartImage({
             style={style}
             onLoad={onLoad}
         />
+    );
+}
+
+export default function SmartImage(props: SmartImageCoreProps) {
+    return (
+        <Delayed>
+            <SmartImageCore {...props} />
+        </Delayed>
     );
 }

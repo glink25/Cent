@@ -1,4 +1,7 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
+
+import { DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu";
+import { toast } from "sonner";
 import useCategory from "@/hooks/use-category";
 import { useCreators } from "@/hooks/use-creator";
 import { useCurrency } from "@/hooks/use-currency";
@@ -6,12 +9,21 @@ import { useScheduled } from "@/hooks/use-scheduled";
 import { useTag } from "@/hooks/use-tag";
 import { amountToNumber } from "@/ledger/bill";
 import { useIntl } from "@/locale";
+import { useGuideStore } from "@/store/guide";
 import { type EditBill, useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
 import { formatTime } from "@/utils/time";
 import { showBillEditor } from "../bill-editor";
 import CategoryIcon from "../category/icon";
 import SmartImage from "../image";
+import { Button } from "../ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuGroup,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+} from "../ui/dropdown-menu";
 
 export default function BillInfo({
     edit,
@@ -54,12 +66,53 @@ export default function BillInfo({
             onConfirm?.(true);
         }
     };
+
+    // more actions
+    const toDuplicate = async () => {
+        if (edit?.id) {
+            await useLedgerStore
+                .getState()
+                .addBill({ ...edit, time: Date.now() });
+            onConfirm?.(true);
+        }
+    };
+    const toSplit = async () => {
+        if (edit?.id) {
+            if (!useGuideStore.getState().splitBillTipShows) {
+                toast.info(t("split-action-tip"));
+                useGuideStore.setState((prev) => ({
+                    ...prev,
+                    splitBillTipShows: true,
+                }));
+            }
+            const newBill = await showBillEditor(edit);
+            await Promise.all([
+                useLedgerStore.getState().addBill({ ...newBill }),
+                useLedgerStore.getState().updateBill(edit.id, {
+                    ...edit,
+                    amount: edit.amount - newBill.amount,
+                    // 涉及多币种时默认币种相同，直接相减
+                    currency:
+                        edit.currency === undefined
+                            ? undefined
+                            : {
+                                  ...edit.currency,
+                                  amount:
+                                      edit.currency.amount -
+                                      (newBill.currency?.amount ?? 0),
+                              },
+                }),
+            ]);
+            onConfirm?.(true);
+        }
+    };
     const toDelete = async () => {
         if (edit?.id) {
             await useLedgerStore.getState().removeBill(edit?.id);
             onConfirm?.(false);
         }
     };
+
     const toClose = () => {
         onCancel?.();
     };
@@ -120,7 +173,7 @@ export default function BillInfo({
                         </div>
                         {currency !== undefined && (
                             <div className="flex justify-between items-center my-1 gap-2">
-                                <div>币种:</div>
+                                <div>{t("currency")}:</div>
                                 <div>
                                     {currency.symbol}
                                     {amountToNumber(edit.currency!.amount)}{" "}
@@ -170,13 +223,11 @@ export default function BillInfo({
                 <div className="footer flex justify-between items-center">
                     <div className="flex">
                         {canEdit && (
-                            <button
-                                type="button"
-                                className="buttoned px-2 rounded-md text-red-600 cursor-pointer"
-                                onClick={toDelete}
-                            >
-                                {t("delete")}
-                            </button>
+                            <MoreAction
+                                onDelete={toDelete}
+                                onDuplicate={toDuplicate}
+                                onSplit={toSplit}
+                            />
                         )}
                     </div>
                     <div className="flex">
@@ -200,5 +251,51 @@ export default function BillInfo({
                 </div>
             </div>
         </div>
+    );
+}
+
+function MoreAction({
+    onDelete,
+    onSplit,
+    onDuplicate,
+}: {
+    onDelete?: () => void;
+    onSplit?: () => void;
+    onDuplicate?: () => void;
+}) {
+    const t = useIntl();
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button
+                    variant={"ghost"}
+                    className="text-base font-normal cursor-pointer"
+                >
+                    {t("more-actions")}
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+                <DropdownMenuGroup>
+                    <DropdownMenuItem onClick={onDuplicate}>
+                        <i className="icon-[mdi--content-copy]"></i>
+                        {t("duplicate")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={onSplit}>
+                        <i className="icon-[mdi--format-page-split]"></i>
+                        {t("split-action")}
+                    </DropdownMenuItem>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                    <DropdownMenuItem
+                        className="text-red-600"
+                        onClick={onDelete}
+                    >
+                        <i className="icon-[mdi--trash-can-outline]"></i>
+                        {t("delete")}
+                    </DropdownMenuItem>
+                </DropdownMenuGroup>
+            </DropdownMenuContent>
+        </DropdownMenu>
     );
 }

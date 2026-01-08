@@ -32,5 +32,5 @@ export function useMediaQuery(query: string) {
     return matches;
 }
 
-// 辅助 Hook，方便在组件中使用
-export const useIsDesktop = () => useMediaQuery("(min-width: 768px)");
+// 符合tailwindcss sm 的分界线定义
+export const useIsDesktop = () => useMediaQuery("(min-width: 640px)");
