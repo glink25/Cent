@@ -189,3 +189,11 @@ export const DefaultCurrencies = [
     },
     // --- 新增货币结束 ---
 ];
+
+export type Currency = {
+    label: any;
+    id: string;
+    labelKey: string;
+    symbol: string;
+    icon: string;
+};

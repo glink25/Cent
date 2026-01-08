@@ -452,7 +452,7 @@
   "quick-currencies-desc": "在记账页面快速切换币种",
   "currency-update-v2-hint": "自定义币种 & 币种自定义排序现已支持",
   "group-no-items": "暂无项目",
-  "quick-entry-empty": "拖动货币到此处，在记账时即可切换多币种",
+  "quick-entry-empty": "移动货币到此处，在记账时即可切换多币种",
   "add-new-tag": "创建标签",
   "edit-tag": "编辑标签",
   "tag-name": "标签名称",
@@ -507,5 +507,6 @@
   "duplicate": "复制",
   "split-action": "拆分",
   "more-actions": "更多",
-  "split-action-tip": "原来的账单会减去当前金额"
+  "split-action-tip": "原来的账单会减去当前金额",
+  "other-currencies": "其它货币"
 }
