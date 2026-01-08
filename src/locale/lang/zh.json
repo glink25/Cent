@@ -506,5 +506,6 @@
   "next-schedule-date-at": "下一条将在{date}录入",
   "duplicate": "复制",
   "split-action": "拆分",
-  "more-actions": "更多"
+  "more-actions": "更多",
+  "split-action-tip": "原来的账单会减去当前金额"
 }

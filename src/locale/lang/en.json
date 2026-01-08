@@ -493,5 +493,6 @@
   "next-schedule-date-at": "Next record will be {date}",
   "duplicate": "Duplicate",
   "split-action": "Split",
-  "more-actions": "More"
+  "more-actions": "More",
+  "split-action-tip": "The current amount will be deducted from the original bill"
 }

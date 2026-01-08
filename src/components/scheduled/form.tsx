@@ -272,8 +272,10 @@ export default function ScheduledEditForm({
                             <p className="text-sm text-muted-foreground">
                                 {t("set-scheduled-period")}
                             </p>
-                            <div className="flex items-center justify-between">
-                                <div>{t("every")}:</div>
+                            <div className="flex items-center justify-between gap-2">
+                                <div className="flex-shrink-0">
+                                    {t("every")}:
+                                </div>
                                 <div className="flex items-center gap-2">
                                     <FormField
                                         control={form.control}

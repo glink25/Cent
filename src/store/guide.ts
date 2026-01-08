@@ -12,6 +12,8 @@ type GuideStore = {
     cloudSyncHintShows?: boolean;
     // 首页预算提示
     dynamicPromotionIds?: string[];
+    // 拆分账单提示
+    splitBillTipShows?: boolean;
     closedPromotionIds?: string[];
 };
 
