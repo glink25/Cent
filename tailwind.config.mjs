@@ -5,6 +5,21 @@ module.exports = {
     content: ["./src/**/*.{js,ts,jsx,tsx}"],
     theme: {
         extend: {
+            // Semantic color tokens (mapped to CSS variables).
+            // Use classes like `bg-semantic-expense`, `text-semantic-income-medium`.
+            colors: {
+                semantic: {
+                    // strong / primary usage for expense/income
+                    expense: "var(--color-expense)",
+                    // '-medium' mappings point to legacy aliases so we can
+                    // change component usages without altering visual colors.
+                    "expense-medium": "var(--color-expense-medium-legacy)",
+                    "expense-muted": "var(--color-expense-400)",
+                    income: "var(--color-income)",
+                    "income-medium": "var(--color-income-medium-legacy)",
+                    "income-muted": "var(--color-income-400)",
+                },
+            },
             keyframes: {
                 "overlay-show": {
                     from: { opacity: "0" },

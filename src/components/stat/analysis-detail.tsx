@@ -68,7 +68,11 @@ export function AnalysisDetail({
         // 使用 intl.formatMessage 生成文案片段
         return (
             <span
-                className={changeValue >= 0 ? "text-red-700" : "text-green-700"}
+                className={
+                    changeValue >= 0
+                        ? "text-semantic-expense"
+                        : "text-semantic-income"
+                }
             >
                 {t(messageId, { p: percentage })}
             </span>
@@ -95,9 +99,9 @@ export function AnalysisDetail({
                 className={cn(
                     "common text-sm [&_[data-state=value]]:font-medium pb-2",
                     type === "expense"
-                        ? "[&_[data-state=value]]:text-green-700"
+                        ? "[&_[data-state=value]]:text-semantic-income"
                         : type === "income"
-                          ? "[&_[data-state=value]]:text-red-700"
+                          ? "[&_[data-state=value]]:text-semantic-expense"
                           : "",
                 )}
             >

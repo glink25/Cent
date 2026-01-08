@@ -167,6 +167,30 @@ button {
 	--sidebar-ring: oklch(0.551 0.027 264.364);
 }
 
+/* Semantic expense/income color variables (defaults match Tailwind's default palette)
+   - These variables are intended to be the single source of truth for "expense" and
+	 "income" related colors used across the app. Change here or in `.dark` to theme.
+*/
+:root {
+	/* Semantic expense/income colors: keep minimal set
+	   - Primary semantic color
+	   - Legacy '-medium' alias kept for compatibility */
+	--color-expense: #b91c1c; /* primary expense color */
+	--color-expense-medium-legacy: #f87171; /* medium (legacy) */
+
+	--color-income: #15803d; /* primary income color */
+	--color-income-medium-legacy: #34d399; /* medium (legacy) */
+}
+
+/* Dark mode overrides for semantic colors (optional) */
+.dark {
+	--color-expense: #991b1b;
+	--color-expense-medium-legacy: #fb7185;
+
+	--color-income: #166534;
+	--color-income-medium-legacy: #34d399;
+}
+
 @layer base {
 	* {
 		@apply border-border outline-ring/50;

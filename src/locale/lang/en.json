@@ -495,5 +495,7 @@
   "split-action": "Split",
   "more-actions": "More",
   "split-action-tip": "The current amount will be deducted from the original bill",
-  "other-currencies": "Other currencies"
+  "other-currencies": "Other currencies",
+  "put-ledgers-on-me": "Put ledgers on Me",
+  "unkown-users-may-show-up-when-analyze": "May have unknown user shows up"
 }

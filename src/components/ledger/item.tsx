@@ -110,9 +110,9 @@ export default function BillItem({
                 <div
                     className={`text-lg font-bold truncate flex-shrink-0 flex flex-col items-end ${
                         bill.type === "expense"
-                            ? "text-red-700"
+                            ? "text-semantic-expense"
                             : bill.type === "income"
-                              ? "text-green-900"
+                              ? "text-semantic-income"
                               : ""
                     }`}
                 >

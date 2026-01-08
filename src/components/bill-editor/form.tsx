@@ -262,7 +262,7 @@ export default function EditorForm({
                                     }));
                                 }}
                             >
-                                <Switch.Thumb className="w-1/2 h-full flex justify-center items-center transition-all rounded-md bg-red-700 -translate-x-[22px] data-[state=checked]:bg-green-700 data-[state=checked]:translate-x-[21px]">
+                                <Switch.Thumb className="w-1/2 h-full flex justify-center items-center transition-all rounded-md bg-semantic-expense -translate-x-[22px] data-[state=checked]:bg-semantic-income data-[state=checked]:translate-x-[21px]">
                                     <span className="text-[8px]">
                                         {billState.type === "expense"
                                             ? t("expense")
