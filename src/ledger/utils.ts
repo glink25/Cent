@@ -129,21 +129,38 @@ export const isBillMatched = (bill: Bill, filter: BillFilter) => {
 };
 
 export const treeCategories = (categories: BillCategory[]) => {
-    return categories.reduce(
-        (p, c) => {
-            if (!c.parent) {
-                p.push({ ...c, children: [] });
-                return p;
+    // 1. 创建一个 Map 存储所有节点，并预设 children 属性
+    const itemMap = new Map<
+        string,
+        BillCategory & { children: BillCategory[] }
+    >();
+
+    for (const cat of categories) {
+        itemMap.set(cat.id, { ...cat, children: [] });
+    }
+
+    const result: (BillCategory & { children: BillCategory[] })[] = [];
+
+    // 2. 建立层级关系
+    for (const cat of categories) {
+        const item = itemMap.get(cat.id)!;
+
+        if (!cat.parent) {
+            // 如果没有父级，说明是根节点
+            result.push(item);
+        } else {
+            // 找到父级并把当前项加入父级的 children 中
+            const parentItem = itemMap.get(cat.parent);
+            if (parentItem) {
+                parentItem.children.push(item);
+            } else {
+                // 情况处理：如果数据中引用了不存在的父 ID，可根据业务需求决定是否作为根节点
+                result.push(item);
             }
-            const parent = p.find((x) => x.id === c.parent);
-            if (!parent) {
-                return p;
-            }
-            parent.children.push(c);
-            return p;
-        },
-        [] as (BillCategory & { children: BillCategory[] })[],
-    );
+        }
+    }
+
+    return result;
 };
 
 /** 检查target 分类是否与source分类相同，或者是source的子类 */
