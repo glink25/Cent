@@ -35,7 +35,9 @@ const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
                 setDisplayValue(toThousand(Math.round(latest)).toString());
             } else {
                 // 如果 value 是小数，使用自动计算的精度
-                setDisplayValue(toThousand(toFixed(latest, precision)));
+                setDisplayValue(
+                    toThousand(toFixed(latest, Math.min(precision, 2))),
+                );
             }
         });
 

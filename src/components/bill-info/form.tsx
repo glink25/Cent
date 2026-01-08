@@ -16,6 +16,7 @@ import { formatTime } from "@/utils/time";
 import { showBillEditor } from "../bill-editor";
 import CategoryIcon from "../category/icon";
 import SmartImage from "../image";
+import Money from "../money";
 import { Button } from "../ui/button";
 import {
     DropdownMenu,
@@ -149,7 +150,10 @@ export default function BillInfo({
                             }`}
                         >
                             <div>{edit.type === "expense" ? "-" : "+"}</div>
-                            <div>{amountToNumber(edit.amount)}</div>
+                            <Money
+                                value={amountToNumber(edit.amount)}
+                                accurate
+                            />
                         </div>
                     </div>
 
