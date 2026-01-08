@@ -145,8 +145,8 @@ export default function BillInfo({
                         <div
                             className={`text-2xl font-bold flex overflow-x-auto ${
                                 edit.type === "expense"
-                                    ? "text-red-700"
-                                    : "text-green-900"
+                                    ? "text-semantic-expense"
+                                    : "text-semantic-income"
                             }`}
                         >
                             <div>{edit.type === "expense" ? "-" : "+"}</div>

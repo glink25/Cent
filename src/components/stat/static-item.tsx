@@ -45,9 +45,9 @@ export function StaticItem({
                         className={cn(
                             "absolute top-0 text-[8px] px-2 rounded-full min-w-min h-full flex items-center justify-end text-white",
                             type === "expense"
-                                ? "bg-red-700"
+                                ? "bg-semantic-expense"
                                 : type === "income"
-                                  ? "bg-green-700"
+                                  ? "bg-semantic-income"
                                   : "bg-stone-700",
                         )}
                         style={{ width: `${percent * 100}%` }}

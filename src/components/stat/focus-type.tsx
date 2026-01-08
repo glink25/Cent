@@ -24,14 +24,14 @@ export function FocusTypeSelector({
                 className={cn(
                     btnClass,
                     focusType === "income" &&
-                        "!bg-stone-700 !text-white [&_span]:text-green-600",
+                        "!bg-stone-700 !text-white [&_span]:text-semantic-income-medium",
                 )}
                 onClick={() => {
                     setFocusType("income");
                 }}
             >
                 <div className="flex flex-col items-center justify-center">
-                    <span className="text-green-700">
+                    <span className="text-semantic-income">
                         +<Money value={money[0]} />
                     </span>
                     <div className="text-[10px] opacity-60"> {t("income")}</div>
@@ -42,12 +42,12 @@ export function FocusTypeSelector({
                 className={cn(
                     btnClass,
                     focusType === "expense" &&
-                        "!bg-stone-700 !text-white [&_span]:text-red-400",
+                        "!bg-stone-700 !text-white [&_span]:text-semantic-expense-medium",
                 )}
                 onClick={() => setFocusType("expense")}
             >
                 <div className="flex flex-col items-center justify-center">
-                    <span className="text-red-700">
+                    <span className="text-semantic-expense">
                         -<Money value={money[1]} />
                     </span>
                     <div className="text-[10px] opacity-60">{t("expense")}</div>

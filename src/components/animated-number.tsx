@@ -14,7 +14,10 @@ const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
     const previousValueRef = useRef(value);
 
     // 根据传入的 value 自动判断小数位数
-    const precision = (value.toString().split(".")[1] || "").length;
+    const precision = Math.min(
+        (value.toString().split(".")[1] || "").length,
+        2,
+    );
 
     const springValue = useSpring(previousValueRef.current, {
         stiffness: 100,
@@ -35,9 +38,7 @@ const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
                 setDisplayValue(toThousand(Math.round(latest)).toString());
             } else {
                 // 如果 value 是小数，使用自动计算的精度
-                setDisplayValue(
-                    toThousand(toFixed(latest, Math.min(precision, 2))),
-                );
+                setDisplayValue(toThousand(toFixed(latest, precision)));
             }
         });
 

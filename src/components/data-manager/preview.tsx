@@ -148,13 +148,13 @@ export const PreviewForm = ({
                 <div className="flex flex-col px-4 gap-3">
                     <div>
                         <div className="opacity-60 text-sm">
-                            将账单放在我的名下:
+                            {t("put-ledgers-on-me")}
                         </div>
                         <Switch checked={asMine} onCheckedChange={setAsMine} />
                     </div>
                     {!asMine && (
                         <p className="text-xs text-red-700">
-                            账单统计时可能会出现未知用户
+                            {t("unkown-users-may-show-up-when-analyze")}
                         </p>
                     )}
                 </div>
