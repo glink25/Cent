@@ -247,6 +247,11 @@ function buildMessages(
     return messages;
 }
 
+export interface Message {
+    role: "user" | "assistant";
+    content: string;
+}
+
 /**
  * 开始对话，输入初始消息，返回一个next函数，能够自动合并上下文，并返回AI的响应结果
  *
@@ -259,7 +264,10 @@ function buildMessages(
  *
  * @returns 返回一个 next 函数，用于发送消息并获取 AI 响应
  */
-export const createChatBox = async (envPrompt: string) => {
+export const createChatBox = async (
+    envPrompt: string,
+    prevMessages?: Message[],
+) => {
     // 获取账本数据（在对话开始时获取一次，后续复用）
     const ledgerData = await getLedgerData();
 
@@ -267,7 +275,7 @@ export const createChatBox = async (envPrompt: string) => {
     const conversationHistory: Array<{
         role: "user" | "assistant";
         content: string;
-    }> = [];
+    }> = prevMessages ?? [];
 
     // 函数调用结果历史
     const functionResults: Array<{ function: string; result: unknown }> = [];
@@ -424,8 +432,10 @@ export const createChatBox = async (envPrompt: string) => {
         return errorMessage;
     };
 
-    return next;
+    return { next };
 };
+
+export type ChatBox = Awaited<ReturnType<typeof createChatBox>>;
 
 export type EnvArg = {
     filterView?: BillFilterView;
