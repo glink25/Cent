@@ -28,6 +28,7 @@ interface ChatCardProps {
     onActivate: () => void;
     onSendMessage: (message: string) => Promise<void>;
     onInputChange: (value: string) => void;
+    onDelete?: () => void;
 }
 
 export function ChatCard({
@@ -36,6 +37,7 @@ export function ChatCard({
     onActivate,
     onSendMessage,
     onInputChange,
+    onDelete,
 }: ChatCardProps) {
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -77,7 +79,7 @@ export function ChatCard({
     return (
         <div
             className={cn(
-                "flex flex-col w-full shrink-0 h-full overflow-hidden snap-center",
+                "flex flex-col w-full shrink-0 h-full overflow-hidden snap-center relative",
             )}
         >
             {/* 消息列表 */}
@@ -150,6 +152,16 @@ export function ChatCard({
                         </div>
                     )}
                 <div className="flex gap-2">
+                    {onDelete && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={onDelete}
+                            className="h-10 shrink-0"
+                        >
+                            <i className="icon-[mdi--delete-outline] text-sm"></i>
+                        </Button>
+                    )}
                     <textarea
                         ref={inputRef}
                         value={card.input}
