@@ -5,6 +5,7 @@ import { useNavigate, useParams } from "react-router";
 import { useShallow } from "zustand/shallow";
 import { StorageDeferredAPI } from "@/api/storage";
 import type { AnalysisResult } from "@/api/storage/analysis";
+import { Assistant } from "@/components/assistant";
 import {
     BillFilterViewProvider,
     showBillFilterView,
@@ -85,10 +86,19 @@ export default function Page() {
         range: fullRange,
         selectCustomSliceWhenInitial: Boolean(id),
     });
-    const realRange = [
-        sliceRange?.[0] ?? selectedFilter?.start ?? startTime,
-        sliceRange?.[1] ?? selectedFilter?.end ?? endTime,
-    ];
+    const realRange = useMemo(
+        () => [
+            sliceRange?.[0] ?? selectedFilter?.start ?? startTime,
+            sliceRange?.[1] ?? selectedFilter?.end ?? endTime,
+        ],
+        [
+            sliceRange,
+            selectedFilter?.start,
+            selectedFilter?.end,
+            startTime,
+            endTime,
+        ],
+    );
 
     const navigate = useNavigate();
     const seeDetails = (append?: Partial<BillFilter>) => {
@@ -250,6 +260,16 @@ export default function Page() {
     };
 
     const { allCurrencies, baseCurrency } = useCurrency();
+
+    const envArg = useMemo(
+        () => ({
+            filterView: selectedFilterView,
+            focusType,
+            viewType,
+            range: realRange,
+        }),
+        [selectedFilterView, focusType, viewType, realRange],
+    );
     return (
         <div className="w-full h-full p-2 flex flex-col items-center justify-center gap-4 overflow-hidden page-show">
             <div className="w-full mx-2 max-w-[600px] flex flex-col gap-2">
@@ -339,6 +359,7 @@ export default function Page() {
             />
             <div className="w-full flex-1 flex justify-center overflow-y-auto">
                 <div className="w-full mx-2 max-w-[600px] flex flex-col items-center gap-4 relative">
+                    <Assistant env={envArg} />
                     {Part}
                     {tagStructure.length > 0 && (
                         <div className="rounded-md border p-2 w-full flex flex-col">
