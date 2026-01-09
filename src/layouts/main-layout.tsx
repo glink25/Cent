@@ -20,6 +20,7 @@ import { SortableListProvider } from "@/components/sortable";
 import { SortableGroupProvider } from "@/components/sortable/group";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useInitPreset } from "@/hooks/use-preset";
 import {
     useQuickEntryByClipboard,
     useQuickGoAdd,
@@ -47,6 +48,8 @@ export default function MainLayout() {
     useEffect(() => {
         applyScheduledRef.current();
     }, []);
+
+    useInitPreset();
 
     return (
         <ThemeProvider>

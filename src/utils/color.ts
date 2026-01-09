@@ -1,5 +1,5 @@
 export const getCSSVariable = (variable: string) => {
-    const rootStyle = getComputedStyle(document.documentElement);
+    const rootStyle = getComputedStyle(document.body);
     const value = rootStyle.getPropertyValue(variable).trim();
     return value;
 };

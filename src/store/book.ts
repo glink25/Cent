@@ -4,6 +4,7 @@ import { create } from "zustand";
 import type { PersistOptions } from "zustand/middleware";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type { Book } from "@/api/endpoints/type";
+import { CUSTOM_CSS_STORAGE_KEY } from "@/utils/preset";
 import { loadStorageAPI } from "../api/storage/dynamic";
 
 type BookStoreState = {
@@ -77,6 +78,7 @@ export const useBookStore = create<BookStore>()(
                         produce((state) => {
                             state.currentBookId = id;
                             state.visible = false;
+                            localStorage.removeItem(CUSTOM_CSS_STORAGE_KEY);
                             Promise.resolve().then(() => {
                                 location.reload();
                             });

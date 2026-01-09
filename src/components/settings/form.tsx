@@ -13,6 +13,7 @@ import { Button } from "../ui/button";
 import AboutSettingsItem, { AdvancedGuideItem } from "./about";
 import LabSettingsItem from "./lab";
 import LanguageSettingsItem from "./language";
+import PresetSettingsItem from "./preset";
 import ThemeSettingsItem from "./theme";
 import UserSettingsItem from "./user";
 
@@ -101,6 +102,7 @@ export default function SettingsForm({
                 <UserInfo />
                 <div className="flex-1 overflow-y-auto flex flex-col divide-y pb-4">
                     <BookSettings />
+                    <PresetSettingsItem />
                     <CategorySettingsItem />
                     <TagSettingsItem />
                     <Budget />
