@@ -5,8 +5,11 @@ import PopupLayout from "@/layouts/popup-layout";
 import { useIntl } from "@/locale";
 import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
+import { cn } from "@/utils";
 import createConfirmProvider from "../confirm";
 import { Button } from "../ui/button";
+
+const betaClassName = `relative after:content-['beta'] after:rounded after:bg-yellow-400 after:px-[2px] after:text-[8px] after:block after:absolute after:top-0 after:right-0 after:translate-x-[calc(100%+4px)]`;
 
 function Form({ onCancel }: { onCancel?: () => void }) {
     const t = useIntl();
@@ -123,7 +126,9 @@ export default function PresetSettingsItem() {
                 className="w-full py-4 rounded-none h-auto"
             >
                 <div className="w-full px-4 flex justify-between items-center">
-                    <div className="flex items-center gap-2">
+                    <div
+                        className={cn(betaClassName, "flex items-center gap-2")}
+                    >
                         <i className="icon-[mdi--palette-outline] size-5"></i>
                         {t("preset")}
                     </div>
