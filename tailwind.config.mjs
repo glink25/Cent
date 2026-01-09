@@ -2,7 +2,7 @@ const plugin = require("tailwindcss/plugin");
 /** @type {import('tailwindcss').Config} */
 module.exports = {
     darkMode: "class",
-    content: ["./src/**/*.{js,ts,jsx,tsx}"],
+    content: ["./src/**/*.{js,ts,jsx,tsx}", "!./docs/**/*"],
     theme: {
         extend: {
             // Semantic color tokens (mapped to CSS variables).

@@ -88,6 +88,7 @@ export type PersonalMeta = {
     rates?: Record<string, number>;
     tagGroups?: BillTagGroup[];
     scheduleds?: Scheduled[];
+    customCSS?: string;
 };
 
 export type CustomCurrency = {
