@@ -1,3 +1,6 @@
+import { useLedgerStore } from "@/store/ledger";
+import { useUserStore } from "@/store/user";
+
 /**
  * 智谱AI的api请求，参考文档：https://docs.bigmodel.cn/cn/guide/develop/http/introduction
  * @param messages 结构化的消息列表，包含 system、user、assistant 角色的消息
@@ -6,11 +9,12 @@ export const requestAI = async (
     messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
 ): Promise<string> => {
     // 从环境变量获取 API Key
-    const apiKey = import.meta.env.VITE_ZHIPU_API_KEY;
+    const userId = useUserStore.getState().id;
+    const apiKey =
+        useLedgerStore.getState().infos?.meta.personal?.[userId]?.assistant
+            ?.bigmodel?.apiKey;
     if (!apiKey) {
-        throw new Error(
-            "未配置智谱AI API Key，请在环境变量中设置 VITE_ZHIPU_API_KEY",
-        );
+        throw new Error("未配置智谱AI API Key，请在【AI设置】中配置");
     }
 
     // 智谱AI API 端点

@@ -89,6 +89,11 @@ export type PersonalMeta = {
     tagGroups?: BillTagGroup[];
     scheduleds?: Scheduled[];
     customCSS?: string;
+    assistant?: {
+        bigmodel?: {
+            apiKey?: string;
+        };
+    };
 };
 
 export type CustomCurrency = {

@@ -11,6 +11,7 @@ import DataManagerSettingsItem from "../data-manager";
 import ScheduledSettingsItems from "../scheduled/settings-item";
 import { Button } from "../ui/button";
 import AboutSettingsItem, { AdvancedGuideItem } from "./about";
+import AssistantSettingsItem from "./assistant";
 import LabSettingsItem from "./lab";
 import LanguageSettingsItem from "./language";
 import PresetSettingsItem from "./preset";
@@ -102,6 +103,7 @@ export default function SettingsForm({
                 <UserInfo />
                 <div className="flex-1 overflow-y-auto flex flex-col divide-y pb-4">
                     <BookSettings />
+                    <AssistantSettingsItem />
                     <PresetSettingsItem />
                     <CategorySettingsItem />
                     <TagSettingsItem />
