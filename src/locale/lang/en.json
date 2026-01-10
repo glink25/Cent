@@ -522,5 +522,6 @@
   "preset_question.monthly_budget.prompt": "Based on my spending this month and in the past, create a monthly budget that fits my habits to help reduce unnecessary expenses.",
   "preset_question.anomaly_detection.label": "Check for bill anomalies",
   "preset_question.anomaly_detection.prompt": "Are there any anomalies in my bills?",
-  "loading": "loading"
+  "loading": "loading",
+  "ai-function-toll-result": "Tool Runs Result"
 }
