@@ -510,7 +510,7 @@
   "ai-assistant": "AI Assistant",
   "assistant-description": "Configure AI assistant settings",
   "bigmodel-api-key": "Zhipu GLM API Key",
-  "bigmodel-api-key-description": "Enter your Zhipu GLM API Key to enable AI assistant features, NOTICE key will be sync to cloud, and be share to collaborators",
+  "bigmodel-api-key-description": "Enter your Zhipu GLM <a>API Key</a> to enable AI assistant features, NOTICE key will be sync to cloud, and be share to collaborators",
   "bigmodel-api-key-placeholder": "Please enter API Key",
   "assistant-api-key-saved": "API Key saved",
   "new-ai-chat": "New chat",
@@ -523,5 +523,6 @@
   "preset_question.anomaly_detection.label": "Check for bill anomalies",
   "preset_question.anomaly_detection.prompt": "Are there any anomalies in my bills?",
   "loading": "loading",
-  "ai-function-toll-result": "Tool Runs Result"
+  "ai-function-toll-result": "Tool Runs Result",
+  "ai-key-required-error": "Please add API key in AI Assistant settings"
 }

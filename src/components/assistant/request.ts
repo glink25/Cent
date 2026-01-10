@@ -1,3 +1,4 @@
+import { t } from "@/locale";
 import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
 
@@ -14,7 +15,7 @@ export const requestAI = async (
         useLedgerStore.getState().infos?.meta.personal?.[userId]?.assistant
             ?.bigmodel?.apiKey;
     if (!apiKey) {
-        throw new Error("未配置智谱AI API Key，请在【AI设置】中配置");
+        throw new Error(t("ai-key-required-error"));
     }
 
     // 智谱AI API 端点
