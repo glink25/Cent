@@ -519,5 +519,11 @@
   "split-action-tip": "原来的账单会减去当前金额",
   "other-currencies": "其它货币",
   "put-ledgers-on-me": "将账单放在我的名下:",
-  "unkown-users-may-show-up-when-analyze": "账单统计时可能会出现未知用户"
+  "unkown-users-may-show-up-when-analyze": "账单统计时可能会出现未知用户",
+  "ai-assistant": "AI助手",
+  "assistant-description": "配置AI助手相关设置",
+  "bigmodel-api-key": "智谱GLM API Key",
+  "bigmodel-api-key-description": "输入智谱GLM的API Key以启用AI助手功能，注意该key会被云同步，对其他协作者可见",
+  "bigmodel-api-key-placeholder": "请输入API Key",
+  "assistant-api-key-saved": "API Key已保存"
 }

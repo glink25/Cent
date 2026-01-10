@@ -27,7 +27,7 @@ const StaticViews = [
     { id: "custom", label: "stat-view-custom" },
 ] as const;
 
-type ViewType = (typeof StaticViews)[number]["id"];
+export type ViewType = (typeof StaticViews)[number]["id"];
 
 type DateSlice = {
     end: Dayjs;
