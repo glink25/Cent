@@ -1,5 +1,5 @@
-import dayjs from "dayjs";
 import type { ExportedJSON } from "@/ledger/type";
+import { t } from "@/locale";
 import { useLedgerStore } from "@/store/ledger";
 import { getAccountMeta, queryBills } from "./functions";
 import { requestAI } from "./request";
@@ -172,7 +172,7 @@ export const createChatBox = async (
                     ? [
                           {
                               role: "user",
-                              content: `## 工具执行结果\n${JSON.stringify(functionResults.slice(-1))}`,
+                              content: `## ${t("ai-function-toll-result")}\n${JSON.stringify(functionResults.slice(-1))}`,
                           },
                       ]
                     : []),
