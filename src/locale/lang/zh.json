@@ -525,5 +525,14 @@
   "bigmodel-api-key": "智谱GLM API Key",
   "bigmodel-api-key-description": "输入智谱GLM的API Key以启用AI助手功能，注意该key会被云同步，对其他协作者可见",
   "bigmodel-api-key-placeholder": "请输入API Key",
-  "assistant-api-key-saved": "API Key已保存"
+  "assistant-api-key-saved": "API Key已保存",
+  "new-ai-chat": "新对话",
+  "start-talk-to-ai": "开始与 AI 对话吧",
+  "input-your-questions": "输入您的问题...",
+  "preset_question.analyze_ledger.label": "分析当前的账单",
+  "preset_question.analyze_ledger.prompt": "分析当前的账单",
+  "preset_question.monthly_budget.label": "帮我制定每月预算",
+  "preset_question.monthly_budget.prompt": "根据我本月和往期的每月支出情况，制定一个符合我消费习惯的每月预算，以便减少不必要的花销",
+  "preset_question.anomaly_detection.label": "账单是否有异常",
+  "preset_question.anomaly_detection.prompt": "账单是否有异常"
 }

@@ -358,7 +358,7 @@ export default function Page() {
                 money={totalMoneys}
             />
             <div className="w-full flex-1 flex justify-center overflow-y-auto">
-                <div className="w-full mx-2 max-w-[600px] flex flex-col items-center gap-4 relative">
+                <div className="w-full max-w-[600px] flex flex-col items-center gap-4 relative">
                     <Assistant env={envArg} />
                     {Part}
                     {tagStructure.length > 0 && (

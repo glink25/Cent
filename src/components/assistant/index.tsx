@@ -1,7 +1,8 @@
 import { Collapsible } from "radix-ui";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { SnapDiv, useSnap } from "@/hooks/use-snap";
+import { SnapDiv, type SnapDivInstance } from "@/hooks/use-snap";
+import { useIntl } from "@/locale";
 import { useAssistantStore } from "@/store/assistant";
 import { PaginationIndicator } from "../indicator";
 import {
@@ -20,22 +21,24 @@ const getId = () => Date.now().toString(16);
 const createEmptyChat = () => ({ messages: [], id: getId(), loading: false });
 
 export function Assistant({ env }: { env?: EnvArg }) {
+    const t = useIntl();
+
     const envPrompt = useMemo(() => getEnvPrompt(env), [env]);
     const envPromptRef = useRef(envPrompt);
     envPromptRef.current = envPrompt;
 
     // 从 store 读取持久化的数据
 
-    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const scrollContainerRef = useRef<SnapDivInstance>(null);
 
     const isCollapsed = useAssistantStore((state) => state.isCollapsed);
 
-    const [cards, _setCards] = useState<CardData[]>(() => [
-        createEmptyChat(),
-        ...useAssistantStore
+    const [cards, _setCards] = useState<CardData[]>(() => {
+        const exist = useAssistantStore
             .getState()
-            .cards.map((c) => ({ ...c, loading: false })),
-    ]);
+            .cards.map((c) => ({ ...c, loading: false }));
+        return exist.length === 0 ? [createEmptyChat()] : exist;
+    });
 
     const initialIndex = cards.findIndex(
         (c) => c.id === useAssistantStore.getState().activeCardId,
@@ -115,7 +118,7 @@ export function Assistant({ env }: { env?: EnvArg }) {
                         ...prev.messages,
                         {
                             role: "assistant",
-                            content: `错误：${error instanceof Error ? error.message : String(error)}`,
+                            content: `Error: ${error instanceof Error ? error.message : String(error)}`,
                         },
                     ],
                 }));
@@ -132,7 +135,13 @@ export function Assistant({ env }: { env?: EnvArg }) {
     };
 
     const handleDeleteCard = (id: string) => {
-        setCards((prev) => prev.filter((v) => v.id !== id));
+        setCards((prev) => {
+            const newV = prev.filter((v) => v.id !== id);
+            if (newV.length === 0) {
+                return [createEmptyChat()];
+            }
+            return newV;
+        });
     };
 
     const canAddNew = cards[0]?.messages.length !== 0;
@@ -146,8 +155,8 @@ export function Assistant({ env }: { env?: EnvArg }) {
             if (!container) {
                 return;
             }
-            container.scrollTo({ left: 0, behavior: "smooth" });
-        }, 1);
+            container.scrollTo(0);
+        }, 100);
     };
 
     return (
@@ -165,7 +174,9 @@ export function Assistant({ env }: { env?: EnvArg }) {
             <div className="flex items-center justify-between p-2 border-b">
                 <div className="flex items-center gap-2">
                     <i className="icon-[mdi--robot] text-lg"></i>
-                    <span className="text-sm font-medium">AI 助手</span>
+                    <span className="text-sm font-medium">
+                        {t("ai-assistant")}
+                    </span>
                 </div>
                 <div className="flex items-center gap-2">
                     {canAddNew && (
@@ -175,8 +186,8 @@ export function Assistant({ env }: { env?: EnvArg }) {
                             onClick={addNewCard}
                             className="h-7 text-xs group-data-[state=closed]:hidden"
                         >
-                            <i className="icon-[mdi--plus] mr-1"></i>
-                            新对话
+                            <i className="icon-[mdi--chat-plus-outline] mr-1"></i>
+                            {t("new-ai-chat")}
                         </Button>
                     )}
                     <Collapsible.Trigger asChild>

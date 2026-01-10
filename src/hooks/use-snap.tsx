@@ -307,7 +307,12 @@ type SnapDivProps = {
     initialIndex?: number;
 };
 
-export const SnapDiv = forwardRef<HTMLDivElement | null, SnapDivProps>(
+export type SnapDivInstance = {
+    el: HTMLDivElement | null;
+    scrollTo: (i: number, behavior?: ScrollBehavior | undefined) => void;
+};
+
+export const SnapDiv = forwardRef<SnapDivInstance, SnapDivProps>(
     function useSnapDiv(
         {
             className,
@@ -318,8 +323,9 @@ export const SnapDiv = forwardRef<HTMLDivElement | null, SnapDivProps>(
         ref,
     ) {
         const divRef = useRef<HTMLDivElement | null>(null);
-        useImperativeHandle(ref, () => divRef.current!);
-        const { index } = useSnap(divRef, initialIndex, 10, 10);
+        const { index, scrollTo } = useSnap(divRef, initialIndex, 10, 10);
+        useImperativeHandle(ref, () => ({ el: divRef.current, scrollTo }));
+
         const prevIndexRef = useRef(index);
 
         const onActiveIndexChangeRef = useRef(onActiveIndexChange);
