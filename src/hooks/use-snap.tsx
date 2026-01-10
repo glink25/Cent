@@ -1,4 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+    forwardRef,
+    type ReactNode,
+    useCallback,
+    useEffect,
+    useImperativeHandle,
+    useRef,
+    useState,
+} from "react";
+import { cn } from "@/utils";
 
 type UseSnapResult = {
     count: number;
@@ -214,9 +223,10 @@ export function useSnap(
         };
 
         if (supportsScrollEnd) {
-            (el as any).addEventListener(
+            (el as HTMLElement).addEventListener(
                 "scrollend",
                 handleScrollEnd as EventListener,
+                { passive: true },
             );
         } else {
             const onScroll = () => {
@@ -289,3 +299,42 @@ export function useSnap(
         isHorizontal: isHorizontalRef.current,
     };
 }
+
+type SnapDivProps = {
+    className?: string;
+    children?: ReactNode;
+    onActiveIndexChange?: (activeIndex: number) => void;
+    initialIndex?: number;
+};
+
+export const SnapDiv = forwardRef<HTMLDivElement | null, SnapDivProps>(
+    function useSnapDiv(
+        {
+            className,
+            children,
+            initialIndex,
+            onActiveIndexChange,
+        }: SnapDivProps,
+        ref,
+    ) {
+        const divRef = useRef<HTMLDivElement | null>(null);
+        useImperativeHandle(ref, () => divRef.current!);
+        const { index } = useSnap(divRef, initialIndex, 10, 10);
+        const prevIndexRef = useRef(index);
+
+        const onActiveIndexChangeRef = useRef(onActiveIndexChange);
+        onActiveIndexChangeRef.current = onActiveIndexChange;
+        useEffect(() => {
+            if (prevIndexRef.current !== index) {
+                onActiveIndexChangeRef.current?.(index);
+                prevIndexRef.current = index;
+            }
+        }, [index]);
+
+        return (
+            <div ref={divRef} className={cn(className)}>
+                {children}
+            </div>
+        );
+    },
+);

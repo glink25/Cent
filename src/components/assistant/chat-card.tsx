@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/utils";
 import type { Message } from "./chat";
@@ -31,16 +31,19 @@ export function ChatCard({
 }: ChatCardProps) {
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const [input, setInput] = useState("");
-    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const messagesContainerRef = useRef<HTMLDivElement>(null);
 
-    // 自动滚动到底部
-    // useEffect(() => {
-    //     if (isActive && card.messages.length > 0) {
-    //         messagesEndRef.current?.scrollIntoView({ behavior: "smooth", });
-    //     }
-    // }, [card.messages, isActive]);
+    useEffect(() => {
+        if (messages.length > 0) {
+            messagesContainerRef.current?.scrollTo({
+                top: messagesContainerRef.current.scrollHeight,
+                behavior: "smooth",
+            });
+        }
+    }, [messages.length]);
 
     const handleSend = async () => {
+        const input = inputRef.current?.value ?? "";
         await onSendMessage(input.trim());
         setInput("");
     };
@@ -56,7 +59,7 @@ export function ChatCard({
         // 先设置输入值，然后立即发送
         setInput(question);
         // 等待状态更新后发送消息
-        setTimeout(async () => {
+        setTimeout(() => {
             handleSend();
         }, 0);
     };
@@ -68,7 +71,10 @@ export function ChatCard({
             )}
         >
             {/* 消息列表 */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 snap-center">
+            <div
+                ref={messagesContainerRef}
+                className="flex-1 overflow-y-auto p-4 space-y-4 snap-center"
+            >
                 {messages.length === 0 ? (
                     <div className="text-center text-muted-foreground text-sm py-8">
                         开始与 AI 对话吧
@@ -108,17 +114,16 @@ export function ChatCard({
                                 </div>
                             </div>
                         )}
-                        <div ref={messagesEndRef} />
                     </>
                 )}
             </div>
 
             {/* 输入区域 */}
-            <div className="p-2 border-t relative">
+            <div className="relative">
                 {/* 预设问题（悬浮在输入框上方） */}
                 {
-                    <div className="absolute bottom-full left-4 right-4 mb-2">
-                        <div className="flex flex-wrap gap-2 bg-background/95 backdrop-blur-sm p-2 border-input">
+                    <div className="w-full p-2">
+                        <div className="w-full flex gap-2 bg-background/95 backdrop-blur-sm border-input overflow-x-auto">
                             {PRESET_QUESTIONS.map((question) => (
                                 <button
                                     key={question}
@@ -126,7 +131,7 @@ export function ChatCard({
                                     onClick={() =>
                                         handlePresetQuestion(question)
                                     }
-                                    className="text-xs px-2 py-1 rounded-md border border-input bg-background hover:bg-accent transition-colors shadow-sm"
+                                    className="flex-shrink-0 text-xs px-2 py-1 rounded-md border border-input bg-background hover:bg-accent transition-colors shadow-sm"
                                 >
                                     {question}
                                 </button>
@@ -134,7 +139,7 @@ export function ChatCard({
                         </div>
                     </div>
                 }
-                <div className="flex gap-2">
+                <div className="flex gap-2 px-2">
                     {onDelete && (
                         <Button
                             variant="ghost"

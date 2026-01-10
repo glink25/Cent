@@ -1,7 +1,8 @@
 import { Collapsible } from "radix-ui";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { type PersistedChatCard, useAssistantStore } from "@/store/assistant";
+import { SnapDiv, useSnap } from "@/hooks/use-snap";
+import { useAssistantStore } from "@/store/assistant";
 import { PaginationIndicator } from "../indicator";
 import {
     type ChatBox,
@@ -10,9 +11,13 @@ import {
     getEnvPrompt,
     type Message,
 } from "./chat";
-import { ChatCard, type ChatCardData } from "./chat-card";
+import { ChatCard } from "./chat-card";
 
 type CardData = { messages: Message[]; id: string; loading: boolean };
+
+const getId = () => Date.now().toString(16);
+
+const createEmptyChat = () => ({ messages: [], id: getId(), loading: false });
 
 export function Assistant({ env }: { env?: EnvArg }) {
     const envPrompt = useMemo(() => getEnvPrompt(env), [env]);
@@ -25,7 +30,33 @@ export function Assistant({ env }: { env?: EnvArg }) {
 
     const isCollapsed = useAssistantStore((state) => state.isCollapsed);
 
-    const [cards, setCards] = useState<CardData[]>([]);
+    const [cards, _setCards] = useState<CardData[]>(() => [
+        createEmptyChat(),
+        ...useAssistantStore
+            .getState()
+            .cards.map((c) => ({ ...c, loading: false })),
+    ]);
+
+    const initialIndex = cards.findIndex(
+        (c) => c.id === useAssistantStore.getState().activeCardId,
+    );
+    const [activeIndex, setActiveIndex] = useState(initialIndex);
+
+    const setCards: typeof _setCards = useCallback((v) => {
+        _setCards((prev) => {
+            const newV = (() => {
+                if (typeof v === "function") {
+                    return v(prev);
+                }
+                return v;
+            })();
+            useAssistantStore.setState((state) => ({
+                ...state,
+                cards: newV.filter((v) => v.messages.length > 0),
+            }));
+            return newV;
+        });
+    }, []);
 
     const chatBoxes = useRef(new Map<string, ChatBox>());
     const handleSendMessage = async (id: string, message: string) => {
@@ -33,16 +64,19 @@ export function Assistant({ env }: { env?: EnvArg }) {
         if (!card) {
             return;
         }
+
         const updateCard = (setter: (prev: CardData) => CardData) => {
             setCards((prev) => {
                 const i = prev.findIndex((v) => v.id === id);
                 if (i === -1) {
                     return prev;
                 }
-                prev[i] = setter({ ...prev[i] });
-                return [...prev];
+                const newCards = [...prev];
+                newCards[i] = setter({ ...newCards[i] });
+                return newCards;
             });
         };
+
         const run = async () => {
             const chatBox = await (async () => {
                 const exist = chatBoxes.current.get(id);
@@ -88,6 +122,7 @@ export function Assistant({ env }: { env?: EnvArg }) {
                 throw error;
             }
         };
+
         updateCard((prev) => ({ ...prev, loading: true }));
         try {
             await run();
@@ -96,9 +131,24 @@ export function Assistant({ env }: { env?: EnvArg }) {
         }
     };
 
-    const handleDeleteCard = (id: string) => {};
+    const handleDeleteCard = (id: string) => {
+        setCards((prev) => prev.filter((v) => v.id !== id));
+    };
 
-    const addNewCard = () => {};
+    const canAddNew = cards[0]?.messages.length !== 0;
+    const addNewCard = () => {
+        if (!canAddNew) {
+            return;
+        }
+        setCards((prev) => [createEmptyChat(), ...prev]);
+        setTimeout(() => {
+            const container = scrollContainerRef.current;
+            if (!container) {
+                return;
+            }
+            container.scrollTo({ left: 0, behavior: "smooth" });
+        }, 1);
+    };
 
     return (
         <Collapsible.Root
@@ -118,7 +168,7 @@ export function Assistant({ env }: { env?: EnvArg }) {
                     <span className="text-sm font-medium">AI 助手</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    {cards.length > 0 && (
+                    {canAddNew && (
                         <Button
                             variant="ghost"
                             size="sm"
@@ -140,8 +190,19 @@ export function Assistant({ env }: { env?: EnvArg }) {
             {/* 折叠内容 */}
             <Collapsible.Content className="data-[state=open]:animate-collapse-open data-[state=closed]:animate-collapse-close data-[state=closed]:overflow-hidden">
                 <div className="w-full pb-2">
-                    <div
+                    <SnapDiv
+                        initialIndex={initialIndex}
                         ref={scrollContainerRef}
+                        onActiveIndexChange={useCallback(
+                            (index: number) => {
+                                useAssistantStore.setState((state) => ({
+                                    ...state,
+                                    activeCardId: cards[index]?.id,
+                                }));
+                                setActiveIndex(index);
+                            },
+                            [cards],
+                        )}
                         className="overflow-x-auto w-full h-[300px] flex-shrink-0 py-2 flex gap-2 scrollbar-hidden snap-mandatory snap-x"
                     >
                         {cards.map((card) => (
@@ -164,9 +225,12 @@ export function Assistant({ env }: { env?: EnvArg }) {
                                 />
                             </div>
                         ))}
-                    </div>
+                    </SnapDiv>
 
-                    <PaginationIndicator count={cards.length} current={-1} />
+                    <PaginationIndicator
+                        count={cards.length}
+                        current={activeIndex}
+                    />
                 </div>
             </Collapsible.Content>
         </Collapsible.Root>
