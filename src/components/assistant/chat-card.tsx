@@ -31,6 +31,7 @@ interface ChatCardProps {
     isLoading: boolean;
     onSendMessage: (message: string) => Promise<void>;
     onDelete?: () => void;
+    title?: string;
 }
 
 export function ChatCard({
@@ -38,6 +39,7 @@ export function ChatCard({
     isLoading,
     onSendMessage,
     onDelete,
+    title,
 }: ChatCardProps) {
     const t = useIntl();
 
@@ -82,6 +84,12 @@ export function ChatCard({
                 "flex flex-col w-full shrink-0 h-full overflow-hidden snap-center relative",
             )}
         >
+            {/* title */}
+            {title && (
+                <div className="flex justify-center items-center text-sm pb-2 opacity-60 border-b">
+                    {title}
+                </div>
+            )}
             {/* 消息列表 */}
             <div
                 ref={messagesContainerRef}

@@ -5,16 +5,16 @@ import { SnapDiv, type SnapDivInstance } from "@/hooks/use-snap";
 import { useIntl } from "@/locale";
 import { useAssistantStore } from "@/store/assistant";
 import { PaginationIndicator } from "../indicator";
-import {
-    type ChatBox,
-    createChatBox,
-    type EnvArg,
-    getEnvPrompt,
-    type Message,
-} from "./chat";
+import { type ChatBox, createChatBox, type Message } from "./chat";
 import { ChatCard } from "./chat-card";
+import { type EnvArg, getEnvPrompt } from "./env";
 
-type CardData = { messages: Message[]; id: string; loading: boolean };
+type CardData = {
+    messages: Message[];
+    id: string;
+    loading: boolean;
+    title?: string;
+};
 
 const getId = () => Date.now().toString(16);
 
@@ -105,9 +105,10 @@ export function Assistant({ env }: { env?: EnvArg }) {
                 const result = await chatBox.next(message);
                 updateCard((prev) => ({
                     ...prev,
+                    title: result.title ?? prev.title,
                     messages: [
                         ...prev.messages,
-                        { role: "assistant", content: result },
+                        { role: "assistant", content: result.content },
                     ],
                 }));
             } catch (error) {
@@ -222,6 +223,7 @@ export function Assistant({ env }: { env?: EnvArg }) {
                                 className="w-full shrink-0 snap-center"
                             >
                                 <ChatCard
+                                    title={card.title}
                                     isLoading={card.loading}
                                     messages={card.messages}
                                     onSendMessage={(message) =>
