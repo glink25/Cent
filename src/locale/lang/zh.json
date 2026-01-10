@@ -522,8 +522,8 @@
   "unkown-users-may-show-up-when-analyze": "账单统计时可能会出现未知用户",
   "ai-assistant": "AI助手",
   "assistant-description": "配置AI助手相关设置",
-  "bigmodel-api-key": "智谱GLM API Key",
-  "bigmodel-api-key-description": "输入智谱GLM的API Key以启用AI助手功能，注意该key会被云同步，对其他协作者可见",
+  "bigmodel-api-key": "智谱GLM API Key(免费)",
+  "bigmodel-api-key-description": "输入智谱GLM的<a>API Key</a>以启用AI助手功能，注意该key会被云同步，对其他协作者可见",
   "bigmodel-api-key-placeholder": "请输入API Key",
   "assistant-api-key-saved": "API Key已保存",
   "new-ai-chat": "新对话",
@@ -535,5 +535,6 @@
   "preset_question.monthly_budget.prompt": "根据我本月和往期的每月支出情况，制定一个符合我消费习惯的每月预算，以便减少不必要的花销",
   "preset_question.anomaly_detection.label": "账单是否有异常",
   "preset_question.anomaly_detection.prompt": "账单是否有异常",
-  "ai-function-toll-result": "工具执行结果"
+  "ai-function-toll-result": "工具执行结果",
+  "ai-key-required-error": "未配置AI API Key，请在【AI助手】中配置"
 }

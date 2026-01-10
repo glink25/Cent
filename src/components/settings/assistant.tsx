@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/shallow";
 import PopupLayout from "@/layouts/popup-layout";
@@ -68,7 +68,18 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                     <div className="text-sm py-1">{t("bigmodel-api-key")}</div>
                     <div className="pb-2">
                         <div className="text-xs opacity-60 mb-2">
-                            {t("bigmodel-api-key-description")}
+                            {t("bigmodel-api-key-description", {
+                                a: (chunk: ReactNode) => (
+                                    <a
+                                        className="underline text-blue-700"
+                                        target="_blank"
+                                        href="https://bigmodel.cn/usercenter/proj-mgmt/apikeys"
+                                        rel="noopener"
+                                    >
+                                        {chunk}
+                                    </a>
+                                ),
+                            })}
                         </div>
                         <Input
                             name="bigmodel-apikey"
