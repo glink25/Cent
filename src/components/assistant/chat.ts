@@ -10,7 +10,7 @@ import { requestAI } from "./request";
 import { systemPrompt } from "./system-prompt";
 
 // Debug 标志：设置为 true 时在控制台打印对话信息和函数调用情况
-const DEBUG = true;
+const DEBUG = import.meta.env.DEV === true;
 
 /**
  * 解析 AI 响应中的函数调用

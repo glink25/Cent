@@ -512,5 +512,15 @@
   "bigmodel-api-key": "Zhipu GLM API Key",
   "bigmodel-api-key-description": "Enter your Zhipu GLM API Key to enable AI assistant features, NOTICE key will be sync to cloud, and be share to collaborators",
   "bigmodel-api-key-placeholder": "Please enter API Key",
-  "assistant-api-key-saved": "API Key saved"
+  "assistant-api-key-saved": "API Key saved",
+  "new-ai-chat": "New chat",
+  "start-talk-to-ai": "Start talk to AI",
+  "input-your-questions": "Ask questions",
+  "preset_question.analyze_ledger.label": "Analyze current ledger",
+  "preset_question.analyze_ledger.prompt": "Analyze the current ledger",
+  "preset_question.monthly_budget.label": "Help me create a monthly budget",
+  "preset_question.monthly_budget.prompt": "Based on my spending this month and in the past, create a monthly budget that fits my habits to help reduce unnecessary expenses.",
+  "preset_question.anomaly_detection.label": "Check for bill anomalies",
+  "preset_question.anomaly_detection.prompt": "Are there any anomalies in my bills?",
+  "loading": "loading"
 }

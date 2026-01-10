@@ -1,5 +1,7 @@
+/** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { t, useIntl } from "@/locale";
 import { cn } from "@/utils";
 import type { Message } from "./chat";
 
@@ -10,10 +12,18 @@ export interface ChatCardData {
 }
 
 const PRESET_QUESTIONS = [
-    "分析当前的账单",
-    "账单是否有异常",
-    "本月支出情况如何",
-    "哪些分类花费最多",
+    {
+        label: t("preset_question.analyze_ledger.label"),
+        prompt: t("preset_question.analyze_ledger.prompt"),
+    },
+    {
+        label: t("preset_question.monthly_budget.label"),
+        prompt: t("preset_question.monthly_budget.prompt"),
+    },
+    {
+        label: t("preset_question.anomaly_detection.label"),
+        prompt: t("preset_question.anomaly_detection.prompt"),
+    },
 ];
 
 interface ChatCardProps {
@@ -29,6 +39,8 @@ export function ChatCard({
     onSendMessage,
     onDelete,
 }: ChatCardProps) {
+    const t = useIntl();
+
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const [input, setInput] = useState("");
     const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -44,7 +56,7 @@ export function ChatCard({
 
     const handleSend = async () => {
         const input = inputRef.current?.value ?? "";
-        await onSendMessage(input.trim());
+        onSendMessage(input.trim());
         setInput("");
     };
 
@@ -77,7 +89,7 @@ export function ChatCard({
             >
                 {messages.length === 0 ? (
                     <div className="text-center text-muted-foreground text-sm py-8">
-                        开始与 AI 对话吧
+                        {t("start-talk-to-ai")}
                     </div>
                 ) : (
                     <>
@@ -124,16 +136,16 @@ export function ChatCard({
                 {
                     <div className="w-full p-2">
                         <div className="w-full flex gap-2 bg-background/95 backdrop-blur-sm border-input overflow-x-auto">
-                            {PRESET_QUESTIONS.map((question) => (
+                            {PRESET_QUESTIONS.map((question, index) => (
                                 <button
-                                    key={question}
+                                    key={index}
                                     type="button"
                                     onClick={() =>
-                                        handlePresetQuestion(question)
+                                        handlePresetQuestion(question.prompt)
                                     }
                                     className="flex-shrink-0 text-xs px-2 py-1 rounded-md border border-input bg-background hover:bg-accent transition-colors shadow-sm"
                                 >
-                                    {question}
+                                    {question.label}
                                 </button>
                             ))}
                         </div>
@@ -145,6 +157,7 @@ export function ChatCard({
                             variant="ghost"
                             size="icon"
                             onClick={onDelete}
+                            disabled={isLoading}
                             className="h-10 shrink-0"
                         >
                             <i className="icon-[mdi--delete-outline] text-sm"></i>
@@ -155,7 +168,7 @@ export function ChatCard({
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder="输入您的问题..."
+                        placeholder={t("input-your-questions")}
                         disabled={isLoading}
                         className="flex-1 h-10 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-none"
                     />
