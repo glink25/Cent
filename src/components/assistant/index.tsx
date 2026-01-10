@@ -172,7 +172,7 @@ export function Assistant({ env }: { env?: EnvArg }) {
             className="w-full rounded-md border group"
         >
             {/* 标题栏 */}
-            <div className="flex items-center justify-between p-2 border-b">
+            <div className="flex items-center justify-between p-2 border-b group-data-[state=closed]:border-none">
                 <div className="flex items-center gap-2">
                     <i className="icon-[mdi--robot] text-lg"></i>
                     <span className="text-sm font-medium">
@@ -200,7 +200,7 @@ export function Assistant({ env }: { env?: EnvArg }) {
             </div>
 
             {/* 折叠内容 */}
-            <Collapsible.Content className="data-[state=open]:animate-collapse-open data-[state=closed]:animate-collapse-close data-[state=closed]:overflow-hidden">
+            <Collapsible.Content className="data-[state=open]:animate-collapse-open data-[state=closed]:animate-collapse-close overflow-hidden">
                 <div className="w-full pb-2">
                     <SnapDiv
                         initialIndex={initialIndex}
