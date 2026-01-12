@@ -1,4 +1,4 @@
-/** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
+/** biome-ignore-all lint/suspicious/noArrayIndexKey: preset questions use index as key */
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { t, useIntl } from "@/locale";
@@ -23,6 +23,10 @@ const PRESET_QUESTIONS = [
     {
         label: t("preset_question.anomaly_detection.label"),
         prompt: t("preset_question.anomaly_detection.prompt"),
+    },
+    {
+        label: t("preset_question.annual_summary.label"),
+        prompt: t("preset_question.annual_summary.prompt"),
     },
 ];
 
