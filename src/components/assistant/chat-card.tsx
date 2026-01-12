@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { t, useIntl } from "@/locale";
 import { cn } from "@/utils";
 import type { Message } from "./chat";
+import "./style.css";
 
 export interface ChatCardData {
     id: string;
@@ -127,7 +128,7 @@ export function ChatCard({
                                 >
                                     {message.role === "assistant" ? (
                                         <div
-                                            className="[&_p]:mb-2 [&_p:last-child]:mb-0 [&_strong]:font-semibold [&_em]:italic [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-muted [&_pre]:p-2 [&_pre]:rounded [&_pre]:overflow-x-auto [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_ul]:list-disc [&_ul]:ml-4 [&_ul]:mb-2 [&_ol]:list-decimal [&_ol]:ml-4 [&_ol]:mb-2 [&_li]:mb-1 [&_h1]:text-lg [&_h1]:font-bold [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-bold [&_h2]:mb-2 [&_h3]:text-sm [&_h3]:font-bold [&_h3]:mb-2 [&_a]:text-primary [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-muted-foreground [&_blockquote]:pl-2 [&_blockquote]:italic [&_blockquote]:mb-2 [&_hr]:my-2 [&_hr]:border-muted"
+                                            className="ai-markdown-content"
                                             dangerouslySetInnerHTML={{
                                                 __html: snarkdown(
                                                     message.content,
@@ -141,14 +142,13 @@ export function ChatCard({
                             </div>
                         ))}
                         {isLoading && (
-                            <div className="flex justify-start">
-                                <div className="rounded-md px-3 py-2 bg-muted text-sm">
-                                    <span className="inline-flex items-center gap-1">
-                                        <span className="animate-pulse">
-                                            ...
-                                        </span>
-                                    </span>
-                                </div>
+                            <div className="rounded-md px-3 py-2 w-fit max-w-[80%] text-sm !select-auto bg-muted transition-all">
+                                <span className="ai-thinking-text ai-gradient-shimmer">
+                                    {t("ai-thinking")}
+                                </span>
+                                <span className="ai-tools-text ai-gradient-shimmer">
+                                    {t("ai-calling-tools")}
+                                </span>
                             </div>
                         )}
                     </>

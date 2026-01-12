@@ -1,0 +1,148 @@
+/* AI Assistant Chat Styles */
+/* Markdown content styles for AI assistant replies */
+.ai-markdown-content p {
+	margin-bottom: 0.5rem;
+}
+
+.ai-markdown-content p:last-child {
+	margin-bottom: 0;
+}
+
+.ai-markdown-content strong {
+	font-weight: 600;
+}
+
+.ai-markdown-content em {
+	font-style: italic;
+}
+
+.ai-markdown-content pre {
+	background-color: hsl(var(--muted));
+	padding: 0.5rem;
+	border-radius: 0.25rem;
+	overflow-x: auto;
+}
+
+.ai-markdown-content pre code {
+	background-color: transparent;
+	padding: 0;
+}
+
+.ai-markdown-content code {
+	background-color: hsl(var(--muted));
+	padding: 0.125rem 0.25rem;
+	border-radius: 0.25rem;
+	font-size: 0.75rem;
+}
+
+.ai-markdown-content ul {
+	list-style-type: disc;
+	margin-left: 1rem;
+	margin-bottom: 0.5rem;
+}
+
+.ai-markdown-content ol {
+	list-style-type: decimal;
+	margin-left: 1rem;
+	margin-bottom: 0.5rem;
+}
+
+.ai-markdown-content li {
+	margin-bottom: 0.25rem;
+}
+
+.ai-markdown-content h1 {
+	font-size: 1.125rem;
+	font-weight: 700;
+	margin-bottom: 0.5rem;
+}
+
+.ai-markdown-content h2 {
+	font-size: 1rem;
+	font-weight: 700;
+	margin-bottom: 0.5rem;
+}
+
+.ai-markdown-content h3 {
+	font-size: 0.875rem;
+	font-weight: 700;
+	margin-bottom: 0.5rem;
+}
+
+.ai-markdown-content a {
+	color: hsl(var(--primary));
+	text-decoration: underline;
+}
+
+.ai-markdown-content blockquote {
+	border-left: 2px solid hsl(var(--muted-foreground));
+	padding-left: 0.5rem;
+	font-style: italic;
+	margin-bottom: 0.5rem;
+}
+
+.ai-markdown-content hr {
+	margin-top: 0.5rem;
+	margin-bottom: 0.5rem;
+	border-color: hsl(var(--muted));
+}
+
+/* AI gradient shimmer text effect - abstracted class */
+.ai-gradient-shimmer {
+	background: linear-gradient(
+		90deg,
+		#60a5fa 0%,
+		#818cf8 25%,
+		#a78bfa 50%,
+		#c084fc 75%,
+		#60a5fa 100%
+	);
+	background-size: 200% 100%;
+	background-clip: text;
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	color: transparent;
+}
+
+@keyframes ai-gradient-shimmer {
+	0% {
+		background-position: 200% 50%;
+	}
+	100% {
+		background-position: 0% 50%;
+	}
+}
+
+/* AI loading animation styles */
+.ai-thinking-text {
+	animation:
+		ai-thinking-fade 3s forwards,
+		ai-gradient-shimmer 4s linear infinite;
+}
+
+.ai-tools-text {
+	opacity: 0;
+	animation:
+		ai-tools-fade 0.3s 3s forwards,
+		ai-gradient-shimmer 4s linear 3s infinite;
+}
+
+@keyframes ai-thinking-fade {
+	0%,
+	85% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+		display: none;
+	}
+}
+
+@keyframes ai-tools-fade {
+	0% {
+		opacity: 0;
+	}
+	100% {
+		opacity: 1;
+	}
+}
