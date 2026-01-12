@@ -1,5 +1,7 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: preset questions use index as key */
+/** biome-ignore-all lint/security/noDangerouslySetInnerHtml: markdown rendering requires innerHTML */
 import { useEffect, useRef, useState } from "react";
+import snarkdown from "snarkdown";
 import { Button } from "@/components/ui/button";
 import { t, useIntl } from "@/locale";
 import { cn } from "@/utils";
@@ -123,7 +125,18 @@ export function ChatCard({
                                             : "bg-muted",
                                     )}
                                 >
-                                    {message.content}
+                                    {message.role === "assistant" ? (
+                                        <div
+                                            className="[&_p]:mb-2 [&_p:last-child]:mb-0 [&_strong]:font-semibold [&_em]:italic [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-muted [&_pre]:p-2 [&_pre]:rounded [&_pre]:overflow-x-auto [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_ul]:list-disc [&_ul]:ml-4 [&_ul]:mb-2 [&_ol]:list-decimal [&_ol]:ml-4 [&_ol]:mb-2 [&_li]:mb-1 [&_h1]:text-lg [&_h1]:font-bold [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-bold [&_h2]:mb-2 [&_h3]:text-sm [&_h3]:font-bold [&_h3]:mb-2 [&_a]:text-primary [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-muted-foreground [&_blockquote]:pl-2 [&_blockquote]:italic [&_blockquote]:mb-2 [&_hr]:my-2 [&_hr]:border-muted"
+                                            dangerouslySetInnerHTML={{
+                                                __html: snarkdown(
+                                                    message.content,
+                                                ),
+                                            }}
+                                        />
+                                    ) : (
+                                        message.content
+                                    )}
                                 </div>
                             </div>
                         ))}
