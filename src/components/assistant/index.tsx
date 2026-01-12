@@ -63,10 +63,22 @@ export function Assistant({ env }: { env?: EnvArg }) {
                 }
                 return v;
             })();
-            useAssistantStore.setState((state) => ({
-                ...state,
-                cards: newV.filter((v) => v.messages.length > 0),
-            }));
+            useAssistantStore.setState((state) => {
+                const bookId = useBookStore.getState().currentBookId;
+                if (!bookId) {
+                    return state;
+                }
+                return {
+                    ...state,
+                    records: {
+                        ...state.records,
+                        [bookId]: {
+                            ...state.records[bookId],
+                            cards: newV.filter((v) => v.messages.length > 0),
+                        },
+                    },
+                };
+            });
             return newV;
         });
     }, []);
