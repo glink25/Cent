@@ -1,7 +1,7 @@
 import type { ExportedJSON } from "@/ledger/type";
 import { t } from "@/locale";
 import { useLedgerStore } from "@/store/ledger";
-import { getAccountMeta, queryBills } from "./functions";
+import { analyzeBills, getAccountMeta, queryBills } from "./functions";
 import { requestAI } from "./request";
 import { systemPrompt } from "./system-prompt";
 
@@ -133,6 +133,8 @@ async function executeFunctionCall(
         }
         case "get_account_meta":
             return getAccountMeta(ledgerData.meta);
+        case "analyze_bills":
+            return analyzeBills(args as any, ledgerData);
         default:
             throw new Error(`未知工具: ${name}`);
     }
@@ -159,7 +161,7 @@ export const createChatBox = async (
         conversationHistory.push({ role: "user", content: message });
 
         let iterations = 0;
-        const maxIterations = 5;
+        const maxIterations = 200;
 
         while (iterations < maxIterations) {
             iterations++;

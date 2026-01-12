@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { numberToAmount } from "@/ledger/bill";
+import { amountToNumber, numberToAmount } from "@/ledger/bill";
 import { BillCategories } from "@/ledger/category";
 import type {
     BillCategory,
@@ -169,4 +169,233 @@ export function getAccountMeta(meta: GlobalMeta) {
         tags: allTags,
         currencies: meta.customCurrencies ?? [],
     };
+}
+
+// ==========================================
+// 1. 类型定义
+// ==========================================
+
+/** 分析工具的入参 */
+export interface AnalyzeBillsArgs extends QueryBillsArgs {
+    /** 分组维度: 默认 category */
+    groupBy?: "category" | "tag" | "day" | "month" | "year" | "type";
+    /** 返回前 N 项数据，剩余合并为 Others */
+    limit?: number;
+    /** 是否包含时间趋势数据 */
+    includeTrend?: boolean;
+}
+
+/** 返回给大模型的数据结构 */
+export interface AnalysisResult {
+    meta: {
+        totalAmount: number;
+        count: number;
+        currency: string;
+        dateRange: string;
+    };
+    /** 分组统计结果 (Token 友好的核心数据) */
+    distribution: Array<{
+        name: string;
+        amount: number;
+        percentage: string;
+        count: number;
+    }>;
+    /** 趋势数据 (可选) */
+    trend?: Array<{
+        date: string;
+        amount: number;
+    }>;
+}
+
+// ==========================================
+// 2. 辅助函数
+// ==========================================
+
+// 将数据库存储的整数金额转换为实际金额 (10000 -> 1)
+const toUnitAmount = (amount: number) => amount / 10000;
+
+// 获取分类名称映射 Map
+const getCategoryMap = (categories: BillCategory[] = []) => {
+    return categories.reduce(
+        (acc, cur) => {
+            acc[cur.id] = cur.name;
+            return acc;
+        },
+        {} as Record<string, string>,
+    );
+};
+
+// 获取标签名称映射 Map
+const getTagMap = (tags: BillTag[] = []) => {
+    return tags.reduce(
+        (acc, cur) => {
+            acc[cur.id] = cur.name;
+            return acc;
+        },
+        {} as Record<string, string>,
+    );
+};
+
+// ==========================================
+// 3. 核心分析函数
+// ==========================================
+
+export function analyzeBills(
+    args: AnalyzeBillsArgs,
+    data: ExportedJSON,
+): AnalysisResult {
+    const {
+        groupBy = "category",
+        limit = 10,
+        includeTrend = false,
+        ...filters
+    } = args;
+
+    // 1. 获取基础数据 (复用现有的筛选逻辑)
+    // 注意：queryBills 返回的是 { bills: [], statistics: {} }
+    const { bills, statistics } = queryBills(filters, data);
+
+    // 2. 准备元数据查找表
+    const allCategories = [
+        ...(data.meta.categories ?? []),
+        // 假设 BillCategories 是从全局导入的默认分类
+        // ...BillCategories
+    ];
+    // 注意：这里需要确保你能获取到所有分类，包括默认分类。
+    // 如果 BillCategories 无法在此处直接导入，建议通过 data.meta 传递或合并。
+
+    const categoryNameMap = getCategoryMap(allCategories);
+    const tagNameMap = getTagMap(data.meta.tags);
+
+    // 3. 聚合计算 (Aggregation)
+    const groups: Record<string, { amount: number; count: number }> = {};
+    const trendMap: Record<string, number> = {};
+
+    bills.forEach((bill) => {
+        const amount = toUnitAmount(bill.amount);
+
+        // --- A. 处理分组逻辑 ---
+        let key = "Unknown";
+
+        if (groupBy === "category") {
+            key = categoryNameMap[bill.categoryId] || "Unknown Category";
+        } else if (groupBy === "tag") {
+            // 特殊处理：如果按标签分组，一笔账单可能有多个标签
+            // 策略：如果没有标签，归为 "No Tag"
+            // 如果有标签，这笔金额会在多个标签中重复统计 (这是标签分析的常规做法)，或者你可以选择只取第一个
+            if (!bill.tagIds || bill.tagIds.length === 0) {
+                key = "No Tag";
+                if (!groups[key]) groups[key] = { amount: 0, count: 0 };
+                groups[key].amount += amount;
+                groups[key].count += 1;
+            } else {
+                bill.tagIds.forEach((tagId) => {
+                    const tagName = tagNameMap[tagId] || "Unknown Tag";
+                    if (!groups[tagName])
+                        groups[tagName] = { amount: 0, count: 0 };
+                    groups[tagName].amount += amount;
+                    groups[tagName].count += 1;
+                });
+                key = ""; // 已经处理过了，跳过下面的通用累加
+            }
+        } else if (groupBy === "day") {
+            key = dayjs(bill.time).format("YYYY-MM-DD");
+        } else if (groupBy === "month") {
+            key = dayjs(bill.time).format("YYYY-MM");
+        } else if (groupBy === "year") {
+            key = dayjs(bill.time).format("YYYY");
+        } else if (groupBy === "type") {
+            key = bill.type === "expense" ? "支出" : "收入";
+        }
+
+        // 通用累加 (除了 Tag 特殊处理外)
+        if (key) {
+            if (!groups[key]) groups[key] = { amount: 0, count: 0 };
+            groups[key].amount += amount;
+            groups[key].count += 1;
+        }
+
+        // --- B. 处理趋势数据 (如果是按时间分组，直接复用 groups 即可，不需要重复计算) ---
+        if (includeTrend) {
+            // 默认趋势按“天”或者“月”聚合，取决于数据跨度，这里简化默认为按天
+            const trendKey = dayjs(bill.time).format("YYYY-MM-DD");
+            trendMap[trendKey] = (trendMap[trendKey] || 0) + amount;
+        }
+    });
+
+    // 4. 排序与截断 (Top N + Others)
+    const sortedGroups = Object.entries(groups)
+        .map(([name, stat]) => ({ name, ...stat }))
+        .sort((a, b) => b.amount - a.amount); // 按金额降序
+
+    const topN = sortedGroups.slice(0, limit);
+    const others = sortedGroups.slice(limit);
+
+    // 处理 Others
+    if (others.length > 0) {
+        const othersStat = others.reduce(
+            (acc, cur) => ({
+                amount: acc.amount + cur.amount,
+                count: acc.count + cur.count,
+            }),
+            { amount: 0, count: 0 },
+        );
+        topN.push({
+            name: "Others",
+            amount: othersStat.amount,
+            count: othersStat.count,
+        });
+    }
+
+    // 计算百分比
+    const totalCalculatedAmount = topN.reduce(
+        (sum, item) => sum + item.amount,
+        0,
+    );
+    const finalDistribution = topN.map((item) => ({
+        ...item,
+        amount: Number(item.amount.toFixed(2)), // 保留两位小数
+        percentage:
+            totalCalculatedAmount === 0
+                ? "0%"
+                : `${((item.amount / totalCalculatedAmount) * 100).toFixed(1)}%`,
+    }));
+
+    // 5. 组装趋势数据 (按时间排序)
+    let trendResult: AnalysisResult["trend"];
+    if (includeTrend) {
+        trendResult = Object.entries(trendMap)
+            .map(([date, amount]) => ({
+                date,
+                amount: Number(amount.toFixed(2)),
+            }))
+            .sort((a, b) => dayjs(a.date).valueOf() - dayjs(b.date).valueOf());
+    }
+
+    // 6. 返回结果
+    const result = {
+        meta: {
+            // 使用 filters 里的 billType 决定总额是净额还是特定类型，或者直接返回筛选出的总和
+            totalAmount: Number(
+                toUnitAmount(
+                    filters.billType === "income"
+                        ? statistics.totalIncome
+                        : filters.billType === "expense"
+                          ? statistics.totalExpense
+                          : statistics.totalIncome - statistics.totalExpense, // 如果未指定类型，这里可能返回净额
+                ).toFixed(2),
+            ),
+            count: statistics.total,
+            currency: data.meta.baseCurrency || "CNY",
+            dateRange:
+                filters.startTime && filters.endTime
+                    ? `${filters.startTime} to ${filters.endTime}`
+                    : "All Time",
+        },
+        distribution: finalDistribution,
+        trend: trendResult,
+    };
+
+    // 将amount转换为实际金额
+    return result;
 }

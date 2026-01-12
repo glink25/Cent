@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { SnapDiv, type SnapDivInstance } from "@/hooks/use-snap";
 import { useIntl } from "@/locale";
 import { useAssistantStore } from "@/store/assistant";
+import { useBookStore } from "@/store/book";
 import { PaginationIndicator } from "../indicator";
 import { type ChatBox, createChatBox, type Message } from "./chat";
 import { ChatCard } from "./chat-card";
@@ -20,6 +21,14 @@ const getId = () => Date.now().toString(16);
 
 const createEmptyChat = () => ({ messages: [], id: getId(), loading: false });
 
+const getPersistRecords = () => {
+    const bookId = useBookStore.getState().currentBookId;
+    if (!bookId) {
+        return undefined;
+    }
+    return useAssistantStore.getState().records[bookId];
+};
+
 export function Assistant({ env }: { env?: EnvArg }) {
     const t = useIntl();
 
@@ -34,14 +43,15 @@ export function Assistant({ env }: { env?: EnvArg }) {
     const isCollapsed = useAssistantStore((state) => state.isCollapsed);
 
     const [cards, _setCards] = useState<CardData[]>(() => {
-        const exist = useAssistantStore
-            .getState()
-            .cards.map((c) => ({ ...c, loading: false }));
-        return exist.length === 0 ? [createEmptyChat()] : exist;
+        const exist = getPersistRecords()?.cards.map((c) => ({
+            ...c,
+            loading: false,
+        }));
+        return !exist || exist.length === 0 ? [createEmptyChat()] : exist;
     });
 
     const initialIndex = cards.findIndex(
-        (c) => c.id === useAssistantStore.getState().activeCardId,
+        (c) => c.id === getPersistRecords()?.activeCardId,
     );
     const [activeIndex, setActiveIndex] = useState(initialIndex);
 
@@ -53,10 +63,22 @@ export function Assistant({ env }: { env?: EnvArg }) {
                 }
                 return v;
             })();
-            useAssistantStore.setState((state) => ({
-                ...state,
-                cards: newV.filter((v) => v.messages.length > 0),
-            }));
+            useAssistantStore.setState((state) => {
+                const bookId = useBookStore.getState().currentBookId;
+                if (!bookId) {
+                    return state;
+                }
+                return {
+                    ...state,
+                    records: {
+                        ...state.records,
+                        [bookId]: {
+                            ...state.records[bookId],
+                            cards: newV.filter((v) => v.messages.length > 0),
+                        },
+                    },
+                };
+            });
             return newV;
         });
     }, []);
