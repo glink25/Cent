@@ -6,6 +6,7 @@ import { useIntl } from "@/locale";
 import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
 import { cn } from "@/utils";
+import { decodeApiKey, encodeApiKey } from "@/utils/api-key";
 import createConfirmProvider from "../confirm";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -13,7 +14,7 @@ import { Input } from "../ui/input";
 function Form({ onCancel }: { onCancel?: () => void }) {
     const t = useIntl();
     const { id: userId } = useUserStore();
-    const apiKey = useLedgerStore(
+    const encodedApiKey = useLedgerStore(
         useShallow(
             (state) =>
                 state.infos?.meta.personal?.[userId]?.assistant?.bigmodel
@@ -21,9 +22,11 @@ function Form({ onCancel }: { onCancel?: () => void }) {
         ),
     );
 
+    // 解码 base64 编码的 API Key 用于展示
+    const apiKey = decodeApiKey(encodedApiKey);
     const [apiKeyValue, setApiKeyValue] = useState(apiKey);
 
-    // 同步 store 的值到本地状态
+    // 同步 store 的值到本地状态（解码后的值）
     useEffect(() => {
         setApiKeyValue(apiKey);
     }, [apiKey]);
@@ -33,6 +36,8 @@ function Form({ onCancel }: { onCancel?: () => void }) {
     }, []);
 
     const handleSave = useCallback(async () => {
+        // 保存时编码为 base64
+        const encodedValue = encodeApiKey(apiKeyValue);
         await useLedgerStore.getState().updatePersonalMeta((prev) => {
             if (!prev.assistant) {
                 prev.assistant = {};
@@ -40,7 +45,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
             if (!prev.assistant.bigmodel) {
                 prev.assistant.bigmodel = {};
             }
-            prev.assistant.bigmodel.apiKey = apiKeyValue;
+            prev.assistant.bigmodel.apiKey = encodedValue;
             return prev;
         });
         toast.success(t("assistant-api-key-saved"));

@@ -1,6 +1,7 @@
 import { t } from "@/locale";
 import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
+import { decodeApiKey } from "@/utils/api-key";
 
 /**
  * 智谱AI的api请求，参考文档：https://docs.bigmodel.cn/cn/guide/develop/http/introduction
@@ -9,14 +10,16 @@ import { useUserStore } from "@/store/user";
 export const requestAI = async (
     messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
 ): Promise<string> => {
-    // 从环境变量获取 API Key
+    // 从 store 获取 API Key（base64 编码的）
     const userId = useUserStore.getState().id;
-    const apiKey =
+    const encodedApiKey =
         useLedgerStore.getState().infos?.meta.personal?.[userId]?.assistant
             ?.bigmodel?.apiKey;
-    if (!apiKey) {
+    if (!encodedApiKey) {
         throw new Error(t("ai-key-required-error"));
     }
+    // 解码 base64 编码的 API Key
+    const apiKey = decodeApiKey(encodedApiKey);
 
     // 智谱AI API 端点
     const apiUrl = "https://open.bigmodel.cn/api/paas/v4/chat/completions";
