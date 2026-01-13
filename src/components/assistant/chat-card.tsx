@@ -77,6 +77,9 @@ export function ChatCard({
     };
 
     const handlePresetQuestion = async (question: string) => {
+        if (isLoading) {
+            return;
+        }
         // 先设置输入值，然后立即发送
         setInput(question);
         // 等待状态更新后发送消息
@@ -162,16 +165,18 @@ export function ChatCard({
                     <div className="w-full p-2">
                         <div className="w-full flex gap-2 bg-background/95 backdrop-blur-sm border-input overflow-x-auto">
                             {PRESET_QUESTIONS.map((question, index) => (
-                                <button
+                                <Button
                                     key={index}
                                     type="button"
+                                    disabled={isLoading}
+                                    variant={"outline"}
                                     onClick={() =>
                                         handlePresetQuestion(question.prompt)
                                     }
                                     className="flex-shrink-0 text-xs px-2 py-1 rounded-md border border-input bg-background hover:bg-accent transition-colors shadow-sm"
                                 >
                                     {question.label}
-                                </button>
+                                </Button>
                             ))}
                         </div>
                     </div>
