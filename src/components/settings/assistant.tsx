@@ -280,7 +280,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
     const { id: userId } = useUserStore();
 
     // 获取配置列表和默认配置ID
-    const { configs = [], defaultConfigId } = useLedgerStore(
+    const { configs, defaultConfigId } = useLedgerStore(
         useShallow((state) => {
             const assistantData =
                 state.infos?.meta.personal?.[userId]?.assistant;
@@ -453,13 +453,13 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                     <div className="text-sm font-medium py-2">
                         {t("ai-config-list")}
                     </div>
-                    {configs.length === 0 ? (
+                    {(configs?.length ?? 0) === 0 ? (
                         <div className="text-xs opacity-60 text-center py-8">
                             {t("no-ai-configs")}
                         </div>
                     ) : (
                         <div className="flex flex-col gap-2">
-                            {configs.map((config) => (
+                            {configs?.map((config) => (
                                 <div
                                     key={config.id}
                                     className={cn(
@@ -495,7 +495,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                                             >
                                                 <i className="icon-[mdi--pencil] size-4"></i>
                                             </Button>
-                                            {config.id !== defaultConfigId && (
+                                            {
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
@@ -508,7 +508,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                                                 >
                                                     <i className="icon-[mdi--delete] size-4"></i>
                                                 </Button>
-                                            )}
+                                            }
                                         </div>
                                     </div>
                                     {config.id !== defaultConfigId && (

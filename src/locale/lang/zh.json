@@ -574,5 +574,11 @@
   "ai-config-not-found-error": "未找到默认 AI 配置，请在【AI助手】中设置默认配置",
   "ai-thinking": "AI思考中...",
   "ai-calling-tools": "正在调用工具进行分析...",
-  "open-ai-compatible": "Open AI 兼容"
+  "open-ai-compatible": "Open AI 兼容",
+  "voice-recording-settings": "语音记账设置",
+  "enable-voice-recording": "启用语音记账",
+  "voice-recording-description": "开启后可以通过语音方式快速记账",
+  "voice-recording-requires-ai-config": "需要先配置AI助手才能启用语音记账功能",
+  "voice-recording-setup-tip": "请先在【AI助手】中配置API Key，配置完成后即可启用语音记账功能",
+  "voice-recording-tip": "长按记账+按钮即可触发语音记账"
 }

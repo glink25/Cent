@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from "react-router";
 import { goAddBill } from "./bill-editor";
 import { afterAddBillPromotion } from "./promotion";
 import { showSettings } from "./settings";
+import VoiceAddButton from "./voice";
 
 export default function Navigation() {
     const location = useLocation();
@@ -16,6 +17,8 @@ export default function Navigation() {
     const switchTab = (value: "/" | "/stat" | "/search") => {
         navigate(`${value}`);
     };
+
+    const voiceEnabled = true;
 
     return createPortal(
         <div
@@ -49,16 +52,25 @@ export default function Navigation() {
                     <i className="icon-[mdi--format-align-center] size-5"></i>
                 </button>
 
-                <button
-                    type="button"
-                    className="w-18 h-18 sm:w-14 sm:h-14 rounded-full bg-stone-900 shadow-md flex items-center justify-center m-1 cursor-pointer transform transition-all hover:scale-105"
-                    onClick={() => {
-                        goAddBill();
-                        afterAddBillPromotion();
-                    }}
-                >
-                    <i className="icon-[mdi--add] text-[white] size-7"></i>
-                </button>
+                {voiceEnabled ? (
+                    <VoiceAddButton
+                        onClick={() => {
+                            goAddBill();
+                            afterAddBillPromotion();
+                        }}
+                    />
+                ) : (
+                    <button
+                        type="button"
+                        className="w-18 h-18 sm:w-14 sm:h-14 rounded-full bg-stone-900 shadow-md flex items-center justify-center m-1 cursor-pointer transform transition-all hover:scale-105"
+                        onClick={() => {
+                            goAddBill();
+                            afterAddBillPromotion();
+                        }}
+                    >
+                        <i className="icon-[mdi--add] text-[white] size-7"></i>
+                    </button>
+                )}
 
                 <button
                     type="button"

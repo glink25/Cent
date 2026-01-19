@@ -562,5 +562,11 @@
   "ai-config-not-found-error": "Default AI configuration not found. Please set a default configuration in AI Assistant settings",
   "ai-thinking": "AI thinking...",
   "ai-calling-tools": "Calling tools for analysis...",
-  "open-ai-compatible": "Open AI compatible"
+  "open-ai-compatible": "Open AI compatible",
+  "voice-recording-settings": "Voice Recording Settings",
+  "enable-voice-recording": "Enable Voice Recording",
+  "voice-recording-description": "Enable voice-based billing entry for quick recording",
+  "voice-recording-requires-ai-config": "AI Assistant configuration required to enable voice recording",
+  "voice-recording-setup-tip": "Please configure an API Key in AI Assistant settings first. Once configured, you can enable voice recording functionality",
+  "voice-recording-tip": "Longpress add bill button to trigger voice recording"
 }

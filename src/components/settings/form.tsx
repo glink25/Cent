@@ -17,6 +17,7 @@ import LanguageSettingsItem from "./language";
 import PresetSettingsItem from "./preset";
 import ThemeSettingsItem from "./theme";
 import UserSettingsItem from "./user";
+import VoiceSettingsItem from "./voice";
 
 function UserInfo() {
     const t = useIntl();
@@ -104,6 +105,7 @@ export default function SettingsForm({
                 <div className="flex-1 overflow-y-auto flex flex-col divide-y pb-4">
                     <BookSettings />
                     <AssistantSettingsItem />
+                    <VoiceSettingsItem />
                     <PresetSettingsItem />
                     <CategorySettingsItem />
                     <TagSettingsItem />

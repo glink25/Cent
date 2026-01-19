@@ -19,12 +19,8 @@ type State = {
     keyboardHeight?: number;
     /** 在账单列表中直接展示附件图片 */
     showAssetsInLedger?: boolean;
-    /** @deprecated */
-    quickEntryWithReLayr?: boolean;
-    /** @deprecated */
-    reLayrPort?: string;
-    /** @deprecated */
-    reLayrKey?: string;
+    /** 是否开启语音记账 */
+    voiceRecordingEnabled?: boolean;
 };
 type Store = State;
 
@@ -59,8 +55,6 @@ export const usePreferenceStore = create<Store>()(
                 autoLocateWhenAddBill: false,
                 readClipboardWhenReduceMotionChanged: false,
                 smartPredict: false,
-                reLayrKey: "cent",
-                reLayrPort: "2525",
             };
         },
         {

@@ -117,5 +117,12 @@ export default function createConfirmProvider<Value, Returned = Value>(
         return promise;
     };
 
-    return [Confirm, confirm] as const;
+    const withController = (value?: Value) => {
+        const [promise, cancel] = useGlobalConfirmStore
+            .getState()
+            .open<Value, Returned>(instanceId, value);
+        return { promise, cancel };
+    };
+
+    return [Confirm, confirm, withController] as const;
 }
