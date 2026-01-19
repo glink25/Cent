@@ -1,28 +1,67 @@
+import type { AIConfig } from "@/ledger/extra-type";
 import { t } from "@/locale";
 import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
 import { decodeApiKey } from "@/utils/api-key";
 
 /**
- * 智谱AI的api请求，参考文档：https://docs.bigmodel.cn/cn/guide/develop/http/introduction
+ * 从 store 获取 AI 配置
+ * @returns AI配置对象
+ * @throws 如果没有配置或没有默认配置时抛出错误
+ */
+function getAIConfig(): AIConfig {
+    const userId = useUserStore.getState().id;
+    const assistantData =
+        useLedgerStore.getState().infos?.meta.personal?.[userId]?.assistant;
+
+    // 优先使用新的配置系统
+    if (assistantData?.configs && assistantData.configs.length > 0) {
+        const defaultConfigId = assistantData.defaultConfigId;
+        if (defaultConfigId) {
+            const config = assistantData.configs.find(
+                (c) => c.id === defaultConfigId,
+            );
+            if (config) {
+                return config;
+            }
+        }
+    }
+
+    // Fallback: 如果新配置不存在，尝试使用旧的 bigmodel 配置
+    const oldApiKey = assistantData?.bigmodel?.apiKey;
+    if (oldApiKey) {
+        // 构造一个临时的配置对象，使用智谱 AI 的默认配置
+        return {
+            id: "legacy-bigmodel",
+            name: "智谱GLM (Legacy)",
+            apiKey: oldApiKey,
+            apiUrl: "https://open.bigmodel.cn/api/paas/v4",
+            model: "glm-4-flash",
+            apiType: "open-ai-compatible",
+        };
+    }
+
+    // 如果新旧配置都不存在，抛出错误
+    throw new Error(t("ai-config-required-error"));
+}
+
+/**
+ * AI API 请求，支持 OpenAI 兼容的 API 格式
  * @param messages 结构化的消息列表，包含 system、user、assistant 角色的消息
  */
 export const requestAI = async (
     messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
 ): Promise<string> => {
-    // 从 store 获取 API Key（base64 编码的）
-    const userId = useUserStore.getState().id;
-    const encodedApiKey =
-        useLedgerStore.getState().infos?.meta.personal?.[userId]?.assistant
-            ?.bigmodel?.apiKey;
-    if (!encodedApiKey) {
-        throw new Error(t("ai-key-required-error"));
-    }
-    // 解码 base64 编码的 API Key
-    const apiKey = decodeApiKey(encodedApiKey);
+    // 从 store 获取 AI 配置
+    const config = getAIConfig();
 
-    // 智谱AI API 端点
-    const apiUrl = "https://open.bigmodel.cn/api/paas/v4/chat/completions";
+    // 解码 base64 编码的 API Key
+    const apiKey = decodeApiKey(config.apiKey);
+
+    // 构建 API URL
+    const apiUrl = config.apiUrl.endsWith("/")
+        ? `${config.apiUrl}chat/completions`
+        : `${config.apiUrl}/chat/completions`;
 
     try {
         const response = await fetch(apiUrl, {
@@ -32,7 +71,7 @@ export const requestAI = async (
                 Authorization: `Bearer ${apiKey}`,
             },
             body: JSON.stringify({
-                model: "glm-4", // 使用 glm-4 模型
+                model: config.model,
                 messages,
                 temperature: 0.7,
                 max_tokens: 2000,
@@ -42,7 +81,7 @@ export const requestAI = async (
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(
-                `智谱AI API 请求失败: ${response.status} ${response.statusText}. ${errorText}`,
+                `AI API 请求失败: ${response.status} ${response.statusText}. ${errorText}`,
             );
         }
 
@@ -56,11 +95,11 @@ export const requestAI = async (
             }
         }
 
-        throw new Error("智谱AI API 响应格式异常");
+        throw new Error("AI API 响应格式异常");
     } catch (error) {
         if (error instanceof Error) {
             throw error;
         }
-        throw new Error(`智谱AI API 请求异常: ${String(error)}`);
+        throw new Error(`AI API 请求异常: ${String(error)}`);
     }
 };
