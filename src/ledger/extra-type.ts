@@ -82,6 +82,16 @@ export type Scheduled = {
     latest?: number;
 };
 
+// AI配置类型
+export type AIConfig = {
+    id: string;
+    name: string;
+    apiKey: string; // base64 encoded
+    apiUrl: string;
+    model: string;
+    apiType: "open-ai-compatible"; // 当前只支持OpenAI兼容的API格式
+};
+
 // 个人配置，不需要转换，可以略过
 export type PersonalMeta = {
     names?: Record<string, string>;
@@ -93,6 +103,8 @@ export type PersonalMeta = {
         bigmodel?: {
             apiKey?: string;
         };
+        configs?: AIConfig[];
+        defaultConfigId?: string;
     };
 };
 
