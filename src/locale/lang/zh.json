@@ -611,5 +611,11 @@
   "amap-security-code-required": "高德地图安全密钥不能为空",
   "map-config-saved": "地图配置已保存",
   "map-config-cleared": "地图配置已清除",
-  "are-you-sure-to-clear-map-config": "确定要清除地图配置吗？"
+  "are-you-sure-to-clear-map-config": "确定要清除地图配置吗？",
+  "map-error-no-api-key": "请配置高德地图 API Key",
+  "map-error-load-failed": "地图加载失败",
+  "map-error-api-load-failed": "Amap API load failed",
+  "map-marker-amount": "金额",
+  "map-marker-accuracy": "位置精度",
+  "map-error-configure-in-settings": "请在设置中配置地图 API Key"
 }

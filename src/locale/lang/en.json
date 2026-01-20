@@ -599,5 +599,11 @@
   "amap-security-code-required": "AMap Security Code is required",
   "map-config-saved": "Map configuration saved",
   "map-config-cleared": "Map configuration cleared",
-  "are-you-sure-to-clear-map-config": "Are you sure you want to clear map configuration?"
+  "are-you-sure-to-clear-map-config": "Are you sure you want to clear map configuration?",
+  "map-error-no-api-key": "Please configure AMap API Key",
+  "map-error-load-failed": "Map load failed",
+  "map-error-api-load-failed": "Amap API load failed",
+  "map-marker-amount": "Amount",
+  "map-marker-accuracy": "Location accuracy",
+  "map-error-configure-in-settings": "Please configure map API Key in settings"
 }

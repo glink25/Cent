@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Bill } from "@/ledger/type";
+import { useIntl } from "@/locale";
 import type { AMapMap, AMapMarker } from "./amap-types";
 
 interface AMapContainerProps {
@@ -13,6 +14,7 @@ export default function AMapContainer({
     amapKey,
     amapSecurityCode,
 }: AMapContainerProps) {
+    const t = useIntl();
     const mapRef = useRef<HTMLDivElement>(null);
     const mapInstanceRef = useRef<AMapMap | null>(null);
     const markersRef = useRef<AMapMarker[]>([]);
@@ -25,7 +27,7 @@ export default function AMapContainer({
 
         // 检查 API Key 配置
         if (!amapKey) {
-            setError("请配置高德地图 API Key");
+            setError(t("map-error-no-api-key"));
             return;
         }
 
@@ -38,7 +40,6 @@ export default function AMapContainer({
 
         // 动态加载高德地图 JS API
         const loadAMap = () => {
-            console.log("start load amap");
             return new Promise<void>((resolve, reject) => {
                 if (window.AMap) {
                     resolve();
@@ -50,7 +51,7 @@ export default function AMapContainer({
                 script.src = `https://webapi.amap.com/maps?v=2.0&key=${amapKey}`;
                 script.onload = () => resolve();
                 script.onerror = () =>
-                    reject(new Error("Amap API load failed"));
+                    reject(new Error(t("map-error-api-load-failed")));
                 document.head.appendChild(script);
             });
         };
@@ -71,8 +72,8 @@ export default function AMapContainer({
                 setSdkLoaded(true); // SDK加载完成
             })
             .catch((err) => {
-                console.error("地图加载失败:", err);
-                setError(err.message || "地图加载失败");
+                console.error(t("map-error-load-failed"), err);
+                setError(err.message || t("map-error-load-failed"));
             });
 
         return () => {
@@ -82,7 +83,7 @@ export default function AMapContainer({
                 mapInstanceRef.current = null;
             }
         };
-    }, [amapKey, amapSecurityCode]); // 依赖API配置
+    }, [amapKey, amapSecurityCode, t]); // 依赖API配置和翻译函数
 
     // 更新地图标记点（依赖SDK加载状态和bills数据）
     useEffect(() => {
@@ -127,7 +128,7 @@ export default function AMapContainer({
 
                 const marker = new window.AMap.Marker({
                     position: [location.longitude, location.latitude],
-                    title: `金额: ¥${(amount / 10000).toFixed(2)}`,
+                    title: `${t("map-marker-amount")}: ${(amount / 10000).toFixed(2)}`,
                     anchor: "bottom-center",
                     // 自定义标记图标
                     icon: new window.AMap.Icon({
@@ -142,10 +143,10 @@ export default function AMapContainer({
                     content: `
                         <div style="padding: 12px; min-width: 150px;">
                             <p style="margin: 0; font-weight: bold; font-size: 14px; color: #333;">
-                                金额: ¥${(amount / 10000).toFixed(2)}
+                                ${t("map-marker-amount")}: ¥${(amount / 10000).toFixed(2)}
                             </p>
                             <p style="margin: 8px 0 0 0; font-size: 12px; color: #999;">
-                                位置精度: ${location.accuracy.toFixed(0)}m
+                                ${t("map-marker-accuracy")}: ${location.accuracy.toFixed(0)}m
                             </p>
                             <p style="margin: 4px 0 0 0; font-size: 11px; color: #ccc;">
                                 ${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}
@@ -177,7 +178,7 @@ export default function AMapContainer({
                 mapInstance.setZoom(15);
             }
         }
-    }, [bills, sdkLoaded]); // 依赖bills和sdkLoaded状态
+    }, [bills, sdkLoaded, t]); // 依赖bills、sdkLoaded状态和翻译函数
 
     // 错误状态
     if (error) {
@@ -187,7 +188,7 @@ export default function AMapContainer({
                     <i className="icon-[mdi--alert-circle-outline] size-8 text-destructive mb-2"></i>
                     <p className="text-sm text-muted-foreground">{error}</p>
                     <p className="text-xs text-muted-foreground mt-2">
-                        请在设置中配置地图 API Key
+                        {t("map-error-configure-in-settings")}
                     </p>
                 </div>
             </div>
