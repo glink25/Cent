@@ -14,6 +14,7 @@ import AboutSettingsItem, { AdvancedGuideItem } from "./about";
 import AssistantSettingsItem from "./assistant";
 import LabSettingsItem from "./lab";
 import LanguageSettingsItem from "./language";
+import MapSettingsItem from "./map-settings";
 import PresetSettingsItem from "./preset";
 import ThemeSettingsItem from "./theme";
 import UserSettingsItem from "./user";
@@ -139,6 +140,7 @@ export default function SettingsForm({
                         </div>
                         <div className="flex flex-col divide-y">
                             <PresetSettingsItem />
+                            <MapSettingsItem />
                             <LabSettingsItem />
                             <AboutSettingsItem />
                             <ThemeSettingsItem />

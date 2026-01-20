@@ -15,6 +15,7 @@ import BillItem from "@/components/ledger/item";
 import { showSortableList } from "@/components/sortable";
 import { AnalysisCloud } from "@/components/stat/analysic-cloud";
 import { AnalysisDetail } from "@/components/stat/analysis-detail";
+import AnalysisMap from "@/components/stat/analysis-map";
 import { useChartPart } from "@/components/stat/chart-part";
 import { DateSliced, useDateSliced } from "@/components/stat/date-slice";
 import {
@@ -397,6 +398,15 @@ export default function Page() {
                         </div>
                     )}
                     <AnalysisCloud
+                        bills={
+                            focusType === "expense"
+                                ? filteredExpenseBills
+                                : focusType === "income"
+                                  ? filteredIncomeBills
+                                  : filtered
+                        }
+                    />
+                    <AnalysisMap
                         bills={
                             focusType === "expense"
                                 ? filteredExpenseBills

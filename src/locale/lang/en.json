@@ -583,5 +583,21 @@
   "book-settings": "Book Settings",
   "ai": "AI",
   "billing-functions": "Billing Functions",
-  "other-settings": "Other Settings"
+  "other-settings": "Other Settings",
+  "ledger-footprint": "Footprint",
+  "map-settings": "Map Settings",
+  "map-settings-description": "Configure AMap API Key and Security Code to enable map features",
+  "amap-key": "AMap Key",
+  "amap-key-placeholder": "Enter AMap Key",
+  "amap-key-description": "API key for calling AMap services, note that this key will be synced to the cloud and share to collaborators",
+  "amap-security-code": "AMap Security Code",
+  "amap-security-code-placeholder": "Enter AMap Security Code",
+  "amap-security-code-description": "Security code for API authentication, note that this key will be synced to the cloud and share to collaborators",
+  "map-settings-help": "How to get AMap API key? <a>View AMap documentation</a>",
+  "clear-map-config": "Clear Map Configuration",
+  "amap-key-required": "AMap Key is required",
+  "amap-security-code-required": "AMap Security Code is required",
+  "map-config-saved": "Map configuration saved",
+  "map-config-cleared": "Map configuration cleared",
+  "are-you-sure-to-clear-map-config": "Are you sure you want to clear map configuration?"
 }

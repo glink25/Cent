@@ -595,5 +595,21 @@
   "book-settings": "账本设置",
   "ai": "AI",
   "billing-functions": "记账功能",
-  "other-settings": "其他设置"
+  "other-settings": "其他设置",
+  "ledger-footprint": "账单足迹",
+  "map-settings": "地图设置",
+  "map-settings-description": "配置高德地图API密钥和安全密钥以启用地图功能",
+  "amap-key": "高德地图Key",
+  "amap-key-placeholder": "请输入高德地图Key",
+  "amap-key-description": "用于调用高德地图API的密钥，注意该key会被云同步，对所有协作者生效",
+  "amap-security-code": "高德地图安全密钥",
+  "amap-security-code-placeholder": "请输入高德地图安全密钥",
+  "amap-security-code-description": "用于验证API调用的安全密钥，注意该key会被云同步，对所有协作者生效",
+  "map-settings-help": "如何获取高德地图API密钥？<a>查看高德地图文档</a>",
+  "clear-map-config": "清除地图配置",
+  "amap-key-required": "高德地图Key不能为空",
+  "amap-security-code-required": "高德地图安全密钥不能为空",
+  "map-config-saved": "地图配置已保存",
+  "map-config-cleared": "地图配置已清除",
+  "are-you-sure-to-clear-map-config": "确定要清除地图配置吗？"
 }
