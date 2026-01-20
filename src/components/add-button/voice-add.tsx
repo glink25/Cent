@@ -73,6 +73,10 @@ export function VoiceAddButton({ onClick }: { onClick?: () => void }) {
                 );
             } finally {
                 closeDialog();
+                setFormState({
+                    text: "",
+                    phase: "listening",
+                });
             }
         }, []),
         onLongPressEnd: useCallback(() => {
