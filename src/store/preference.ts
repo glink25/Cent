@@ -21,6 +21,8 @@ type State = {
     showAssetsInLedger?: boolean;
     /** 是否开启语音记账 */
     voiceRecordingEnabled?: boolean;
+    /** 是否使用键盘输入代替语言识别 */
+    voiceByKeyboard?: boolean;
 };
 type Store = State;
 

@@ -36,6 +36,7 @@ export function useLongPress(options: UseLongPressOptions) {
     const longPressTimeout = useRef<NodeJS.Timeout | undefined>(undefined);
 
     const onPointerDown = useCallback((e: PointerEvent) => {
+        e.preventDefault();
         const el = e.currentTarget as HTMLElement;
         isDown.current = true;
         el?.setPointerCapture(e.pointerId);

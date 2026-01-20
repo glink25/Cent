@@ -568,5 +568,16 @@
   "voice-recording-description": "Enable voice-based billing entry for quick recording",
   "voice-recording-requires-ai-config": "AI Assistant configuration required to enable voice recording",
   "voice-recording-setup-tip": "Please configure an API Key in AI Assistant settings first. Once configured, you can enable voice recording functionality",
-  "voice-recording-tip": "Longpress add bill button to trigger voice recording"
+  "voice-recording-tip": "Longpress add bill button to trigger voice recording",
+  "voice-cancel-tip": "Release finger to cancel",
+  "use-keyboard-input-instead-of-voice": "Use keyboard input instead of voice recognition",
+  "use-keyboard-input-description": "Voice input may not be available on some devices. In such cases, you can use text input as an alternative. You can also use your system keyboard app for voice input",
+  "voice-listening-text": "Recognizing voice content...",
+  "voice-parsing-text": "Parsing...",
+  "voice-recording-dialog-title": "Voice Recording",
+  "voice-add-success": "Successfully added {count} bill(s)",
+  "voice-recognition-failed": "Recognition failed: {error}",
+  "keyboard-input-title": "Smart Recognition",
+  "keyboard-input-placeholder": "Please enter text to parse as bills",
+  "keyboard-parsing": "Parsing..."
 }

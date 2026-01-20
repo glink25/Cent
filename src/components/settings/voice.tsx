@@ -32,6 +32,9 @@ function Form({ onCancel }: { onCancel?: () => void }) {
         "voiceRecordingEnabled",
     );
 
+    const [voiceByKeyboard, setVoiceByKeyboard] =
+        usePreference("voiceByKeyboard");
+
     return (
         <PopupLayout
             title={t("voice-recording-settings")}
@@ -40,7 +43,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
         >
             <div className="flex-1 flex flex-col overflow-y-auto py-4">
                 {/* 语音记账开关 */}
-                <div className="w-full min-h-10 pb-2 flex justify-between items-center px-4">
+                <div className="w-full min-h-10 pb-2 flex justify-between items-center px-4 gap-2">
                     <div className="text-sm">
                         <div>{t("enable-voice-recording")}</div>
                         <div className="text-xs opacity-60">
@@ -71,6 +74,24 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                                 <div>{t("voice-recording-setup-tip")}</div>
                             </div>
                         </div>
+                    </div>
+                )}
+                {voiceEnabled && (
+                    <div className="w-full min-h-10 pb-2 flex justify-between items-center px-4 gap-2">
+                        <div className="text-sm">
+                            <div>
+                                {t("use-keyboard-input-instead-of-voice")}
+                            </div>
+                            <div className="text-xs opacity-60">
+                                {t("use-keyboard-input-description")}
+                            </div>
+                        </div>
+                        <Switch
+                            checked={Boolean(voiceByKeyboard)}
+                            onCheckedChange={(checked) => {
+                                setVoiceByKeyboard(checked);
+                            }}
+                        />
                     </div>
                 )}
             </div>

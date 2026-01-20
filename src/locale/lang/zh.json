@@ -580,5 +580,16 @@
   "voice-recording-description": "开启后可以通过语音方式快速记账",
   "voice-recording-requires-ai-config": "需要先配置AI助手才能启用语音记账功能",
   "voice-recording-setup-tip": "请先在【AI助手】中配置API Key，配置完成后即可启用语音记账功能",
-  "voice-recording-tip": "长按记账+按钮即可触发语音记账"
+  "voice-recording-tip": "长按记账+按钮即可触发语音记账",
+  "voice-cancel-tip": "移开手指后松手即可取消",
+  "use-keyboard-input-instead-of-voice": "使用键盘输入代替语音识别",
+  "use-keyboard-input-description": "在部分设备上语音输入功能可能无法启用，此时可以使用文本输入进行代替，可以使用系统键盘App进行语音输入",
+  "voice-listening-text": "正在识别语音内容...",
+  "voice-parsing-text": "分析中...",
+  "voice-recording-dialog-title": "语音记账",
+  "voice-add-success": "成功添加{count}笔账单",
+  "voice-recognition-failed": "识别失败：{error}",
+  "keyboard-input-title": "智能识别",
+  "keyboard-input-placeholder": "请输入需要解析为账单的文本",
+  "keyboard-parsing": "识别中..."
 }
