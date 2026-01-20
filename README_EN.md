@@ -18,48 +18,42 @@ which uses a **GitHub Repository** for data synchronization and version control,
 
 ---
 
+## 📈 Feature Preview
+
+| Feature | Screenshot |
+|------|------|
+| Two-Level Categories & Tag Management | ![Category Example](https://glink25.github.io/post-assets/mgucw881-cent-accountting.jpg) |
+| Custom Tags | ![Tag Example](https://glink25.github.io/post-assets/mgucw884-cent-tag-1.jpg) |
+| Statistics and Analysis View | ![Statistical Analysis](https://glink25.github.io/post-assets/mgucw884-cent-stat.jpg) |
+| Budget Management | ![Budget View](https://glink25.github.io/post-assets/mgucw884-cent-budget.jpg) |
+| GitHub Collaboration | ![Collaboration Feature](https://glink25.github.io/post-assets/mgucw884-github-collaborator.jpg) |
+
+>  **Latest Update**: Cent now supports AI Assistant, Voice Recording, Multi-Currency Management, Map Visualization, Scheduled Billing, and many more features! See [Cent 1.1 Update Notes](https://glink25.github.io/post/Cent-%E5%B7%B2%E6%94%AF%E6%8C%81%E5%A4%9A%E5%B8%81%E7%A7%8D%E8%87%AA%E5%8A%A8%E8%AE%B0%E8%B4%A6/) for details.
+
+---
+
 ## ✨ Features
 
-### Core Features
-- 💾 **Fully Self-Contained Data**: Ledger data is stored in your private GitHub/Gitee repository or Web DAV, without any third-party servers.  
-- 👥 **Multi-User Collaboration**: Share ledgers and synchronize changes in real-time using the GitHub/Gitee Collaborator feature.  
-- ⚡️ **Incremental Sync**: Only uploads/downloads changed data, significantly reducing sync time.  
-- 📱 **PWA Support**: Can be installed to the desktop and used like a native App, supported on iOS and Android.  
-- 🔒 **Completely Open Source**: Deployment cost is nearly zero, the code is fully auditable and can be self-hosted.
+### 💾 Fully Self-Contained Data
+Ledger data is stored in your private GitHub/Gitee repository or Web DAV, without any third-party servers. **Multi-user collaboration** via GitHub Collaborator feature, with **incremental sync** mechanism that only uploads/downloads changed data, significantly reducing sync time.
 
-### AI-Powered Features
-- 🤖 **AI Assistant**: Supports OpenAI-compatible APIs for intelligent bill analysis, budget suggestions, and annual summaries.
-- 🎤 **Voice Recording**: Quick voice-based bill entry with speech recognition and keyboard text input support.
-- 🧠 **Smart Prediction**: Auto-predicts categories and notes based on time patterns to improve recording efficiency.
+### 🤖 AI-Powered Experience
+Long press the recording button for **Voice Recording**, where AI automatically parses amounts, categories, and notes. Configure OpenAI-compatible APIs for intelligent bill analysis, budget suggestions, annual summaries, and **smart predictions** based on historical data.
 
-### Multi-Currency Support
-- 💱 **Multi-Currency Management**: Supports 30+ international currencies, custom currencies, and real-time exchange rate conversion.
-- 💰 **Base Currency Settings**: Freely switch base currency, manually adjust exchange rates, and use quick currency shortcuts.
+### 💱 Multi-Currency & Scheduled Billing
+Supports 30+ international currencies plus custom currencies, with real-time automatic exchange rate conversion. Perfect for international travel and cross-border transactions. Create **scheduled billing** templates for subscriptions and auto-renewals.
 
-### Billing Features
-- 🔄 **Scheduled Billing**: Automatically records periodic bills for subscriptions and auto-renewals.
-- 🗺️ **Map Visualization**: Automatically records bill locations and displays spending footprints on a map (AMap support).
-- 📝 **Batch Editing**: Multi-select bills for batch category/tag modification or deletion.
-- 🖼️ **Attachment Support**: Upload image attachments for bills with cache management.
-- 📋 **Quick Entry**: Support for clipboard quick entry and iOS Shortcuts integration.
+### 📊 Statistics & Visualization
+Multi-dimensional filtering and trend analysis, custom analysis views, budget management with progress monitoring. **View spending footprints on a map** with AMap support.
 
-### Data Management
-- 🖼️ **Smart Import**: Supports WeChat/Alipay bill imports and AI-powered custom import schemes.
-- 📤 **Import/Export**: Freely import and export bill data to eliminate data anxiety.
-- 🗜️ **Bill Compression**: Compress cloud incremental data to reduce storage space.
+### 🛠️ More Features
+- 📱 **PWA Support**: Install to desktop and use like a native app
+- 📥 **Smart Import**: WeChat/Alipay bills, create custom import schemes with AI
+- 🏷️ **Categories & Tags**: Custom categories, tag groups, single/multi-select, preferred currencies
+- 📋 **Quick Actions**: iOS Shortcuts, clipboard entry, batch editing, natural language recognition
+- 🎨 **Customization**: Dark mode, custom CSS, keyboard customization
 
-### Statistics & Analysis
-- 📊 **Rich Statistical Analysis**: Supports multi-dimensional filtering and trend analysis with customizable and saveable analysis views.  
-- 📈 **Multi-Dimensional Trends**: User expense/income/balance trends, category structure, frequent word clouds, etc.
-- 💰 **Budget Management**: Set budgets by category or tag and monitor progress in real-time, with category budget support.  
-
-### Categories & Tags
-- 🏷️ **Two-Level Category System**: Supports custom two-level categories, icons, and sorting.  
-- 🔖 **Tag System**: Supports tag groups, single/multi-select tags, required tags, and tag-preferred currencies.
-
-### Customization
-- 🎨 **Custom Themes**: Supports custom CSS and dark mode (follow system/manual switch).
-- ⌨️ **Keyboard Customization**: Customize keyboard height and multiply keys (quick input of 00/000).
+*...and many more features waiting to be discovered ✨*
 
 ---
 
@@ -91,18 +85,6 @@ The synchronization logic has been abstracted and encapsulated, with future supp
 - Self-hosted Servers  
 - Cloud Drives (e.g., Dropbox, OneDrive)  
 - Local Offline Ledgers  
-
----
-
-## 📈 Feature Preview
-
-| Feature | Screenshot |
-|------|------|
-| Two-Level Categories & Tag Management | ![Category Example](https://glink25.github.io/post-assets/mgucw881-cent-accountting.jpg) |
-| Custom Tags | ![Tag Example](https://glink25.github.io/post-assets/mgucw884-cent-tag-1.jpg) |
-| Statistics and Analysis View | ![Statistical Analysis](https://glink25.github.io/post-assets/mgucw884-cent-stat.jpg) |
-| Budget Management | ![Budget View](https://glink25.github.io/post-assets/mgucw884-cent-budget.jpg) |
-| GitHub Collaboration | ![Collaboration Feature](https://glink25.github.io/post-assets/mgucw884-github-collaborator.jpg) |
 
 ---
 
