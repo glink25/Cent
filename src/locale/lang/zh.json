@@ -617,5 +617,6 @@
   "map-error-api-load-failed": "Amap API load failed",
   "map-marker-amount": "金额",
   "map-marker-accuracy": "位置精度",
-  "map-error-configure-in-settings": "请在设置中配置地图 API Key"
+  "map-error-configure-in-settings": "请在设置中配置地图 API Key",
+  "ledger-no-footprint-tip": "暂无足迹，记账时记得勾选位置哦"
 }

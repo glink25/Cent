@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Bill } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import type { AMapMap, AMapMarker } from "./amap-types";
@@ -85,6 +85,11 @@ export default function AMapContainer({
         };
     }, [amapKey, amapSecurityCode, t]); // 依赖API配置和翻译函数
 
+    // 过滤出有地理位置的账单
+    const billsWithLocation = useMemo(
+        () => bills?.filter((bill) => bill.location) || [],
+        [bills],
+    );
     // 更新地图标记点（依赖SDK加载状态和bills数据）
     useEffect(() => {
         // 等待SDK加载完成和地图实例创建
@@ -97,9 +102,6 @@ export default function AMapContainer({
             mapInstance.remove(marker);
         });
         markersRef.current = [];
-
-        // 过滤出有地理位置的账单
-        const billsWithLocation = bills?.filter((bill) => bill.location) || [];
 
         if (billsWithLocation.length === 0) {
             // 没有位置数据时，重置地图中心到默认位置
@@ -178,7 +180,7 @@ export default function AMapContainer({
                 mapInstance.setZoom(15);
             }
         }
-    }, [bills, sdkLoaded, t]); // 依赖bills、sdkLoaded状态和翻译函数
+    }, [billsWithLocation, sdkLoaded, t]); // 依赖bills、sdkLoaded状态和翻译函数
 
     // 错误状态
     if (error) {
