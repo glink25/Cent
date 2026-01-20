@@ -605,5 +605,6 @@
   "map-error-api-load-failed": "Amap API load failed",
   "map-marker-amount": "Amount",
   "map-marker-accuracy": "Location accuracy",
-  "map-error-configure-in-settings": "Please configure map API Key in settings"
+  "map-error-configure-in-settings": "Please configure map API Key in settings",
+  "ledger-no-footprint-tip": "No footprint yet, remember to check location when adding bills"
 }

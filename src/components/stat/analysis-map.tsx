@@ -36,25 +36,29 @@ export default function AnalysisMap({
     // 检查是否有账单包含地理位置信息
     const hasLocationData = bills?.some((bill) => bill.location);
 
-    // 如果没有地理位置数据，不显示地图组件
-    if (!hasLocationData) {
-        return null;
-    }
-
     return (
         <div className="rounded-md border p-2 w-full flex flex-col relative">
             <h2 className="font-medium text-lg my-3 text-center">
                 {t("ledger-footprint")}
             </h2>
-            <div data-map-container className="w-full h-[300px]">
-                <Suspense fallback={<Skeleton className="w-full h-full" />}>
-                    <AMapContainer
-                        bills={bills}
-                        amapKey={amapKey}
-                        amapSecurityCode={amapSecurityCode}
-                    />
-                </Suspense>
-            </div>
+            {hasLocationData ? (
+                <div className="text-center text-sm opacity-60 py-2">
+                    {t("ledger-no-footprint-tip")}
+                </div>
+            ) : (
+                <div
+                    data-map-container
+                    className="w-full h-[240px] md:h-[300px]"
+                >
+                    <Suspense fallback={<Skeleton className="w-full h-full" />}>
+                        <AMapContainer
+                            bills={bills}
+                            amapKey={amapKey}
+                            amapSecurityCode={amapSecurityCode}
+                        />
+                    </Suspense>
+                </div>
+            )}
         </div>
     );
 }

@@ -237,7 +237,7 @@ export function Assistant({ env }: { env?: EnvArg }) {
                             },
                             [cards],
                         )}
-                        className="overflow-x-auto w-full h-[calc(100vh-350px)] min-h-[300px] max-h-[500px] flex-shrink-0 py-2 flex gap-2 scrollbar-hidden snap-mandatory snap-x"
+                        className="overflow-x-auto w-full h-[calc(100vh-350px-env(safe-area-inset-top)-env(safe-area-inset-bottom))] min-h-[300px] max-h-[500px] flex-shrink-0 py-2 flex gap-2 scrollbar-hidden snap-mandatory snap-x"
                     >
                         {cards.map((card) => (
                             <div
