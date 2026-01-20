@@ -193,9 +193,6 @@ function ConfigForm({
                                 type="button"
                                 onClick={() => setShowApiKey(!showApiKey)}
                                 className="absolute right-0 top-0 h-full px-3 flex items-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
-                                aria-label={
-                                    showApiKey ? "隐藏密码" : "显示密码"
-                                }
                             >
                                 {showApiKey ? (
                                     <i className="icon-[mdi--eye-off] size-4"></i>
