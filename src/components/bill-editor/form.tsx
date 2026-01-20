@@ -418,7 +418,7 @@ export default function EditorForm({
                     <button
                         type="button"
                         className={cn(
-                            `rounded-lg border py-1 px-2 my-1 mr-1 h-8 flex gap-2 items-center justify-center whitespace-nowrap cursor-pointer`,
+                            `rounded-lg border py-1 px-2 h-8 flex gap-2 items-center justify-center whitespace-nowrap cursor-pointer`,
                         )}
                         onClick={() => {
                             showTagList();
