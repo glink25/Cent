@@ -4,6 +4,7 @@ import { useIntl } from "@/locale";
 import { useLedgerStore } from "@/store/ledger";
 import { usePreference } from "@/store/preference";
 import { useUserStore } from "@/store/user";
+import { isSpeechRecognitionSupported } from "../add-button/recognize";
 import createConfirmProvider from "../confirm";
 import { Button } from "../ui/button";
 import { Switch } from "../ui/switch";
@@ -59,6 +60,13 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                         onCheckedChange={(checked) => {
                             if (hasAIConfig) {
                                 setVoiceEnabled(checked);
+                                if (checked) {
+                                    const isSupported =
+                                        isSpeechRecognitionSupported();
+                                    if (!isSupported) {
+                                        setVoiceByKeyboard(true);
+                                    }
+                                }
                             }
                         }}
                         disabled={!hasAIConfig}

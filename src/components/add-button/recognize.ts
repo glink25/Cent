@@ -49,6 +49,12 @@ declare global {
 
 let currentRecognition: ISpeechRecognition | null = null;
 
+export function isSpeechRecognitionSupported() {
+    const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+    return !!SpeechRecognition;
+}
+
 export function startRecognize(onChange?: (text: string) => void) {
     console.log("start recognize");
 
