@@ -41,7 +41,7 @@ export default function AnalysisMap({
             <h2 className="font-medium text-lg my-3 text-center">
                 {t("ledger-footprint")}
             </h2>
-            {hasLocationData ? (
+            {!hasLocationData ? (
                 <div className="text-center text-sm opacity-60 py-2">
                     {t("ledger-no-footprint-tip")}
                 </div>
