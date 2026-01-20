@@ -12,7 +12,7 @@ export default function ComplexAddButton({
     const [voiceByKeyboard] = usePreference("voiceByKeyboard");
     if (!voiceRecordingEnabled) {
         return (
-            <BaseButton>
+            <BaseButton onClick={onClick}>
                 <i className="icon-[mdi--add] text-[white] size-7"></i>
             </BaseButton>
         );
