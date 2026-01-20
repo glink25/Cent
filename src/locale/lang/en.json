@@ -309,7 +309,7 @@
   "custom-css-description": "Enter custom CSS code to personalize the interface style, reload App to activate",
   "custom-css-placeholder": "/* Enter your CSS code here */\n.example {\n  color: red;\n}",
   "custom-css-saved": "CSS saved",
-  "theme": "Theme",
+  "theme": "Dark Mode",
   "theme-system": "System",
   "theme-light": "Light",
   "theme-dark": "Dark",
@@ -579,5 +579,9 @@
   "voice-recognition-failed": "Recognition failed: {error}",
   "keyboard-input-title": "Smart Recognition",
   "keyboard-input-placeholder": "Please enter text to parse as bills",
-  "keyboard-parsing": "Parsing..."
+  "keyboard-parsing": "Parsing...",
+  "book-settings": "Book Settings",
+  "ai": "AI",
+  "billing-functions": "Billing Functions",
+  "other-settings": "Other Settings"
 }

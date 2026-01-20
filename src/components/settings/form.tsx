@@ -102,23 +102,50 @@ export default function SettingsForm({
         >
             <div className="divide-y divide-solid flex flex-col overflow-hidden">
                 <UserInfo />
-                <div className="flex-1 overflow-y-auto flex flex-col divide-y pb-4">
-                    <BookSettings />
-                    <AssistantSettingsItem />
-                    <VoiceSettingsItem />
-                    <PresetSettingsItem />
-                    <CategorySettingsItem />
-                    <TagSettingsItem />
-                    <Budget />
-                    <ScheduledSettingsItems />
-                    <CurrencySettingsItem />
-                    <UserSettingsItem />
-                    <DataManagerSettingsItem />
-                    <LabSettingsItem />
-                    <AboutSettingsItem />
-                    <ThemeSettingsItem />
-                    <LanguageSettingsItem />
-                    <AdvancedGuideItem />
+                <div className="flex-1 overflow-y-auto flex flex-col py-4">
+                    <div>
+                        <div className="text-xs opacity-60 px-8">
+                            {t("book-settings")}
+                        </div>
+                        <div className="flex flex-col divide-y">
+                            <BookSettings />
+                            <UserSettingsItem />
+                            <DataManagerSettingsItem />
+                        </div>
+                    </div>
+                    <div>
+                        <div className="text-xs opacity-60 px-8">{t("ai")}</div>
+                        <div className="flex flex-col divide-y">
+                            <AssistantSettingsItem />
+                            <VoiceSettingsItem />
+                        </div>
+                    </div>
+                    <div>
+                        <div className="text-xs opacity-60 px-8">
+                            {t("billing-functions")}
+                        </div>
+                        <div className="flex flex-col divide-y">
+                            <CategorySettingsItem />
+                            <TagSettingsItem />
+                            <Budget />
+                            <ScheduledSettingsItems />
+                            <CurrencySettingsItem />
+                        </div>
+                    </div>
+
+                    <div>
+                        <div className="text-xs opacity-60 px-8">
+                            {t("other-settings")}
+                        </div>
+                        <div className="flex flex-col divide-y">
+                            <PresetSettingsItem />
+                            <LabSettingsItem />
+                            <AboutSettingsItem />
+                            <ThemeSettingsItem />
+                            <LanguageSettingsItem />
+                            <AdvancedGuideItem />
+                        </div>
+                    </div>
                 </div>
             </div>
         </PopupLayout>

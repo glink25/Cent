@@ -309,7 +309,7 @@
   "custom-css-description": "输入自定义CSS代码来个性化界面样式，可能需要重启App来应用",
   "custom-css-placeholder": "/* 在这里输入你的CSS代码 */\n.example {\n  color: red;\n}",
   "custom-css-saved": "CSS已保存",
-  "theme": "主题",
+  "theme": "深色模式",
   "theme-system": "跟随系统",
   "theme-light": "浅色",
   "theme-dark": "深色",
@@ -591,5 +591,9 @@
   "voice-recognition-failed": "识别失败：{error}",
   "keyboard-input-title": "智能识别",
   "keyboard-input-placeholder": "请输入需要解析为账单的文本",
-  "keyboard-parsing": "识别中..."
+  "keyboard-parsing": "识别中...",
+  "book-settings": "账本设置",
+  "ai": "AI",
+  "billing-functions": "记账功能",
+  "other-settings": "其他设置"
 }

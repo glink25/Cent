@@ -48,7 +48,6 @@ export function VoiceAddButton({ onClick }: { onClick?: () => void }) {
 
             try {
                 const value = await finished;
-                console.log(value, "vvvvvv");
                 const text = value.trim();
                 if (text.length === 0) {
                     return;
@@ -62,6 +61,11 @@ export function VoiceAddButton({ onClick }: { onClick?: () => void }) {
                 toast.success(t("voice-add-success", { count: bills.length }));
             } catch (error) {
                 console.error(error);
+                const errorMessage =
+                    error instanceof Error ? error.message : "";
+                if (errorMessage.includes("aborted")) {
+                    return;
+                }
                 toast.error(
                     t("voice-recognition-failed", {
                         error: error instanceof Error ? error.message : "",
@@ -86,7 +90,8 @@ export function VoiceAddButton({ onClick }: { onClick?: () => void }) {
     return (
         <VoiceFormContext.Provider value={formState}>
             <BaseButton {...presses?.()}>
-                <i className="icon-[mdi--microphone-plus] text-[white] size-7"></i>
+                {/* <i className="icon-[mdi--microphone-plus] text-[white] size-7"></i> */}
+                <i className="icon-[mdi--add] text-[white] size-7"></i>
             </BaseButton>
             <VoiceFormProvider />
         </VoiceFormContext.Provider>

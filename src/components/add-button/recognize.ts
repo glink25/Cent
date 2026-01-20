@@ -57,7 +57,7 @@ export function startRecognize(onChange?: (text: string) => void) {
         window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-        const error = new Error("当前浏览器不支持语音识别功能");
+        const error = new Error("unsupported browser");
         return {
             finished: Promise.reject(error),
             cancel: () => {},
@@ -126,7 +126,7 @@ export function startRecognize(onChange?: (text: string) => void) {
 
             // 其他错误情况
             if (event.error !== "aborted") {
-                const errorMessage = getErrorMessage(event.error);
+                const errorMessage = event.error;
                 reject(new Error(errorMessage));
             }
 
@@ -169,7 +169,7 @@ export function startRecognize(onChange?: (text: string) => void) {
             console.log("cancel recognize");
             if (recognition && currentRecognition === recognition) {
                 isCancelled = true;
-                promiseReject(new Error("识别已取消"));
+                promiseReject(new Error("aborted manually"));
                 recognition.abort();
                 currentRecognition = null;
             }
@@ -191,18 +191,4 @@ export function stopRecognize() {
         currentRecognition.stop();
         currentRecognition = null;
     }
-}
-
-// 错误消息映射
-function getErrorMessage(error: string): string {
-    const errorMessages: Record<string, string> = {
-        "no-speech": "没有检测到语音输入",
-        "audio-capture": "无法捕获音频，请检查麦克风权限",
-        "not-allowed": "没有麦克风权限，请在浏览器设置中允许访问麦克风",
-        network: "网络错误",
-        aborted: "识别已中止",
-        "service-not-allowed": "语音识别服务不可用",
-    };
-
-    return errorMessages[error] || `语音识别错误: ${error}`;
 }
