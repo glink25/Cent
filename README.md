@@ -1,5 +1,7 @@
 # Cent
 
+简体中文 | [English](./README_EN.md)
+
 > 你可能只需要一个记账软件。
 
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-green.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
@@ -20,20 +22,189 @@ Cent 是一个 **完全免费、开源的多人协作记账 Web App**，
 
 ## ✨ 特性
 
+### 核心特性
 - 💾 **数据完全自持**：账本数据保存在你的 GitHub/Gitee 私人仓库/Web DAV中，无需任何第三方服务器。  
 - 👥 **多人协作**：通过 GitHub/Gitee Collaborator 功能即可共享账本，实时同步修改。 
-- 🖼️ **导入导出**：自由导入和导出账单数据，摆脱数据焦虑，支持微信/支付宝账单导入
 - ⚡️ **增量同步**：只上传/下载变更数据，大幅缩短同步时间。  
-- 📊 **丰富的统计分析**：支持多维度筛选与走势分析，可自定义分析视图。  
-- 🏷️ **分类与标签系统**：支持二级分类、自定义标签、图标、排序。  
-- 💰 **预算管理**：按分类或标签设置预算并实时监控进度。  
-- 🖼️ **附件支持**：可为账单上传图片附件。  
 - 📱 **PWA 支持**：可安装到桌面，像原生 App 一样使用，支持 iOS 与 Android。  
 - 🔒 **完全开源**：部署成本几乎为零，代码完全可审计、可自建。
 
+### AI 智能功能
+- 🤖 **AI 助手**：支持 OpenAI 兼容 API，可进行账单分析、预算建议、年度总结等智能对话。
+- 🎤 **语音记账**：通过语音快速记账，支持语音识别和键盘文本输入。
+- 🧠 **智能预测**：根据时间自动预测可能的分类和备注，提升记账效率。
+
+### 多币种支持
+- 💱 **多币种管理**：支持 30+ 种国际货币，可自定义货币，实时汇率自动转换。
+- 💰 **本位币设置**：自由切换本位币，手动调整汇率，快捷币种入口。
+
+### 记账功能
+- 🔄 **周期记账**：自动定期记账，适用于订阅、自动续费等周期性支出。
+- 🗺️ **地图可视化**：自动记录账单位置，在地图上展示消费足迹（支持高德地图）。
+- 📝 **批量编辑**：多选账单进行批量修改分类、标签或删除。
+- 🖼️ **附件支持**：可为账单上传图片附件，支持附件缓存管理。
+- 📋 **快捷记账**：支持剪贴板快速记账、iOS 快捷指令集成。
+
+### 数据管理
+- 🖼️ **智能导入**：支持微信/支付宝账单导入，可通过 AI 创建自定义导入方案。
+- 📤 **导入导出**：自由导入和导出账单数据，摆脱数据焦虑。
+- 🗜️ **账单压缩**：压缩云端增量数据，减少存储空间。
+
+### 统计与分析
+- 📊 **丰富的统计分析**：支持多维度筛选与走势分析，可自定义并保存分析视图。  
+- 📈 **多维度趋势**：用户支出/收入/结余趋势、分类结构、高频词云等。
+- 💰 **预算管理**：按分类或标签设置预算并实时监控进度，支持分类预算。  
+
+### 分类与标签
+- 🏷️ **二级分类系统**：支持自定义二级分类、图标、排序。  
+- 🔖 **标签系统**：支持标签分组、单选/多选标签、必选标签、标签偏好币种。
+
+### 个性化定制
+- 🎨 **自定义主题**：支持自定义 CSS，深色模式（跟随系统/手动切换）。
+- ⌨️ **键盘定制**：自定义键盘高度、乘数键（快速输入 00/000）。
+
 ---
 
->  [Cent 1.1](https://glink25.github.io/post/Cent-%E5%B7%B2%E6%94%AF%E6%8C%81%E5%A4%9A%E5%B8%81%E7%A7%8D%E8%87%AA%E5%8A%A8%E8%AE%B0%E8%B4%A6/) 正式推出，新功能包括快捷指令自动记账、多币种等。
+>  **最新更新**：Cent 现已支持 AI 助手、语音记账、多币种管理、地图可视化、周期记账等众多新功能！详见 [Cent 1.1 更新说明](https://glink25.github.io/post/Cent-%E5%B7%B2%E6%94%AF%E6%8C%81%E5%A4%9A%E5%B8%81%E7%A7%8D%E8%87%AA%E5%8A%A8%E8%AE%B0%E8%B4%A6/)。
+
+## 🎯 功能详解
+
+### AI 智能功能
+
+#### 🤖 AI 助手
+- **功能**：集成 OpenAI 兼容 API，支持智能对话
+- **应用场景**：
+  - 📊 账单分析：分析当前筛选条件下的账单数据，提供消费洞察
+  - 💡 预算建议：根据历史消费习惯，制定合理的每月预算
+  - 🔍 异常检测：发现账单中的异常消费模式
+  - 📝 年度总结：生成年度记账报告和消费回顾
+- **配置**：在设置中配置 API Key、API URL 和模型，支持多个 AI 配置切换
+
+#### 🎤 语音记账
+- **使用方式**：长按记账按钮即可触发语音记账
+- **识别方式**：
+  - 语音识别：浏览器原生语音识别（需设备支持）
+  - 键盘输入：使用键盘输入文本，支持系统语音输入
+- **智能解析**：AI 自动解析语音/文本内容，提取金额、分类、备注等信息
+
+#### 🧠 智能预测
+- **功能**：基于历史记账数据，根据当前时间预测可能的分类和备注
+- **学习模式**：自动学习用户的记账习惯，提供个性化预测
+
+### 多币种管理
+
+#### 💱 币种支持
+- **内置币种**：支持 30+ 种国际货币（人民币、美元、欧元、日元等）
+- **自定义币种**：可添加任意自定义货币（如虚拟货币、游戏币等）
+- **快捷入口**：设置常用币种快捷入口，记账时快速切换
+
+#### 💰 汇率管理
+- **自动汇率**：自动获取最新汇率进行转换
+- **手动汇率**：可手动修改汇率（仅对当前用户生效）
+- **本位币**：设置本位币，所有统计以本位币为准
+- **多币种记账**：支持单笔账单使用不同币种，自动按汇率统计
+
+### 高级记账功能
+
+#### 🔄 周期记账
+- **应用场景**：订阅服务（视频网站、音乐会员）、自动续费、月租等
+- **设置方式**：
+  - 创建账单模板（金额、分类、备注等）
+  - 设定周期（每天/每周/每月/自定义）
+  - 启用后自动按周期生成账单
+- **补录功能**：如果中途启用，可以自动补录此前缺失的账单
+
+#### 🗺️ 地图可视化
+- **功能**：
+  - 自动记录账单位置（需授权定位权限）
+  - 在地图上展示所有消费地点
+  - 查看消费足迹和区域分布
+- **地图服务**：支持高德地图（需在设置中配置 API Key）
+
+#### 📝 批量操作
+- **批量编辑**：多选账单后批量修改分类、标签、类型
+- **批量删除**：一次性删除多条账单
+- **账单分拆**：将一条账单拆分成多条
+- **账单复制**：快速复制账单并修改
+
+### 数据管理
+
+#### 📥 智能导入
+- **支付宝账单**：直接导入支付宝导出的账单文件
+- **微信账单**：直接导入微信导出的账单文件
+- **自定义方案**：
+  - 使用 AI（如 ChatGPT）创建自定义导入方案
+  - 适配任意格式的账单文件
+  - 保存方案供后续使用
+
+#### 🗜️ 账单压缩
+- **应用场景**：频繁批量修改/删除账单后，云端增量数据变得庞大
+- **功能**：压缩云端数据，减少存储空间
+- **注意事项**：压缩前确保所有设备数据已同步
+
+#### 🔄 多端同步
+- **GitHub/Gitee**：使用 Git 仓库进行同步（支持一键登录或 Token）
+- **Web DAV**：支持坚果云、群晖 NAS 等 WebDAV 服务
+- **增量同步**：仅同步变更数据，提升同步效率
+
+### 统计与分析
+
+#### 📊 分析视图
+- **预设视图**：周视图、月视图、年视图
+- **自定义视图**：
+  - 自定义筛选条件（时间范围、用户、分类、标签等）
+  - 保存为分析视图，快速查看
+- **多维度分析**：
+  - 支出/收入结构（饼图）
+  - 各用户支出/收入/结余趋势（折线图）
+  - 分类排行、高频词云
+
+#### 💰 预算管理
+- **总预算**：设置总体预算金额
+- **分类预算**：为不同分类分配具体预算
+- **标签筛选**：仅计入/排除特定标签的账单
+- **周期设置**：按天/周/月设置预算周期
+- **进度监控**：
+  - 实时显示预算使用进度
+  - 今日可用、日均支出、总剩余等指标
+  - 预算达成/未达成提醒
+
+### 标签系统
+
+#### 🔖 标签管理
+- **标签组**：将标签分组管理，如「出行方式」「用餐类型」
+- **单选/多选**：标签组可设置为单选或多选
+- **必选标签**：设置必选标签，记账时默认选中第一个
+- **偏好币种**：为标签设置偏好币种，选中标签时自动切换币种
+- **标签排序**：拖拽调整标签和标签组的显示顺序
+
+### 快捷功能
+
+#### 📋 快速记账
+- **iOS 快捷指令**：
+  - 通过快捷指令快速打开记账页面
+  - 配合「减弱动态效果」实现后台快捷记账
+- **剪贴板记账**：
+  - 从剪贴板读取账单信息
+  - AI 解析文本内容生成账单
+- **智能识别**：支持自然语言输入，如「午饭花了30块」
+
+#### ⌨️ 记账优化
+- **键盘高度**：可调节虚拟键盘高度（1-100%）
+- **乘数键**：快速输入 00 或 000
+- **自动定位**：记账时自动记录位置（需授权）
+
+### 个性化
+
+#### 🎨 主题定制
+- **深色模式**：支持跟随系统或手动切换
+- **自定义 CSS**：输入自定义 CSS 代码个性化界面样式
+- **主题市场**：（即将推出）更多主题选择
+
+#### 🖼️ 附件管理
+- **图片附件**：为账单上传图片
+- **附件展示**：可选择在账单列表中直接展示附件
+- **缓存管理**：清理附件缓存，释放存储空间
 
 ## 🧠 核心原理
 
@@ -71,10 +242,21 @@ Cent 内置一套自定义的增量同步策略，仅同步增量差异：
 | 功能 | 截图 |
 |------|------|
 | 二级分类 & 标签管理 | ![分类示例](https://glink25.github.io/post-assets/mgucw881-cent-accountting.jpg) |
-| 自定义标签 | ![标签示例](https://glink25.github.io/post-assets/mgucw884-cent-tag-1.jpg) |
+| 自定义标签系统 | ![标签示例](https://glink25.github.io/post-assets/mgucw884-cent-tag-1.jpg) |
 | 统计与分析视图 | ![统计分析](https://glink25.github.io/post-assets/mgucw884-cent-stat.jpg) |
 | 预算管理 | ![预算视图](https://glink25.github.io/post-assets/mgucw884-cent-budget.jpg) |
 | GitHub 协作 | ![协作功能](https://glink25.github.io/post-assets/mgucw884-github-collaborator.jpg) |
+
+### 🆕 新功能亮点
+
+- **🤖 AI 助手**：智能对话分析账单，提供预算建议和年度总结
+- **🎤 语音记账**：长按记账按钮即可通过语音快速记账
+- **💱 多币种支持**：支持 30+ 种货币，自动汇率转换，适合出国旅行和跨境消费
+- **🗺️ 地图可视化**：在地图上查看每笔消费的位置，了解消费足迹
+- **🔄 周期记账**：自动记录订阅、自动续费等周期性支出
+- **🏷️ 标签系统升级**：支持标签分组、单选/多选、标签偏好币种
+- **📊 智能分析**：自定义分析视图、高频词云、多维度趋势分析
+- **📋 快捷记账**：支持 iOS 快捷指令、剪贴板快速记账
 
 ---
 
@@ -101,12 +283,27 @@ Cent使用Cloudflare Workers部署了一个线上鉴权服务，该服务只针�
 
 ## 🧪 开发计划
 
+### 已完成
 - ✅ 增量同步核心实现  
 - ✅ 多人协作账本  
-- 🚧 自动测试体系  
-- 🚧 地图支出可视化  
-- 🚧 更多同步端点（网盘 / 自建服务器）  
-- 🚧 移动端交互优化  
+- ✅ AI 助手功能
+- ✅ 语音记账
+- ✅ 多币种支持与汇率管理
+- ✅ 地图支出可视化（高德地图集成）
+- ✅ 周期记账
+- ✅ 智能导入（支付宝/微信账单）
+- ✅ 标签系统升级
+- ✅ Web DAV 同步支持
+- ✅ 快捷指令集成
+- ✅ 批量编辑功能
+
+### 进行中
+- 🚧 自动测试体系
+- 🚧 更多同步端点（Dropbox / OneDrive）
+
+### 计划中
+- 📋 数据报表导出（PDF/Excel）
+- 📋 更多智能功能  
 
 ---
 
@@ -170,133 +367,3 @@ pnpm lint
 
 ---
 </details>
-
- # Cent
-
-> You might only need an accounting software.
-
-[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-green.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
-[![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
-[![PWA](https://img.shields.io/badge/PWA-supported-blue.svg)]()
-[![GitHub Repo](https://img.shields.io/badge/data-storage_on_GitHub-black?logo=github)]()
-
-Cent is a **completely free, open-source, collaborative accounting Web App**,  
-which uses a **GitHub Repository** for data synchronization and version control, enabling real-time cross-platform sync without a server.
-
-🔗 **Live Demo**: [https://cent.linkai.work](https://cent.linkai.work)  
-💾 **Open Source Repository**: [https://github.com/glink25/Cent](https://github.com/glink25/Cent)  
-📖 **Blog**: [https://glink25.github.io/tag/Cent/](https://glink25.github.io/tag/Cent/)  
-
----
-
-## ✨ Features
-
-- 💾 **Fully Self-Contained Data**: Ledger data is stored in your private GitHub repository, without any third-party servers.  
-- 👥 **Multi-User Collaboration**: Share ledgers and synchronize changes in real-time using the GitHub Collaborator feature.  
-- ⚡️ **Incremental Sync**: Only uploads/downloads changed data, significantly reducing sync time.  
-- 📊 **Rich Statistical Analysis**: Supports multi-dimensional filtering and trend analysis, with customizable analysis views.  
-- 🏷️ **Category and Tag System**: Supports two-level categories, custom tags, icons, and sorting.  
-- 💰 **Budget Management**: Set budgets by category or tag and monitor progress in real-time.  
-- 🖼️ **Attachment Support**: Allows uploading image attachments for bills.  
-- 📱 **PWA Support**: Can be installed to the desktop and used like a native App, supported on iOS and Android.  
-- 🔒 **Completely Open Source**: Deployment cost is nearly zero, the code is fully auditable and can be self-hosted.
-
----
-
-## 🧠 Core Principles
-
-Cent is a "pure frontend" PWA application.  
-Apart from GitHub OAuth login, Cent does not rely on any backend services.
-
-### 🗂 Data Structure
-
-- Each ledger (Book) corresponds to a GitHub repository.
-- Data is stored in JSON format within the repository, supporting historical version rollback.
-- Multi-ledger management is achieved by identifying ledgers via repository names.
-
-### 🔁 Incremental Sync Mechanism
-
-Cent incorporates a custom incremental synchronization strategy, only syncing the differential changes:  
-- Initial Sync: Full data download.  
-- Subsequent Sync: Only transfers newly added or modified parts.  
-- Supports offline caching and resume capability.  
-
-This mechanism significantly improves sync efficiency, leading to a smooth and natural collaborative experience.
-
-### 🧩 Extensible Sync Endpoints
-
-The synchronization logic has been abstracted and encapsulated, with future support planned for:  
-- Self-hosted Servers  
-- Cloud Drives (e.g., Dropbox, OneDrive)  
-- Local Offline Ledgers  
-
----
-
-## 📈 Feature Preview
-
-| Feature | Screenshot |
-|------|------|
-| Two-Level Categories & Tag Management | ![Category Example](https://glink25.github.io/post-assets/mgucw881-cent-accountting.jpg) |
-| Custom Tags | ![Tag Example](https://glink25.github.io/post-assets/mgucw884-cent-tag-1.jpg) |
-| Statistics and Analysis View | ![Statistical Analysis](https://glink25.github.io/post-assets/mgucw884-cent-stat.jpg) |
-| Budget Management | ![Budget View](https://glink25.github.io/post-assets/mgucw884-cent-budget.jpg) |
-| GitHub Collaboration | ![Collaboration Feature](https://glink25.github.io/post-assets/mgucw884-github-collaborator.jpg) |
-
----
-
-## 🚀 Deployment and Usage
-
-### Method 1: Use the Online Version Directly
-
-1. Open [https://cent.linkai.work](https://cent.linkai.work)
-2. Log in and authorize with GitHub
-3. Create a new ledger (a new repository will be created automatically)
-4. Start recording transactions 🎉
-
-### Method 2: Self-Deployment
-
-1. Fork this repository  
-2. Deploy on [Cloudflare Pages](https://pages.cloudflare.com/) or any static hosting platform  
-3. Manually input your GitHub Token on the login screen to use it  
-4. All ledgers and data are stored in your GitHub repositories  
-
-> For security reasons, the self-hosted method cannot support GitHub/Gitee one-click-authentication. You will need to manually generate a token with read and write permissions for the repository (Repo) on the Github/Gitee settings page, and use it through the manual token input feature.
-Cent uses Cloudflare Workers to deploy an online authentication service, which only provides services for trusted domains. If you require a quick login service, you can refer to the project [cent-github-backend](https://github.com/glink25/cent-github-backend) to create your own backend service and apply for an OAuth app on the corresponding platform yourself.
-
----
-
-## 🧪 Development Plan
-
-- ✅ Incremental sync core implementation  
-- ✅ Multi-user collaborative ledgers  
-- 🚧 Automated testing system  
-- 🚧 Map visualization of expenditures  
-- 🚧 More sync endpoints (Cloud Drives / Self-hosted Servers)  
-- 🚧 Mobile interaction optimization  
-
----
-
-## 💬 Contribution and Feedback
-
-Cent welcomes all developers and users to contribute:
-
-```bash
-# Clone the project
-git clone [https://github.com/glink25/Cent.git](https://github.com/glink25/Cent.git)
-
-# Install dependencies
-pnpm install
-
-# Run locally
-pnpm dev
-
-# Lint
-pnpm lint
-```
-
-## 📜 License
- - This project is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0) License.
- - You are free to share, adapt, and redistribute.
- - You must give appropriate credit.
- - You may not use the material for commercial purposes.
- - If you remix, transform, or build upon the material, you must distribute your contributions under the same license as the original.
