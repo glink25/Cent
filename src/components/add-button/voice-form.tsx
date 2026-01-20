@@ -85,9 +85,7 @@ export default function VoiceForm({ onCancel }: { onCancel?: () => void }) {
                             data-voice-text
                             className="text-lg text-foreground/80"
                         >
-                            {text === undefined
-                                ? t("voice-listening-text")
-                                : text}
+                            {!text ? t("voice-listening-text") : text}
                         </p>
                     ) : (
                         <p
