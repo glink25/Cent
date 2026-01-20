@@ -81,7 +81,9 @@ export function startRecognize(onChange?: (text: string) => void) {
     recognition.maxAlternatives = 1; // 最多返回一个识别结果
 
     let finalTranscript = "";
+    let currentText = ""; // 保存当前完整文本（包括临时结果）
     let isCancelled = false;
+    let isStopped = false; // 标记是否手动停止
     let promiseResolve: (value: string) => void;
     let promiseReject: (reason: Error) => void;
 
@@ -104,8 +106,10 @@ export function startRecognize(onChange?: (text: string) => void) {
                 }
             }
 
+            // 保存当前完整文本（包括最终和临时结果）
+            currentText = finalTranscript + interimTranscript;
+
             // 调用 onChange 回调，传递当前识别到的文本（包括最终和临时结果）
-            const currentText = finalTranscript + interimTranscript;
             if (onChange && currentText) {
                 onChange(currentText);
             }
@@ -139,8 +143,10 @@ export function startRecognize(onChange?: (text: string) => void) {
                 return;
             }
 
-            // 正常结束，resolve Promise
-            promiseResolve(finalTranscript);
+            // 如果是手动停止，返回当前完整文本（包括临时结果）
+            // 否则返回最终文本
+            const resultText = isStopped ? currentText : finalTranscript;
+            promiseResolve(resultText);
             currentRecognition = null;
         };
 
@@ -172,6 +178,7 @@ export function startRecognize(onChange?: (text: string) => void) {
         stop: () => {
             console.log("stop recognize");
             if (recognition && currentRecognition === recognition) {
+                isStopped = true; // 标记为手动停止
                 recognition.stop();
             }
         },

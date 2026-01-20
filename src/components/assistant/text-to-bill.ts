@@ -4,7 +4,9 @@ import { BillCategories } from "@/ledger/category";
 import type { BillType } from "@/ledger/type";
 import { intlCategory } from "@/ledger/utils";
 import { t } from "@/locale";
+import { locales } from "@/locale/utils";
 import { useLedgerStore } from "@/store/ledger";
+import { usePreferenceStore } from "@/store/preference";
 import { requestAI } from "./request";
 
 const getCategories = () => {
@@ -18,15 +20,15 @@ const getCategories = () => {
 };
 
 const textToBillSystemPrompt = (categoriesStr: string) => {
-    const parts: string[] = [];
+    const locale = locales.find(
+        (l) => l.name === usePreferenceStore.getState().locale,
+    )?.label;
 
-    // 基础信息
-    parts.push("## 当前环境信息");
-    parts.push("");
-    parts.push(`**当前时间**: ${dayjs().format("YYYY-MM-DD HH:mm:ss")}`);
-    parts.push("");
     return `请通过给出的记账系统分类信息数据，从用户提供的文本中提取出关键的分类、金额和备注信息，使其能够准确快速地录入记账系统中，请严格按照给定规范给出回答
-${parts.join("\n")}
+## 当前环境信息
+**当前时间**: ${dayjs().format("YYYY-MM-DD HH:mm:ss")}
+**用户的语言偏好**: ${locale}
+
 下面是用户所有的分类：
 \`\`\`plaintext
 ${categoriesStr}
