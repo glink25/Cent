@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router";
+import ComplexAddButton from "./add-button";
 import { goAddBill } from "./bill-editor";
 import { afterAddBillPromotion } from "./promotion";
 import { showSettings } from "./settings";
@@ -49,16 +50,12 @@ export default function Navigation() {
                     <i className="icon-[mdi--format-align-center] size-5"></i>
                 </button>
 
-                <button
-                    type="button"
-                    className="w-18 h-18 sm:w-14 sm:h-14 rounded-full bg-stone-900 shadow-md flex items-center justify-center m-1 cursor-pointer transform transition-all hover:scale-105"
+                <ComplexAddButton
                     onClick={() => {
                         goAddBill();
                         afterAddBillPromotion();
                     }}
-                >
-                    <i className="icon-[mdi--add] text-[white] size-7"></i>
-                </button>
+                />
 
                 <button
                     type="button"
