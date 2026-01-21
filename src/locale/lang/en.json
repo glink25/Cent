@@ -332,6 +332,7 @@
   "custom-user": "Custom User",
   "custom-user-name": "Nick Name",
   "custom-user-name-placeholder": "Used to distinguish users during multi-user sharing",
+  "custom-user-name-tooltip": "When multiple people share the same account, you can set different nicknames to distinguish different users. This way you can see who created each record.",
   "web-dav-proxy-url": "https://glink25.github.io/post/%E9%80%9A%E8%BF%87Web-DAV%E8%BF%9B%E8%A1%8CCent%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5/#%E4%BD%BF%E7%94%A8%E4%BB%A3%E7%90%86",
   "web-dav-custom-user": "https://glink25.github.io/post/%E9%80%9A%E8%BF%87Web-DAV%E8%BF%9B%E8%A1%8CCent%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5/#%E8%87%AA%E5%AE%9A%E4%B9%89%E7%94%A8%E6%88%B7",
   "sync-with-s3": "Sync with S3",

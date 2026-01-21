@@ -15,6 +15,7 @@ import {
     FormMessage,
 } from "../ui/form";
 import { Input } from "../ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 
 export type S3Edit = {
     endpoint: string;
@@ -244,6 +245,18 @@ const LoadingForm = ({
                                     <FormLabel asChild>
                                         <div className="flex items-center gap-1">
                                             {t("custom-user-name")}
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <i className="icon-[mdi--help-circle-outline] cursor-pointer"></i>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="text-xs p-2">
+                                                    <p>
+                                                        {t(
+                                                            "custom-user-name-tooltip",
+                                                        )}
+                                                    </p>
+                                                </PopoverContent>
+                                            </Popover>
                                         </div>
                                     </FormLabel>
                                     <FormControl>

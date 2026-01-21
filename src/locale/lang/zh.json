@@ -334,6 +334,7 @@
   "custom-user": "自定义用户",
   "custom-user-name": "昵称",
   "custom-user-name-placeholder": "用于多人共享时区分用户",
+  "custom-user-name-tooltip": "当多人共享同一个账号时，可以设置不同的昵称来区分不同用户。这样可以在记录中看到是谁创建的每条记录。",
   "web-dav-proxy-url": "https://glink25.github.io/post/%E9%80%9A%E8%BF%87Web-DAV%E8%BF%9B%E8%A1%8CCent%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5/#%E4%BD%BF%E7%94%A8%E4%BB%A3%E7%90%86",
   "web-dav-custom-user": "https://glink25.github.io/post/%E9%80%9A%E8%BF%87Web-DAV%E8%BF%9B%E8%A1%8CCent%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5/#%E8%87%AA%E5%AE%9A%E4%B9%89%E7%94%A8%E6%88%B7",
   "sync-with-s3": "通过 S3 进行数据同步",
