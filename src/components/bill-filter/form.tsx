@@ -7,6 +7,8 @@ import type { BillCategory, BillFilter, BillType } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import { cn } from "@/utils";
 import { CascadeMultipleSelect } from "../cascade";
+import { StrictCascadeMultipleSelect } from "../cascade/strict";
+
 import Clearable from "../clearable";
 import { DatePicker } from "../date-picker";
 import Tag from "../tag";
@@ -66,7 +68,7 @@ export default function BillFilterForm({
 
     const allCreators = useCreators();
     const { incomes, expenses, categories: allCategories } = useCategory();
-    const options = useMemo(
+    const categoryOptions = useMemo(
         () => [
             {
                 id: "ExpensesLabel",
@@ -127,16 +129,29 @@ export default function BillFilterForm({
             .join(",");
     };
 
-    const { tags: allTags } = useTag();
+    const { tags: allTags, grouped: tagGroups } = useTag();
     const formatTags = (ids?: (number | string)[]) => {
         if (ids === undefined || ids.length === 0) {
             return t("unlimited");
         }
         return ids
+            .filter((id) => tagGroups.every((g) => g.id !== id))
             .map((id) => allTags.find((v) => v.id === id)?.name ?? id)
             .join(",");
     };
 
+    const tagOptions = useMemo(
+        () =>
+            tagGroups.map((tagGroup) => ({
+                id: tagGroup.id,
+                name: tagGroup.name,
+                children: tagGroup.tags?.map((v) => ({
+                    id: v.id,
+                    name: v.name,
+                })),
+            })),
+        [tagGroups],
+    );
     const { allCurrencies } = useCurrency();
     const formatCurrencies = (ids?: (number | string)[]) => {
         if (ids === undefined || ids.length === 0) {
@@ -340,7 +355,7 @@ export default function BillFilterForm({
                 </div>
                 <CascadeMultipleSelect
                     value={form.categories ?? allCategories.map((c) => c.id)}
-                    list={options}
+                    list={categoryOptions}
                     align="end"
                     trigger={
                         <Button
@@ -481,8 +496,12 @@ export default function BillFilterForm({
                         <div className="flex-shrink-0">
                             {t("tags-excluded-short")}
                         </div>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
+
+                        <StrictCascadeMultipleSelect
+                            value={form.excludeTags ?? []}
+                            list={tagOptions}
+                            align="end"
+                            trigger={
                                 <Button
                                     variant="outline"
                                     className="px-2 md:px-4 py-2 text-xs md:text-sm"
@@ -491,44 +510,26 @@ export default function BillFilterForm({
                                         {formatTags(form.excludeTags)}
                                     </div>
                                 </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-56" align="end">
-                                {allTags.map((item) => (
-                                    <DropdownMenuCheckboxItem
-                                        key={item.id}
-                                        checked={form.excludeTags?.includes(
-                                            item.id,
-                                        )}
-                                        onCheckedChange={(v) => {
-                                            setForm((prev) => {
-                                                const set = new Set(
-                                                    prev.excludeTags ?? [],
-                                                );
-                                                if (v) {
-                                                    set.add(item.id);
-                                                } else {
-                                                    set.delete(item.id);
-                                                }
-                                                const newTags = Array.from(set);
-                                                return {
-                                                    ...prev,
-                                                    excludeTags: newTags,
-                                                };
-                                            });
-                                        }}
-                                    >
-                                        {item.name}
-                                    </DropdownMenuCheckboxItem>
-                                ))}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                            }
+                            onValueChange={(value) => {
+                                setForm((prev) => {
+                                    return {
+                                        ...prev,
+                                        excludeTags: value,
+                                    };
+                                });
+                            }}
+                        ></StrictCascadeMultipleSelect>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="flex-shrink-0">
                             {t("tags-include-short")}
                         </div>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
+                        <StrictCascadeMultipleSelect
+                            value={form.tags ?? []}
+                            list={tagOptions}
+                            align="end"
+                            trigger={
                                 <Button
                                     variant="outline"
                                     className="px-2 md:px-4 py-2 text-xs md:text-sm"
@@ -537,42 +538,16 @@ export default function BillFilterForm({
                                         {formatTags(form.tags)}
                                     </div>
                                 </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-56" align="end">
-                                {allTags.map((item) => (
-                                    <DropdownMenuCheckboxItem
-                                        key={item.id}
-                                        checked={
-                                            form.tags
-                                                ? form.tags.includes(item.id)
-                                                : true
-                                        }
-                                        onCheckedChange={(v) => {
-                                            setForm((prev) => {
-                                                const set = new Set(
-                                                    prev.tags ??
-                                                        allTags.map(
-                                                            (c) => c.id,
-                                                        ),
-                                                );
-                                                if (v) {
-                                                    set.add(item.id);
-                                                } else {
-                                                    set.delete(item.id);
-                                                }
-                                                const newTags = Array.from(set);
-                                                return {
-                                                    ...prev,
-                                                    tags: newTags,
-                                                };
-                                            });
-                                        }}
-                                    >
-                                        {item.name}
-                                    </DropdownMenuCheckboxItem>
-                                ))}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                            }
+                            onValueChange={(value) => {
+                                setForm((prev) => {
+                                    return {
+                                        ...prev,
+                                        tags: value,
+                                    };
+                                });
+                            }}
+                        ></StrictCascadeMultipleSelect>
                     </div>
                 </div>
             </div>
