@@ -126,6 +126,21 @@ export default function Login() {
                                         <div className="flex-1">Web DAV</div>
                                     </button>
                                 </div>
+                                {/* S3 */}
+                                <div>
+                                    <button
+                                        type="button"
+                                        className={`${secondaryButtonStyle} ${betaClassName}`}
+                                        onClick={async () => {
+                                            const StorageAPI =
+                                                await loadStorageAPI();
+                                            StorageAPI.loginWith("s3");
+                                        }}
+                                    >
+                                        <i className="icon-[mdi--database]"></i>
+                                        <div className="flex-1">S3</div>
+                                    </button>
+                                </div>
                                 {/* Offline */}
                                 <div>
                                     <button

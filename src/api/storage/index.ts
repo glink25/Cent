@@ -4,6 +4,7 @@ import { EmptyEndpoint } from "../endpoints/empty";
 import { GiteeEndpoint } from "../endpoints/gitee";
 import { GithubEndpoint } from "../endpoints/github";
 import { OfflineEndpoint } from "../endpoints/offline";
+import { S3Endpoint } from "../endpoints/s3";
 import { WebDAVEndpoint } from "../endpoints/web-dav";
 import type { Exposed } from "./worker";
 import DeferredWorker from "./worker?worker";
@@ -13,6 +14,7 @@ const APIS = {
     offline: OfflineEndpoint,
     webdav: WebDAVEndpoint,
     gitee: GiteeEndpoint,
+    s3: S3Endpoint,
 };
 
 const SYNC_ENDPOINT_KEY = "SYNC_ENDPOINT";
@@ -38,6 +40,9 @@ export const StorageAPI = {
         }
         if (type === "webdav") {
             return WebDAVEndpoint.login({ modal });
+        }
+        if (type === "s3") {
+            return S3Endpoint.login({ modal });
         }
     },
     loginManuallyWith: (type: string) => {

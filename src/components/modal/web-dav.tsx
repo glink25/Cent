@@ -148,6 +148,7 @@ const LoadingForm = ({
                             </FormItem>
                         )}
                     />
+                    {/* 使用webdav时，用户可能会将一个webdav配置分享给其他人使用，达成共享的效果，此时需要允许用户填写一个自定义昵称作为不同用户的区分 */}
                     <div className="flex flex-col gap-4 rounded-md border p-2">
                         <a
                             className="flex items-center gap-1"

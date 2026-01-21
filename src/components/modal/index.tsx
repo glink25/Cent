@@ -1,6 +1,7 @@
 import { toast } from "sonner";
 import { LoadingProvider, loading } from "./loading";
 import { PromptProvider, prompt } from "./prompt";
+import { S3AuthProvider, showS3Auth } from "./s3";
 import { showWebDAVAuth, WebDAVAuthProvider } from "./web-dav";
 
 export function ModalProvider() {
@@ -9,6 +10,7 @@ export function ModalProvider() {
             <PromptProvider />
             <LoadingProvider />
             <WebDAVAuthProvider />
+            <S3AuthProvider />
         </>
     );
 }
@@ -17,6 +19,7 @@ const modal = {
     loading,
     prompt,
     webDavAuth: showWebDAVAuth,
+    s3Auth: showS3Auth,
     toast,
 };
 
