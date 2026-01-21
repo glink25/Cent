@@ -47,6 +47,15 @@ const treeDateToStructure = (
             meta: { path: "", sha: "", size: 0 },
         } as StoreStructure,
     );
+
+    // 按照startIndex数字顺序对chunks进行排序
+    // GitHub API返回的是字典序（entry-1000, entry-10000, entry-2000）
+    // 需要按数字排序（entry-1000, entry-2000, entry-10000）
+    structure.chunks.sort((a, b) => a.startIndex - b.startIndex);
+
+    // 对assets按路径排序，保持一致性
+    structure.assets.sort((a, b) => a.path.localeCompare(b.path));
+
     return structure;
 };
 

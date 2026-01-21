@@ -112,6 +112,15 @@ const fileStatsToStructure = (
             });
         }
     }
+
+    // 按照startIndex数字顺序对chunks进行排序
+    // WebDAV返回的是字典序（ledger-1000, ledger-10000, ledger-2000）
+    // 需要按数字排序（ledger-1000, ledger-2000, ledger-10000）
+    structure.chunks.sort((a, b) => a.startIndex - b.startIndex);
+
+    // 对assets按路径排序，保持一致性
+    structure.assets.sort((a, b) => a.path.localeCompare(b.path));
+
     return structure;
 };
 
