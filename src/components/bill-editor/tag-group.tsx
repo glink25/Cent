@@ -74,19 +74,20 @@ function TagGroup({
     // 如果标签组只包含一个标签，那么无需展开弹窗，可以点击直接选中/取消选中该标签
     if (group.tagIds?.length === 1) {
         const singleTagId = group.tagIds[0];
-        const selected = groupSelected.some((v) => v.id === singleTagId);
+        const isSingleSelected = groupSelected.some(
+            (v) => v.id === singleTagId,
+        );
         return (
             <TagTrigger
                 color={group.color}
-                selected={selected}
+                selected={isSingleSelected}
                 onClick={() => {
-                    if (selected) {
+                    if (isSingleSelected) {
                         onSelectChange(
-                            group.tagIds?.filter((v) => v !== singleTagId) ??
-                                [],
+                            selected?.filter((v) => v !== singleTagId) ?? [],
                         );
                     } else {
-                        onSelectChange([...(group.tagIds ?? []), singleTagId]);
+                        onSelectChange([...(selected ?? []), singleTagId]);
                     }
                 }}
             >
