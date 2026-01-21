@@ -77,28 +77,24 @@ const CascaderMenuItem = ({
     };
 
     const content = (
-        <div
-            className="flex items-center w-full cursor-pointer"
-            onClick={handleSelect}
-        >
-            <Checkbox
-                id={`checkbox-${item.id}`}
-                checked={isSelected} // 直接使用 isSelected
-                className="mr-2 pointer-events-none"
-            />
-            <label
-                htmlFor={`checkbox-${item.id}`}
-                className="flex-grow pointer-events-none"
-            >
-                {item.name}
-            </label>
+        <div className="flex w-full justify-between items-center cursor-pointer">
+            <div className="flex-grow pointer-events-none">{item.name}</div>
             {hasChildren && <ChevronRight className="h-4 w-4 ml-auto" />}
         </div>
     );
 
     if (!hasChildren) {
         return (
-            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+            <DropdownMenuItem
+                onSelect={(e) => {
+                    e.preventDefault();
+                    handleSelect();
+                }}
+            >
+                <Checkbox
+                    checked={isSelected} // 直接使用 isSelected
+                    className="mr-2 pointer-events-none"
+                />
                 {content}
             </DropdownMenuItem>
         );
@@ -106,14 +102,24 @@ const CascaderMenuItem = ({
 
     return (
         <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <DropdownMenuItem
-                    onSelect={(e) => e.preventDefault()}
-                    className="justify-between"
-                >
-                    {content}
-                </DropdownMenuItem>
-            </DropdownMenuTrigger>
+            <div className="flex items-center gap-2 w-full rounded-sm px-2 py-1.5 hover:bg-foreground/10 cursor-pointer">
+                <Checkbox
+                    checked={isSelected} // 直接使用 isSelected
+                    className="cursor-pointer"
+                    onCheckedChange={() => {
+                        console.log("checked change");
+                        handleSelect();
+                    }}
+                />
+                <DropdownMenuTrigger asChild>
+                    <DropdownMenuItem
+                        onSelect={(e) => e.preventDefault()}
+                        className="flex-grow p-0 !bg-transparent"
+                    >
+                        {content}
+                    </DropdownMenuItem>
+                </DropdownMenuTrigger>
+            </div>
             <DropdownMenuPortal>
                 <DropdownMenuContent
                     align={align}
