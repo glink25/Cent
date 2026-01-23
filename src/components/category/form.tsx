@@ -103,7 +103,6 @@ export default function CategoryEditForm({
                 ...category,
                 ...data,
             };
-            console.log("add category:", newCategory);
             const newId = await add(newCategory);
             onConfirm?.(newId);
             return;

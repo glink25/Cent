@@ -74,6 +74,9 @@ export const createLoginAPI = () => {
                         }),
                     },
                 );
+                if (!res.ok) {
+                    throw new Error("refresh token: Bad credentials");
+                }
                 const githubTokenData =
                     (await res.json()) as GithubTokenResponse;
                 const accessToken = githubTokenData["access_token"];
