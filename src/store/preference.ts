@@ -23,6 +23,11 @@ type State = {
     voiceRecordingEnabled?: boolean;
     /** 是否使用键盘输入代替语言识别 */
     voiceByKeyboard?: boolean;
+    /** relayr中转服务配置 */
+    relayr?: {
+        enable?: boolean;
+        passcode?: string;
+    };
 };
 type Store = State;
 
