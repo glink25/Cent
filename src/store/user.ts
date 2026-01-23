@@ -57,9 +57,7 @@ export const useUserStore = create<UserStore>()(
                         }),
                     );
                 } catch (error) {
-                    if (
-                        (error as Error)?.message.startsWith("Bad credentials")
-                    ) {
+                    if ((error as Error)?.message.includes("Bad credentials")) {
                         const { toast } = await toastLib;
                         toast.error(
                             t(
