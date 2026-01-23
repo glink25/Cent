@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useCopyToClipboard } from "react-use";
 import { toast } from "sonner";
+import { v4 } from "uuid";
 import { useShallow } from "zustand/shallow";
 import PopupLayout from "@/layouts/popup-layout";
 import { useIntl } from "@/locale";
@@ -18,10 +19,7 @@ import { Switch } from "../ui/switch";
  * 生成随机字符串（用于 passcode）
  */
 function generateRandomPasscode(): string {
-    // 降级方案：使用 Math.random 生成随机字符串
-    return Array.from({ length: 32 }, () =>
-        Math.floor(Math.random() * 16).toString(16),
-    ).join("");
+    return `relayr-${v4()}`;
 }
 
 function Form({ onCancel }: { onCancel?: () => void }) {

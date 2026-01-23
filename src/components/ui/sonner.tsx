@@ -24,7 +24,6 @@ const Toaster = ({ ...props }: ToasterProps) => {
                     error: "[&_[data-icon]]:text-destructive",
                 },
             }}
-            duration={100000}
             {...props}
         />,
         document.body,
