@@ -35,6 +35,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
     const [enable, setEnable] = useState(relayrConfig?.enable ?? false);
     const [secret, setSecret] = useState(relayrConfig?.passcode ?? "");
     const [showSecret, setShowSecret] = useState(false);
+    const [configText, setConfigText] = useState<string>("");
 
     // 同步 store 的值到本地状态
     useEffect(() => {
@@ -157,7 +158,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                                     const prompt = textToBillSystemPrompt(
                                         getCategoriesStr(),
                                     );
-                                    const configText = JSON.stringify({
+                                    const configTextValue = JSON.stringify({
                                         passcode: secret,
                                         prompt,
                                         relayrURL: import.meta.env
@@ -165,27 +166,23 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                                         relayrKey: import.meta.env
                                             .VITE_RELAYR_ANNON_KEY,
                                     });
-                                    try {
-                                        copy(configText);
-                                        toast.success(
-                                            t("quick-entry-config-copied"),
-                                            { duration: 2000 },
-                                        );
-                                    } catch (error) {
-                                        console.error(
-                                            "Failed to copy to clipboard:",
-                                            error,
-                                        );
-                                        toast.error(t("copy-failed"), {
-                                            duration: 2000,
-                                        });
-                                    }
+                                    setConfigText(configTextValue);
+                                    copy(configTextValue);
+                                    toast.success(
+                                        t("quick-entry-config-copied"),
+                                        { duration: 2000 },
+                                    );
                                 }}
                                 className="w-full"
                             >
                                 <i className="icon-[mdi--content-copy] size-4 mr-2"></i>
                                 {t("copy-quick-entry-config")}
                             </Button>
+                            {configText && (
+                                <div className="mt-2 h-[70px] overflow-y-auto !select-all text-xs text-gray-600 dark:text-gray-400 break-all font-mono bg-gray-50 dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-700">
+                                    {configText}
+                                </div>
+                            )}
                         </div>
 
                         {/* 第二步：安装快捷指令Relayr版 */}
