@@ -23,6 +23,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useInitPreset } from "@/hooks/use-preset";
 import {
     useQuickEntryByClipboard,
+    useQuickEntryByRelayr,
     useQuickGoAdd,
 } from "@/hooks/use-quick-entry";
 import { useScheduled } from "@/hooks/use-scheduled";
@@ -33,6 +34,7 @@ import { startBackgroundPredict } from "@/utils/predict";
 export default function MainLayout() {
     useQuickGoAdd();
     useQuickEntryByClipboard();
+    useQuickEntryByRelayr();
 
     useEffect(() => {
         // predict

@@ -19,7 +19,7 @@ const getCategories = () => {
     return categories;
 };
 
-const textToBillSystemPrompt = (categoriesStr: string) => {
+export const textToBillSystemPrompt = (categoriesStr: string) => {
     const locale = locales.find(
         (l) => l.name === usePreferenceStore.getState().locale,
     )?.label;
@@ -37,7 +37,7 @@ ${categoriesStr}
 <Thought>
 此处记录你的思考过程。
 1. 根据文本分析用户想要录入的账单的类型（支出或收入）。
-2. 根据用户想要录入的账单的类型，从用户所有的分类中选择一个分类，注意只能从已有的分类中选择，不能自己新增分类。
+2. 根据用户想要录入的账单的类型，从用户所有的分类中选择一个最贴合的分类，注意只能从已有的分类中选择，不能自己新增分类。
 3. 根据文本内容，分析出用户想要录入的账单的金额
 4. 根据文本内容，分析出用户想要录入的账单的备注，备注可能包含多个关键词，需要将多个关键词用空格分隔。
 5. 根据文本内容，分析出用户想要录入的账单对应的发生时间，需要注意用户文本中的时间描述性语句，并推测出较为准确的24小时制时间，例如【今天】【昨天】【上午】【下午】【晚上】等，时间格式为YYYY-MM-DD HH:mm，注意多笔账单时可能需要格外注意不同账单的发生时间，并分别为每笔账单返回对应的时间。如果没有特定时间描述，一般使用当前时间即可。
@@ -70,7 +70,7 @@ export interface ParsedBill {
  * @param result AI 返回的原始 XML 格式字符串
  * @returns 解析后的账单数组
  */
-function parseBillsFromResponse(result: string): ParsedBill[] {
+export function parseBillsFromResponse(result: string): ParsedBill[] {
     const bills: ParsedBill[] = [];
 
     // 使用正则表达式提取所有的 <Bill> 标签
@@ -141,22 +141,23 @@ function parseBillsFromResponse(result: string): ParsedBill[] {
     return bills;
 }
 
-export async function parseTextToBill(text: string) {
-    console.log("start parsing text:", text);
-
+export const getCategoriesStr = () => {
     const categories = getCategories();
     // 按照支出：xxx xxx,收入:xxx xxx的格式将categories转为字符串
-    const incomes = categories
+    const expenses = categories
         .filter((v) => v.type === "expense")
         .map((v) => `${v.name}`)
         .join("\n");
-    const expenses = categories
+    const incomes = categories
         .filter((v) => v.type === "income")
         .map((v) => `${v.name}`)
         .join("\n");
+    return `支出：\n${expenses},\n收入：${incomes}`;
+};
 
-    const categoriesStr = `支出：\n${expenses},\n收入：${incomes}`;
-    const prompt = textToBillSystemPrompt(categoriesStr);
+export async function parseTextToBill(text: string) {
+    console.log("start parsing text:", text);
+    const prompt = textToBillSystemPrompt(getCategoriesStr());
     const result = await requestAI([
         { role: "system", content: prompt },
         {
@@ -166,6 +167,11 @@ export async function parseTextToBill(text: string) {
             `,
         },
     ]);
+    return xmlTextToBills(result);
+}
+
+export async function xmlTextToBills(result: string) {
+    const categories = getCategories();
     // 通过xml格式解析result，参考chat.ts中的parseStandardResponse，注意可能会有多个账单，需要返回一个数组
     const rawBills = parseBillsFromResponse(result);
     console.log("parsed bills:", rawBills);

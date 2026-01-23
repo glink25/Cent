@@ -16,6 +16,7 @@ import LabSettingsItem from "./lab";
 import LanguageSettingsItem from "./language";
 import MapSettingsItem from "./map-settings";
 import PresetSettingsItem from "./preset";
+import QuickEntrySettingsItem from "./quick-entry";
 import ThemeSettingsItem from "./theme";
 import UserSettingsItem from "./user";
 import VoiceSettingsItem from "./voice";
@@ -95,6 +96,11 @@ export default function SettingsForm({
     onCancel?: () => void;
 }) {
     const t = useIntl();
+
+    const showRelyr =
+        import.meta.env.VITE_RELAYR_URL &&
+        import.meta.env.VITE_RELAYR_ANNON_KEY;
+
     return (
         <PopupLayout
             onBack={onCancel}
@@ -118,6 +124,7 @@ export default function SettingsForm({
                         <div className="text-xs opacity-60 px-8">{t("ai")}</div>
                         <div className="flex flex-col divide-y">
                             <AssistantSettingsItem />
+                            {showRelyr && <QuickEntrySettingsItem />}
                             <VoiceSettingsItem />
                         </div>
                     </div>
