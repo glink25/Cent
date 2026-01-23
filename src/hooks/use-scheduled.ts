@@ -139,7 +139,7 @@ export async function fillScheduledBills(scheduled: Scheduled) {
         scheduled.repeat.unit,
         scheduled.start,
         scheduled.latest ?? scheduled.start,
-        scheduled.end,
+        Math.min(scheduled.end ?? Date.now(), Date.now()),
     );
 
     const diff = allDates.filter((time) => {
