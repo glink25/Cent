@@ -663,5 +663,6 @@
   "relayr-encrypt-public-key": "加密公钥",
   "relayr-encrypt-public-key-description": "用于加密传输数据的 RSA 公钥",
   "relayr-public-key-copied": "公钥已复制",
-  "copy-public-key": "复制公钥"
+  "copy-public-key": "复制公钥",
+  "ai-import-transformer": "AI 智能导入"
 }

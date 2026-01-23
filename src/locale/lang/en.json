@@ -651,5 +651,6 @@
   "relayr-encrypt-public-key": "Encryption Public Key",
   "relayr-encrypt-public-key-description": "RSA public key for encrypting transmitted data",
   "relayr-public-key-copied": "Public key copied",
-  "copy-public-key": "Copy Public Key"
+  "copy-public-key": "Copy Public Key",
+  "ai-import-transformer": "Import by AI"
 }

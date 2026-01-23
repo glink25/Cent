@@ -1,6 +1,7 @@
 import { type ReactNode, useMemo, useState } from "react";
 import { useCopyToClipboard, useLocalStorage } from "react-use";
 import { toast } from "sonner";
+import { requestAI } from "@/components/assistant/request";
 import PopupLayout from "@/layouts/popup-layout";
 import { BillCategories } from "@/ledger/category";
 import type { ExportedJSON } from "@/ledger/type";
@@ -17,16 +18,23 @@ import {
 } from "../ui/select";
 import { promptText } from "./llm-prompt";
 import { importFromPreviewResult, showImportPreview } from "./preview-form";
+import { startTransform } from "./probe/index";
 import AlipayCode from "./schemas/alipay.js?raw";
 import WechatCode from "./schemas/wechat.js?raw";
 
 type ImportTransformer = {
     id: string;
     label?: ReactNode;
-    transformerCode: string;
+    transformerCode?: string;
+    useAI?: boolean;
 };
 
 const getDefaultTransformers = () => [
+    {
+        label: t("ai-import-transformer"),
+        id: "ai-import",
+        useAI: true,
+    },
     {
         label: t("alipay-import-transformer"),
         id: "alipay",
@@ -53,7 +61,7 @@ export function SmartImport({ onCancel }: { onCancel?: () => void }) {
         [] as ImportTransformer[],
     );
     const AllTransformers = useMemo(
-        () => [...DefaultTransformers, ...customTransformers!],
+        () => [...DefaultTransformers, ...(customTransformers ?? [])],
         [customTransformers, DefaultTransformers],
     );
 
@@ -61,6 +69,7 @@ export function SmartImport({ onCancel }: { onCancel?: () => void }) {
     const isDefaultTransformer = Boolean(
         DefaultTransformers.find((v) => v.id === selected),
     );
+    const isAITransformer = selectedTransformer?.useAI === true;
     const updateTransformerCode = (code: string) => {
         setCustomTransformers(() => {
             const prev = customTransformers;
@@ -100,43 +109,87 @@ export function SmartImport({ onCancel }: { onCancel?: () => void }) {
     const [loading, setLoading] = useState(false);
 
     const toImport = async () => {
-        if (!selectedTransformer?.transformerCode || !file) {
+        if (!file) {
             return;
         }
-        setLoading(true);
-        const data = await (async () => {
-            try {
-                const result = await runCode(
-                    selectedTransformer.transformerCode,
-                    file,
-                );
-                return checkJSON(result);
-            } catch (error) {
-                console.error(error);
-                const errorInfo =
-                    (error as Error).message ?? JSON.stringify(error);
-                setErrorInfo(errorInfo);
-                toast.error(errorInfo);
-                return undefined;
-            } finally {
-                setLoading(false);
+        if (isAITransformer) {
+            // AI 导入
+            if (!selectedTransformer) {
+                return;
             }
-        })();
-        if (!data) {
-            return;
+            setLoading(true);
+            const data = await (async () => {
+                try {
+                    const result = await startTransform(file, requestAI);
+                    console.log("AI transform result:", result);
+                    return checkJSON(result);
+                } catch (error) {
+                    console.error(error);
+                    const errorInfo =
+                        (error as Error).message ?? JSON.stringify(error);
+                    setErrorInfo(errorInfo);
+                    toast.error(errorInfo);
+                    return undefined;
+                } finally {
+                    setLoading(false);
+                }
+            })();
+            if (!data) {
+                return;
+            }
+            const res = await showImportPreview({
+                bills: data.items,
+                meta: data.meta,
+            });
+            if (!res) {
+                return;
+            }
+            if (res.strategy === "overlap") {
+                // 智能导入时，需要
+            }
+            await importFromPreviewResult(res);
+            onCancel?.();
+        } else {
+            // 传统代码转换
+            if (!selectedTransformer?.transformerCode) {
+                return;
+            }
+            setLoading(true);
+            const data = await (async () => {
+                try {
+                    const transformerCode = selectedTransformer.transformerCode;
+                    if (!transformerCode) {
+                        throw new Error("转换代码为空");
+                    }
+                    const result = await runCode(transformerCode, file);
+                    return checkJSON(result);
+                } catch (error) {
+                    console.error(error);
+                    const errorInfo =
+                        (error as Error).message ?? JSON.stringify(error);
+                    setErrorInfo(errorInfo);
+                    toast.error(errorInfo);
+                    return undefined;
+                } finally {
+                    setLoading(false);
+                }
+            })();
+            if (!data) {
+                return;
+            }
+            const res = await showImportPreview({
+                bills: data.items,
+                meta: data.meta,
+            });
+            if (!res) {
+                return;
+            }
+            if (res.strategy === "overlap") {
+                // 智能导入时，需要
+            }
+            await importFromPreviewResult(res);
+            onCancel?.();
         }
-        const res = await showImportPreview({
-            bills: data.items,
-            meta: data.meta,
-        });
-        if (!res) {
-            return;
-        }
-        if (res.strategy === "overlap") {
-            // 智能导入时，需要
-        }
-        await importFromPreviewResult(res);
-        onCancel?.();
     };
     return (
         <PopupLayout
@@ -158,6 +211,7 @@ export function SmartImport({ onCancel }: { onCancel?: () => void }) {
                                 {
                                     id,
                                     transformerCode: "",
+                                    useAI: false,
                                 },
                             ];
                         });
@@ -200,7 +254,7 @@ export function SmartImport({ onCancel }: { onCancel?: () => void }) {
                         }}
                     />
                 </div>
-                {!isDefaultTransformer && (
+                {!isDefaultTransformer && !isAITransformer && (
                     <div className="flex flex-col gap-2">
                         <div className="text-xs opacity-60">
                             {t("step1-prompt-copy")}
@@ -271,6 +325,22 @@ export function SmartImport({ onCancel }: { onCancel?: () => void }) {
                                 </Button>
                             </div>
                         )}
+                    </div>
+                )}
+                {isAITransformer && errorInfo && (
+                    <div className="flex gap-2">
+                        <div className="flex-1 rounded-md border p-1 h-9 text-xs text-red-500 select-auto overflow-x-auto">
+                            {errorInfo}
+                        </div>
+                        <Button
+                            variant="secondary"
+                            onClick={async () => {
+                                await copy(errorInfo);
+                                toast.success(t("copy-success"));
+                            }}
+                        >
+                            {t("copy-error-info")}
+                        </Button>
                     </div>
                 )}
             </div>
@@ -383,7 +453,8 @@ const checkJSON = (v: unknown) => {
     if (!v || typeof v !== "object") {
         throw new Error("result is not an object");
     }
-    if (!Array.isArray((v as any)["items"])) {
+    const obj = v as Record<string, unknown>;
+    if (!Array.isArray(obj["items"])) {
         throw new Error("the value of key 'items' in result is not an array");
     }
     if ((v as ExportedJSON).items.length === 0) {
