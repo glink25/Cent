@@ -207,7 +207,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                                 variant="outline"
                                 onClick={() => {
                                     window.open(
-                                        t("relayr-shortcut-link"),
+                                        "https://www.icloud.com/shortcuts/5571a9ebc24544beb6abb51817714389",
                                         "_blank",
                                         "noopener,noreferrer",
                                     );
