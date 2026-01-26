@@ -19,14 +19,19 @@ const getCategories = () => {
     return categories;
 };
 
-export const textToBillSystemPrompt = (categoriesStr: string) => {
+export const textToBillSystemPrompt = (
+    categoriesStr: string,
+    withTime: boolean = true,
+) => {
     const locale = locales.find(
         (l) => l.name === usePreferenceStore.getState().locale,
     )?.label;
-
+    const timeStr = withTime
+        ? `**当前时间**: ${dayjs().format("YYYY-MM-DD HH:mm:ss")}`
+        : "";
     return `请通过给出的记账系统分类信息数据，从用户提供的文本中提取出关键的分类、金额和备注信息，使其能够准确快速地录入记账系统中，请严格按照给定规范给出回答
 ## 当前环境信息
-**当前时间**: ${dayjs().format("YYYY-MM-DD HH:mm:ss")}
+${timeStr}
 **用户的语言偏好**: ${locale}
 
 下面是用户所有的分类：

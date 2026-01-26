@@ -97,9 +97,7 @@ export default function SettingsForm({
 }) {
     const t = useIntl();
 
-    const showRelyr =
-        import.meta.env.VITE_RELAYR_URL &&
-        import.meta.env.VITE_RELAYR_ANNON_KEY;
+    const showRelyr = Boolean(import.meta.env.VITE_RELAYR_URL);
 
     return (
         <PopupLayout

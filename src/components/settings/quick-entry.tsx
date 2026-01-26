@@ -6,6 +6,7 @@ import { useShallow } from "zustand/shallow";
 import PopupLayout from "@/layouts/popup-layout";
 import { useIntl } from "@/locale";
 import { usePreferenceStore } from "@/store/preference";
+import { generateSymmetricKey } from "@/utils/encrypt";
 import {
     getCategoriesStr,
     textToBillSystemPrompt,
@@ -41,32 +42,43 @@ function Form({ onCancel }: { onCancel?: () => void }) {
         setSecret(relayrConfig?.passcode ?? "");
     }, [relayrConfig]);
 
-    const handleEnableChange = (checked: boolean) => {
+    const handleEnableChange = async (checked: boolean) => {
         setEnable(checked);
-        usePreferenceStore.setState((prev) => {
-            const currentRelayr = prev.relayr ?? {};
-            // 如果开启 relayr 且之前没有设置过 passcode，则自动生成一个
-            if (checked && !currentRelayr.passcode) {
+
+        if (checked) {
+            // 开启服务：生成新的对称加密密钥和 passcode
+            try {
                 const newPasscode = generateRandomPasscode();
+                const encryptKey = generateSymmetricKey();
+
                 // 立即更新本地状态
                 setSecret(newPasscode);
-                return {
+
+                usePreferenceStore.setState((prev) => ({
                     ...prev,
                     relayr: {
-                        ...currentRelayr,
-                        enable: checked,
+                        enable: true,
                         passcode: newPasscode,
+                        encryptKey: encryptKey,
                     },
-                };
+                }));
+
+                toast.success(t("relayr-enabled"));
+            } catch (error) {
+                console.error("开启 Relayr 服务失败:", error);
+                toast.error(t("relayr-enable-failed"));
+                setEnable(false);
             }
-            return {
-                ...prev,
-                relayr: {
-                    ...currentRelayr,
-                    enable: checked,
-                },
-            };
-        });
+        } else {
+            // 关闭服务：清空所有 relayr 相关配置
+            usePreferenceStore.setState((prev) => {
+                return Object.fromEntries(
+                    Object.entries(prev).filter(([key]) => key !== "relayr"),
+                ) as typeof prev;
+            });
+            setSecret("");
+            toast.success(t("relayr-disabled"));
+        }
     };
 
     const [, copy] = useCopyToClipboard();
@@ -155,17 +167,19 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                                 onClick={async () => {
                                     const prompt = textToBillSystemPrompt(
                                         getCategoriesStr(),
+                                        false,
                                     );
                                     const configTextValue = JSON.stringify({
                                         passcode: secret,
                                         prompt,
                                         relayrURL: import.meta.env
                                             .VITE_RELAYR_URL,
-                                        relayrKey: import.meta.env
-                                            .VITE_RELAYR_ANNON_KEY,
+                                        encryptKey: relayrConfig?.encryptKey,
+                                        version: "1.0",
                                     });
                                     setConfigText(configTextValue);
                                     copy(configTextValue);
+                                    // 显示复制成功的提示消息，持续时间为 2 秒
                                     toast.success(
                                         t("quick-entry-config-copied"),
                                         { duration: 2000 },
@@ -203,19 +217,6 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                                 {t("install-shortcut")}
                             </Button>
                         </div>
-
-                        {/* 帮助链接 */}
-                        <div className="w-full px-4 pt-4 inline-flex justify-center">
-                            <a
-                                href={t("quick-entry-help-url")}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-xs opacity-60 hover:opacity-80 transition-opacity flex items-center gap-1 text-blue-500 hover:text-blue-600 underline"
-                            >
-                                <i className="icon-[mdi--help-circle-outline] size-4"></i>
-                                {t("quick-entry-help-link")}
-                            </a>
-                        </div>
                     </div>
                 )}
 
@@ -230,6 +231,19 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                         </div>
                     </div>
                 )}
+
+                {/* 帮助链接 */}
+                <div className="w-full px-4 pt-4 inline-flex justify-center">
+                    <a
+                        href={t("quick-entry-help-url")}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs opacity-60 hover:opacity-80 transition-opacity flex items-center gap-1 text-blue-500 hover:text-blue-600 underline"
+                    >
+                        <i className="icon-[mdi--help-circle-outline] size-4"></i>
+                        {t("quick-entry-help-link")}
+                    </a>
+                </div>
             </div>
         </PopupLayout>
     );

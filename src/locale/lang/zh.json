@@ -647,12 +647,19 @@
   "copy-quick-entry-config": "复制快捷指令配置",
   "quick-entry-config-copied": "快捷指令配置已复制到剪贴板",
   "quick-entry-help-link": "如何通过Relayr和快捷指令自动记账",
-  "quick-entry-help-url": "https://glink25.github.io/post/%E9%80%9A%E8%BF%87Relayr%E5%92%8C%E5%BF%AB%E6%8D%B7%E6%8C%87%E4%BB%A4%E8%87%AA%E5%8A%A8%E8%AE%B0%E8%B4%A6/",
-  "relayr-shortcut-link": "https://www.icloud.com/shortcuts/a38e19b90e3c4a5c9253730c406e6de4",
+  "quick-entry-help-url": "https://glink25.github.io/post/%E9%80%9A%E8%BF%87Relayr%E5%BF%AB%E6%8D%B7%E8%AE%B0%E8%B4%A6/",
+  "relayr-shortcut-link": "https://www.icloud.com/shortcuts/1b81bfe43ab5446d9ca85a062d14c40f",
   "install-shortcut": "安装快捷指令Relayr版",
   "step-1": "第一步：",
   "step-2": "第二步：",
   "ios": "iOS",
   "android": "Android",
-  "to-be-continued": "待续"
+  "to-be-continued": "待续",
+  "relayr-enabled": "Relayr 服务已启用",
+  "relayr-enable-failed": "开启 Relayr 服务失败",
+  "relayr-disabled": "Relayr 服务已关闭",
+  "relayr-encrypt-public-key": "加密公钥",
+  "relayr-encrypt-public-key-description": "用于加密传输数据的 RSA 公钥",
+  "relayr-public-key-copied": "公钥已复制",
+  "copy-public-key": "复制公钥"
 }
