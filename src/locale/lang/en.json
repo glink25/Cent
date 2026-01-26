@@ -635,12 +635,19 @@
   "copy-quick-entry-config": "Copy Quick Entry Config",
   "quick-entry-config-copied": "Quick entry config copied to clipboard",
   "quick-entry-help-link": "How to auto-record bills via Relayr and Shortcuts",
-  "quick-entry-help-url": "https://glink25.github.io/post/%E9%80%9A%E8%BF%87Relayr%E5%92%8C%E5%BF%AB%E6%8D%B7%E6%8C%87%E4%BB%A4%E8%87%AA%E5%8A%A8%E8%AE%B0%E8%B4%A6/",
-  "relayr-shortcut-link": "https://www.icloud.com/shortcuts/a38e19b90e3c4a5c9253730c406e6de4",
+  "quick-entry-help-url": "https://glink25.github.io/post/%E9%80%9A%E8%BF%87Relayr%E5%BF%AB%E6%8D%B7%E8%AE%B0%E8%B4%A6/",
+  "relayr-shortcut-link": "https://www.icloud.com/shortcuts/1b81bfe43ab5446d9ca85a062d14c40f",
   "install-shortcut": "Install shortcuts for Relayr",
   "step-1": "Step 1:",
   "step-2": "Step 2:",
   "ios": "iOS",
   "android": "Android",
-  "to-be-continued": "To be continued"
+  "to-be-continued": "To be continued",
+  "relayr-enabled": "Relayr service enabled",
+  "relayr-enable-failed": "Failed to enable Relayr service",
+  "relayr-disabled": "Relayr service disabled",
+  "relayr-encrypt-public-key": "Encryption Public Key",
+  "relayr-encrypt-public-key-description": "RSA public key for encrypting transmitted data",
+  "relayr-public-key-copied": "Public key copied",
+  "copy-public-key": "Copy Public Key"
 }

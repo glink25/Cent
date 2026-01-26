@@ -27,6 +27,11 @@ type State = {
     relayr?: {
         enable?: boolean;
         passcode?: string;
+        // @deprecated 使用对称加密代替
+        encryptPublicKey?: string;
+        // @deprecated 使用对称加密代替
+        encryptPrivateKey?: string;
+        encryptKey?: string;
     };
 };
 type Store = State;
