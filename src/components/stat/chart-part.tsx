@@ -193,6 +193,14 @@ export function useChartPart({
         });
     }, [dimension, dataSources.subCategoryStructure, selectedCategory]);
 
+    const calendarRange = useMemo(
+        () => [filtered[0]?.time, filtered[filtered.length - 1]?.time],
+        [
+            filtered[0]?.time,
+            filtered[filtered.length - 1]?.time,
+            filtered.length,
+        ],
+    );
     const Part = (
         <>
             <div className="flex-shrink-0 w-full min-h-[300px] border rounded-md relative">
@@ -218,17 +226,15 @@ export function useChartPart({
                 </div>
                 {asCalendar && viewType !== "custom" ? (
                     <div className="w-full">
-                        <div className="py-4 flex justify-center font-semibold text-lg">
+                        <div className="pt-4 pb-2 flex justify-center font-semibold text-lg">
                             {(charts[0]?.title as any)?.text}
                         </div>
                         <CalendarDetail
                             viewType={viewType}
+                            focusType={focusType}
                             dataset={charts[0].dataset as any}
                             dimension={dimension}
-                            range={[
-                                filtered[0]?.time,
-                                filtered[filtered.length - 1]?.time,
-                            ]}
+                            range={calendarRange}
                         />
                     </div>
                 ) : (

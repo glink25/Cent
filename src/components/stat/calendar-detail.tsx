@@ -6,6 +6,7 @@ import { cn } from "@/utils";
 import { collaboratorColors } from "@/utils/color";
 import { toThousand } from "@/utils/number";
 import type { EnvArg } from "../assistant/env";
+import type { FocusType } from "./focus-type";
 
 export interface CalendarCellSlotProps {
     date: dayjs.Dayjs;
@@ -171,7 +172,6 @@ function BaseCalendarDetail({
                                 className={cn(
                                     "aspect-square flex flex-col items-center justify-center text-sm rounded-md relative",
                                     today &&
-                                        !inRange &&
                                         isCurrentMonth &&
                                         "bg-accent text-accent-foreground",
                                 )}
@@ -300,7 +300,7 @@ function BaseCalendarDetail({
                                             "bg-accent text-accent-foreground",
                                     )}
                                 >
-                                    <span className="text-xs font-medium">
+                                    <span className="text-sm font-medium">
                                         {getMonthNames[monthIndexInYear]}
                                     </span>
                                     {monthSlot?.({
@@ -323,7 +323,7 @@ function BaseCalendarDetail({
     }
 
     return (
-        <div className="p-4">
+        <div className="p-2">
             {viewType === "weekly" && renderWeeklyView()}
             {viewType === "monthly" && renderMonthlyView()}
             {viewType === "yearly" && renderYearlyView()}
@@ -358,10 +358,12 @@ interface DatasetSource {
 export default function CalendarDetail({
     dataset,
     dimension,
+    focusType,
     ...props
 }: {
     dataset: DatasetSource;
     dimension: "category" | "user";
+    focusType: FocusType;
 } & CalendarDetailProps) {
     // 解析 dataset，创建日期到数据的映射
     const dateDataMap = useMemo(() => {
@@ -452,9 +454,14 @@ export default function CalendarDetail({
         } else {
             // user 维度：显示加号
             const userName = dataset.source?.[0]?.[index + 1];
+            const prefix =
+                focusType === "income" ||
+                (focusType === "balance" && value >= 0)
+                    ? "+"
+                    : "-";
             return (
                 <div style={{ color: collaboratorColors(`${userName}`) }}>
-                    {value}
+                    {`${prefix}${m(Math.abs(value))}`}
                 </div>
             );
         }
