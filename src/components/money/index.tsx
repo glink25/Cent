@@ -1,4 +1,3 @@
-import type React from "react";
 import { toThousand } from "@/utils/number";
 
 interface MoneyProps {

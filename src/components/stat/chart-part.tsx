@@ -16,6 +16,8 @@ import {
 import CategoryIcon from "../category/icon";
 import Chart, { type ChartInstance } from "../chart";
 import { Button } from "../ui/button";
+import CalendarDetail from "./calendar-detail";
+import type { ViewType } from "./date-slice";
 import type { FocusType } from "./focus-type";
 import { StaticItem } from "./static-item";
 
@@ -27,7 +29,7 @@ export function useChartPart({
     dimension,
     displayCurrency,
 }: {
-    viewType: string;
+    viewType: ViewType;
     seeDetails: (append?: Partial<BillFilter>) => void;
     focusType: FocusType;
     filtered: Bill[];
@@ -44,6 +46,8 @@ export function useChartPart({
     }, [displayCurrency, baseCurrency.id, convert]);
 
     const trendChart = useRef<ChartInstance>(undefined);
+    // 是否以日历展示而非折线图
+    const [asCalendar, setAsCalendar] = useState(false);
     // 是否以列表展示而非饼图
     const [asList, setAsList] = useState(false);
 
@@ -189,15 +193,58 @@ export function useChartPart({
         });
     }, [dimension, dataSources.subCategoryStructure, selectedCategory]);
 
+    const calendarRange = useMemo(
+        () => [filtered[0]?.time, filtered[filtered.length - 1]?.time],
+        [
+            filtered[0]?.time,
+            filtered[filtered.length - 1]?.time,
+            filtered.length,
+        ],
+    );
     const Part = (
         <>
-            <div className="flex-shrink-0 w-full h-[300px]">
-                <Chart
-                    ref={trendChart}
-                    key={dimension}
-                    option={charts[0]}
-                    className="w-full h-full border rounded-md"
-                />
+            <div className="flex-shrink-0 w-full min-h-[300px] border rounded-md relative">
+                <div className="absolute top-4 left-4 z-2">
+                    {viewType !== "custom" && (
+                        <button
+                            type="button"
+                            className={cn(
+                                "inline-flex justify-center items-center p-1 rounded-full",
+                                asCalendar && "bg-foreground text-background",
+                            )}
+                            onClick={() => {
+                                setAsCalendar((v) => !v);
+                            }}
+                        >
+                            <i
+                                className={cn(
+                                    "icon-[mdi--calendar-month-outline] cursor-pointer",
+                                )}
+                            ></i>
+                        </button>
+                    )}
+                </div>
+                {asCalendar && viewType !== "custom" ? (
+                    <div className="w-full">
+                        <div className="pt-4 pb-2 flex justify-center font-semibold text-lg">
+                            {(charts[0]?.title as any)?.text}
+                        </div>
+                        <CalendarDetail
+                            viewType={viewType}
+                            focusType={focusType}
+                            dataset={charts[0].dataset as any}
+                            dimension={dimension}
+                            range={calendarRange}
+                        />
+                    </div>
+                ) : (
+                    <Chart
+                        ref={trendChart}
+                        key={dimension}
+                        option={charts[0]}
+                        className="w-full h-full"
+                    />
+                )}
             </div>
             {focusType !== "balance" && (
                 <div className="flex-shrink-0 w-full border rounded-md relative">

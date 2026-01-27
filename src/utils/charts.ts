@@ -3,7 +3,12 @@ import { merge, sortBy } from "lodash-es";
 import type { ECOption } from "@/components/chart";
 import { amountToNumber } from "@/ledger/bill";
 import type { Bill, BillType } from "@/ledger/type";
-import { categoryColors, createColorSet, getCSSVariable } from "./color";
+import {
+    categoryColors,
+    collaboratorColors,
+    createColorSet,
+    getCSSVariable,
+} from "./color";
 import { toFixed } from "./number";
 import { formatDate } from "./time";
 
@@ -522,6 +527,7 @@ export const userTrendOption = (
                 x: "date", // 映射到 dataset 中的 'date' 列
                 y: dataset.source[0][i + 1], // 映射到 dataset 中的 'glink25' 列
             },
+            color: collaboratorColors(dataset.source[0][i + 1] as string),
         })),
     };
 
