@@ -45,3 +45,16 @@ export const categoryColors = createColorSet([
     "#9a60b4",
     "#ea7ccc",
 ]);
+
+// 自动生成collaborator的颜色
+export const collaboratorColors = createColorSet([
+    "#5470c6",
+    "#91cc75",
+    "#fac858",
+    "#ee6666",
+    "#73c0de",
+    "#3ba272",
+    "#fc8452",
+    "#9a60b4",
+    "#ea7ccc",
+]);
