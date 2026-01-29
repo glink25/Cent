@@ -3,8 +3,10 @@ import { useCopyToClipboard } from "react-use";
 import { toast } from "sonner";
 import { v4 } from "uuid";
 import { useShallow } from "zustand/shallow";
+import { getQuickCurrencies } from "@/hooks/use-currency";
 import PopupLayout from "@/layouts/popup-layout";
 import { useIntl } from "@/locale";
+import { useLedgerStore } from "@/store/ledger";
 import { usePreferenceStore } from "@/store/preference";
 import { generateSymmetricKey } from "@/utils/encrypt";
 import {
@@ -176,6 +178,13 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                                             .VITE_RELAYR_URL,
                                         encryptKey: relayrConfig?.encryptKey,
                                         version: "1.0",
+                                        tags: useLedgerStore
+                                            .getState()
+                                            .infos?.meta.tags.map((v) => v.name)
+                                            .join(","),
+                                        currencies: getQuickCurrencies().map(
+                                            (v) => v.label,
+                                        ),
                                     });
                                     setConfigText(configTextValue);
                                     copy(configTextValue);

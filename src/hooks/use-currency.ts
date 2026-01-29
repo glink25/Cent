@@ -6,7 +6,7 @@ import {
     DefaultCurrencyId,
 } from "@/api/currency/currencies";
 import type { CustomCurrency } from "@/ledger/type";
-import { useIntl } from "@/locale";
+import { t, useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
 import { type CConvert, useCurrencyStore } from "@/store/currency";
 import { useLedgerStore } from "@/store/ledger";
@@ -181,4 +181,24 @@ export const useCurrency = () => {
         quickCurrencies,
         updateQuickCurrencies,
     };
+};
+
+export const getAllCurrencies = () => {
+    const customCurrencies =
+        useLedgerStore.getState().infos?.meta.customCurrencies ?? [];
+    return [
+        ...customCurrencies.map((c) => ({ ...c, label: c.name })),
+        ...DefaultCurrencies.map((c) => ({ ...c, label: t(c.labelKey) })),
+    ];
+};
+
+export const getQuickCurrencies = () => {
+    const allCurrencies = getAllCurrencies();
+    const quickCurrencyIds =
+        useLedgerStore.getState().infos?.meta.quickCurrencies ?? [];
+    return quickCurrencyIds
+        .map((id) => {
+            return allCurrencies.find((v) => v.id === id);
+        })
+        .filter((v) => v !== undefined);
 };

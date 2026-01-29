@@ -1,10 +1,13 @@
 import dayjs from "dayjs";
+import { DefaultCurrencyId } from "@/api/currency/currencies";
+import { getAllCurrencies } from "@/hooks/use-currency";
 import { numberToAmount } from "@/ledger/bill";
 import { BillCategories } from "@/ledger/category";
 import type { BillType } from "@/ledger/type";
 import { intlCategory } from "@/ledger/utils";
 import { t } from "@/locale";
 import { locales } from "@/locale/utils";
+import { useCurrencyStore } from "@/store/currency";
 import { useLedgerStore } from "@/store/ledger";
 import { usePreferenceStore } from "@/store/preference";
 import { requestAI } from "./request";
@@ -67,6 +70,8 @@ export interface ParsedBill {
     category: string;
     amount: number;
     note?: string;
+    tags?: string[];
+    currency?: string;
     time?: Date;
 }
 
@@ -127,6 +132,12 @@ export function parseBillsFromResponse(result: string): ParsedBill[] {
                 case "note":
                     billData.note = value;
                     break;
+                case "tag":
+                    billData.tags = [...(billData.tags ?? []), value];
+                    break;
+                case "currency":
+                    billData.currency = value;
+                    break;
                 case "time":
                     billData.time = new Date(value);
                     break;
@@ -177,6 +188,8 @@ export async function parseTextToBill(text: string) {
 
 export async function xmlTextToBills(result: string) {
     const categories = getCategories();
+    const allTags = useLedgerStore.getState().infos?.meta.tags;
+    const allCurrencies = getAllCurrencies();
     // 通过xml格式解析result，参考chat.ts中的parseStandardResponse，注意可能会有多个账单，需要返回一个数组
     const rawBills = parseBillsFromResponse(result);
     console.log("parsed bills:", rawBills);
@@ -192,12 +205,40 @@ export async function xmlTextToBills(result: string) {
             const amount = numberToAmount(raw.amount);
             const comment = raw.note;
             const time = raw.time?.getTime() ?? Date.now();
+            const tagIds = raw.tags
+                ?.map((v) => allTags?.find((t) => t.name === v)?.id)
+                .filter((v) => v !== undefined);
+            const currency = allCurrencies.find(
+                (c) => c.label === raw.currency,
+            );
+            const baseCurrencyId =
+                useLedgerStore.getState().infos?.meta.baseCurrency ??
+                DefaultCurrencyId;
+            if (!currency || currency.id === baseCurrencyId) {
+                return {
+                    type,
+                    categoryId,
+                    amount,
+                    comment,
+                    time,
+                    tagIds,
+                };
+            }
+            const { predict } = useCurrencyStore
+                .getState()
+                .convert(amount, currency.id, baseCurrencyId);
             return {
                 type,
                 categoryId,
-                amount,
+                amount: predict,
                 comment,
                 time,
+                tagIds,
+                currency: {
+                    base: baseCurrencyId,
+                    target: currency.id,
+                    amount: amount,
+                },
             };
         })
         .filter((v) => v !== undefined);
