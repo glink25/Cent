@@ -28,6 +28,7 @@ import {
 } from "@/hooks/use-quick-entry";
 import { useScheduled } from "@/hooks/use-scheduled";
 import { ThemeProvider } from "@/hooks/use-theme";
+import { useUrlHandler } from "@/hooks/use-url-handler";
 import { usePreferenceStore } from "@/store/preference";
 import { startBackgroundPredict } from "@/utils/predict";
 
@@ -35,6 +36,7 @@ export default function MainLayout() {
     useQuickGoAdd();
     useQuickEntryByClipboard();
     useQuickEntryByRelayr();
+    useUrlHandler(); // 处理标准 URL 链接唤起
 
     useEffect(() => {
         // predict
