@@ -174,6 +174,29 @@ pnpm lint
 
 ---
 
+## 🙏 感谢墙 / Donor Wall
+
+感谢所有支持 Cent 项目的捐赠者！您的支持是我持续开发的动力。  
+Thank you to all donors who support the Cent project! Your support is the driving force behind my continued development.
+
+<div align="center">
+
+<table>
+<tr>
+<td align="center">
+  <a href="https://github.com/example">
+    <img src="https://api.dicebear.com/7.x/initials/svg?seed=一" width="60" height="60" alt="" style="border-radius: 50%;"/>
+    <br />
+    <sub><b>一**户</b></sub>
+  </a>
+</td>
+</tr>
+</table>
+
+</div>
+
+---
+
 <details>
 <summary>点击查看</summary>
 
