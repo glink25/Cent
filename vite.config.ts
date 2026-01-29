@@ -53,10 +53,15 @@ export default defineConfig(({ mode }) => {
                 protocol_handlers: [
                     {
                         protocol: "cent-accounting",
-                        url: "/add?data=%s",
+                        url: "/add-bills?text=%s",
                         client_mode: "focus-existing", // 优先聚焦现有窗口
                     } as any,
                 ],
+                launch_handler: {
+                    client_mode: ["navigate-existing", "auto"], // 优先在现有窗口导航
+                },
+                // 注意：标准 URL 链接唤起通过应用层面的 URL 参数处理实现
+                // 见 src/hooks/use-url-handler.tsx
             },
         }),
     ];
