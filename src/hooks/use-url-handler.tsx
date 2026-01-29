@@ -23,8 +23,8 @@ export function useUrlHandler() {
 
             // 处理 /add-bills 路径
             if (pathname === "/add-bills" || pathname === "/add-bills/") {
-                const text = searchParams.get("text");
-                window.history.replaceState({}, "", window.location.pathname);
+                const text = decodeURIComponent(searchParams.get("text") ?? "");
+                window.history.replaceState({}, "", "/");
                 if (text) {
                     try {
                         // 解析文本为账单
