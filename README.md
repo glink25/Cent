@@ -176,8 +176,8 @@ pnpm lint
 
 ## 🙏 感谢墙 / Donor Wall
 
-感谢所有支持 Cent 项目的捐赠者！您的支持是我们持续开发的动力。  
-Thank you to all donors who support the Cent project! Your support is the driving force behind our continued development.
+感谢所有支持 Cent 项目的捐赠者！您的支持是我持续开发的动力。  
+Thank you to all donors who support the Cent project! Your support is the driving force behind my continued development.
 
 <div align="center">
 
