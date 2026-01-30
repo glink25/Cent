@@ -32,25 +32,24 @@ export const relayrMiddleware: Handler = async (url, options, next) => {
 
         // 3. 构建最终的目标 URL (target_base + suffix)
         const finalTargetUrl = `${targetBase}${targetPathSuffix}`;
-
         // 4. 转换请求参数
         const newOptions: RequestInit = {
             ...options,
-            method: options.method || "GET",
+            method: "POST",
             headers: {
                 ...options.headers,
                 ...extraHeaders,
                 "x-relayr-target": finalTargetUrl,
+                "x-relayr-method": options.method,
                 "Content-Type": "application/json",
             },
             // 根据你的要求，将原 body 和 target 封装进新的 body
             body: options.body,
         };
 
-        // 强制使用 POST 发送给代理服务器，因为需要携带 body
-        newOptions.method = "POST";
-
-        console.log(`[Proxy Forwarding] ${finalTargetUrl} -> ${proxyUrl}`);
+        console.log(
+            `[Proxy Forwarding][${options.method}] ${finalTargetUrl} -> ${proxyUrl}`,
+        );
         return next(proxyUrl, newOptions);
     } catch (err) {
         console.error("[Proxy Middleware Error]", err);

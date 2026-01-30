@@ -55,6 +55,7 @@ const LoadingForm = ({
         },
     });
     const [checking, setChecking] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const onSubmit = async (data: z.infer<typeof formSchema>) => {
         data.remote = data.remote.replace(/\/$/, "");
         setChecking(true);
@@ -120,7 +121,30 @@ const LoadingForm = ({
                                     <div>{t("password")}</div>
                                 </FormLabel>
                                 <FormControl>
-                                    <Input {...field} type="password" />
+                                    <div className="relative">
+                                        <Input
+                                            {...field}
+                                            type={
+                                                showPassword
+                                                    ? "text"
+                                                    : "password"
+                                            }
+                                            className="pr-10"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setShowPassword(!showPassword)
+                                            }
+                                            className="absolute right-0 top-0 h-full px-3 flex items-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                                        >
+                                            {showPassword ? (
+                                                <i className="icon-[mdi--eye-off] size-4"></i>
+                                            ) : (
+                                                <i className="icon-[mdi--eye] size-4"></i>
+                                            )}
+                                        </button>
+                                    </div>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
