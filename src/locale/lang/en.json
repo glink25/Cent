@@ -543,7 +543,7 @@
   "ai-config-api-key-description": "API key for authentication, note that this key will be synced to the cloud and visible to collaborators",
   "ai-config-api-key-placeholder": "Enter API Key",
   "ai-config-api-url": "API URL",
-  "ai-config-api-url-description": "Base URL of the API service, e.g., https://api.openai.com/v1 for OpenAI",
+  "ai-config-api-url-description": "Base URL of the API service, e.g., https://api.openai.com/v1 for OpenAI, or <a>use proxy</a>",
   "ai-config-api-url-placeholder": "e.g., https://api.openai.com/v1",
   "ai-config-model": "Model",
   "ai-config-model-description": "Name of the AI model to use, different models may have different capabilities and costs",

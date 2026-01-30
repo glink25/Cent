@@ -556,7 +556,7 @@
   "ai-config-api-key-description": "用于身份验证的API密钥，注意该key会被云同步，对其他协作者可见",
   "ai-config-api-key-placeholder": "请输入API Key",
   "ai-config-api-url": "API URL",
-  "ai-config-api-url-description": "API服务的基础地址，例如OpenAI的地址为 https://api.openai.com/v1",
+  "ai-config-api-url-description": "API服务的基础地址，例如OpenAI的地址为 https://api.openai.com/v1 ，或者<a>使用代理</a>",
   "ai-config-api-url-placeholder": "例如: https://api.openai.com/v1",
   "ai-config-model": "模型",
   "ai-config-model-description": "要使用的AI模型名称，不同模型可能有不同的能力和成本",

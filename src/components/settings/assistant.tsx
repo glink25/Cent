@@ -198,7 +198,18 @@ function ConfigForm({
                             onChange={(e) => setApiUrl(e.currentTarget.value)}
                         />
                         <div className="text-xs opacity-60 mt-1">
-                            {t("ai-config-api-url-description")}
+                            {t("ai-config-api-url-description", {
+                                a: (chunks: React.ReactNode) => (
+                                    <a
+                                        href="https://glink25.github.io/post/%E4%BD%BF%E7%94%A8Realyr%E4%BB%A3%E7%90%86%E5%8D%8F%E8%AE%AEURL/"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-500 hover:text-blue-600 underline"
+                                    >
+                                        {chunks}
+                                    </a>
+                                ),
+                            })}
                         </div>
                     </div>
 
