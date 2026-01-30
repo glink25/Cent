@@ -180,7 +180,9 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                                         version: "1.0",
                                         tags: useLedgerStore
                                             .getState()
-                                            .infos?.meta.tags.map((v) => v.name)
+                                            .infos?.meta.tags?.map(
+                                                (v) => v.name,
+                                            )
                                             .join(","),
                                         currencies: getQuickCurrencies().map(
                                             (v) => v.label,
