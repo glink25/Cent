@@ -1,7 +1,9 @@
+import { relayrMiddleware } from "./relayr-middleware";
+
 // 保存原始 fetch
 const originalFetch = self.fetch.bind(self);
 
-type Handler = (
+export type Handler = (
     url: RequestInfo | URL,
     options: RequestInit,
     next: typeof originalFetch,
@@ -53,6 +55,9 @@ self.fetch = async (url: RequestInfo | URL, options: RequestInit = {}) => {
     const composed = composeFetchChain(proxyHandlers, originalFetch);
     return (composed as any)(url, options);
 };
+
+// 注册中间件
+registerProxy(relayrMiddleware);
 
 // 导出 registerProxy
 export { registerProxy };

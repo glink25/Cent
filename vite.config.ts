@@ -80,5 +80,17 @@ export default defineConfig(({ mode }) => {
         worker: {
             format: "es",
         },
+        server: {
+            proxy: {
+                // 这里的 '/api' 是你在代码中调用的路径前缀
+                "/google-api": {
+                    target: "https://generativelanguage.googleapis.com", // 目标接口域名
+                    changeOrigin: true, // 必须设置为 true，以便绕过主机检查
+                    rewrite: (path) => path.replace(/^\/google-api/, ""), // 去掉路径中的前缀
+                    // 如果你的网络环境需要科学上网，且使用了本地代理软件，可能需要配置此项（可选）
+                    // secure: false,
+                },
+            },
+        },
     };
 });
