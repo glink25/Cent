@@ -8,9 +8,17 @@ import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
 import { cn } from "@/utils";
 import { decodeApiKey, encodeApiKey } from "@/utils/api-key";
+import { requestAI } from "../assistant/request";
 import createConfirmProvider from "../confirm";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "../ui/select";
 
 // 配置编辑弹框
 function ConfigForm({
@@ -27,6 +35,9 @@ function ConfigForm({
     const [apiKey, setApiKey] = useState(edit ? decodeApiKey(edit.apiKey) : "");
     const [apiUrl, setApiUrl] = useState(edit?.apiUrl ?? "");
     const [model, setModel] = useState(edit?.model ?? "");
+    const [apiType, setApiType] = useState<AIConfig["apiType"]>(
+        edit?.apiType ?? "open-ai-compatible",
+    );
     const [isTesting, setIsTesting] = useState(false);
     const [showApiKey, setShowApiKey] = useState(false);
 
@@ -55,11 +66,11 @@ function ConfigForm({
             apiKey: encodeApiKey(apiKey.trim()),
             apiUrl: apiUrl.trim(),
             model: model.trim(),
-            apiType: "open-ai-compatible",
+            apiType: apiType,
         };
 
         onConfirm?.(config);
-    }, [name, apiKey, apiUrl, model, edit, onConfirm, t]);
+    }, [name, apiKey, apiUrl, model, apiType, edit, onConfirm, t]);
 
     const handleTestConnection = useCallback(async () => {
         if (!apiKey.trim() || !apiUrl.trim() || !model.trim()) {
@@ -69,37 +80,30 @@ function ConfigForm({
 
         setIsTesting(true);
         try {
-            // 构造测试请求
-            const testUrl = apiUrl.trim().endsWith("/")
-                ? `${apiUrl.trim()}chat/completions`
-                : `${apiUrl.trim()}/chat/completions`;
+            // 构建测试配置对象
+            const testConfig: AIConfig = {
+                id: "test",
+                name: "test",
+                apiKey: apiKey.trim(),
+                apiUrl: apiUrl.trim(),
+                model: model.trim(),
+                apiType: apiType,
+            };
 
-            const response = await fetch(testUrl, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${apiKey.trim()}`,
+            // 构建测试消息
+            const testMessages: Array<{
+                role: "system" | "user" | "assistant";
+                content: string;
+            }> = [
+                {
+                    role: "user",
+                    content: "请直接输出文本“测试完成”",
                 },
-                body: JSON.stringify({
-                    model: model.trim(),
-                    messages: [
-                        {
-                            role: "user",
-                            content: "Hi",
-                        },
-                    ],
-                    max_tokens: 10,
-                }),
-            });
+            ];
 
-            if (response.ok) {
-                toast.success(t("connection-success"));
-            } else {
-                const errorData = await response.json().catch(() => ({}));
-                toast.error(
-                    `${t("connection-failed")}: ${errorData.error?.message || response.statusText}`,
-                );
-            }
+            await requestAI(testMessages, testConfig);
+            toast.success(t("connection-success"));
+            return;
         } catch (error) {
             toast.error(
                 `${t("connection-failed")}: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -107,7 +111,7 @@ function ConfigForm({
         } finally {
             setIsTesting(false);
         }
-    }, [apiKey, apiUrl, model, t]);
+    }, [apiKey, apiUrl, model, apiType, t]);
 
     return (
         <PopupLayout
@@ -135,25 +139,50 @@ function ConfigForm({
                         <div className="text-sm py-1">
                             {t("ai-config-api-type")}
                         </div>
-                        <Input
-                            name="ai-config-api-type"
-                            value={t("open-ai-compatible")}
-                            disabled
-                            className="bg-gray-50 dark:bg-gray-900 cursor-not-allowed"
-                        />
+                        <Select
+                            value={apiType}
+                            onValueChange={(value: AIConfig["apiType"]) =>
+                                setApiType(value)
+                            }
+                        >
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="open-ai-compatible">
+                                    {t("open-ai-compatible")}
+                                </SelectItem>
+                                <SelectItem value="google-ai-studio">
+                                    {t("google-ai-studio")}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
                         <div className="text-xs opacity-60 mt-1">
-                            {t("ai-config-api-type-description", {
-                                a: (chunks: React.ReactNode) => (
-                                    <a
-                                        href="https://platform.openai.com/docs/api-reference"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-blue-500 hover:text-blue-600 underline"
-                                    >
-                                        {chunks}
-                                    </a>
-                                ),
-                            })}
+                            {apiType === "open-ai-compatible"
+                                ? t("ai-config-api-type-description", {
+                                      a: (chunks: React.ReactNode) => (
+                                          <a
+                                              href="https://platform.openai.com/docs/api-reference"
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="text-blue-500 hover:text-blue-600 underline"
+                                          >
+                                              {chunks}
+                                          </a>
+                                      ),
+                                  })
+                                : t("ai-config-api-type-google-description", {
+                                      a: (chunks: React.ReactNode) => (
+                                          <a
+                                              href="https://ai.google.dev/api"
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="text-blue-500 hover:text-blue-600 underline"
+                                          >
+                                              {chunks}
+                                          </a>
+                                      ),
+                                  })}
                         </div>
                     </div>
 
