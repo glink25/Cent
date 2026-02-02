@@ -81,7 +81,7 @@ export class OfflineStorage {
     }
     async deleteStore(storeFullName: string) {
         this.getStore(storeFullName);
-        await this.storeMap.get(storeFullName)?.storage.dangerousClearAll();
+        await this.storeMap.get(storeFullName)?.storage.clearStorages();
         this.notifyChange(storeFullName);
         return;
     }

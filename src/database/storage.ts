@@ -160,6 +160,10 @@ export class BillIndexedDBStorage implements StashStorage {
             },
         };
     };
+    clearStorages = () => {
+        return deleteDB(this.dbName);
+    };
+
     dangerousClearAll = async () => {
         // return deleteDB(this.dbName);
         const databases = await indexedDB.databases();
