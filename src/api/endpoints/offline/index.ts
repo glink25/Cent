@@ -1,4 +1,5 @@
 import { BillIndexedDBStorage } from "@/database/storage";
+import { t } from "@/locale";
 import type { SyncEndpointFactory } from "../type";
 import { OfflineStorage } from "./core";
 
@@ -35,7 +36,13 @@ export const OfflineEndpoint: SyncEndpointFactory = {
             fetchAllBooks: repo.fetchAllStore.bind(repo),
             createBook: repo.createStore.bind(repo),
             initBook: repo.initStore.bind(repo),
-            deleteBook: repo.deleteStore.bind(repo),
+            deleteBook: (name) => {
+                const ok = confirm(t("delete-book-offline-tip"));
+                if (!ok) {
+                    return Promise.reject();
+                }
+                return repo.deleteStore(name);
+            },
             inviteForBook: undefined,
 
             batch: repo.batch.bind(repo),

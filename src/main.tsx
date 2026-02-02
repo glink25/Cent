@@ -1,4 +1,5 @@
 import "./utils/shim";
+import "@/utils/fetch-proxy";
 
 import { StrictMode, Suspense } from "react";
 import { createRoot } from "react-dom/client";

@@ -75,6 +75,7 @@ export type StorageFactory<V = any> = (
 export interface StashStorage {
     createArrayableStorage: ArrayableStorageFactory;
     createStorage: StorageFactory;
+    clearStorages: () => Promise<void>;
     dangerousClearAll: () => Promise<void>;
 }
 
