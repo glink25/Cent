@@ -664,5 +664,6 @@
   "relayr-encrypt-public-key-description": "用于加密传输数据的 RSA 公钥",
   "relayr-public-key-copied": "公钥已复制",
   "copy-public-key": "复制公钥",
-  "delete-book-offline-tip": "确定要删除该账本吗？账本内所有数据都将丢失无法找回"
+  "delete-book-offline-tip": "确定要删除该账本吗？账本内所有数据都将丢失无法找回",
+  "overspending": "超支"
 }

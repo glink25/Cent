@@ -76,6 +76,8 @@ export function BudgetBar({
     time?: { percent: number; leftDays: number; totalDays: number };
 }) {
     const t = useIntl();
+
+    const totalLeft = total - used;
     return (
         <>
             <BudgetProgress
@@ -107,16 +109,21 @@ export function BudgetBar({
                     <div>
                         {t("total-budget")}: {total}
                     </div>
-                    <div>
-                        {t("total-left")}: {(total - used).toFixed(2)}
-                    </div>
+                    {totalLeft > 0 ? (
+                        <div>
+                            {t("total-left")}: {totalLeft.toFixed(2)}
+                        </div>
+                    ) : (
+                        <div className="text-semantic-expense">
+                            {t("overspending")}: {totalLeft.toFixed(2)}
+                        </div>
+                    )}
                     {time && (
                         <>
                             {t("daily-left")}:
-                            {(
-                                (total - used) /
-                                Math.max(1, time.leftDays)
-                            ).toFixed(2)}
+                            {(totalLeft / Math.max(1, time.leftDays)).toFixed(
+                                2,
+                            )}
                         </>
                     )}
                 </div>

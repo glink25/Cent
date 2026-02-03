@@ -125,8 +125,7 @@ export default function BudgetCard({
                         )}
                     </div>
                 </div>
-                {budget.totalBudget !== 0 &&
-                encountered?.categoriesUsed?.length === 1 ? (
+                {budget.totalBudget !== 0 ? (
                     <div className="flex flex-col">
                         <BudgetBar
                             total={total}
