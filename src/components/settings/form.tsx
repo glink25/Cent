@@ -2,6 +2,8 @@ import { StorageAPI, StorageDeferredAPI } from "@/api/storage";
 import PopupLayout from "@/layouts/popup-layout";
 import { useIntl } from "@/locale";
 import { useUserStore } from "@/store/user";
+import { clearCached } from "@/utils/cache";
+import { GetOnlineAssetsCacheKey } from "@/utils/constant";
 import TagSettingsItem from "../bill-tag";
 import { BookSettings } from "../book";
 import Budget from "../budget";
@@ -31,6 +33,7 @@ function UserInfo() {
         }
         await Promise.all([
             StorageAPI.logout(),
+            clearCached(GetOnlineAssetsCacheKey),
             new Promise<void>((res) => {
                 setTimeout(() => {
                     res();
