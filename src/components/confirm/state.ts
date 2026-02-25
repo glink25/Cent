@@ -3,7 +3,7 @@ import { create } from "zustand";
 import { getEnableHashMode } from "@/store/preference";
 import hashBack from "./hash-back";
 
-const CONFIRM_DIALOG_BASE_Z = 2;
+const CONFIRM_DIALOG_BASE_Z = 4;
 
 // 单个实例的状态定义
 type InstanceState<Value = any, Returned = any> = {
