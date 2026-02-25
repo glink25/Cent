@@ -10,8 +10,10 @@ import createConfirmProvider from "../confirm";
 import IOSUnscrolledInput from "../input";
 import { Button } from "../ui/button";
 
+// 简易对话框，调用后弹出对话框，包含取消和确定按钮，点击取消将会reject promise，点击确认则会resolve，值取决于对话框中input的值
 type PromptOptions = {
     title: ReactNode;
+    // 可以指定input的属性，如果input为undefined，则不会显示input
     input?: DetailedHTMLProps<
         InputHTMLAttributes<HTMLInputElement>,
         HTMLInputElement
@@ -50,7 +52,7 @@ const PromptForm = ({
                 )}
 
                 <div className="w-full flex gap-2 pt-2 items-center justify-end">
-                    {!edit?.cancellable && (
+                    {edit?.cancellable !== false && (
                         <Button
                             variant="ghost"
                             size="sm"

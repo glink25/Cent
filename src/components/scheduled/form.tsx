@@ -23,6 +23,7 @@ import { useUserStore } from "@/store/user";
 import { cn } from "@/utils";
 import { showBillEditor } from "../bill-editor";
 import BillItem from "../ledger/item";
+import modal from "../modal";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
@@ -109,15 +110,13 @@ export default function ScheduledEditForm({
         if (formatted.enabled) {
             const needBills = await fillScheduledBills(formatted);
             if (needBills.length > 0) {
-                const ok = confirm(
-                    t("scheduled-lack-bills", {
+                await modal.prompt({
+                    title: t("scheduled-lack-bills", {
                         n: needBills.length,
                     }),
-                );
-                if (ok) {
-                    formatted.latest = Date.now() + 1;
-                    formatted.needBills = needBills;
-                }
+                });
+                formatted.latest = Date.now() + 1;
+                formatted.needBills = needBills;
             }
         }
         onConfirm?.(formatted);

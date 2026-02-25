@@ -14,6 +14,7 @@ import {
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { useCallback, useRef, useState } from "react";
 import { useIsDesktop } from "@/hooks/use-media-query";
+import { cn } from "@/utils";
 import { getStrictContext } from "./get-strict-context";
 import { useControlledState } from "./use-controlled-state";
 
@@ -147,13 +148,13 @@ function DialogOverlay({
         <DialogPrimitive.Overlay data-slot="dialog-overlay" asChild forceMount>
             <div
                 key="dialog-overlay"
-                style={{ opacity }}
-                className="!transition-none opacity-0"
+                {...props}
+                style={{ ...props.style, opacity }}
+                className={cn("!transition-none opacity-0", props.className)}
                 // initial={{ opacity: 0 }}
                 // animate={{ opacity: 1 }}
                 // exit={{ opacity: 0 }}
                 // transition={transition}
-                {...props}
             />
         </DialogPrimitive.Overlay>
     );

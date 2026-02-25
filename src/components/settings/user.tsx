@@ -6,6 +6,7 @@ import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
 import createConfirmProvider from "../confirm";
 import Deletable from "../deletable";
+import modal from "../modal";
 import { Button } from "../ui/button";
 
 function Form({ onCancel }: { onCancel?: () => void }) {
@@ -15,7 +16,10 @@ function Form({ onCancel }: { onCancel?: () => void }) {
     const creators = useCreators();
 
     const toEditName = async (user: { id: string }) => {
-        const newName = prompt(t("please-enter-nickname"));
+        const newName = (await modal.prompt({
+            title: t("please-enter-nickname"),
+            input: { type: "text" },
+        })) as string;
         if (!newName) {
             return;
         }

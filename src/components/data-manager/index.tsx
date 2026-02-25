@@ -74,10 +74,8 @@ function Form({ onCancel }: { onCancel?: () => void }) {
     };
 
     const toShrinkData = async () => {
-        const ok = confirm(t("bill-compression-tip"));
-        if (!ok) {
-            return;
-        }
+        await modal.prompt({ title: t("bill-compression-tip") });
+
         const isSynced = useLedgerStore.getState().sync === "success";
         if (!isSynced) {
             toast.warning(t("wait-synced-tip"));

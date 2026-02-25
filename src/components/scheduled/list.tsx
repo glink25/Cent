@@ -7,6 +7,7 @@ import {
 import PopupLayout from "@/layouts/popup-layout";
 import { useIntl } from "@/locale";
 import { useLedgerStore } from "@/store/ledger";
+import modal from "../modal";
 import { Button } from "../ui/button";
 import { Switch } from "../ui/switch";
 import { showScheduledEdit } from ".";
@@ -89,21 +90,17 @@ export default function ScheduledListForm({
                                                 const needBills =
                                                     await fillScheduledBills(s);
                                                 if (needBills.length > 0) {
-                                                    const ok = confirm(
-                                                        t(
+                                                    await modal.prompt({
+                                                        title: t(
                                                             "scheduled-lack-bills",
                                                             {
                                                                 n: needBills.length,
                                                             },
                                                         ),
-                                                    );
-                                                    if (ok) {
-                                                        useLedgerStore
-                                                            .getState()
-                                                            .addBills(
-                                                                needBills,
-                                                            );
-                                                    }
+                                                    });
+                                                    useLedgerStore
+                                                        .getState()
+                                                        .addBills(needBills);
                                                 }
                                             }
                                             await update(s.id, {
@@ -139,9 +136,14 @@ export default function ScheduledListForm({
                                     variant="destructive"
                                     className="w-[24px] h-[24px] p-0"
                                     onClick={async () => {
-                                        const ok = confirm(
-                                            t("scheduled-delete-warning"),
-                                        );
+                                        const ok = await modal
+                                            .prompt({
+                                                title: t(
+                                                    "scheduled-delete-warning",
+                                                ),
+                                            })
+                                            .then(() => true)
+                                            .catch(() => false);
                                         if (!ok) return;
                                         await update(s.id, undefined);
                                     }}

@@ -5,6 +5,7 @@ import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
 import { useIsLogin } from "@/store/user";
 import Loading from "../loading";
+import modal from "../modal";
 import { Button } from "../ui/button";
 import { Checkbox } from "../ui/checkbox";
 import { Label } from "../ui/label";
@@ -120,7 +121,10 @@ export function BookForm() {
                 <Button
                     disabled={creating}
                     onClick={async () => {
-                        const name = prompt(t("please-input-book-name"));
+                        const name = (await modal.prompt({
+                            title: t("please-input-book-name"),
+                            input: { type: "text" },
+                        })) as string;
                         if (!name) {
                             return;
                         }

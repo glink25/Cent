@@ -3,6 +3,7 @@ import { DefaultCurrencyId } from "@/api/currency/currencies";
 import { useCurrency } from "@/hooks/use-currency";
 import type { BillFilter } from "@/ledger/type";
 import { useIntl } from "@/locale";
+import modal from "../modal";
 import { Button } from "../ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "../ui/select";
@@ -109,13 +110,12 @@ export default function BillFilterView({
                     {!edit?.hideDelete && (
                         <Button
                             variant="destructive"
-                            onClick={() => {
-                                const ok = confirm(
-                                    t("are-you-sure-to-delete-this-filter"),
-                                );
-                                if (!ok) {
-                                    return;
-                                }
+                            onClick={async () => {
+                                await modal.prompt({
+                                    title: t(
+                                        "are-you-sure-to-delete-this-filter",
+                                    ),
+                                });
                                 onConfirm?.("delete");
                             }}
                         >

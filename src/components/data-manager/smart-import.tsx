@@ -6,6 +6,7 @@ import { BillCategories } from "@/ledger/category";
 import type { ExportedJSON } from "@/ledger/type";
 import { t, useIntl } from "@/locale";
 import { readClipboard } from "@/utils/clipboard";
+import modal from "../modal";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import {
@@ -74,8 +75,11 @@ export function SmartImport({ onCancel }: { onCancel?: () => void }) {
         });
     };
 
-    const toEditName = () => {
-        const name = prompt(t("please-enter-a-new-schema-name"));
+    const toEditName = async () => {
+        const name = (await modal.prompt({
+            title: t("please-enter-a-new-schema-name"),
+            input: { type: "text" },
+        })) as string;
         if (!name) {
             return;
         }

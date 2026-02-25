@@ -8,6 +8,7 @@ import Budget from "../budget";
 import CategorySettingsItem from "../category";
 import CurrencySettingsItem from "../currency";
 import DataManagerSettingsItem from "../data-manager";
+import modal from "../modal";
 import ScheduledSettingsItems from "../scheduled/settings-item";
 import { Button } from "../ui/button";
 import AboutSettingsItem, { AdvancedGuideItem } from "./about";
@@ -25,10 +26,8 @@ function UserInfo() {
     const t = useIntl();
     const { id, avatar_url, name, expired } = useUserStore();
     const toLogOut = async () => {
-        const ok = confirm(t("logout-warning"));
-        if (!ok) {
-            return;
-        }
+        await modal.prompt({ title: t("logout-warning") });
+
         await Promise.all([
             StorageAPI.logout(),
             new Promise<void>((res) => {

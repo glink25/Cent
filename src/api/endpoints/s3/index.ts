@@ -57,7 +57,7 @@ export const S3Endpoint: SyncEndpointFactory = {
         location.reload();
     },
     manuallyLogin: undefined,
-    init: () => {
+    init: ({ modal }) => {
         const auth = getAuth();
         if (!auth) {
             throw new Error("S3 auth not found");
@@ -159,7 +159,9 @@ export const S3Endpoint: SyncEndpointFactory = {
                 });
             },
             deleteBook: async () => {
-                confirm("请在您的 S3 存储桶中手动删除该文件夹");
+                await modal.prompt({
+                    title: "请在您的 S3 存储桶中手动删除该文件夹",
+                });
             },
             inviteForBook: undefined,
 

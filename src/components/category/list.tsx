@@ -7,6 +7,7 @@ import type { BillCategory, BillType } from "@/ledger/type";
 import { categoriesGridClassName, treeCategories } from "@/ledger/utils";
 import { useIntl } from "@/locale";
 import { cn } from "@/utils";
+import modal from "../modal";
 import { showSortableList } from "../sortable";
 import { Button } from "../ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
@@ -61,10 +62,9 @@ export default function CategoryList({
             right={
                 <Button
                     onClick={async () => {
-                        const ok = confirm(t("sure-to-reset-categories"));
-                        if (!ok) {
-                            return;
-                        }
+                        await modal.prompt({
+                            title: t("sure-to-reset-categories"),
+                        });
                         try {
                             await reset();
                             toast.success(t("reset-success"));

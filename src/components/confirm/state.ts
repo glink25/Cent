@@ -3,9 +3,12 @@ import { create } from "zustand";
 import { getEnableHashMode } from "@/store/preference";
 import hashBack from "./hash-back";
 
+const CONFIRM_DIALOG_BASE_Z = 2;
+
 // 单个实例的状态定义
 type InstanceState<Value = any, Returned = any> = {
     visible: boolean;
+    zIndex?: number;
     edit?: Value;
     controller?: {
         resolve: (val: Returned) => void;
@@ -64,8 +67,12 @@ export const useGlobalConfirmStore = create<
         }
         set(
             produce((state: GlobalConfirmState) => {
+                const visibleCount = Object.values(state.instances).filter(
+                    (i) => i.visible,
+                ).length;
                 state.instances[id] = {
                     visible: true,
+                    zIndex: CONFIRM_DIALOG_BASE_Z + visibleCount,
                     edit: value,
                     controller: {
                         resolve,
