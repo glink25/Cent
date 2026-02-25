@@ -55,6 +55,6 @@ export type SyncEndpointFactory = {
     type: string;
     name: string;
     login: (ctx: { modal: Modal }) => void;
-    manuallyLogin?: () => void;
-    init: () => SyncEndpoint;
+    manuallyLogin?: (ctx: { modal: Modal }) => void;
+    init: (ctx: { modal: Modal }) => SyncEndpoint;
 };

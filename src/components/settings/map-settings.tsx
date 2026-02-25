@@ -6,6 +6,7 @@ import { useIntl } from "@/locale";
 import { useLedgerStore } from "@/store/ledger";
 import { decodeApiKey, encodeApiKey } from "@/utils/api-key";
 import createConfirmProvider from "../confirm";
+import modal from "../modal";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 
@@ -57,9 +58,7 @@ function MapConfigForm({ onCancel }: { onCancel?: () => void }) {
     }, [amapKey, amapSecurityCode, onCancel, t]);
 
     const handleClear = useCallback(async () => {
-        const confirmed = window.confirm(t("are-you-sure-to-clear-map-config"));
-        if (!confirmed) return;
-
+        await modal.prompt({ title: t("are-you-sure-to-clear-map-config") });
         // 清除配置
         await useLedgerStore.getState().updateGlobalMeta((prev) => {
             if (prev.map) {

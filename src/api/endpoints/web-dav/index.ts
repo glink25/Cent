@@ -55,7 +55,7 @@ export const WebDAVEndpoint: SyncEndpointFactory = {
         location.reload();
     },
     manuallyLogin: undefined,
-    init: () => {
+    init: ({ modal }) => {
         const auth = getAuth();
         if (!auth) {
             throw new Error("web dav auth not found");
@@ -152,9 +152,9 @@ export const WebDAVEndpoint: SyncEndpointFactory = {
                 });
             },
             deleteBook: async () => {
-                confirm(
-                    "Please delete this folder on your Web DAV server/app manually",
-                );
+                await modal.prompt({
+                    title: "Please delete this folder on your Web DAV server/app manually",
+                });
             },
             inviteForBook: undefined,
 

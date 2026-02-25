@@ -18,7 +18,7 @@ export const OfflineEndpoint: SyncEndpointFactory = {
         location.reload();
     },
     manuallyLogin: undefined,
-    init: () => {
+    init: ({ modal }) => {
         const repo = new OfflineStorage({
             storage: (name) => new BillIndexedDBStorage(`book-${name}`),
         });
@@ -36,11 +36,8 @@ export const OfflineEndpoint: SyncEndpointFactory = {
             fetchAllBooks: repo.fetchAllStore.bind(repo),
             createBook: repo.createStore.bind(repo),
             initBook: repo.initStore.bind(repo),
-            deleteBook: (name) => {
-                const ok = confirm(t("delete-book-offline-tip"));
-                if (!ok) {
-                    return Promise.reject();
-                }
+            deleteBook: async (name) => {
+                await modal.prompt({ title: t("delete-book-offline-tip") });
                 return repo.deleteStore(name);
             },
             inviteForBook: undefined,

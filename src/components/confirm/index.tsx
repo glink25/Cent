@@ -1,5 +1,5 @@
 import { VisuallyHidden } from "radix-ui";
-import { type ReactNode, useEffect } from "react";
+import { type ReactNode, useEffect, useMemo } from "react";
 import { useShallow } from "zustand/shallow";
 import { cn } from "@/utils";
 import {
@@ -42,7 +42,13 @@ export default function createConfirmProvider<Value, Returned = Value>(
         const state = useGlobalConfirmStore(
             useShallow((s) => s.instances[instanceId]),
         );
-
+        const layerStyle = useMemo(
+            () =>
+                state?.zIndex != null
+                    ? { zIndex: `${state.zIndex}` }
+                    : undefined,
+            [state?.zIndex],
+        );
         // 3. 组件卸载时清理全局 Store 中的数据，避免内存泄漏
         useEffect(() => {
             return () => useGlobalConfirmStore.getState().remove(instanceId);
@@ -72,8 +78,14 @@ export default function createConfirmProvider<Value, Returned = Value>(
                 }}
             >
                 <DialogPortal>
-                    <DialogOverlay className="fixed inset-0 bg-black/50 z-[2]" />
-                    <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center pointer-events-none z-[2]">
+                    <DialogOverlay
+                        className="fixed inset-0 bg-black/50"
+                        style={layerStyle}
+                    />
+                    <div
+                        className="fixed top-0 left-0 w-full h-full flex justify-center items-center pointer-events-none"
+                        style={layerStyle}
+                    >
                         <DialogContent
                             fade={fade}
                             swipe={swipe}

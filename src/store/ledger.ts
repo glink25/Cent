@@ -5,6 +5,7 @@ import { create } from "zustand";
 import type { UserInfo } from "@/api/endpoints/type";
 import { loadStorageAPI } from "@/api/storage/dynamic";
 import { showBookGuide } from "@/components/book/util";
+import modal from "@/components/modal";
 import type { Action, Full, OutputType, Update } from "@/database/stash";
 import type { Bill, GlobalMeta, PersonalMeta } from "@/ledger/type";
 import { t } from "@/locale";
@@ -379,12 +380,13 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
                 },
             );
             if (repeated.length > 0) {
-                const ok = confirm(
-                    `包含${repeated.length}条重复项目，是否去除后继续导入？`,
-                );
-                if (!ok) {
-                    throw new Error("导入取消");
-                }
+                await modal
+                    .prompt({
+                        title: `包含${repeated.length}条重复项目，是否去除后继续导入？`,
+                    })
+                    .catch(() => {
+                        return Promise.reject(new Error("导入取消"));
+                    });
             }
             const repo = getCurrentFullRepoName();
             const creatorId = useUserStore.getState().id;

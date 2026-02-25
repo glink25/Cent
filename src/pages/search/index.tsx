@@ -13,6 +13,7 @@ import {
     BatchEditProvider,
     showBatchEdit,
 } from "@/components/ledger/batch-edit";
+import modal from "@/components/modal";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import useCategory from "@/hooks/use-category";
@@ -106,7 +107,10 @@ export default function Page() {
     const navigate = useNavigate();
     const { addFilter } = useCustomFilters();
     const toSaveFilter = useCallback(async () => {
-        const name = prompt(t("please-enter-a-name-for-current-filter"));
+        const name = (await modal.prompt({
+            title: t("please-enter-a-name-for-current-filter"),
+            input: { type: "text" },
+        })) as string;
         if (!name) {
             return;
         }
@@ -151,14 +155,11 @@ export default function Page() {
               : "indeterminate";
 
     const toBatchDelete = async () => {
-        const ok = confirm(
-            t("batch-delete-confirm", {
+        await modal.prompt({
+            title: t("batch-delete-confirm", {
                 n: selectedIds.length,
             }),
-        );
-        if (!ok) {
-            return;
-        }
+        });
         setEnableSelect(false);
         await useLedgerStore.getState().removeBills(selectedIds);
         await toSearch();

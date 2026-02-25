@@ -27,6 +27,7 @@ import type { BillCategory, BillType } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
 import { cn } from "@/utils";
+import modal from "../modal";
 import CategoryIcon from "./icon";
 import { ICONS } from "./icons";
 
@@ -145,7 +146,10 @@ export default function CategoryEditForm({
             categories: cates.map((c) => c.id),
         });
         if (exist.length > 0) {
-            alert(t("category-delete-alert", { n: exist.length }));
+            modal.prompt({
+                title: t("category-delete-alert", { n: exist.length }),
+                cancellable: false,
+            });
             return;
         }
         // 删除类别

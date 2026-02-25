@@ -22,7 +22,7 @@ const type = (localStorage.getItem(SYNC_ENDPOINT_KEY) ??
     "github") as keyof typeof APIS;
 
 const _StorageAPI = APIS[type] ?? EmptyEndpoint;
-const actions = _StorageAPI.init();
+const actions = _StorageAPI.init({ modal });
 
 export const StorageAPI = {
     name: _StorageAPI.name,
@@ -47,10 +47,10 @@ export const StorageAPI = {
     },
     loginManuallyWith: (type: string) => {
         if (type === "github") {
-            return GithubEndpoint.manuallyLogin?.();
+            return GithubEndpoint.manuallyLogin?.({ modal });
         }
         if (type === "gitee") {
-            return GiteeEndpoint.manuallyLogin?.();
+            return GiteeEndpoint.manuallyLogin?.({ modal });
         }
     },
 };

@@ -10,6 +10,7 @@ import { cn } from "@/utils";
 import { decodeApiKey, encodeApiKey } from "@/utils/api-key";
 import { requestAI } from "../assistant/request";
 import createConfirmProvider from "../confirm";
+import modal from "../modal";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import {
@@ -437,11 +438,9 @@ function Form({ onCancel }: { onCancel?: () => void }) {
 
     const handleDeleteConfig = useCallback(
         async (configId: string) => {
-            const confirmed = window.confirm(
-                t("are-you-sure-to-delete-this-config"),
-            );
-            if (!confirmed) return;
-
+            await modal.prompt({
+                title: t("are-you-sure-to-delete-this-config"),
+            });
             await useLedgerStore.getState().updatePersonalMeta((prev) => {
                 if (!prev.assistant?.configs) return prev;
 

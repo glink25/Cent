@@ -1,3 +1,4 @@
+import type { Modal } from "@/components/modal";
 import { Scheduler } from "@/database/scheduler";
 import { BillIndexedDBStorage } from "@/database/storage";
 import type { Bill } from "@/ledger/type";
@@ -15,12 +16,15 @@ const config = {
 
 const LoginAPI = createLoginAPI();
 
-const manuallyLogin = async () => {
-    const token = prompt(t("please-enter-your-github-token"));
+const manuallyLogin = async ({ modal }: { modal: Modal }) => {
+    const token = await modal.prompt({
+        title: t("please-enter-your-github-token"),
+        input: { type: "text" },
+    });
     if (!token) {
         return;
     }
-    LoginAPI.manuallySetToken(token);
+    LoginAPI.manuallySetToken(token as string);
     location.reload();
 };
 
@@ -29,7 +33,7 @@ export const GithubEndpoint: SyncEndpointFactory = {
     name: "Github",
     login: LoginAPI.login,
     manuallyLogin,
-    init: () => {
+    init: ({ modal }) => {
         LoginAPI.afterLogin();
         const repo = createTidal<Bill>({
             storageFactory: (name) => new BillIndexedDBStorage(`book-${name}`),
@@ -47,22 +51,16 @@ export const GithubEndpoint: SyncEndpointFactory = {
             return repo.replace(`${config.repoPrefix}-`, "");
         };
 
-        const inviteForBook = (bookId: string) => {
-            const ok = confirm(t("invite-tip"));
-            if (!ok) {
-                return;
-            }
+        const inviteForBook = async (bookId: string) => {
+            await modal.prompt({ title: t("invite-tip") });
             window.open(
                 `https://github.com/${bookId}/settings/access`,
                 "_blank",
             );
         };
 
-        const deleteBook = (bookId: string) => {
-            const ok = confirm(t("delete-book-tip"));
-            if (!ok) {
-                return Promise.reject();
-            }
+        const deleteBook = async (bookId: string) => {
+            await modal.prompt({ title: t("delete-book-tip") });
             window.open(`https://github.com/${bookId}/settings`, "_blank");
             return Promise.reject();
         };
