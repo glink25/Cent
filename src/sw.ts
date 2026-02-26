@@ -33,7 +33,12 @@ const navigationHandler = async (params: any) => {
     });
 };
 
-registerRoute(new NavigationRoute(navigationHandler));
+// 不处理 .well-known、__headers 等站点元数据路径，直接走网络
+registerRoute(
+    new NavigationRoute(navigationHandler, {
+        denylist: [/\/\.well-known(\/|$)/, /\/__headers(\/|$)/],
+    }),
+);
 
 // 缓存第三方cdn逻辑
 registerRoute(
