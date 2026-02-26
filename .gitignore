@@ -21,3 +21,15 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Rust build artifacts
+src-tauri/target
+
+# Cargo lock file (可选)
+# 这里的逻辑和 package-lock.json 类似：
+# 如果是开发终端应用，建议提交 Cargo.lock 以保证团队环境一致。
+# 如果你不想提交：
+# /src-tauri/Cargo.lock
+# Tauri bundles and distribution packages
+src-tauri/gen
+src-tauri/binaries

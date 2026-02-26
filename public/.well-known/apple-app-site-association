@@ -1,0 +1,15 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["com.glink.dailycent"],
+        "components": [
+          {
+            "/": "/open/*",
+            "comment": "匹配所有以 /open/ 开头的路径"
+          }
+        ]
+      }
+    ]
+  }
+}
