@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import useCategory from "@/hooks/use-category";
 import { useCurrency } from "@/hooks/use-currency";
 import { useTag } from "@/hooks/use-tag";
+import { useWheelScrollX } from "@/hooks/use-wheel-scroll";
 import PopupLayout from "@/layouts/popup-layout";
 import { amountToNumber, numberToAmount } from "@/ledger/bill";
 import { ExpenseBillCategories, IncomeBillCategories } from "@/ledger/category";
@@ -209,6 +210,9 @@ export default function EditorForm({
         }
         return "triple-zero";
     });
+
+    const tagSelectorRef = useRef<HTMLDivElement>(null);
+    useWheelScrollX(tagSelectorRef);
     return (
         <Calculator.Root
             multiplyKey={multiplyKey}
@@ -401,7 +405,10 @@ export default function EditorForm({
                     )}
                 </div>
                 {/* tags */}
-                <div className="w-full h-[40px] flex-shrink-0 flex-grow-0 flex gap-1 py-1 items-center overflow-x-auto px-2 text-sm font-medium scrollbar-hidden">
+                <div
+                    ref={tagSelectorRef}
+                    className="w-full h-[40px] flex-shrink-0 flex-grow-0 flex gap-1 py-1 items-center overflow-x-auto px-2 text-sm font-medium scrollbar-hidden"
+                >
                     <TagGroupSelector
                         isCreate={isCreate}
                         selectedTags={billState.tagIds}

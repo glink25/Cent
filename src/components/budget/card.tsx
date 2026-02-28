@@ -53,8 +53,8 @@ export default function BudgetCard({
         const now = dayjs();
         const spend = now.diff(currentRange[0]);
         const duration = currentRange[1].diff(currentRange[0]);
-        const totalDays = dayjs.duration(duration).asDays();
-        const spendDays = dayjs.duration(spend).asDays();
+        const totalDays = Math.ceil(dayjs.duration(duration).asDays());
+        const spendDays = Math.floor(dayjs.duration(spend).asDays());
         const leftDays = Math.max(0, totalDays - spendDays);
         return { percent: spend / duration, leftDays, totalDays };
     }, [currentRange]);
@@ -100,6 +100,7 @@ export default function BudgetCard({
             })}
         </>
     );
+
     return (
         <div
             className={cn(
@@ -118,7 +119,8 @@ export default function BudgetCard({
                             <>
                                 {t("today-left")}:
                                 {(
-                                    total / time.totalDays -
+                                    (total - encountered.totalUsed) /
+                                        time.leftDays -
                                     todayEncountered.totalUsed
                                 ).toFixed(2)}
                             </>
