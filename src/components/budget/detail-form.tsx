@@ -33,6 +33,16 @@ function BudgetProgress({
 }) {
     const p = used / total;
     const tp = (todayUsed ?? 0) / total;
+    const totalLeft = total - used;
+    // 计算超支进度条
+    const overs = useMemo(() => {
+        if (totalLeft >= 0) {
+            return [];
+        }
+        const p = Math.abs(totalLeft) / total;
+        const i = Math.floor(p);
+        return [...Array.from({ length: Math.min(i, 3) }, () => 1), p - i];
+    }, [totalLeft, total]);
 
     return (
         <div className="w-full flex items-center h-4 relative">
@@ -53,6 +63,19 @@ function BudgetProgress({
                         width: `${p * 100}%`,
                     }}
                 ></div>
+                {overs.map((p, i) => {
+                    return (
+                        <div
+                            key={i}
+                            className={cn(
+                                "inner h-2 rounded-full absolute left-0 top-0 bg-fuchsia-700/80",
+                            )}
+                            style={{
+                                width: `${p * 100}%`,
+                            }}
+                        ></div>
+                    );
+                })}
             </div>
             <div
                 className="absolute top-0 h-4 bg-slate-500 w-[2px]"
