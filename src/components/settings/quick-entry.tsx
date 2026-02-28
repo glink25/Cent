@@ -218,7 +218,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                                 variant="outline"
                                 onClick={() => {
                                     window.open(
-                                        "https://www.icloud.com/shortcuts/5571a9ebc24544beb6abb51817714389",
+                                        "https://www.icloud.com/shortcuts/31529bde07134e5d931b51ed158ea303",
                                         "_blank",
                                         "noopener,noreferrer",
                                     );
