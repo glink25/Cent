@@ -88,7 +88,12 @@ export const budgetEncountered = (
     currentRange: [Dayjs, Dayjs],
     allCategories: BillCategory[],
 ) => {
-    const filtered = filterOrderedBillListByTimeRange(bills, currentRange);
+    const filtered = filterOrderedBillListByTimeRange(
+        bills,
+        currentRange,
+        true,
+        (v) => budget.joiners.includes(v.creatorId),
+    );
     let totalUsed = 0;
     const categoriesUsed = budget.categoriesBudget?.map((c) => ({
         id: c.id,
