@@ -122,9 +122,10 @@ export function BudgetBar({
                     {time && (
                         <div>
                             {t("daily-expense")}:
-                            {(used / (time.totalDays - time?.leftDays)).toFixed(
-                                2,
-                            )}
+                            {(
+                                used /
+                                Math.max(1, time.totalDays - time?.leftDays)
+                            ).toFixed(2)}
                         </div>
                     )}
                 </div>
