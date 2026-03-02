@@ -87,6 +87,11 @@ export const filterOrderedBillListByTimeRange = <T extends { time: number }>(
     orderedList: T[],
     range: [number | dayjs.Dayjs, number | dayjs.Dayjs],
     desc = true,
+    customFilter?: (item: T) => boolean,
 ) => {
-    return filterOrderedBillListByTimeRangeAnd(orderedList, { range, desc });
+    return filterOrderedBillListByTimeRangeAnd(orderedList, {
+        range,
+        desc,
+        customFilter,
+    });
 };
