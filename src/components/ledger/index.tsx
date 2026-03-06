@@ -3,7 +3,13 @@
 
 import { useVirtualizer } from "@tanstack/react-virtual";
 import dayjs, { type Dayjs } from "dayjs";
-import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
+import {
+    forwardRef,
+    useEffect,
+    useImperativeHandle,
+    useRef,
+    useState,
+} from "react";
 import type { OutputType } from "@/database/stash";
 import type { Bill } from "@/ledger/type";
 import { cn } from "@/utils";
@@ -72,6 +78,7 @@ const Ledger = forwardRef<LedgerRef, LedgerProps>(
         ref,
     ) => {
         const parentRef = useRef<HTMLDivElement>(null);
+        const [stickyDate, setStickyDate] = useState<Dayjs | null>(null);
 
         useImperativeHandle(ref, () => ({
             scrollToIndex: (index: number) => {
@@ -97,20 +104,27 @@ const Ledger = forwardRef<LedgerRef, LedgerProps>(
             const handleScroll = () => {
                 const scrollTop = el.scrollTop;
                 const visibleItems = rowVirtualizer.getVirtualItems();
+                // 找到第一个底部超过 scrollTop 的 item，即当前顶部可见的那个
                 const firstVisible = visibleItems.find(
-                    (item) => item.start >= scrollTop,
+                    (item) => item.start + item.size > scrollTop,
                 );
                 if (firstVisible) {
                     const firstBill = bills[firstVisible.index];
                     const curDate = dayjs.unix(firstBill.time / 1000);
                     onVisibleDateChange?.(curDate);
+                    if (enableDivideAsOrdered) {
+                        setStickyDate(prev => {
+                            if (prev && curDate.isSame(prev, 'day')) return prev;
+                            return curDate;
+                        });
+                    }
                 }
             };
             el.addEventListener("scroll", handleScroll, { passive: true });
             // 初始调用
             handleScroll();
             return () => el.removeEventListener("scroll", handleScroll);
-        }, [bills, onVisibleDateChange, rowVirtualizer]);
+        }, [bills, enableDivideAsOrdered, onVisibleDateChange, rowVirtualizer]);
 
         useEffect(() => {
             if (!presence) {
@@ -132,12 +146,21 @@ const Ledger = forwardRef<LedgerRef, LedgerProps>(
         return (
             <div
                 ref={parentRef}
-                className={className}
+                className={cn("relative", className)}
                 style={{
                     height: `100%`,
                     overflow: "auto",
                 }}
             >
+                {enableDivideAsOrdered && stickyDate && (
+                    <div
+                        key={stickyDate.format("YYYY-MM-DD")}
+                        className="sticky top-0 z-10 pl-12 pr-4 py-1 text-sm ledger-divider bg-background/80 backdrop-blur-sm cursor-pointer"
+                        onClick={() => onDateClick?.(stickyDate)}
+                    >
+                        {denseDate(stickyDate)}
+                    </div>
+                )}
                 <div
                     data-main-ledger
                     className={cn(
@@ -186,15 +209,6 @@ const Ledger = forwardRef<LedgerRef, LedgerProps>(
                                     width: "100%",
                                 }}
                             >
-                                {virtualRow.index === 0 &&
-                                    enableDivideAsOrdered && (
-                                        <Divider
-                                            date={curDate}
-                                            onClick={() =>
-                                                onDateClick?.(curDate)
-                                            }
-                                        />
-                                    )}
                                 <div
                                     className={`w-full flex items-center overflow-hidden ledger-item item-${virtualRow.index}`}
                                     onClick={
