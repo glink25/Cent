@@ -11,21 +11,15 @@ export default function CategoryIcon({
     const isSvgString = icon.trim().startsWith("<svg");
 
     if (isSvgString) {
-        // 用 data-uri 转换成 <img> 的 src
-        const svgSrc = "data:image/svg+xml;utf8," + encodeURIComponent(icon);
         return (
             <i
                 className={cn(
-                    "flex items-center justify-center min-w-4 min-h-4",
+                    "flex items-center justify-center min-w-4 min-h-4 [&>svg]:w-[1em] [&>svg]:h-[1em]",
                     className,
                 )}
-                style={{
-                    backgroundImage: `url(${svgSrc})`,
-                    backgroundSize: "contain",
-                    backgroundPosition: "center",
-                    backgroundRepeat: "no-repeat",
-                }}
-            ></i>
+                // biome-ignore lint/security/noDangerouslySetInnerHtml: SVG string needs inline rendering to support currentColor
+                dangerouslySetInnerHTML={{ __html: icon }}
+            />
         );
     }
 
