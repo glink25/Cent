@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import useCategory from "@/hooks/use-category";
 import { useCurrency } from "@/hooks/use-currency";
+import { useIsDesktop } from "@/hooks/use-media-query";
 import { useTag } from "@/hooks/use-tag";
 import { useWheelScrollX } from "@/hooks/use-wheel-scroll";
 import PopupLayout from "@/layouts/popup-layout";
@@ -44,6 +45,37 @@ const defaultBill = {
     categoryId: ExpenseBillCategories[0].id,
 };
 
+type KeyboardHeightBounds = {
+    min: number;
+    max: number;
+};
+
+const normalizeKeyboardHeightPercent = (value: number) =>
+    Math.max(0, Math.min(100, Math.round(value)));
+
+const getKeyboardHeightBounds = (isDesktop: boolean): KeyboardHeightBounds => {
+    const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+    if (isDesktop) {
+        return {
+            min: 280,
+            max: Math.min(
+                460,
+                Math.max(360, Math.round(viewportHeight * 0.56)),
+            ),
+        };
+    }
+    const min = Math.round(Math.min(300, Math.max(280, viewportHeight * 0.36)));
+    const max = Math.round(
+        Math.min(520, Math.max(min + 100, viewportHeight * 0.62)),
+    );
+    return { min, max };
+};
+
+const getKeyboardHeight = (percent: number, bounds: KeyboardHeightBounds) => {
+    const ratio = normalizeKeyboardHeightPercent(percent) / 100;
+    return Math.round(bounds.min + (bounds.max - bounds.min) * ratio);
+};
+
 export default function EditorForm({
     edit,
     onCancel,
@@ -54,6 +86,7 @@ export default function EditorForm({
     onCancel?: () => void;
 }) {
     const t = useIntl();
+    const isDesktop = useIsDesktop();
     const goBack = () => {
         onCancel?.();
     };
@@ -213,6 +246,71 @@ export default function EditorForm({
 
     const tagSelectorRef = useRef<HTMLDivElement>(null);
     useWheelScrollX(tagSelectorRef);
+    const [keyboardHeightPercent, setKeyboardHeightPercent] = useState(() =>
+        normalizeKeyboardHeightPercent(
+            usePreferenceStore.getState().keyboardHeight ?? 50,
+        ),
+    );
+    const [keyboardHeightBounds, setKeyboardHeightBounds] = useState(() =>
+        getKeyboardHeightBounds(isDesktop),
+    );
+    const keyboardDragRef = useRef<{
+        pointerId: number;
+        startY: number;
+        startPercent: number;
+        lastPercent: number;
+    } | null>(null);
+
+    const persistKeyboardHeight = useCallback((value: number) => {
+        const next = normalizeKeyboardHeightPercent(value);
+        setKeyboardHeightPercent(next);
+        usePreferenceStore.setState((prev) => ({
+            ...prev,
+            keyboardHeight: next,
+        }));
+    }, []);
+
+    useEffect(() => {
+        const updateBounds = () => {
+            setKeyboardHeightBounds(getKeyboardHeightBounds(isDesktop));
+        };
+        updateBounds();
+
+        const viewport = window.visualViewport;
+        window.addEventListener("resize", updateBounds);
+        viewport?.addEventListener("resize", updateBounds);
+
+        return () => {
+            window.removeEventListener("resize", updateBounds);
+            viewport?.removeEventListener("resize", updateBounds);
+        };
+    }, [isDesktop]);
+
+    const keyboardHeight = useMemo(
+        () => getKeyboardHeight(keyboardHeightPercent, keyboardHeightBounds),
+        [keyboardHeightBounds, keyboardHeightPercent],
+    );
+
+    const updateKeyboardDrag = useCallback(
+        (clientY: number) => {
+            const drag = keyboardDragRef.current;
+            if (!drag) {
+                return;
+            }
+            const distance =
+                keyboardHeightBounds.max - keyboardHeightBounds.min;
+            if (distance <= 0) {
+                return;
+            }
+            const next = normalizeKeyboardHeightPercent(
+                drag.startPercent + ((drag.startY - clientY) / distance) * 100,
+            );
+            drag.lastPercent = next;
+            setKeyboardHeightPercent(next);
+        },
+        [keyboardHeightBounds],
+    );
+
     return (
         <Calculator.Root
             multiplyKey={multiplyKey}
@@ -244,7 +342,7 @@ export default function EditorForm({
             input={monitorFocused}
         >
             <PopupLayout
-                className="h-full gap-2 pb-0 overflow-y-auto scrollbar-hidden"
+                className="h-full gap-2 pb-0 overflow-hidden"
                 onBack={goBack}
                 title={
                     <div className="pl-[54px] w-full min-h-12 rounded-lg flex pt-2 pb-0 overflow-hidden scrollbar-hidden">
@@ -339,8 +437,8 @@ export default function EditorForm({
                 }
             >
                 {/* categories */}
-                <div className="flex-1 flex-shrink-0 overflow-y-auto min-h-[80px] scrollbar-hidden flex flex-col px-2 text-sm font-medium gap-2">
-                    <div className="flex flex-col min-h-[80px] grow-[2] shrink overflow-y-auto scrollbar-hidden w-full">
+                <div className="flex-1 min-h-0 overflow-hidden scrollbar-hidden flex flex-col px-2 text-sm font-medium gap-2">
+                    <div className="flex flex-col min-h-0 grow-[2] shrink overflow-y-auto scrollbar-hidden w-full">
                         <div
                             className={cn(
                                 "grid gap-1",
@@ -375,7 +473,7 @@ export default function EditorForm({
                         </div>
                     </div>
                     {(subCategories?.length ?? 0) > 0 && (
-                        <div className="flex flex-col min-h-[68px] grow-[1] shrink max-h-fit overflow-y-auto rounded-md border p-2 shadow scrollbar-hidden">
+                        <div className="flex flex-col min-h-[68px] min-h-0 grow-[1] shrink overflow-y-auto rounded-md border p-2 shadow scrollbar-hidden">
                             <div
                                 className={cn(
                                     "grid gap-1",
@@ -439,10 +537,83 @@ export default function EditorForm({
                 {/* keyboard area */}
                 <div
                     className={cn(
-                        "h-[calc(480px+160px*(var(--bekh,0.5)-0.5))] sm:h-[calc(380px+160px*(var(--bekh,0.5)-0.5))] min-h-[264px] max-h-[calc(100%-124px)]",
                         "keyboard-field flex gap-2 flex-col justify-start bg-stone-900 sm:rounded-b-md text-[white] p-2 pb-[max(env(safe-area-inset-bottom),8px)]",
                     )}
+                    style={{ height: keyboardHeight }}
                 >
+                    <div className="flex justify-center">
+                        <div
+                            role="slider"
+                            aria-label={t("keyboard-height")}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            aria-valuenow={keyboardHeightPercent}
+                            tabIndex={0}
+                            className="flex h-4 w-16 touch-none select-none items-center justify-center rounded-full cursor-row-resize"
+                            onPointerDown={(e) => {
+                                keyboardDragRef.current = {
+                                    pointerId: e.pointerId,
+                                    startY: e.clientY,
+                                    startPercent: keyboardHeightPercent,
+                                    lastPercent: keyboardHeightPercent,
+                                };
+                                e.currentTarget.setPointerCapture(e.pointerId);
+                            }}
+                            onPointerMove={(e) => {
+                                if (
+                                    keyboardDragRef.current?.pointerId !==
+                                    e.pointerId
+                                ) {
+                                    return;
+                                }
+                                updateKeyboardDrag(e.clientY);
+                            }}
+                            onPointerUp={(e) => {
+                                if (
+                                    keyboardDragRef.current?.pointerId !==
+                                    e.pointerId
+                                ) {
+                                    return;
+                                }
+                                updateKeyboardDrag(e.clientY);
+                                persistKeyboardHeight(
+                                    keyboardDragRef.current.lastPercent,
+                                );
+                                keyboardDragRef.current = null;
+                                e.currentTarget.releasePointerCapture(
+                                    e.pointerId,
+                                );
+                            }}
+                            onPointerCancel={(e) => {
+                                if (
+                                    keyboardDragRef.current?.pointerId !==
+                                    e.pointerId
+                                ) {
+                                    return;
+                                }
+                                persistKeyboardHeight(
+                                    keyboardDragRef.current.lastPercent,
+                                );
+                                keyboardDragRef.current = null;
+                            }}
+                            onKeyDown={(e) => {
+                                if (e.key === "ArrowUp") {
+                                    e.preventDefault();
+                                    persistKeyboardHeight(
+                                        keyboardHeightPercent + 5,
+                                    );
+                                }
+                                if (e.key === "ArrowDown") {
+                                    e.preventDefault();
+                                    persistKeyboardHeight(
+                                        keyboardHeightPercent - 5,
+                                    );
+                                }
+                            }}
+                        >
+                            <div className="h-1 w-12 rounded-full bg-white/25" />
+                        </div>
+                    </div>
                     <div className="flex justify-between items-center">
                         <div className="flex gap-2 items-center h-10">
                             <div className="flex items-center h-full">
@@ -450,7 +621,7 @@ export default function EditorForm({
                                     <div className="pr-2 flex gap-[6px] items-center overflow-x-auto max-w-22 h-full scrollbar-hidden">
                                         {billState.images?.map((img, index) => (
                                             <Deletable
-                                                // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                                                // biome-ignore lint/suspicious/noArrayIndexKey: image chips are rendered in selection order
                                                 key={index}
                                                 onDelete={() => {
                                                     setBillState((v) => ({
@@ -576,7 +747,7 @@ export default function EditorForm({
 
                     <button
                         type="button"
-                        className="flex h-[80px] min-h-[48px] justify-center items-center bg-green-700 rounded-lg font-bold text-lg cursor-pointer"
+                        className="flex h-14 sm:h-[80px] min-h-[48px] justify-center items-center bg-green-700 rounded-lg font-bold text-lg cursor-pointer"
                         onClick={toConfirm}
                     >
                         <i className="icon-[mdi--check] icon-md"></i>

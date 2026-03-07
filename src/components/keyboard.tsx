@@ -41,6 +41,16 @@ type ButtonValue = string;
 // --- Context ---
 const CalculatorContext = createContext<CalculatorContextType | null>(null);
 
+const useCalculatorContext = () => {
+    const ctx = useContext(CalculatorContext);
+    if (!ctx) {
+        throw new Error(
+            "Calculator components must be used within Calculator.Root",
+        );
+    }
+    return ctx;
+};
+
 const getLayout = (multiplyKey?: "double-zero" | "triple-zero") => [
     { label: "1", cols: 2 },
     { label: "2", cols: 2 },
@@ -261,13 +271,13 @@ export const CalculatorRoot = ({
 };
 
 export const CalculatorValue = ({ className }: { className?: string }) => {
-    const { formula } = useContext(CalculatorContext)!;
+    const { formula } = useCalculatorContext();
     return (
         <div data-calculator-value className={cn(className)}>
             {toText(formula)
                 .split("")
                 .map((v, i) => (
-                    // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                    // biome-ignore lint/suspicious/noArrayIndexKey: calculator digits are positional
                     <span key={i}>{v === "x" ? "×" : v}</span>
                 ))}
         </div>
@@ -282,9 +292,14 @@ export const CalculatorKeyboard = ({
     onKey?: (v: string) => void;
 }) => {
     const t = useIntl();
-    const { handleButtonClick, Layout } = useContext(CalculatorContext)!;
+    const { handleButtonClick, Layout } = useCalculatorContext();
     return (
-        <div className={cn("grid grid-cols-8 gap-2", className)}>
+        <div
+            className={cn(
+                "grid h-full min-h-0 grid-cols-8 grid-rows-4 gap-1 sm:gap-2",
+                className,
+            )}
+        >
             {Layout.map((row) => (
                 <Button
                     variant="ghost"
@@ -296,7 +311,7 @@ export const CalculatorKeyboard = ({
                     }}
                     className={cn(
                         (row.cols ?? 1) > 1 && "col-span-2",
-                        "h-full text-lg font-semibold bg-background/10 active:bg-background/50 transition-all",
+                        "h-full min-h-0 px-2 py-1 text-base sm:px-4 sm:py-2 sm:text-lg font-semibold bg-background/10 active:bg-background/50 transition-all",
                         row.label === "c" && "bg-destructive/60",
                     )}
                 >
