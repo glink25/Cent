@@ -425,6 +425,7 @@ function DialogContent({
                 return;
             }
             initialPlayed.current = true;
+            exitPlayed.current = false;
             // 执行“进入”动画
             Array.from(Object.entries(currentVariant.animate)).forEach(
                 ([prop, value]) => {
@@ -449,6 +450,7 @@ function DialogContent({
                 return;
             }
             exitPlayed.current = true;
+            initialPlayed.current = false;
             // 执行“退出”动画
             const exitAnimation = async () => {
                 await contentRef.current?.animate(

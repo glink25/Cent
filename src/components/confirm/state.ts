@@ -16,6 +16,7 @@ type InstanceState<Value = any, Returned = any> = {
         promise: Promise<Returned>;
         cancel: () => void;
     };
+    openId: string;
 };
 
 // 全局 Store 的总状态
@@ -41,6 +42,7 @@ export const useGlobalConfirmStore = create<
         const controller = get().instances[id]?.controller;
         if (controller) return [controller.promise, controller.cancel] as const;
 
+        const openId = `id-${Date.now()}`;
         const { promise, reject, resolve } = Promise.withResolvers<any>();
 
         let cancelled = false;
@@ -74,6 +76,7 @@ export const useGlobalConfirmStore = create<
                     visible: true,
                     zIndex: CONFIRM_DIALOG_BASE_Z + visibleCount,
                     edit: value,
+                    openId,
                     controller: {
                         resolve,
                         reject,

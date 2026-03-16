@@ -56,7 +56,7 @@ export default function createConfirmProvider<Value, Returned = Value>(
         // 如果该实例还未初始化（从未调用过 open），则不渲染
         if (!state) return null;
 
-        const { visible, edit, controller } = state;
+        const { visible, edit, controller, openId } = state;
 
         const onCancel = () => {
             controller?.cancel();
@@ -72,6 +72,7 @@ export default function createConfirmProvider<Value, Returned = Value>(
 
         return (
             <Dialog
+                key={openId}
                 open={visible}
                 onOpenChange={(v) => {
                     if (!v) onCancel();
