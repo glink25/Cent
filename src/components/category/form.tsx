@@ -356,13 +356,21 @@ export default function CategoryEditForm({
                             className="w-full h-full flex flex-col gap-2 m-0"
                         >
                             <div className="w-full h-full flex flex-col gap-2">
-                                <div className="text-sm opacity-80 flex justify-between items-center px-2">
-                                    <div>{t("copy-and-paste-svg-below")}:</div>
+                                <div className="text-sm opacity-80 flex justify-between items-center px-2 gap-2">
+                                    <div className="flex flex-col gap-1">
+                                        <div>
+                                            {t("copy-and-paste-svg-below")}:
+                                        </div>
+                                        <div className="text-xs opacity-60">
+                                            {t("icon-svg-tip")}
+                                        </div>
+                                    </div>
+
                                     <Button size="sm">{t("clear")}</Button>
                                 </div>
                                 <textarea
                                     className="w-full flex-1 border rounded-lg p-2"
-                                    placeholder={`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12z"/></svg>`}
+                                    placeholder={`<svg data-render="mask" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12z"/></svg>`}
                                     onChange={(e) => {
                                         const svgText = e.currentTarget.value;
                                         if (

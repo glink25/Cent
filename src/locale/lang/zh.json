@@ -239,6 +239,7 @@
   "icons-tab": "图标",
   "custom-tab": "自定义",
   "copy-and-paste-svg-below": "将SVG粘贴到下方",
+  "icon-svg-tip": "使用[data-render=\"mask\"]和[fill=\"currentColor\"]可以自动支持深/浅色切换",
   "clear": "清空",
   "save": "保存",
   "category-delete-alert": "无法删除分类，该分类包含{n}条记录，请先移动至其他分类",

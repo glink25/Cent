@@ -11,8 +11,39 @@ export default function CategoryIcon({
     const isSvgString = icon.trim().startsWith("<svg");
 
     if (isSvgString) {
-        // 用 data-uri 转换成 <img> 的 src
+        const useMaskMode = icon.includes(`data-render="mask"`);
         const svgSrc = "data:image/svg+xml;utf8," + encodeURIComponent(icon);
+
+        if (useMaskMode) {
+            // 用于 mask 的 SVG 需为不透明形状，将 currentColor 改为 black 以保证遮罩正确
+            const maskSvg = icon.replace(
+                /\bfill=["']currentColor["']/gi,
+                'fill="black"',
+            );
+            const maskSvgSrc =
+                "data:image/svg+xml;utf8," + encodeURIComponent(maskSvg);
+            return (
+                <i
+                    className={cn(
+                        "inline-block w-4 h-4 min-w-4 min-h-4",
+                        className,
+                    )}
+                    style={{
+                        backgroundColor: "currentColor",
+                        WebkitMaskImage: `url(${maskSvgSrc})`,
+                        maskImage: `url(${maskSvgSrc})`,
+                        WebkitMaskRepeat: "no-repeat",
+                        maskRepeat: "no-repeat",
+                        WebkitMaskSize: "100% 100%",
+                        maskSize: "100% 100%",
+                        WebkitMaskPosition: "center",
+                        maskPosition: "center",
+                    }}
+                />
+            );
+        }
+
+        // 原有 background-image 模式
         return (
             <i
                 className={cn(
@@ -25,7 +56,7 @@ export default function CategoryIcon({
                     backgroundPosition: "center",
                     backgroundRepeat: "no-repeat",
                 }}
-            ></i>
+            />
         );
     }
 
