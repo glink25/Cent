@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/shallow";
 import PopupLayout from "@/layouts/popup-layout";
@@ -491,7 +491,18 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                     </div>
                     {(configs?.length ?? 0) === 0 ? (
                         <div className="text-xs opacity-60 text-center py-8">
-                            {t("no-ai-configs")}
+                            {t("no-ai-configs", {
+                                a: (chunk: ReactNode) => (
+                                    <a
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-500 hover:text-blue-600 underline"
+                                        href="https://glink25.github.io/post/%E5%BC%80%E5%90%AF-Cent-AI-%E5%8A%A9%E6%89%8B%E9%80%9A%E7%94%A8%E9%85%8D%E7%BD%AE%E4%B8%8E%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/"
+                                    >
+                                        {chunk}
+                                    </a>
+                                ),
+                            })}
                         </div>
                     ) : (
                         <div className="flex flex-col gap-2">

@@ -557,7 +557,7 @@
   "set-as-default": "Set as Default",
   "delete-config": "Delete Configuration",
   "are-you-sure-to-delete-this-config": "Are you sure you want to delete this configuration?",
-  "no-ai-configs": "No AI configurations yet, create one",
+  "no-ai-configs": "No AI configurations yet, <a>create one</a>",
   "ai-config-saved": "Configuration saved",
   "ai-config-deleted": "Configuration deleted",
   "api-key-required": "API Key is required",
