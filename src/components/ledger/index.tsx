@@ -113,8 +113,9 @@ const Ledger = forwardRef<LedgerRef, LedgerProps>(
                     const curDate = dayjs.unix(firstBill.time / 1000);
                     onVisibleDateChange?.(curDate);
                     if (enableDivideAsOrdered) {
-                        setStickyDate(prev => {
-                            if (prev && curDate.isSame(prev, 'day')) return prev;
+                        setStickyDate((prev) => {
+                            if (prev && curDate.isSame(prev, "day"))
+                                return prev;
                             return curDate;
                         });
                     }

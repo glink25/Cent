@@ -240,6 +240,7 @@
   "icons-tab": "Icons",
   "custom-tab": "Custom",
   "copy-and-paste-svg-below": "Copy & paste SVG below",
+  "icon-svg-tip": "Use [data-render=\"mask\"] and [fill=\"currentColor\"] to support light/dark theme automatically",
   "clear": "Clear",
   "save": "Save",
   "total-records": "total: {n}",
