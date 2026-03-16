@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import useCategory from "@/hooks/use-category";
 import { useCurrency } from "@/hooks/use-currency";
-import { useIsDesktop } from "@/hooks/use-media-query";
 import { useTag } from "@/hooks/use-tag";
 import { useWheelScrollX } from "@/hooks/use-wheel-scroll";
 import PopupLayout from "@/layouts/popup-layout";
@@ -11,7 +10,7 @@ import { amountToNumber, numberToAmount } from "@/ledger/bill";
 import { ExpenseBillCategories, IncomeBillCategories } from "@/ledger/category";
 import type { Bill } from "@/ledger/type";
 import { categoriesGridClassName } from "@/ledger/utils";
-import { useIntl, useLocale } from "@/locale";
+import { useIntl } from "@/locale";
 import type { EditBill } from "@/store/ledger";
 import { usePreferenceStore } from "@/store/preference";
 import { cn } from "@/utils";
@@ -27,53 +26,18 @@ import IOSUnscrolledInput from "../input";
 import Calculator from "../keyboard";
 import CurrentLocation from "../simple-location";
 import Tag from "../tag";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "../ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "../ui/select";
 import { goAddBill } from ".";
+import KeyboardHeightHandle from "./keyboard-height-handle";
 import { RemarkHint } from "./remark";
 import TagGroupSelector from "./tag-group";
+import { useKeyboardHeight } from "./use-keyboard-height";
 
 const defaultBill = {
     type: "expense" as Bill["type"],
     comment: "",
     amount: 0,
     categoryId: ExpenseBillCategories[0].id,
-};
-
-type KeyboardHeightBounds = {
-    min: number;
-    max: number;
-};
-
-const normalizeKeyboardHeightPercent = (value: number) =>
-    Math.max(0, Math.min(100, Math.round(value)));
-
-const getKeyboardHeightBounds = (isDesktop: boolean): KeyboardHeightBounds => {
-    const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
-    if (isDesktop) {
-        return {
-            min: 280,
-            max: Math.min(
-                460,
-                Math.max(360, Math.round(viewportHeight * 0.56)),
-            ),
-        };
-    }
-    const min = Math.round(Math.min(300, Math.max(280, viewportHeight * 0.36)));
-    const max = Math.round(
-        Math.min(520, Math.max(min + 100, viewportHeight * 0.62)),
-    );
-    return { min, max };
-};
-
-const getKeyboardHeight = (percent: number, bounds: KeyboardHeightBounds) => {
-    const ratio = normalizeKeyboardHeightPercent(percent) / 100;
-    return Math.round(bounds.min + (bounds.max - bounds.min) * ratio);
 };
 
 export default function EditorForm({
@@ -86,7 +50,6 @@ export default function EditorForm({
     onCancel?: () => void;
 }) {
     const t = useIntl();
-    const isDesktop = useIsDesktop();
     const goBack = () => {
         onCancel?.();
     };
@@ -134,8 +97,6 @@ export default function EditorForm({
         }
         return init;
     });
-
-    const { grouped } = useTag();
 
     const categories = billState.type === "expense" ? expenses : incomes;
 
@@ -246,70 +207,8 @@ export default function EditorForm({
 
     const tagSelectorRef = useRef<HTMLDivElement>(null);
     useWheelScrollX(tagSelectorRef);
-    const [keyboardHeightPercent, setKeyboardHeightPercent] = useState(() =>
-        normalizeKeyboardHeightPercent(
-            usePreferenceStore.getState().keyboardHeight ?? 50,
-        ),
-    );
-    const [keyboardHeightBounds, setKeyboardHeightBounds] = useState(() =>
-        getKeyboardHeightBounds(isDesktop),
-    );
-    const keyboardDragRef = useRef<{
-        pointerId: number;
-        startY: number;
-        startPercent: number;
-        lastPercent: number;
-    } | null>(null);
-
-    const persistKeyboardHeight = useCallback((value: number) => {
-        const next = normalizeKeyboardHeightPercent(value);
-        setKeyboardHeightPercent(next);
-        usePreferenceStore.setState((prev) => ({
-            ...prev,
-            keyboardHeight: next,
-        }));
-    }, []);
-
-    useEffect(() => {
-        const updateBounds = () => {
-            setKeyboardHeightBounds(getKeyboardHeightBounds(isDesktop));
-        };
-        updateBounds();
-
-        const viewport = window.visualViewport;
-        window.addEventListener("resize", updateBounds);
-        viewport?.addEventListener("resize", updateBounds);
-
-        return () => {
-            window.removeEventListener("resize", updateBounds);
-            viewport?.removeEventListener("resize", updateBounds);
-        };
-    }, [isDesktop]);
-
-    const keyboardHeight = useMemo(
-        () => getKeyboardHeight(keyboardHeightPercent, keyboardHeightBounds),
-        [keyboardHeightBounds, keyboardHeightPercent],
-    );
-
-    const updateKeyboardDrag = useCallback(
-        (clientY: number) => {
-            const drag = keyboardDragRef.current;
-            if (!drag) {
-                return;
-            }
-            const distance =
-                keyboardHeightBounds.max - keyboardHeightBounds.min;
-            if (distance <= 0) {
-                return;
-            }
-            const next = normalizeKeyboardHeightPercent(
-                drag.startPercent + ((drag.startY - clientY) / distance) * 100,
-            );
-            drag.lastPercent = next;
-            setKeyboardHeightPercent(next);
-        },
-        [keyboardHeightBounds],
-    );
+    const { keyboardHeight, onPointerDown, onPointerMove, onPointerUp } =
+        useKeyboardHeight();
 
     return (
         <Calculator.Root
@@ -541,79 +440,11 @@ export default function EditorForm({
                     )}
                     style={{ height: keyboardHeight }}
                 >
-                    <div className="flex justify-center">
-                        <div
-                            role="slider"
-                            aria-label={t("keyboard-height")}
-                            aria-valuemin={0}
-                            aria-valuemax={100}
-                            aria-valuenow={keyboardHeightPercent}
-                            tabIndex={0}
-                            className="flex h-4 w-16 touch-none select-none items-center justify-center rounded-full cursor-row-resize"
-                            onPointerDown={(e) => {
-                                keyboardDragRef.current = {
-                                    pointerId: e.pointerId,
-                                    startY: e.clientY,
-                                    startPercent: keyboardHeightPercent,
-                                    lastPercent: keyboardHeightPercent,
-                                };
-                                e.currentTarget.setPointerCapture(e.pointerId);
-                            }}
-                            onPointerMove={(e) => {
-                                if (
-                                    keyboardDragRef.current?.pointerId !==
-                                    e.pointerId
-                                ) {
-                                    return;
-                                }
-                                updateKeyboardDrag(e.clientY);
-                            }}
-                            onPointerUp={(e) => {
-                                if (
-                                    keyboardDragRef.current?.pointerId !==
-                                    e.pointerId
-                                ) {
-                                    return;
-                                }
-                                updateKeyboardDrag(e.clientY);
-                                persistKeyboardHeight(
-                                    keyboardDragRef.current.lastPercent,
-                                );
-                                keyboardDragRef.current = null;
-                                e.currentTarget.releasePointerCapture(
-                                    e.pointerId,
-                                );
-                            }}
-                            onPointerCancel={(e) => {
-                                if (
-                                    keyboardDragRef.current?.pointerId !==
-                                    e.pointerId
-                                ) {
-                                    return;
-                                }
-                                persistKeyboardHeight(
-                                    keyboardDragRef.current.lastPercent,
-                                );
-                                keyboardDragRef.current = null;
-                            }}
-                            onKeyDown={(e) => {
-                                if (e.key === "ArrowUp") {
-                                    e.preventDefault();
-                                    persistKeyboardHeight(
-                                        keyboardHeightPercent + 5,
-                                    );
-                                }
-                                if (e.key === "ArrowDown") {
-                                    e.preventDefault();
-                                    persistKeyboardHeight(
-                                        keyboardHeightPercent - 5,
-                                    );
-                                }
-                            }}
-                        >
-                            <div className="h-1 w-12 rounded-full bg-white/25" />
-                        </div>
-                    </div>
+                    <KeyboardHeightHandle
+                        onPointerDown={onPointerDown}
+                        onPointerMove={onPointerMove}
+                        onPointerUp={onPointerUp}
+                    />
                     <div className="flex justify-between items-center">
                         <div className="flex gap-2 items-center h-10">
                             <div className="flex items-center h-full">
