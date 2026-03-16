@@ -570,7 +570,7 @@
   "set-as-default": "设为默认",
   "delete-config": "删除配置",
   "are-you-sure-to-delete-this-config": "确定要删除这个配置吗？",
-  "no-ai-configs": "还没有AI配置，创建一个吧",
+  "no-ai-configs": "还没有AI配置， <a>创建一个吧</a>",
   "ai-config-saved": "配置已保存",
   "ai-config-deleted": "配置已删除",
   "api-key-required": "API Key不能为空",
