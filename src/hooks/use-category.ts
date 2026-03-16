@@ -93,9 +93,12 @@ export default function useCategory() {
                     return prev;
                 }
                 // 如果是默认分类，并且名称与intl后的名称不同，customName设为true，否则为undefined
-                let customName: boolean | undefined;
+                // 如果是用户自建分类（不在 BillCategories 里），保留原有的 customName（true）
+                const existingCategory = prev.categories[index];
+                let customName: boolean | undefined =
+                    existingCategory.customName;
                 const defaultCategory = BillCategories.find((c) => c.id === id);
-                if (defaultCategory && defaultCategory) {
+                if (defaultCategory) {
                     customName = t(defaultCategory.name) !== value.name;
                 }
                 prev.categories[index] = {
