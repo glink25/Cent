@@ -296,7 +296,7 @@ export const CalculatorKeyboard = ({
                     }}
                     className={cn(
                         (row.cols ?? 1) > 1 && "col-span-2",
-                        "h-full text-lg font-semibold bg-background/10 active:bg-background/50 transition-all",
+                        "h-full text-lg font-semibold bg-background/10 active:bg-background/50 transition-all py-1",
                         row.label === "c" && "bg-destructive/60",
                     )}
                 >

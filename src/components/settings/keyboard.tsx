@@ -4,8 +4,8 @@ import { usePreferenceStore } from "@/store/preference";
 
 export default function KeyboardHeightSettings() {
     const t = useIntl();
-    const [keyboardHeight, setKeyboardHeight] = useState(
-        () => usePreferenceStore.getState().keyboardHeight ?? 50,
+    const [keyboardHeight, setKeyboardHeight] = useState(() =>
+        Number((usePreferenceStore.getState().keyboardHeight ?? 50).toFixed(2)),
     );
     const sliderRef = useRef<HTMLInputElement>(null);
 
