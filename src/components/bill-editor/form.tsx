@@ -35,6 +35,7 @@ import {
 } from "../ui/select";
 import { goAddBill } from ".";
 import { RemarkHint } from "./remark";
+import ResizeHandle from "./resize";
 import TagGroupSelector from "./tag-group";
 
 const defaultBill = {
@@ -244,7 +245,7 @@ export default function EditorForm({
             input={monitorFocused}
         >
             <PopupLayout
-                className="h-full gap-2 pb-0 overflow-y-auto scrollbar-hidden"
+                className="h-full gap-2 pb-0 scrollbar-hidden"
                 onBack={goBack}
                 title={
                     <div className="pl-[54px] w-full min-h-12 rounded-lg flex pt-2 pb-0 overflow-hidden scrollbar-hidden">
@@ -440,9 +441,10 @@ export default function EditorForm({
                 <div
                     className={cn(
                         "h-[calc(480px+160px*(var(--bekh,0.5)-0.5))] sm:h-[calc(380px+160px*(var(--bekh,0.5)-0.5))] min-h-[264px] max-h-[calc(100%-124px)]",
-                        "keyboard-field flex gap-2 flex-col justify-start bg-stone-900 sm:rounded-b-md text-[white] p-2 pb-[max(env(safe-area-inset-bottom),8px)]",
+                        "keyboard-field relative flex gap-2 flex-col justify-start bg-stone-900 sm:rounded-b-md text-[white] p-2 pb-[max(env(safe-area-inset-bottom),8px)]",
                     )}
                 >
+                    <ResizeHandle />
                     <div className="flex justify-between items-center">
                         <div className="flex gap-2 items-center h-10">
                             <div className="flex items-center h-full">
