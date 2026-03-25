@@ -74,7 +74,7 @@ const RateInput = ({
 
     return (
         <div className="space-y-2">
-            <div className="flex items-center gap-3 p-3">
+            <div className="flex items-center gap-3 px-1 py-3">
                 {/* 左侧文字 */}
                 <div className="text-sm text-muted-foreground whitespace-nowrap">
                     1 {isInverted ? targetCurrencyLabel : baseCurrencyLabel} =
@@ -83,7 +83,7 @@ const RateInput = ({
                 {/* 输入框 */}
                 <Input
                     type="number"
-                    className="w-32 text-end"
+                    className="flex-1 text-end"
                     value={displayValue}
                     onChange={(e) => handleInputChange(e.target.value)}
                     placeholder="0.00"

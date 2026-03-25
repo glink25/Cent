@@ -59,11 +59,11 @@ function Form({ onCancel }: { onCancel?: () => void }) {
         const buffer = await StorageDeferredAPI.exportToArrayBuffer(bookId);
         const uint8 = new Uint8Array(buffer);
         const blob = new Blob([uint8], { type: "application/json" });
+        stopLoading();
         await download(
             blob,
             `cent-backup-${bookId.replace("/", "-")}-${new Date().toISOString()}.json`,
         );
-        stopLoading();
     };
 
     const toImportFromOncent = async () => {
