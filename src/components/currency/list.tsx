@@ -1,7 +1,7 @@
 /** biome-ignore-all lint/security/noDangerouslySetInnerHtml: <explanation> */
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { type Currency, DefaultCurrencies } from "@/api/currency/currencies";
 import { useCurrency } from "@/hooks/use-currency";
@@ -9,11 +9,11 @@ import PopupLayout from "@/layouts/popup-layout";
 import type { CustomCurrency } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import { cn } from "@/utils";
-import modal from "../modal";
 import { Button } from "../ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "../ui/select";
 import { EditCurrencyProvider, showEditCurrency } from "./edit-form";
+import { ManualRateProvider, showManualRateUpdate } from "./manual-rate-form";
 
 export default function CurrencyListForm({
     edit,
@@ -72,27 +72,20 @@ export default function CurrencyListForm({
         if (!rate) {
             return;
         }
-        const value = (await modal.prompt({
-            title: (
-                <div>
-                    <h1>{t("manually-update-rate")}</h1>
-                    <p className="text-xs opacity-60">
-                        {t("manually-update-rate-desc")}
-                    </p>
-                </div>
-            ),
-            input: { type: "number", defaultValue: rate?.predict.toFixed(6) },
-        })) as string | undefined;
-        if (value === undefined || value === null || value === "") {
-            setRate(currency.id, undefined);
+        try {
+            const value = await showManualRateUpdate({
+                baseCurrencyLabel: baseCurrency.label,
+                targetCurrencyLabel: t(currency.labelKey),
+                initialRate: rate.predict,
+            });
+            if (value === null) {
+                setRate(currency.id, undefined);
+                return;
+            }
+            setRate(currency.id, value);
+        } catch {
             return;
         }
-        const newRate = Number(value);
-        if (newRate <= 0) {
-            toast.error(t("rate-must-positive"));
-            return;
-        }
-        setRate(currency.id, newRate);
     };
 
     const [loading, setLoading] = useState(false);
@@ -343,6 +336,7 @@ export default function CurrencyListForm({
                 </div>
             </div>
             <EditCurrencyProvider />
+            <ManualRateProvider />
         </PopupLayout>
     );
 }
