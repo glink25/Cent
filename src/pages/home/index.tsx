@@ -130,7 +130,10 @@ export default function Page() {
     return (
         <div className="w-full h-full p-2 flex flex-col overflow-hidden page-show">
             <div className="flex flex-wrap flex-col w-full gap-2">
-                <div className="bg-stone-800 text-background dark:bg-foreground/20 dark:text-foreground relative h-20 w-full flex justify-end rounded-lg sm:flex-1 p-4">
+                <div
+                    data-today-overview
+                    className="bg-stone-800 text-background dark:bg-foreground/20 dark:text-foreground relative h-20 w-full flex justify-end rounded-lg sm:flex-1 p-4"
+                >
                     <span className="absolute top-2 left-4">
                         {denseDate(currentDate)}
                     </span>

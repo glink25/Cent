@@ -262,7 +262,7 @@ export async function applyPreset(preset: PresetConfig): Promise<void> {
                     );
                 }
                 if (incCSS !== undefined && incCSS.length > 0) {
-                    updatedPersonal.customCSS = `${personal.customCSS}\n${incCSS}`;
+                    updatedPersonal.customCSS = `${personal.customCSS ?? ""}\n${incCSS ?? ""}`;
                 }
                 next.personal = {
                     ...prev.personal,

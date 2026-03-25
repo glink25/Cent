@@ -1,7 +1,7 @@
 export const getCSSVariable = (variable: string) => {
+    if (typeof document === "undefined") return "";
     const rootStyle = getComputedStyle(document.body);
-    const value = rootStyle.getPropertyValue(variable).trim();
-    return value;
+    return rootStyle.getPropertyValue(variable).trim();
 };
 
 export const createColorSet = (preset: string[]) => {
@@ -11,7 +11,8 @@ export const createColorSet = (preset: string[]) => {
     let colorIndex = 0;
 
     const getColor = (name: string): string => {
-        if (assignedMap.has(name)) return assignedMap.get(name)!;
+        const existing = assignedMap.get(name);
+        if (existing !== undefined) return existing;
 
         let finalColor: string;
 
@@ -33,21 +34,9 @@ export const createColorSet = (preset: string[]) => {
 
     return getColor;
 };
-// 自动生成category的颜色
-export const categoryColors = createColorSet([
-    "#5470c6",
-    "#91cc75",
-    "#fac858",
-    "#ee6666",
-    "#73c0de",
-    "#3ba272",
-    "#fc8452",
-    "#9a60b4",
-    "#ea7ccc",
-]);
 
-// 自动生成collaborator的颜色
-export const collaboratorColors = createColorSet([
+/** 与 `src/index.css` 中系列色一致，仅在无 DOM（如测试）时作回退 */
+const CHART_SERIES_FALLBACK = [
     "#5470c6",
     "#91cc75",
     "#fac858",
@@ -57,4 +46,44 @@ export const collaboratorColors = createColorSet([
     "#fc8452",
     "#9a60b4",
     "#ea7ccc",
-]);
+] as const;
+
+const CATEGORY_COLOR_VARS = [
+    "--category-color-1",
+    "--category-color-2",
+    "--category-color-3",
+    "--category-color-4",
+    "--category-color-5",
+    "--category-color-6",
+    "--category-color-7",
+    "--category-color-8",
+    "--category-color-9",
+] as const;
+
+const COLLABORATOR_COLOR_VARS = [
+    "--collaborator-color-1",
+    "--collaborator-color-2",
+    "--collaborator-color-3",
+    "--collaborator-color-4",
+    "--collaborator-color-5",
+    "--collaborator-color-6",
+    "--collaborator-color-7",
+    "--collaborator-color-8",
+    "--collaborator-color-9",
+] as const;
+
+const chartPresetFromVarNames = (names: readonly string[]): string[] =>
+    names.map((name, i) => {
+        const v = getCSSVariable(name);
+        if (v) return v;
+        const fb = CHART_SERIES_FALLBACK[i];
+        return fb !== undefined ? fb : "";
+    });
+
+export const categoryColors = createColorSet(
+    chartPresetFromVarNames(CATEGORY_COLOR_VARS),
+);
+
+export const collaboratorColors = createColorSet(
+    chartPresetFromVarNames(COLLABORATOR_COLOR_VARS),
+);

@@ -45,9 +45,13 @@ function BudgetProgress({
     }, [totalLeft, total]);
 
     return (
-        <div className="w-full flex items-center h-4 relative">
+        <div
+            data-budget-progress
+            className="w-full flex items-center h-4 relative"
+        >
             <div className="relative w-full h-2 rounded-full outer bg-gray-300 flex items-center overflow-hidden">
                 <div
+                    data-budget-progress-today
                     className="inner h-2 rounded-full bg-amber-500 absolute top-0"
                     style={{
                         left: `0px`,
@@ -55,9 +59,12 @@ function BudgetProgress({
                     }}
                 ></div>
                 <div
+                    data-budget-progress-all
                     className={cn(
                         "inner h-2 rounded-full absolute left-0 top-0",
-                        p > timePercent ? "bg-red-700" : "bg-green-600",
+                        p > timePercent
+                            ? "bg-red-700 budget-warn"
+                            : "bg-green-600 budget-safe",
                     )}
                     style={{
                         width: `${p * 100}%`,
@@ -66,9 +73,10 @@ function BudgetProgress({
                 {overs.map((p, i) => {
                     return (
                         <div
+                            data-budget-progress-all
                             key={i}
                             className={cn(
-                                "inner h-2 rounded-full absolute left-0 top-0 bg-fuchsia-700/80",
+                                "inner h-2 rounded-full absolute left-0 top-0 bg-fuchsia-700/80 budget-danger",
                             )}
                             style={{
                                 width: `${p * 100}%`,
@@ -78,6 +86,7 @@ function BudgetProgress({
                 })}
             </div>
             <div
+                data-budget-progress-now
                 className="absolute top-0 h-4 bg-slate-500 w-[2px]"
                 style={{
                     left: `${Math.min(timePercent, 1) * 100}%`,
