@@ -147,7 +147,7 @@ const Ledger = forwardRef<LedgerRef, LedgerProps>(
         return (
             <div
                 ref={parentRef}
-                className={cn("relative", className)}
+                className={cn("relative bill-list", className)}
                 style={{
                     height: `100%`,
                     overflow: "auto",

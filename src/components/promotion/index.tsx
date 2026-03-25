@@ -127,7 +127,7 @@ export function Promotion() {
         return null;
     }
     return (
-        <div className="w-full flex flex-col gap-1">
+        <div data-promotion className="w-full flex flex-col gap-1">
             <div
                 ref={scrollRef}
                 className="w-full flex overflow-x-auto gap-2 scrollbar-hidden snap-mandatory snap-x scroll-smooth"

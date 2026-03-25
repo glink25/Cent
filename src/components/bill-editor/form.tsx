@@ -1,16 +1,14 @@
 import { Switch } from "radix-ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
 import useCategory from "@/hooks/use-category";
 import { useCurrency } from "@/hooks/use-currency";
-import { useTag } from "@/hooks/use-tag";
 import { useWheelScrollX } from "@/hooks/use-wheel-scroll";
 import PopupLayout from "@/layouts/popup-layout";
 import { amountToNumber, numberToAmount } from "@/ledger/bill";
 import { ExpenseBillCategories, IncomeBillCategories } from "@/ledger/category";
 import type { Bill } from "@/ledger/type";
 import { categoriesGridClassName } from "@/ledger/utils";
-import { useIntl, useLocale } from "@/locale";
+import { useIntl } from "@/locale";
 import type { EditBill } from "@/store/ledger";
 import { usePreferenceStore } from "@/store/preference";
 import { cn } from "@/utils";
@@ -25,14 +23,7 @@ import SmartImage from "../image";
 import IOSUnscrolledInput from "../input";
 import Calculator from "../keyboard";
 import CurrentLocation from "../simple-location";
-import Tag from "../tag";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "../ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "../ui/select";
 import { goAddBill } from ".";
 import { RemarkHint } from "./remark";
 import ResizeHandle from "./resize";
@@ -90,12 +81,29 @@ export default function EditorForm({
         return pc;
     }, [isCreate]);
 
+    const getMatchDefaultCategory = (categoryId: string) => {
+        const category = [...incomes, ...expenses].find(
+            (c) => c.id === categoryId,
+        );
+        if (!category) {
+            return categoryId;
+        }
+        const defaultSub = category.children.find((v) => v.defaultSelect);
+        if (!defaultSub) {
+            return categoryId;
+        }
+        return defaultSub.id;
+    };
     const [billState, setBillState] = useState(() => {
         const init = {
             ...defaultBill,
-            categoryId: predictCategory?.id ?? defaultBill.categoryId,
             time: Date.now(),
             ...edit,
+            categoryId:
+                predictCategory?.id ??
+                getMatchDefaultCategory(
+                    edit?.categoryId ?? defaultBill.categoryId,
+                ),
         };
         if (edit?.currency?.target === baseCurrency.id) {
             delete init.currency;
@@ -103,7 +111,28 @@ export default function EditorForm({
         return init;
     });
 
-    const { grouped } = useTag();
+    const handleParentCategoryClick = (parentCategoryId: string) => {
+        // 点击父类时，如果此前选中的【是该父类的子类】，则直接选中该父类
+        // 否则选中该父类的 MatchDefault 类别
+        setBillState((prev) => {
+            const parentCategory = [...incomes, ...expenses].find(
+                (c) => c.id === parentCategoryId,
+            );
+            const isPrevParentsChild = parentCategory?.children.some(
+                (c) => c.id === prev.categoryId,
+            );
+            if (isPrevParentsChild) {
+                return {
+                    ...prev,
+                    categoryId: parentCategoryId,
+                };
+            }
+            return {
+                ...prev,
+                categoryId: getMatchDefaultCategory(parentCategoryId),
+            };
+        });
+    };
 
     const categories = billState.type === "expense" ? expenses : incomes;
 
@@ -354,10 +383,7 @@ export default function EditorForm({
                                     category={item}
                                     selected={billState.categoryId === item.id}
                                     onMouseDown={() => {
-                                        setBillState((v) => ({
-                                            ...v,
-                                            categoryId: item.id,
-                                        }));
+                                        handleParentCategoryClick(item.id);
                                     }}
                                 />
                             ))}

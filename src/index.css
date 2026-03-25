@@ -262,3 +262,25 @@ button {
 .with-tag-color.tag-gray {
 	--current-tag-color: var(--tag-gray);
 }
+
+/* 图表分类 / 协作者系列色（ECharts 风格调色板，供 `src/utils/color.ts` 读取） */
+:root {
+	--category-color-1: #5470c6;
+	--category-color-2: #91cc75;
+	--category-color-3: #fac858;
+	--category-color-4: #ee6666;
+	--category-color-5: #73c0de;
+	--category-color-6: #3ba272;
+	--category-color-7: #fc8452;
+	--category-color-8: #9a60b4;
+	--category-color-9: #ea7ccc;
+	--collaborator-color-1: var(--category-color-1);
+	--collaborator-color-2: var(--category-color-2);
+	--collaborator-color-3: var(--category-color-3);
+	--collaborator-color-4: var(--category-color-4);
+	--collaborator-color-5: var(--category-color-5);
+	--collaborator-color-6: var(--category-color-6);
+	--collaborator-color-7: var(--category-color-7);
+	--collaborator-color-8: var(--category-color-8);
+	--collaborator-color-9: var(--category-color-9);
+}

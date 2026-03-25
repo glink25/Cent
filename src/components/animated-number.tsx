@@ -7,6 +7,13 @@ type AnimatedNumberProps = {
     value: number;
 } & HTMLMotionProps<"span">;
 
+const withPM = (v: string) => {
+    if (v.startsWith("-")) {
+        return v;
+    }
+    return `+${v}`;
+};
+
 const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
     value,
     ...restProps
@@ -35,10 +42,12 @@ const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
 
             if (isInteger) {
                 // 如果 value 是整数，只显示整数
-                setDisplayValue(toThousand(Math.round(latest)).toString());
+                setDisplayValue(
+                    withPM(toThousand(Math.round(latest)).toString()),
+                );
             } else {
                 // 如果 value 是小数，使用自动计算的精度
-                setDisplayValue(toThousand(toFixed(latest, precision)));
+                setDisplayValue(withPM(toThousand(toFixed(latest, precision))));
             }
         });
 

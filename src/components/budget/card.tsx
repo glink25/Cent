@@ -62,6 +62,8 @@ export default function BudgetCard({
     if (!encountered) {
         return (
             <div
+                data-budget-card
+                data-budget-finished
                 className={cn(
                     "rounded-lg border flex flex-col w-full px-4 py-2 cursor-pointer",
                     className,
@@ -103,6 +105,7 @@ export default function BudgetCard({
 
     return (
         <div
+            data-budget-card
             className={cn(
                 "rounded-lg border flex flex-col w-full px-4 py-2 cursor-pointer",
                 className,

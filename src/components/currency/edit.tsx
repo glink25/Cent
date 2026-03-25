@@ -8,6 +8,7 @@ import { useIntl } from "@/locale";
 import { Button } from "../ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "../ui/form";
 import { Input } from "../ui/input";
+import RateInput from "./rate-input";
 
 const createFormSchema = (t: any) =>
     z.object({
@@ -107,27 +108,31 @@ export const EditCurrencyForm = ({
                     <FormField
                         control={form.control}
                         name="rateToBase"
-                        render={({ field }) => {
-                            return (
-                                <FormItem>
-                                    <FormLabel>{t("rate-to-base")}</FormLabel>
-                                    <div className="flex gap-2 items-center">
-                                        <div> 1 {baseCurrency.label} = </div>
-                                        <FormControl>
-                                            <Input
-                                                className="flex-1"
-                                                {...field}
-                                            />
-                                        </FormControl>
-                                        <div>
-                                            {form.getValues("name") ||
-                                                t("default-currency-name")}
-                                        </div>
-                                    </div>
-                                </FormItem>
-                            );
-                        }}
-                    ></FormField>
+                        render={({ field }) => (
+                            <FormItem className="space-y-3">
+                                {/* 这里的 FormLabel 可以保留，或者直接使用组件内部的 label */}
+                                <FormLabel>{t("rate-to-base")}</FormLabel>
+                                <FormControl>
+                                    <RateInput
+                                        // 基础货币标签（本位币）
+                                        baseCurrencyLabel={baseCurrency.label}
+                                        // 目标货币标签（当前编辑的币种）
+                                        targetCurrencyLabel={
+                                            form.watch("name") ||
+                                            t("default-currency-name")
+                                        }
+                                        // 传入 Hook Form 的当前值
+                                        value={field.value}
+                                        allowClear={false}
+                                        // 当 RateInput 内部计算出新汇率时，直接更新 Hook Form
+                                        onChange={(newRate) =>
+                                            field.onChange(newRate)
+                                        }
+                                    />
+                                </FormControl>
+                            </FormItem>
+                        )}
+                    />
                 </div>
                 <div className="flex justify-between items-center px-4">
                     <div>

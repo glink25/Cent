@@ -57,6 +57,7 @@ export default function BillItem({
                 "bill-item flex justify-between items-center px-4 py-4 buttoned cursor-pointer",
                 className,
             )}
+            data-bill-tags={tags?.map((v) => v.name).join(" ")}
             onClick={onClick}
         >
             {/* 左侧图标 + 信息 */}
@@ -106,7 +107,7 @@ export default function BillItem({
             </div>
 
             {/* 金额 */}
-            <div className="text-right">
+            <div className="bill-item-tail text-right">
                 <div
                     className={`text-lg font-bold truncate flex-shrink-0 flex flex-col items-end ${
                         bill.type === "expense"

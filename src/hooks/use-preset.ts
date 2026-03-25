@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
 import {
@@ -31,6 +31,21 @@ export function useInitPreset() {
                 }
             }
         });
+        const userId = useUserStore.getState().id;
+        const currentCSS =
+            useLedgerStore.getState().infos?.meta.personal?.[userId]?.customCSS;
+        if (localStorage.getItem(CUSTOM_CSS_STORAGE_KEY) !== currentCSS) {
+            const purified = purifyCSS(currentCSS ?? "");
+            try {
+                localStorage.setItem(CUSTOM_CSS_STORAGE_KEY, purified);
+                applyCustomCSS();
+            } catch (error) {
+                console.error(
+                    "Failed to save custom CSS to localStorage:",
+                    error,
+                );
+            }
+        }
 
         return () => {
             unsubscribe();
