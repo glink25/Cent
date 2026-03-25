@@ -113,6 +113,7 @@ export default function SettingsForm({
                         </div>
                         <div className="flex flex-col divide-y">
                             <BookSettings />
+                            <PresetSettingsItem />
                             <UserSettingsItem />
                             <DataManagerSettingsItem />
                         </div>
@@ -143,7 +144,6 @@ export default function SettingsForm({
                             {t("other-settings")}
                         </div>
                         <div className="flex flex-col divide-y">
-                            <PresetSettingsItem />
                             <MapSettingsItem />
                             <LabSettingsItem />
                             <AboutSettingsItem />
