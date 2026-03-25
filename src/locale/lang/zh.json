@@ -685,5 +685,7 @@
   "relayr-public-key-copied": "公钥已复制",
   "copy-public-key": "复制公钥",
   "delete-book-offline-tip": "确定要删除该账本吗？账本内所有数据都将丢失无法找回",
-  "overspending": "超支"
+  "overspending": "超支",
+  "rate-hint": "当前计算汇率:",
+  "sub-category-default-select": "选中父类时默认选中"
 }

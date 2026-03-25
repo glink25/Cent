@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
 import dayjs from "dayjs";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import useCategory from "@/hooks/use-category";
 import { useSnap } from "@/hooks/use-snap";
 import createTeleportSlot from "@/hooks/use-teleport";
@@ -9,16 +9,10 @@ import { useIntl } from "@/locale";
 import { useLedgerStore } from "@/store/ledger";
 import { cn } from "@/utils";
 import { denseDate } from "@/utils/time";
-import createConfirmProvider from "../confirm";
 import { Button } from "../ui/button";
 import type { Budget } from "./type";
 import { useBudgetDetail } from "./use-budget-detail";
-import {
-    budgetEncountered,
-    budgetRange,
-    budgetReached,
-    budgetTotal,
-} from "./util";
+import { budgetEncountered, budgetReached } from "./util";
 
 function BudgetProgress({
     total,

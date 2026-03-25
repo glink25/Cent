@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input"; // 假设你使用的是 shadcn/ui
+import { useIntl } from "@/locale";
 
 interface RateInputProps {
     baseCurrencyLabel: string;
@@ -20,6 +21,7 @@ const RateInput = ({
     onChange,
     allowClear = true,
 }: RateInputProps) => {
+    const t = useIntl();
     const [isInverted, setIsInverted] = useState(false);
     const [displayValue, setDisplayValue] = useState<string>(
         value != null ? String(value) : "",
@@ -107,7 +109,7 @@ const RateInput = ({
 
             {/* 提示信息 */}
             <p className="text-[12px] text-muted-foreground italic">
-                * 当前计算汇率: 1 {baseCurrencyLabel} ={" "}
+                * {t("rate-hint")} 1 {baseCurrencyLabel} ={" "}
                 {value != null ? value : "—"} {targetCurrencyLabel}
             </p>
         </div>

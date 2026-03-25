@@ -673,5 +673,7 @@
   "relayr-public-key-copied": "Public key copied",
   "copy-public-key": "Copy Public Key",
   "delete-book-offline-tip": "Are you sure you want to delete this book? All data in the book will be lost and cannot be recovered",
-  "overspending": "Overspending"
+  "overspending": "Overspending",
+  "rate-hint": "Current rate:",
+  "sub-category-default-select": "Default selected"
 }

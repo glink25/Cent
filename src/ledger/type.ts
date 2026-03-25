@@ -90,6 +90,8 @@ export type BillCategory = {
     customName?: boolean;
     // 父类的id，如果为空，则该分类视为父类
     parent?: string;
+    // 默认选中，仅对子类生效，如果为true，则该子类的父类在首次选中时，首先会选中该子类，再次点击父类可以选中父类
+    defaultSelect?: boolean;
 };
 
 /** 每笔账单可以设置多个BillTag，一般用于标记这些支出或者收入项与某些事件相关联

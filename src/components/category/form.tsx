@@ -28,6 +28,7 @@ import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
 import { cn } from "@/utils";
 import modal from "../modal";
+import { Switch } from "../ui/switch";
 import CategoryIcon from "./icon";
 import { ICONS } from "./icons";
 
@@ -43,6 +44,7 @@ const createFormSchema = (t: any) =>
 
         // 可选字符串
         parent: z.optional(z.string()),
+        defaultSelect: z.optional(z.boolean()),
     });
 
 const allIcons = ICONS;
@@ -81,6 +83,7 @@ export default function CategoryEditForm({
             ? {
                   name: category.name,
                   parent: category.parent,
+                  defaultSelect: category.defaultSelect,
               }
             : {
                   name: "",
@@ -112,6 +115,7 @@ export default function CategoryEditForm({
             icon: edit.icon,
             name: edit.name,
             parent: edit.parent,
+            defaultSelect: edit.defaultSelect,
         };
         const formattedData = {
             ...data,
@@ -120,7 +124,8 @@ export default function CategoryEditForm({
         if (
             originCate.icon === formattedData.icon &&
             originCate.name === formattedData.name &&
-            originCate.parent === formattedData.parent
+            originCate.parent === formattedData.parent &&
+            originCate.defaultSelect === formattedData.defaultSelect
         ) {
             console.log("nothing changed");
             return;
@@ -185,7 +190,7 @@ export default function CategoryEditForm({
                     </div>
                 }
             >
-                <div className="flex justify-center items-center gap-2">
+                <div className="flex justify-center items-center gap-4">
                     <div className="p-4 size-16 aspect-square rounded-full overflow-hidden border flex justify-center items-center">
                         {category?.icon && (
                             <CategoryIcon
@@ -199,12 +204,15 @@ export default function CategoryEditForm({
                             control={form.control}
                             name="name"
                             render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t("category-name")}</FormLabel>
+                                <FormItem className="flex justify-between items-center">
+                                    <FormLabel className="mb-0">
+                                        {t("category-name")}:
+                                    </FormLabel>
                                     <FormControl>
                                         <Input
                                             type="text"
                                             maxLength={50}
+                                            className="max-w-[60%]"
                                             {...field}
                                         />
                                     </FormControl>
@@ -222,9 +230,9 @@ export default function CategoryEditForm({
                                         ? NO_PARENT
                                         : field.value;
                                 return (
-                                    <FormItem>
-                                        <FormLabel>
-                                            {t("category-parent")}
+                                    <FormItem className="flex justify-between items-center">
+                                        <FormLabel className="mb-0">
+                                            {t("category-parent")}:
                                         </FormLabel>
                                         <FormControl>
                                             <Select
@@ -286,6 +294,34 @@ export default function CategoryEditForm({
                                 );
                             }}
                         ></FormField>
+                        {
+                            <FormField
+                                control={form.control}
+                                name="defaultSelect"
+                                render={({ field }) => {
+                                    return (
+                                        <FormItem className="flex justify-between items-center h-9">
+                                            <FormLabel className="mb-0">
+                                                {t(
+                                                    "sub-category-default-select",
+                                                )}
+                                                :
+                                            </FormLabel>
+                                            <FormControl>
+                                                <Switch
+                                                    checked={Boolean(
+                                                        field.value,
+                                                    )}
+                                                    onCheckedChange={
+                                                        field.onChange
+                                                    }
+                                                />
+                                            </FormControl>
+                                        </FormItem>
+                                    );
+                                }}
+                            ></FormField>
+                        }
                     </div>
                 </div>
 
