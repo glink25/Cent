@@ -374,14 +374,32 @@ export const createGithubSyncer = (config: {
         await octokit.request("POST /user/repos", {
             name: storeName,
             private: true,
+            auto_init: true,
         });
-        await octokit.request("PUT /repos/{owner}/{repo}/contents/{path}", {
-            owner,
-            repo: storeName,
-            path: "meta.json",
-            message: "Initial commit by Tidal",
-            content: encode(JSON.stringify({})),
-        });
+        // 2. 带有退避算法的重试逻辑
+        let retries = 3;
+        while (retries > 0) {
+            try {
+                await octokit.request(
+                    "PUT /repos/{owner}/{repo}/contents/{path}",
+                    {
+                        owner,
+                        repo: storeName,
+                        path: "meta.json",
+                        message: "Initial commit by Tidal",
+                        content: encode(JSON.stringify({})),
+                    },
+                );
+                break; // 成功则跳出循环
+            } catch (error) {
+                retries--;
+                if (retries === 0) throw error;
+                // 等待一段时间再重试（例如 1秒、2秒、4秒...）
+                await new Promise((res) =>
+                    setTimeout(res, 1000 * (2 - retries)),
+                );
+            }
+        }
         return { id: `${owner}/${storeName}`, name: storeName };
     };
 
@@ -417,6 +435,7 @@ export const createGithubSyncer = (config: {
             "GET /user/repos",
             {
                 type: "all",
+                ...withRandomT(),
             },
         );
         return repos

@@ -375,23 +375,37 @@ export const createGiteeSyncer = (config: {
             name: storeName,
             description: `Created by Giteeray`,
             private: true,
+            auto_init: true,
         });
 
         // create meta.json
         const { accessToken } = await auth();
         const path = `/repos/${owner}/${storeName}/contents/meta.json`;
-        await fetch(`${GITEE_API_BASE}${path}`, {
-            method: "POST",
-            headers: {
-                Authorization: `token ${accessToken}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                message: "Initial commit by Giteeray",
-                content: encode(JSON.stringify({})),
-                branch: "master",
-            }),
-        });
+        let retries = 3;
+        while (retries > 0) {
+            try {
+                await fetch(`${GITEE_API_BASE}${path}`, {
+                    method: "POST",
+                    headers: {
+                        Authorization: `token ${accessToken}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        message: "Initial commit by Giteeray",
+                        content: encode(JSON.stringify({})),
+                        branch: "master",
+                    }),
+                });
+                break; // 成功则跳出循环
+            } catch (error) {
+                retries--;
+                if (retries === 0) throw error;
+                // 等待一段时间再重试（例如 1秒、2秒、4秒...）
+                await new Promise((res) =>
+                    setTimeout(res, 1000 * (2 - retries)),
+                );
+            }
+        }
 
         return { id: `${owner}/${storeName}`, name: storeName };
     };
