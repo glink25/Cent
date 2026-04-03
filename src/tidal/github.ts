@@ -1,5 +1,5 @@
+import type { Octokit } from "@octokit/core";
 import { decode, encode } from "js-base64";
-import type { Octokit } from "octokit";
 import type { UserInfo } from "@/api/endpoints/type";
 import type { FileEntry } from "@/database/assets";
 import { shortId } from "@/database/id";
@@ -11,7 +11,17 @@ import type {
     Syncer,
 } from ".";
 
-const loadOctokit = () => import("octokit").then((v) => v.Octokit);
+const loadOctokit = () =>
+    import("@octokit/core").then(({ Octokit }) => {
+        return Octokit;
+    });
+
+const withRandomT = () => ({
+    t: Date.now(), // 添加时间戳参数，使每次请求的 URL 都不同
+});
+
+const loadOctokitPaginate = () =>
+    import("@octokit/plugin-paginate-rest").then((v) => v.paginateRest);
 
 const treeDateToStructure = (
     tree: {
@@ -114,17 +124,22 @@ export const createGithubSyncer = (config: {
 
         const { data: repoData } = await octokit.request(
             "GET /repos/{owner}/{repo}",
-            { owner, repo },
+            { owner, repo, ...withRandomT() },
         );
         const { data: refData } = await octokit.request(
             "GET /repos/{owner}/{repo}/git/ref/{ref}",
-            { owner, repo, ref: `heads/${repoData.default_branch}` },
+            {
+                owner,
+                repo,
+                ref: `heads/${repoData.default_branch}`,
+                ...withRandomT(),
+            },
         );
         const latestCommitSha = refData.object.sha;
 
         const { data: commitData } = await octokit.request(
             "GET /repos/{owner}/{repo}/git/commits/{commit_sha}",
-            { owner, repo, commit_sha: latestCommitSha },
+            { owner, repo, commit_sha: latestCommitSha, ...withRandomT() },
         );
         const treeSha = commitData.tree.sha;
 
@@ -135,6 +150,7 @@ export const createGithubSyncer = (config: {
                 repo,
                 tree_sha: treeSha,
                 recursive: "true",
+                ...withRandomT(),
             },
         );
 
@@ -154,7 +170,7 @@ export const createGithubSyncer = (config: {
             files.map(async (f) => {
                 const { data: content } = await octokit.request(
                     "GET /repos/{owner}/{repo}/git/blobs/{file_sha}",
-                    { owner, repo, file_sha: f.sha },
+                    { owner, repo, file_sha: f.sha, ...withRandomT() },
                 );
                 return {
                     path: f.path,
@@ -232,6 +248,7 @@ export const createGithubSyncer = (config: {
                 request: {
                     signal,
                 },
+                ...withRandomT(),
             },
         );
         const { data: refData } = await octokit.request(
@@ -243,6 +260,7 @@ export const createGithubSyncer = (config: {
                 request: {
                     signal,
                 },
+                ...withRandomT(),
             },
         );
         const { data: commitData } = await octokit.request(
@@ -254,6 +272,7 @@ export const createGithubSyncer = (config: {
                 request: {
                     signal,
                 },
+                ...withRandomT(),
             },
         );
         const baseTreeSha = commitData.tree.sha;
@@ -392,10 +411,14 @@ export const createGithubSyncer = (config: {
     };
 
     const fetchAllStore = async () => {
+        const paginatePlugin = loadOctokitPaginate();
         const octokit = await getOctokit();
-        const repos = await octokit.paginate("GET /user/repos", {
-            type: "all",
-        });
+        const repos = await (await paginatePlugin)(octokit).paginate(
+            "GET /user/repos",
+            {
+                type: "all",
+            },
+        );
         return repos
             .filter((repo) => repo.name.startsWith(config.repoPrefix))
             .map((repo) => repo.full_name);

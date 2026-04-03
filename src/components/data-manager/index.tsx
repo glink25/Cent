@@ -1,7 +1,5 @@
 import { toast } from "sonner";
-import { StorageDeferredAPI } from "@/api/storage";
 import PopupLayout from "@/layouts/popup-layout";
-import type { ExportedJSON } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
@@ -11,6 +9,7 @@ import createConfirmProvider from "../confirm";
 import { FORMAT_BACKUP, showFilePicker } from "../file-picker";
 import modal from "../modal";
 import { Button } from "../ui/button";
+import { prepareExportFile, processImportFile } from "./exportable";
 import { showOncentImport } from "./oncent";
 import {
     ImportPreviewProvider,
@@ -38,8 +37,10 @@ function Form({ onCancel }: { onCancel?: () => void }) {
             return;
         }
         const [jsonFile] = await showFilePicker({ accept: FORMAT_BACKUP });
-        const jsonText = await jsonFile.text();
-        const data = JSON.parse(jsonText) as ExportedJSON;
+        const [stopLoading] = modal.loading();
+        const data = await processImportFile(jsonFile).finally(() => {
+            stopLoading();
+        });
         const res = await showImportPreview({
             bills: data.items,
             meta: data.meta,
@@ -56,13 +57,11 @@ function Form({ onCancel }: { onCancel?: () => void }) {
             return;
         }
         const [stopLoading] = modal.loading();
-        const buffer = await StorageDeferredAPI.exportToArrayBuffer(bookId);
-        const uint8 = new Uint8Array(buffer);
-        const blob = new Blob([uint8], { type: "application/json" });
+        const { blob, ext } = await prepareExportFile(bookId);
         stopLoading();
         await download(
             blob,
-            `cent-backup-${bookId.replace("/", "-")}-${new Date().toISOString()}.json`,
+            `cent-backup-${bookId.replace("/", "-")}-${new Date().toISOString()}.${ext}`,
         );
     };
 

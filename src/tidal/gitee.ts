@@ -101,27 +101,41 @@ export const createGiteeSyncer = (config: {
         signal?: AbortSignal,
     ): Promise<T> => {
         const { accessToken } = await auth();
-        const url = `${GITEE_API_BASE}${path}`;
+
+        // 1. 使用 URL 对象构建完整的 URL
+        const urlObj = new URL(`${GITEE_API_BASE}${path}`);
+
+        // 2. 如果是 GET 请求，添加随机参数 t
+        if (method.toUpperCase() === "GET") {
+            urlObj.searchParams.set("t", Date.now().toString());
+        }
+
         const headers: Record<string, string> = {
             Accept: "application/json",
             Authorization: `token ${accessToken}`,
         };
+
         const opts: RequestInit = {
             method,
             headers,
             signal,
         };
+
         if (body !== undefined) {
             opts.body = JSON.stringify(body);
             headers["Content-Type"] = "application/json";
         }
-        const res = await fetch(url, opts);
+
+        // 3. 使用 urlObj.toString() 发起请求
+        const res = await fetch(urlObj.toString(), opts);
+
         if (!res.ok) {
             const txt = await res.text();
             throw new Error(
                 `Gitee API ${method} ${path} failed: ${res.status} ${res.statusText} - ${txt}`,
             );
         }
+
         const txt = await res.text();
         return txt ? JSON.parse(txt) : ({} as any);
     };
