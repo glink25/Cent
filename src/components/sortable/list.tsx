@@ -38,6 +38,7 @@ function SortableListItem({ id, name }: SortableItem) {
         opacity: isDragging ? 0.5 : 1,
         cursor: "grab",
         userSelect: "none",
+        touchAction: "none",
     };
 
     return (
