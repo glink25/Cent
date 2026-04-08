@@ -693,5 +693,6 @@
   "permission-category": "Categories",
   "permission-currency": "Currency Info",
   "permission-tag": "Tags",
-  "are-you-sure-to-delete-this-widget": "Are you sure you want to delete this widget?"
+  "are-you-sure-to-delete-this-widget": "Are you sure you want to delete this widget?",
+  "show-in-home": "Show in Home"
 }

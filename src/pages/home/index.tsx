@@ -18,8 +18,10 @@ import { PaginationIndicator } from "@/components/indicator";
 import Ledger from "@/components/ledger";
 import Loading from "@/components/loading";
 import { Promotion } from "@/components/promotion";
+import WidgetPreview from "@/components/widget/preview";
 import { useBudget } from "@/hooks/use-budget";
 import { useSnap } from "@/hooks/use-snap";
+import { useWidget } from "@/hooks/use-widget";
 import { amountToNumber } from "@/ledger/bill";
 import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
@@ -79,11 +81,16 @@ export default function Page() {
         return b.joiners.includes(userId) && b.start < Date.now();
     });
 
+    const { widgets } = useWidget();
+    const homeWidgets = widgets.filter((w) => w.showInHome);
+
     const budgetContainer = useRef<HTMLDivElement>(null);
+    const widgetContainer = useRef<HTMLDivElement>(null);
     const { count: budgetCount, index: curBudgetIndex } = useSnap(
         budgetContainer,
         0,
     );
+    useSnap(widgetContainer, 0);
 
     const allLoaded = useRef(false);
     // 有预算时需要加载全部bills
@@ -155,6 +162,23 @@ export default function Page() {
                     )}
                 </div>
                 <Promotion />
+                {homeWidgets.length > 0 && (
+                    <div className="w-full flex flex-col gap-1">
+                        <div
+                            ref={widgetContainer}
+                            className="w-full flex overflow-x-auto gap-2 scrollbar-hidden snap-mandatory snap-x"
+                        >
+                            {homeWidgets.map((widget) => (
+                                <div
+                                    key={widget.id}
+                                    className="flex-shrink-0 snap-start w-full min-h-[100px] border rounded-lg overflow-hidden"
+                                >
+                                    <WidgetPreview widget={widget} />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
                 <div className="w-full flex flex-col gap-1">
                     <div
                         ref={budgetContainer}
@@ -187,7 +211,7 @@ export default function Page() {
                         <Loading className="[&_i]:size-[18px]" />
                     </div>
                 </button>
-                <div>
+                <div className="flex items-center gap-2">
                     {budgetCount > 1 && (
                         <PaginationIndicator
                             count={budgetCount}

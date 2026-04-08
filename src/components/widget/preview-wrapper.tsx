@@ -129,7 +129,6 @@ export default function WidgetPreviewWrapper({
             <div className={`p-4 ${className ?? ""}`}>
                 <div className="space-y-3">
                     <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-20 w-full" />
                     <Skeleton className="h-4 w-1/2" />
                 </div>
             </div>

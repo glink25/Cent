@@ -6,6 +6,7 @@ export type Widget = {
     code: string;
     permissions: string[];
     settings?: Record<string, any>;
+    showInHome?: boolean;
     createdAt: number;
     updatedAt: number;
 };

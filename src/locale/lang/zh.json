@@ -705,5 +705,6 @@
   "permission-category": "账单类别",
   "permission-currency": "多币种信息",
   "permission-tag": "账单标签",
-  "are-you-sure-to-delete-this-widget": "确定要删除这个Widget吗？"
+  "are-you-sure-to-delete-this-widget": "确定要删除这个Widget吗？",
+  "show-in-home": "首页展示"
 }

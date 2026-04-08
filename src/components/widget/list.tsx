@@ -4,12 +4,13 @@ import { useIntl } from "@/locale";
 import modal from "../modal";
 import { showSortableList } from "../sortable";
 import { Button } from "../ui/button";
+import { Switch } from "../ui/switch";
 import { showWidgetEdit } from "./edit-form";
 import WidgetPreview from "./preview";
 
 export default function WidgetList({ onCancel }: { onCancel?: () => void }) {
     const t = useIntl();
-    const { widgets, remove, reorder } = useWidget();
+    const { widgets, remove, reorder, update } = useWidget();
 
     return (
         <PopupLayout onBack={onCancel} title={t("widget-settings")}>
@@ -52,7 +53,20 @@ export default function WidgetList({ onCancel }: { onCancel?: () => void }) {
                     >
                         <div className="flex items-center justify-between">
                             <div className="font-medium">{widget.name}</div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2">
+                                    <Switch
+                                        checked={widget.showInHome ?? false}
+                                        onCheckedChange={async (checked) => {
+                                            await update(widget.id, {
+                                                showInHome: checked,
+                                            });
+                                        }}
+                                    />
+                                    <span className="text-xs opacity-60">
+                                        {t("show-in-home")}
+                                    </span>
+                                </div>
                                 <div className="text-xs opacity-60">
                                     {widget.permissions.join(", ")}
                                 </div>
