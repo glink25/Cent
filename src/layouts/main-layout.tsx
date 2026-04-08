@@ -17,6 +17,7 @@ import {
 } from "@/components/scheduled";
 import { Settings } from "@/components/settings";
 import { SortableListProvider } from "@/components/sortable";
+import { SortableListWithEnableProvider } from "@/components/sortable/enable";
 import { SortableGroupProvider } from "@/components/sortable/group";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -65,6 +66,7 @@ export default function MainLayout() {
                 <BillEditorProvider />
                 <BillInfoProvider />
                 <SortableListProvider />
+                <SortableListWithEnableProvider />
                 <SortableGroupProvider />
                 <Settings />
                 <CurrencyListProvider />

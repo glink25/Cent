@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import { Switch } from "radix-ui";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useShallow } from "zustand/shallow";
 import { StorageDeferredAPI } from "@/api/storage";
@@ -25,18 +25,33 @@ import {
 } from "@/components/stat/focus-type";
 import { TagItem } from "@/components/stat/static-item";
 import { Button } from "@/components/ui/button";
+import WidgetPreview from "@/components/widget/preview";
 import { useCurrency } from "@/hooks/use-currency";
 import {
     DefaultFilterViewId,
     useCustomFilters,
 } from "@/hooks/use-custom-filters";
 import { useTag } from "@/hooks/use-tag";
-import type { BillFilter, BillFilterView } from "@/ledger/extra-type";
+import { useWidget } from "@/hooks/use-widget";
+import type {
+    BillFilter,
+    BillFilterView,
+    BillFilterViewModule,
+} from "@/ledger/extra-type";
 import type { Bill } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
 import { cn } from "@/utils";
+
+const DefaultModuleOrder: BillFilterViewModule[] = [
+    "base-analysis",
+    "top-words",
+    "map",
+    "analysis",
+    "top-expense",
+    "top-income",
+];
 
 export default function Page() {
     const t = useIntl();
@@ -102,18 +117,21 @@ export default function Page() {
     );
 
     const navigate = useNavigate();
-    const seeDetails = (append?: Partial<BillFilter>) => {
-        navigate("/search", {
-            state: {
-                filter: {
-                    ...selectedFilter,
-                    start: realRange[0],
-                    end: realRange[1],
-                    ...append,
+    const seeDetails = useCallback(
+        (append?: Partial<BillFilter>) => {
+            navigate("/search", {
+                state: {
+                    filter: {
+                        ...selectedFilter,
+                        start: realRange[0],
+                        end: realRange[1],
+                        ...append,
+                    },
                 },
-            },
-        });
-    };
+            });
+        },
+        [navigate, selectedFilter, realRange],
+    );
 
     const [filtered, setFiltered] = useState<Bill[]>([]);
 
@@ -147,6 +165,12 @@ export default function Page() {
     });
 
     const totalMoneys = FocusTypes.map((t) => dataSources.total[t]);
+
+    const { widgets } = useWidget();
+
+    const effectiveModules = useMemo(() => {
+        return selectedFilterView?.modules ?? DefaultModuleOrder;
+    }, [selectedFilterView?.modules]);
 
     const { tags } = useTag();
     const tagStructure = useMemo(
@@ -271,6 +295,159 @@ export default function Page() {
         }),
         [selectedFilterView, focusType, viewType, realRange],
     );
+
+    const getBillsByFocusType = useCallback(
+        (type: FocusType) => {
+            if (type === "expense") return filteredExpenseBills;
+            if (type === "income") return filteredIncomeBills;
+            return filtered;
+        },
+        [filtered, filteredExpenseBills, filteredIncomeBills],
+    );
+
+    const renderModule = useCallback(
+        (module: BillFilterViewModule) => {
+            if (module === "base-analysis") {
+                return (
+                    <Fragment key={module}>
+                        <Assistant env={envArg} />
+                        {Part}
+                        {tagStructure.length > 0 && (
+                            <div className="rounded-md border p-2 w-full flex flex-col">
+                                <h2 className="font-medium text-lg my-3 text-center">
+                                    {t("tag-details")}
+                                </h2>
+                                <div className="table w-full border-collapse">
+                                    <div className="table-row-group divide-y">
+                                        {tagStructure.map((struct) => {
+                                            const index =
+                                                FocusTypes.indexOf(focusType);
+                                            const money = [
+                                                struct.income,
+                                                struct.expense,
+                                                struct.income - struct.expense,
+                                            ][index];
+                                            const total = totalMoneys[index];
+                                            return (
+                                                <TagItem
+                                                    key={struct.id}
+                                                    name={struct.name}
+                                                    money={money}
+                                                    total={total}
+                                                    type={focusType}
+                                                    onClick={() => {
+                                                        seeDetails({
+                                                            tags: [struct.id],
+                                                        });
+                                                    }}
+                                                ></TagItem>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </Fragment>
+                );
+            }
+            if (module === "top-words") {
+                return (
+                    <AnalysisCloud
+                        key={module}
+                        bills={getBillsByFocusType(focusType)}
+                    />
+                );
+            }
+            if (module === "map") {
+                return (
+                    <AnalysisMap
+                        key={module}
+                        bills={getBillsByFocusType(focusType)}
+                    />
+                );
+            }
+            if (module === "analysis") {
+                if (!analysis) return null;
+                return (
+                    <div
+                        key={module}
+                        className="rounded-md border p-2 w-full flex flex-col"
+                    >
+                        <h2 className="font-medium text-lg my-3 text-center">
+                            {t("analysis")}
+                        </h2>
+                        <AnalysisDetail
+                            analysis={analysis}
+                            type={focusType}
+                            unit={analysisUnit}
+                        />
+                    </div>
+                );
+            }
+            if (module === "top-expense") {
+                if (!dataSources.highestExpenseBill) return null;
+                return (
+                    <div key={module} className="rounded-md border p-2 w-full">
+                        {t("highest-expense")}:
+                        <BillItem
+                            className="w-full"
+                            bill={dataSources.highestExpenseBill}
+                            showTime
+                            onClick={() =>
+                                showBillInfo(dataSources.highestExpenseBill!)
+                            }
+                        />
+                    </div>
+                );
+            }
+            if (module === "top-income") {
+                if (!dataSources.highestIncomeBill) return null;
+                return (
+                    <div key={module} className="rounded-md border p-2 w-full">
+                        {t("highest-income")}:
+                        <BillItem
+                            className="w-full"
+                            bill={dataSources.highestIncomeBill}
+                            showTime
+                            onClick={() =>
+                                showBillInfo(dataSources.highestIncomeBill!)
+                            }
+                        />
+                    </div>
+                );
+            }
+            if (module.startsWith("widget-")) {
+                const widgetId = module.slice(7);
+                const widget = widgets.find((w) => w.id === widgetId);
+                if (!widget) return null;
+                return (
+                    <div key={module} className="rounded-md border w-full">
+                        <WidgetPreview
+                            widget={widget}
+                            bills={getBillsByFocusType(focusType)}
+                        />
+                    </div>
+                );
+            }
+            return null;
+        },
+        [
+            envArg,
+            Part,
+            tagStructure,
+            focusType,
+            totalMoneys,
+            seeDetails,
+            getBillsByFocusType,
+            analysis,
+            analysisUnit,
+            dataSources.highestExpenseBill,
+            dataSources.highestIncomeBill,
+            t,
+            widgets,
+        ],
+    );
+
     return (
         <div className="w-full h-full p-2 flex flex-col items-center justify-center gap-4 overflow-hidden page-show">
             <div className="w-full mx-2 max-w-[600px] flex flex-col gap-2">
@@ -360,105 +537,7 @@ export default function Page() {
             />
             <div className="w-full px-2 flex-1 flex justify-center overflow-y-auto">
                 <div className="w-full max-w-[600px] flex flex-col items-center gap-4 relative">
-                    <Assistant env={envArg} />
-                    {Part}
-                    {tagStructure.length > 0 && (
-                        <div className="rounded-md border p-2 w-full flex flex-col">
-                            <h2 className="font-medium text-lg my-3 text-center">
-                                {t("tag-details")}
-                            </h2>
-                            <div className="table w-full border-collapse">
-                                <div className="table-row-group divide-y">
-                                    {tagStructure.map((struct) => {
-                                        const index =
-                                            FocusTypes.indexOf(focusType);
-                                        const money = [
-                                            struct.income,
-                                            struct.expense,
-                                            struct.income - struct.expense,
-                                        ][index];
-                                        const total = totalMoneys[index];
-                                        return (
-                                            <TagItem
-                                                key={struct.id}
-                                                name={struct.name}
-                                                money={money}
-                                                total={total}
-                                                type={focusType}
-                                                onClick={() => {
-                                                    seeDetails({
-                                                        tags: [struct.id],
-                                                    });
-                                                }}
-                                            ></TagItem>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    <AnalysisCloud
-                        bills={
-                            focusType === "expense"
-                                ? filteredExpenseBills
-                                : focusType === "income"
-                                  ? filteredIncomeBills
-                                  : filtered
-                        }
-                    />
-                    <AnalysisMap
-                        bills={
-                            focusType === "expense"
-                                ? filteredExpenseBills
-                                : focusType === "income"
-                                  ? filteredIncomeBills
-                                  : filtered
-                        }
-                    />
-                    {analysis && (
-                        <div className="rounded-md border p-2 w-full flex flex-col">
-                            <h2 className="font-medium text-lg my-3 text-center">
-                                {t("analysis")}
-                            </h2>
-                            <AnalysisDetail
-                                analysis={analysis}
-                                type={focusType}
-                                unit={analysisUnit}
-                            />
-                        </div>
-                    )}
-                    <div className="w-full flex flex-col gap-4">
-                        {dataSources.highestExpenseBill && (
-                            <div className="rounded-md border p-2">
-                                {t("highest-expense")}:
-                                <BillItem
-                                    className="w-full"
-                                    bill={dataSources.highestExpenseBill}
-                                    showTime
-                                    onClick={() =>
-                                        showBillInfo(
-                                            dataSources.highestExpenseBill!,
-                                        )
-                                    }
-                                />
-                            </div>
-                        )}
-                        {dataSources.highestIncomeBill && (
-                            <div className="rounded-md border p-2">
-                                {t("highest-income")}:
-                                <BillItem
-                                    className="w-full"
-                                    bill={dataSources.highestIncomeBill}
-                                    showTime
-                                    onClick={() =>
-                                        showBillInfo(
-                                            dataSources.highestIncomeBill!,
-                                        )
-                                    }
-                                />
-                            </div>
-                        )}
-                    </div>
+                    {effectiveModules.map((module) => renderModule(module))}
                     <div>
                         <Button variant="ghost" onClick={() => seeDetails()}>
                             {t("see-all-ledgers")}

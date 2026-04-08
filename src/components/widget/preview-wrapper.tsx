@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTheme } from "@/hooks/use-theme";
+import type { Bill } from "@/ledger/type";
 import { useLedgerStore } from "@/store/ledger";
 import { Skeleton } from "../ui/skeleton";
 import compileWidget from "./core/compile";
@@ -22,18 +23,21 @@ type WidgetPreviewWrapperProps = {
     code: string;
     settings?: Record<string, any>;
     className?: string;
+    bills?: Bill[];
 };
 
 export default function WidgetPreviewWrapper({
     code,
     settings = {},
     className,
+    bills: externalBills,
 }: WidgetPreviewWrapperProps) {
     const [dsl, setDsl] = useState<DSLNode | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const bills = useLedgerStore((s) => s.bills);
+    const storeBills = useLedgerStore((s) => s.bills);
+    const bills = externalBills ?? storeBills;
     const budgets = useLedgerStore((s) => s.infos?.meta.budgets);
     const creators = useLedgerStore((s) => s.infos?.creators);
     const categories = useLedgerStore((s) => s.infos?.meta.categories);

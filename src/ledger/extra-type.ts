@@ -59,11 +59,21 @@ export type BillFilter = Partial<{
     currencies?: string[];
 }>;
 
+export type BillFilterViewModule =
+    | "base-analysis" // BaseAnalysis 模块，这个模块必须被包含在内
+    | "top-words" // AnalysisCloud 高频词云展示模块
+    | "map" // AnalysisMap 地图模块
+    | "analysis" // AnalysisDetail 简易分析模块
+    | "top-expense" // 最高支出模块
+    | "top-income" // 最高收入模块
+    | `widget-${string}`; // Widget 组件
+
 export type BillFilterView = {
     id: string;
     filter: BillFilter;
     name: string;
     displayCurrency?: string;
+    modules?: BillFilterViewModule[];
 };
 
 /** 周期记账配置 */
