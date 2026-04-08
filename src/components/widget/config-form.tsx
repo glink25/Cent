@@ -1,3 +1,12 @@
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { useIntl } from "@/locale";
 import type { FormItem, WidgetSettingsForm } from "./core/compile";
 
@@ -24,56 +33,60 @@ export default function ConfigForm({
         switch (item.type) {
             case "text":
                 return (
-                    <input
+                    <Input
                         id={`config-${key}`}
                         type="text"
                         value={value}
                         onChange={(e) => onChange(key, e.target.value)}
-                        className="flex-1 px-3 py-1.5 text-xs border rounded bg-background"
+                        className="flex-1 h-8 text-xs"
                         placeholder={item.label}
                     />
                 );
 
             case "number":
                 return (
-                    <input
+                    <Input
                         id={`config-${key}`}
                         type="number"
                         value={value}
                         onChange={(e) =>
                             onChange(key, parseFloat(e.target.value) || 0)
                         }
-                        className="flex-1 px-3 py-1.5 text-xs border rounded bg-background"
+                        className="flex-1 h-8 text-xs"
                         placeholder={item.label}
                     />
                 );
 
             case "date":
                 return (
-                    <input
+                    <Input
                         id={`config-${key}`}
                         type="date"
                         value={value}
                         onChange={(e) => onChange(key, e.target.value)}
-                        className="flex-1 px-3 py-1.5 text-xs border rounded bg-background"
+                        className="flex-1 h-8 text-xs"
                     />
                 );
 
             case "select":
                 return (
-                    <select
-                        id={`config-${key}`}
+                    <Select
                         value={value}
-                        onChange={(e) => onChange(key, e.target.value)}
-                        className="flex-1 px-3 py-1.5 text-xs border rounded bg-background"
+                        onValueChange={(v) => onChange(key, v)}
                     >
-                        <option value="">{t("select-placeholder")}</option>
-                        {item.options?.map((option) => (
-                            <option key={option} value={option}>
-                                {option}
-                            </option>
-                        ))}
-                    </select>
+                        <SelectTrigger className="flex-1 h-8 text-xs">
+                            <SelectValue
+                                placeholder={t("select-placeholder")}
+                            />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {item.options?.map((option) => (
+                                <SelectItem key={option} value={option}>
+                                    {option}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 );
 
             default:
@@ -88,12 +101,12 @@ export default function ConfigForm({
             </div>
             {Object.entries(config).map(([key, item]) => (
                 <div key={key} className="flex items-center gap-2">
-                    <label
+                    <Label
                         htmlFor={`config-${key}`}
                         className="text-xs min-w-[80px]"
                     >
                         {item.label}
-                    </label>
+                    </Label>
                     {renderField(key, item)}
                 </div>
             ))}
