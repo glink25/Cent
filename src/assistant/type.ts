@@ -1,4 +1,4 @@
-import type { ZodTypeAny, z } from "zod";
+import type { ZodType, z } from "zod";
 
 export type UserMessage = {
     role: "user";
@@ -61,7 +61,7 @@ export type TurnResult = {
     history: History;
 };
 
-export type ZodLikeSchema = ZodTypeAny;
+export type ZodLikeSchema = ZodType;
 
 export type MinimalSchema<T = unknown> = {
     safeParse: (value: unknown) =>
@@ -75,38 +75,38 @@ export type MinimalSchema<T = unknown> = {
           };
 };
 
-export type ToolSchema<T = unknown> = ZodLikeSchema | MinimalSchema<T>;
+export type ToolSchema = ZodLikeSchema;
 
 export type ToolJsonSchema = Record<string, unknown>;
 
 export type ToolPromptDefinition = {
     name: string;
     describe: string;
-    argSchema: ToolJsonSchema;
+    argSchema?: ToolJsonSchema;
     returnSchema: ToolJsonSchema;
 };
 
 export type Tool<Args = unknown, Returns = unknown> = {
     name: string;
     describe: string;
-    argSchema: ToolSchema;
+    argSchema?: ToolSchema;
     returnSchema: ToolSchema;
     handler: (
-        arg: Args,
+        arg: Args | undefined,
         ctx: { history: History },
     ) => Returns | Promise<Returns>;
 };
 
 export type CreateToolInput<
-    ArgsSchema extends ZodLikeSchema,
+    ArgsSchema extends ZodLikeSchema | undefined,
     ReturnSchema extends ZodLikeSchema,
 > = {
     name: string;
     describe: string;
-    argSchema: ArgsSchema;
+    argSchema?: ArgsSchema;
     returnSchema: ReturnSchema;
     handler: (
-        arg: z.infer<ArgsSchema>,
+        arg: ArgsSchema extends undefined ? undefined : z.infer<ArgsSchema>,
     ) => z.infer<ReturnSchema> | Promise<z.infer<ReturnSchema>>;
 };
 

@@ -22,15 +22,27 @@ function assetsToPrompt(
 你可以通过使用工具 PlaygroundTool，编写代码进行访问，例如使用 getFile(${startIndex}) 获取序号为 ${startIndex} 的文件。`;
 }
 
+function truncateLongText(text: string, maxLength = 10000): string {
+    if (text.length <= maxLength) return text;
+    const head = text.slice(0, maxLength / 2);
+    const tail = text.slice(-maxLength / 2);
+    console.warn(`Text truncated: ${text.length} -> ${maxLength}`);
+    return `${head}...（返回值过长，已截断）...${tail}`;
+}
+
+function formatValue(value: unknown): string {
+    return truncateLongText(JSON.stringify(value, null, 2));
+}
+
 function toolMessageToContent(toolMsg: ToolMessage): string {
     let content = `[工具调用: ${toolMsg.formatted.name}]\n`;
     content += `参数: ${JSON.stringify(toolMsg.formatted.params, null, 2)}\n`;
 
     if (toolMsg.formatted.returns !== undefined) {
-        content += `返回结果: ${JSON.stringify(toolMsg.formatted.returns, null, 2)}`;
+        content += `返回结果: ${formatValue(toolMsg.formatted.returns)}`;
     }
     if (toolMsg.formatted.errors !== undefined) {
-        content += `错误: ${JSON.stringify(toolMsg.formatted.errors, null, 2)}`;
+        content += `错误: ${formatValue(toolMsg.formatted.errors)}`;
     }
 
     return content;
@@ -76,6 +88,7 @@ function historyToMessages(
 
 export const CentAIProvider: Provider = {
     request({ history }) {
+        console.log("History:", history);
         let aborted = false;
         let abortController: AbortController | null = null;
 

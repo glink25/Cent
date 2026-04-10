@@ -12,7 +12,8 @@ import { useNavigate, useParams } from "react-router";
 import { useShallow } from "zustand/shallow";
 import { StorageDeferredAPI } from "@/api/storage";
 import type { AnalysisResult } from "@/api/storage/analysis";
-import AssistantButton from "@/components/assistant-v2";
+import AssistantButton from "@/components/assistant";
+import { setEnv } from "@/components/assistant/tools/env";
 import {
     BillFilterViewProvider,
     showBillFilterView,
@@ -302,6 +303,8 @@ export default function Page() {
         }),
         [selectedFilterView, focusType, viewType, realRange],
     );
+
+    setEnv(envArg);
 
     const getBillsByFocusType = useCallback(
         (type: FocusType) => {

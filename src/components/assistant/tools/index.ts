@@ -1,4 +1,5 @@
 import type { Tool } from "@/assistant";
+import { EnvTool } from "./env-tool";
 import {
     AnalyzeBillsTool,
     GetAccountMetaTool,
@@ -9,6 +10,7 @@ import { CentAIProvider } from "./provider";
 
 export const CentAIConfig = {
     tools: [
+        EnvTool,
         AnalyzeBillsTool,
         QueryBillsTool,
         GetAccountMetaTool,

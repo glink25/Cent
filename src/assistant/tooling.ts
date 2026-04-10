@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { zodToJsonSchema } from "zod-to-json-schema";
 import { parseWithSchema, stringifyJson } from "./shared";
 import systemPromptTemplate from "./system-prompt.md?raw";
 import type {
@@ -8,7 +7,6 @@ import type {
     ResolvedSkill,
     SkillMeta,
     Tool,
-    ToolJsonSchema,
     ToolMessage,
     ToolPromptDefinition,
     ZodLikeSchema,
@@ -20,17 +18,9 @@ const jsonObjectSchema = z.record(z.string(), z.unknown());
 const toolPromptDefinitionSchema = z.object({
     name: z.string(),
     describe: z.string(),
-    argSchema: jsonObjectSchema,
+    argSchema: jsonObjectSchema.optional(),
     returnSchema: jsonObjectSchema,
 });
-
-const listToolsArgsSchema = z
-    .object({
-        names: z.array(z.string()).optional(),
-    })
-    .describe(
-        "Object with optional names:string[] to fetch a subset of tools.",
-    );
 
 const listToolsReturnsSchema = z
     .array(toolPromptDefinitionSchema)
@@ -43,13 +33,6 @@ const skillMetaSchema = z.object({
     name: z.string(),
     description: z.string(),
 });
-
-const listSkillsArgsSchema = z
-    .object({
-        ids: z.array(z.string()).optional(),
-    })
-    .describe("Object with optional ids:string[] to fetch a subset of skills.");
-
 const listSkillsReturnsSchema = z
     .array(skillMetaSchema)
     .describe("Array of skill metadata including id, name, description.");
@@ -81,65 +64,21 @@ export function isZodSchema(schema: unknown): schema is ZodLikeSchema {
     );
 }
 
-function normalizeJsonSchema(schema: unknown): ToolJsonSchema {
-    if (
-        typeof schema !== "object" ||
-        schema === null ||
-        Array.isArray(schema)
-    ) {
-        return { type: "object", description: String(schema) };
-    }
-    return schema as ToolJsonSchema;
-}
-
-function schemaToPromptJsonSchema(name: string, schema: ZodLikeSchema) {
-    return normalizeJsonSchema(
-        zodToJsonSchema(
-            schema as unknown as Parameters<typeof zodToJsonSchema>[0],
-            {
-                name,
-                $refStrategy: "none",
-                target: "jsonSchema7",
-            },
-        ),
-    );
-}
-
-function minimalSchemaToPromptJsonSchema(description: string): ToolJsonSchema {
-    return {
-        type: "object",
-        description,
-    };
-}
-
-function toolSchemaToPromptJsonSchema(
-    toolName: string,
-    field: "argSchema" | "returnSchema",
-    schema: Tool["argSchema"] | Tool["returnSchema"],
-): ToolJsonSchema {
-    if (isZodSchema(schema)) {
-        const suffix = field === "argSchema" ? "Args" : "Returns";
-        return schemaToPromptJsonSchema(`${toolName}${suffix}`, schema);
-    }
-    return minimalSchemaToPromptJsonSchema(
-        `${toolName}.${field} is validated at runtime by a custom schema.`,
-    );
-}
-
 function toolToPromptDefinition(tool: Tool): ToolPromptDefinition {
+    const cuttedToJSONSchema = (v: ZodLikeSchema) => {
+        const schema = z.toJSONSchema(v);
+        return {
+            ...schema,
+            $schema: undefined, // 去掉 $schema 字段，减少冗余信息
+        };
+    };
     return {
         name: tool.name,
         describe: tool.describe,
-        argSchema: toolSchemaToPromptJsonSchema(
-            tool.name,
-            "argSchema",
-            tool.argSchema,
-        ),
-        returnSchema: toolSchemaToPromptJsonSchema(
-            tool.name,
-            "returnSchema",
-            tool.returnSchema,
-        ),
+        argSchema: tool.argSchema
+            ? cuttedToJSONSchema(tool.argSchema)
+            : undefined,
+        returnSchema: cuttedToJSONSchema(tool.returnSchema),
     };
 }
 
@@ -185,38 +124,30 @@ function formatToolError(
 
 export function createListToolsTool(
     tools: Tool<any, any>[],
-): Tool<{ names?: string[] }, ToolPromptDefinition[]> {
+): Tool<undefined, ToolPromptDefinition[]> {
     return createTool({
         name: "listTools",
         describe:
             "List available tools and their argument and return schema summary.",
-        argSchema: listToolsArgsSchema,
+        argSchema: undefined,
         returnSchema: listToolsReturnsSchema,
-        handler: (input) => {
-            const names = input?.names;
-            const visibleTools = names?.length
-                ? tools.filter((tool) => names.includes(tool.name))
-                : tools;
-            return visibleTools.map(toolToPromptDefinition);
+        handler: () => {
+            return tools.map(toolToPromptDefinition);
         },
     });
 }
 
 export function createListSkillsTool(
     skills: Array<Pick<ResolvedSkill, "id" | "name" | "description">>,
-): Tool<{ ids?: string[] }, SkillMeta[]> {
+): Tool<undefined, SkillMeta[]> {
     return createTool({
         name: "listSkills",
         describe:
             "List available skills (metadata only). Use loadSkill to read full content.",
-        argSchema: listSkillsArgsSchema,
+        argSchema: undefined,
         returnSchema: listSkillsReturnsSchema,
-        handler: (input) => {
-            const ids = input?.ids;
-            const visible = ids?.length
-                ? skills.filter((s) => ids.includes(s.id))
-                : skills;
-            return visible.map((s) => ({
+        handler: () => {
+            return skills.map((s) => ({
                 id: s.id,
                 name: s.name,
                 description: s.description,
@@ -314,16 +245,14 @@ export function createTool<
     input: CreateToolInput<ArgsSchema, ReturnSchema>,
 ): Tool<z.infer<ArgsSchema>, z.infer<ReturnSchema>> {
     const { name, describe, argSchema, returnSchema, handler } = input;
-    if (!isZodSchema(argSchema) || !isZodSchema(returnSchema)) {
-        throw new Error(
-            "createTool requires zod schemas for argSchema and returnSchema.",
-        );
+    if (!isZodSchema(returnSchema)) {
+        throw new Error("createTool requires zod schemas for returnSchema.");
     }
     return {
         name,
         describe,
         argSchema,
         returnSchema,
-        handler,
+        handler: handler as any,
     };
 }

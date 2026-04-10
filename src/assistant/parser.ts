@@ -88,6 +88,7 @@ export function parseResult(result: ProviderRequestChunk): AssistantMessage {
     // 3. 清理剩余的文本作为 answer
     assistantMsg.formatted.answer = remainingText
         .replace(/\n{2,}/g, "\n")
+        .replace(/<\s*\/\s*$/g, "")
         .trim();
 
     return assistantMsg;

@@ -5,20 +5,20 @@ import { useLedgerStore } from "@/store/ledger";
 import { analyzeBills, getAccountMeta, queryBills } from "./ledger-functions";
 
 const queryLikeSchema = z.object({
-    startTime: z.string().optional().describe("Start date, YYYY-MM-DD"),
-    endTime: z.string().optional().describe("End date, YYYY-MM-DD"),
+    startTime: z.string().optional().describe("YYYY-MM-DD"),
+    endTime: z.string().optional().describe("YYYY-MM-DD"),
     categoryNames: z
         .array(z.string())
         .optional()
-        .describe("Category names for fuzzy matching"),
-    tagNames: z.array(z.string()).optional().describe("Exact tag names"),
-    keyword: z.string().optional().describe("Keyword in bill comment"),
-    minAmount: z.number().optional().describe("Min amount in unit currency"),
-    maxAmount: z.number().optional().describe("Max amount in unit currency"),
+        .describe("分类名（逗号分隔，支持模糊匹配）"),
+    tagNames: z.array(z.string()).optional().describe("标签名（逗号分隔）"),
+    keyword: z.string().optional().describe("备注关键词"),
+    minAmount: z.number().optional().describe("金额范围（数字）"),
+    maxAmount: z.number().optional().describe("金额范围（数字）"),
     billType: z
         .enum(["income", "expense"])
         .optional()
-        .describe("Filter by income or expense"),
+        .describe("income 或 expense"),
 });
 
 async function loadLedgerData(): Promise<ExportedJSON> {
@@ -34,7 +34,7 @@ async function loadLedgerData(): Promise<ExportedJSON> {
 export const QueryBillsTool = createTool({
     name: "query_bills",
     describe:
-        "Query raw bill records by time/category/tag/keyword/amount filters. Use for specific transactions.",
+        "查询原始账单明细。用于按时间/分类/标签/关键字/金额筛选具体账单。注意如果没有设置合理筛选条件，该工具有可能返回大量账单数据，因此必须谨慎使用，适用场景：查找单笔交易时，或者有明确的时间范围。",
     argSchema: queryLikeSchema,
     returnSchema: z.object({
         bills: z.array(z.record(z.string(), z.unknown())),
@@ -65,18 +65,24 @@ export const QueryBillsTool = createTool({
 
 export const AnalyzeBillsTool = createTool({
     name: "analyze_bills",
-    describe:
-        "Analyze bills with grouped statistics and optional trend. Prefer this for totals, proportions and trends.",
+    describe: "账单统计与分析。优先用于总额、占比、趋势和概况分析。",
     argSchema: queryLikeSchema.extend({
         groupBy: z
             .enum(["category", "tag", "day", "month", "year", "type"])
             .optional()
-            .describe("Grouping dimension"),
-        limit: z.number().int().positive().optional().describe("Top N items"),
+            .describe(
+                "分组维度，可选值：category/tag/day/month/year/type（category: 按分类统计，tag: 按标签统计，day: 按日统计，month: 按月统计）",
+            ),
+        limit: z
+            .number()
+            .int()
+            .positive()
+            .optional()
+            .describe("返回前几项（数字，默认10）"),
         includeTrend: z
             .boolean()
             .optional()
-            .describe("Whether to return trend by day"),
+            .describe("true 或 false (是否包含时间趋势数据，用于分析波动)"),
     }),
     returnSchema: z.object({
         meta: z.object({
@@ -110,7 +116,7 @@ export const AnalyzeBillsTool = createTool({
 
 export const GetAccountMetaTool = createTool({
     name: "get_account_meta",
-    describe: "Get account metadata including categories, tags and currencies.",
+    describe: "获取账本信息，用于获取当前账本定义的分类结构和标签列表。",
     argSchema: z.object({}),
     returnSchema: z.object({
         categories: z.object({

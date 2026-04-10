@@ -67,7 +67,6 @@
 		"webdav": "^5.8.0",
 		"wordcloud": "^1.2.3",
 		"zod": "^4.1.11",
-		"zod-to-json-schema": "^3.25.2",
 		"zustand": "^5.0.8",
 		"zustand-computed": "^2.1.0",
 		"zustand-indexeddb": "^0.1.1"

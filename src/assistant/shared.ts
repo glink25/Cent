@@ -2,10 +2,8 @@ import type {
     AbortablePromise,
     AssistantMessage,
     History,
-    ToolMessage,
-    ToolSchema,
-    TurnResult,
     UserMessage,
+    ZodLikeSchema,
 } from "./type";
 
 export function createAbortError() {
@@ -51,7 +49,13 @@ export function createUserMessage(
     };
 }
 
-export function parseWithSchema<T>(schema: ToolSchema<T>, value: unknown): T {
+export function parseWithSchema<T>(
+    schema: ZodLikeSchema | undefined,
+    value: unknown,
+): T {
+    if (!schema) {
+        return value as T;
+    }
     const result = schema.safeParse(value);
     if (!result.success) {
         throw result.error;

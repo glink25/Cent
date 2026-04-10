@@ -20,7 +20,7 @@ import type {
     TurnResult,
 } from "./type";
 
-const DEFAULT_MAX_TOOL_ROUNDS = 8;
+const DEFAULT_MAX_TOOL_ROUNDS = 20;
 
 export function createSession({
     history = [],
@@ -65,9 +65,9 @@ export function createSession({
     const listSkillsTool = createListSkillsTool(resolvedSkills);
     const loadSkillTool = createLoadSkillTool(skillMap);
     const listTool = createListToolsTool([
-        ...baseTools,
         listSkillsTool,
         loadSkillTool,
+        ...baseTools,
     ]);
 
     const runtimeTools = [

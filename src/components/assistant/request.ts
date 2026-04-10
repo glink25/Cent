@@ -1,20 +1,13 @@
 import type { AIConfig } from "@/ledger/extra-type";
-import { t } from "@/locale";
 import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
-import { decodeApiKey } from "@/utils/api-key";
+import type { ProviderRequestChunk } from "../../assistant/type";
 
-/**
- * 从 store 获取 AI 配置
- * @returns AI配置对象
- * @throws 如果没有配置或没有默认配置时抛出错误
- */
 function getAIConfig(): AIConfig {
     const userId = useUserStore.getState().id;
     const assistantData =
         useLedgerStore.getState().infos?.meta.personal?.[userId]?.assistant;
 
-    // 优先使用新的配置系统
     if (assistantData?.configs && assistantData.configs.length > 0) {
         const defaultConfigId = assistantData.defaultConfigId;
         if (defaultConfigId) {
@@ -27,10 +20,8 @@ function getAIConfig(): AIConfig {
         }
     }
 
-    // Fallback: 如果新配置不存在，尝试使用旧的 bigmodel 配置
     const oldApiKey = assistantData?.bigmodel?.apiKey;
     if (oldApiKey) {
-        // 构造一个临时的配置对象，使用智谱 AI 的默认配置
         return {
             id: "legacy-bigmodel",
             name: "智谱GLM (Legacy)",
@@ -41,40 +32,23 @@ function getAIConfig(): AIConfig {
         };
     }
 
-    // 如果新旧配置都不存在，抛出错误
-    throw new Error(t("ai-config-required-error"));
+    throw new Error("未找到 AI 配置，请先在设置中配置 AI API");
 }
 
-/**
- * 构建 AI API 请求的 URL
- * @param config AI 配置
- * @returns 完整的 API URL
- */
-function buildAIRequestUrl(config: AIConfig): string {
+function buildStreamingUrl(config: AIConfig): string {
     if (config.apiType === "google-ai-studio") {
-        // Google AI Studio API URL 格式
-        if (config.apiUrl.includes(":generateContent")) {
-            return config.apiUrl;
-        }
         const baseUrl = config.apiUrl.endsWith("/")
             ? config.apiUrl.slice(0, -1)
             : config.apiUrl;
-        return `${baseUrl}/v1beta/models/${config.model}:generateContent`;
+        return `${baseUrl}/v1beta/models/${config.model}:streamGenerateContent?alt=sse`;
     } else {
-        // OpenAI 兼容格式
         return config.apiUrl.endsWith("/")
             ? `${config.apiUrl}chat/completions`
             : `${config.apiUrl}/chat/completions`;
     }
 }
 
-/**
- * 构建 AI API 请求的请求头
- * @param apiType API 类型
- * @param apiKey API Key
- * @returns 请求头对象
- */
-function buildAIRequestHeaders(
+function buildStreamingHeaders(
     apiType: AIConfig["apiType"],
     apiKey: string,
 ): Record<string, string> {
@@ -91,14 +65,7 @@ function buildAIRequestHeaders(
     return headers;
 }
 
-/**
- * 构建 AI API 请求体
- * @param config AI 配置
- * @param messages 消息列表
- * @param options 可选参数（temperature, max_tokens/maxOutputTokens）
- * @returns 请求体对象
- */
-function buildAIRequestBody(
+function buildStreamingBody(
     config: AIConfig,
     messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
     options?: {
@@ -108,7 +75,6 @@ function buildAIRequestBody(
     },
 ): unknown {
     if (config.apiType === "google-ai-studio") {
-        // Google AI Studio 格式
         const contents: Array<{
             role: "user" | "model";
             parts: Array<{ text: string }>;
@@ -118,14 +84,12 @@ function buildAIRequestBody(
 
         for (const msg of messages) {
             if (msg.role === "system") {
-                // 收集 system 消息作为 systemInstruction
                 if (systemInstruction) {
                     systemInstruction += "\n\n" + msg.content;
                 } else {
                     systemInstruction = msg.content;
                 }
             } else {
-                // user 和 assistant 消息转换为 contents
                 const role = msg.role === "user" ? "user" : "model";
                 contents.push({
                     role,
@@ -150,7 +114,6 @@ function buildAIRequestBody(
             },
         };
 
-        // 如果有 system instruction，添加到请求中
         if (systemInstruction) {
             requestBody.systemInstruction = {
                 parts: [{ text: systemInstruction }],
@@ -159,150 +122,186 @@ function buildAIRequestBody(
 
         return requestBody;
     } else {
-        // OpenAI 兼容格式
         return {
             model: config.model,
             messages,
+            stream: true,
             temperature: options?.temperature ?? 0.7,
             max_tokens: options?.max_tokens ?? 2000,
         };
     }
 }
+type StreamChunk = ProviderRequestChunk;
+// open ai和google studio api有时候会返回原生思考字段，请将这两个方法修改为返回ReadableStream<{thought:string,answer:string}>,将原生的thought解析出来
 
-/**
- * 通用的 AI API 请求函数
- * @param config AI 配置
- * @param apiKey 解码后的 API Key
- * @param messages 消息列表
- * @param options 可选参数（temperature, max_tokens/maxOutputTokens）
- * @returns fetch Response 对象
- */
-export async function makeAIAPIRequest(
+async function* parseOpenAIStream(
+    response: Response,
+): AsyncIterable<StreamChunk> {
+    const reader = response.body!.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    // 维护全量内容
+    let fullThought = "";
+    let fullAnswer = "";
+
+    try {
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() || "";
+
+            for (const line of lines) {
+                const trimmedLine = line.trim();
+                if (!trimmedLine || !trimmedLine.startsWith("data: ")) continue;
+
+                const jsonStr = trimmedLine.slice(6);
+                if (jsonStr === "[DONE]") continue;
+
+                try {
+                    const data = JSON.parse(jsonStr);
+                    const delta = data.choices?.[0]?.delta;
+
+                    const t = delta?.reasoning_content || "";
+                    const a = delta?.content || "";
+
+                    if (t || a) {
+                        // 累加到全量变量中
+                        fullThought += t;
+                        fullAnswer += a;
+                        // 返回当前已累计的所有内容
+                        yield { thought: fullThought, answer: fullAnswer };
+                    }
+                } catch (error) {
+                    console.warn("Failed to parse OpenAI SSE line:", error);
+                }
+            }
+        }
+    } finally {
+        reader.releaseLock();
+    }
+}
+async function* parseGoogleStream(
+    response: Response,
+): AsyncIterable<StreamChunk> {
+    const reader = response.body!.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    // 维护全量内容
+    let fullThought = "";
+    let fullAnswer = "";
+
+    try {
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() || "";
+
+            for (const line of lines) {
+                const trimmedLine = line.trim();
+                if (!trimmedLine || !trimmedLine.startsWith("data: ")) continue;
+
+                const jsonStr = trimmedLine.slice(6);
+                try {
+                    const data = JSON.parse(jsonStr);
+                    const parts = data.candidates?.[0]?.content?.parts || [];
+
+                    let hasNewContent = false;
+                    for (const part of parts) {
+                        if (part.thought === true || "thought" in part) {
+                            fullThought += part.text || "";
+                            hasNewContent = true;
+                        } else {
+                            fullAnswer += part.text || "";
+                            hasNewContent = true;
+                        }
+                    }
+
+                    if (hasNewContent) {
+                        // 返回包含之前所有内容的完整对象
+                        yield { thought: fullThought, answer: fullAnswer };
+                    }
+                } catch (error) {
+                    console.warn("Failed to parse Google SSE line:", error);
+                }
+            }
+        }
+    } finally {
+        reader.releaseLock();
+    }
+}
+
+export async function createStreamingRequest(
     config: AIConfig,
     apiKey: string,
     messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
-    options?: {
-        temperature?: number;
-        max_tokens?: number;
-        maxOutputTokens?: number;
-    },
+    abortSignal?: AbortSignal,
 ): Promise<Response> {
-    const url = buildAIRequestUrl(config);
-    const headers = buildAIRequestHeaders(config.apiType, apiKey);
-    const body = buildAIRequestBody(config, messages, options);
+    const url = buildStreamingUrl(config);
+    const headers = buildStreamingHeaders(config.apiType, apiKey);
+    const body = buildStreamingBody(config, messages, {
+        temperature: 0.7,
+        max_tokens: 2000,
+    });
 
     return fetch(url, {
         method: "POST",
         headers,
         body: JSON.stringify(body),
+        signal: abortSignal,
     });
 }
 
-/**
- * AI API 请求，支持 OpenAI 兼容和 Google AI Studio 的 API 格式
- * @param messages 结构化的消息列表，包含 system、user、assistant 角色的消息
- */
-export const requestAI = async (
+async function requestAIWithConfig(
     messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
-    _config?: AIConfig,
-): Promise<string> => {
-    // 从 store 获取 AI 配置
-    const config = _config ?? getAIConfig();
+    config: AIConfig,
+): Promise<string> {
+    const abortController = new AbortController();
+    const response = await createStreamingRequest(
+        config,
+        config.apiKey,
+        messages,
+        abortController.signal,
+    );
 
-    // 解码 base64 编码的 API Key
-    const apiKey = decodeApiKey(config.apiKey);
-
-    // 根据 API 类型选择不同的请求方式
-    if (config.apiType === "google-ai-studio") {
-        return requestGoogleAIStudio(config, apiKey, messages);
-    } else {
-        return requestOpenAICompatible(config, apiKey, messages);
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+            `AI API 请求失败: ${response.status} ${response.statusText}. ${errorText}`,
+        );
     }
+
+    const parser =
+        config.apiType === "google-ai-studio"
+            ? parseGoogleStream
+            : parseOpenAIStream;
+
+    let fullAnswer = "";
+    for await (const chunk of parser(response)) {
+        if (chunk.answer?.trim() || chunk.thought?.trim()) {
+            abortController.abort();
+            fullAnswer += chunk.answer || "";
+        }
+    }
+    return fullAnswer;
+}
+
+export async function requestAI(
+    messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
+) {
+    return requestAIWithConfig(messages, getAIConfig());
+}
+
+export {
+    getAIConfig,
+    parseOpenAIStream,
+    parseGoogleStream,
+    requestAIWithConfig,
 };
-
-/**
- * OpenAI 兼容格式的 API 请求
- */
-async function requestOpenAICompatible(
-    config: AIConfig,
-    apiKey: string,
-    messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
-): Promise<string> {
-    try {
-        const response = await makeAIAPIRequest(config, apiKey, messages, {
-            temperature: 0.7,
-            max_tokens: 2000,
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(
-                `AI API 请求失败: ${response.status} ${response.statusText}. ${errorText}`,
-            );
-        }
-
-        const data = await response.json();
-
-        // 提取 AI 响应文本
-        if (data.choices && data.choices.length > 0) {
-            const content = data.choices[0].message?.content;
-            if (typeof content === "string") {
-                return content;
-            }
-        }
-
-        throw new Error("AI API 响应格式异常");
-    } catch (error) {
-        if (error instanceof Error) {
-            throw error;
-        }
-        throw new Error(`AI API 请求异常: ${String(error)}`);
-    }
-}
-
-/**
- * Google AI Studio 格式的 API 请求
- */
-async function requestGoogleAIStudio(
-    config: AIConfig,
-    apiKey: string,
-    messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
-): Promise<string> {
-    try {
-        const response = await makeAIAPIRequest(config, apiKey, messages, {
-            temperature: 0.7,
-            maxOutputTokens: 2000,
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(
-                `AI API 请求失败: ${response.status} ${response.statusText}. ${errorText}`,
-            );
-        }
-
-        const data = await response.json();
-
-        // 提取 AI 响应文本
-        // Google AI Studio 响应格式: candidates[0].content.parts[0].text
-        if (data.candidates && data.candidates.length > 0) {
-            const candidate = data.candidates[0];
-            if (
-                candidate.content?.parts &&
-                candidate.content.parts.length > 0
-            ) {
-                const text = candidate.content.parts[0].text;
-                if (typeof text === "string") {
-                    return text;
-                }
-            }
-        }
-
-        throw new Error("AI API 响应格式异常");
-    } catch (error) {
-        if (error instanceof Error) {
-            throw error;
-        }
-        throw new Error(`AI API 请求异常: ${String(error)}`);
-    }
-}
