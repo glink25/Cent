@@ -31,7 +31,7 @@ function truncateLongText(text: string, maxLength = 10000): string {
 }
 
 function formatValue(value: unknown): string {
-    return truncateLongText(JSON.stringify(value, null, 2));
+    return truncateLongText(JSON.stringify(value));
 }
 
 function toolMessageToContent(toolMsg: ToolMessage): string {

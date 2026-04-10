@@ -27,17 +27,17 @@ const BLOCKED_GLOBALS = [
     "fetch",
     "document",
     "window",
-    "globalThis",
+    // "globalThis",
     "Worker",
     "SharedWorker",
     "ServiceWorker",
-    "importScripts",
-    "setTimeout",
-    "setInterval",
-    "setImmediate",
-    "clearTimeout",
-    "clearInterval",
-    "clearImmediate",
+    // "importScripts",
+    // "setTimeout",
+    // "setInterval",
+    // "setImmediate",
+    // "clearTimeout",
+    // "clearInterval",
+    // "clearImmediate",
     "process",
     "require",
     "module",
@@ -50,7 +50,7 @@ const BLOCKED_GLOBALS = [
     "IDBRequest",
 ];
 
-function createWorkerCode(whiteList: API[], inject: string): string {
+function createWorkerCode(whiteList: API[], inject?: string): string {
     const blockedAPIs = [...BLOCKED_GLOBALS];
 
     return `
@@ -88,13 +88,17 @@ function createWorkerCode(whiteList: API[], inject: string): string {
                 self.constructor.constructor = noOp;
                 // 覆盖异步函数构造器
                 (async function(){}).constructor.constructor = noOp;
-            } catch(e) {}
-
+            } catch(e) {
+            console.warn("Failed to lock down Function constructor:", e); 
+            }
         })();
-
+        globalThis.__FROM_TRANSFER__ = [];
         ${inject}
-
         self.onmessage = async function(e) {
+            if (e.data.type === 'init') {
+                globalThis.__FROM_TRANSFER__ = e.data.transferable;
+                return;
+            }
             const { code, args } = e.data;
             try {
                 // 此时环境已经通过 IIFE 完成了加固，直接开始执行
@@ -121,9 +125,13 @@ function createWorkerCode(whiteList: API[], inject: string): string {
 /**
  * @description 使用web worker+proxy、with等创建一个简单沙盒运行环境，并且注入一些自定义js代码
  */
-export default function createSandBox(whiteList: API[], inject?: string) {
+export default function createSandBox(
+    whiteList: API[],
+    inject?: string,
+    transferable?: Array<{ index: number; file: File }>,
+) {
     let worker: Worker | null = null;
-    const workerCode = createWorkerCode(whiteList, "");
+    const workerCode = createWorkerCode(whiteList, inject);
     const blob = new Blob([workerCode], { type: "application/javascript" });
     const workerUrl = URL.createObjectURL(blob);
 
@@ -131,6 +139,10 @@ export default function createSandBox(whiteList: API[], inject?: string) {
         if (!worker) {
             // 关键：必须指定 type 为 'module'
             worker = new Worker(workerUrl, { type: "module" });
+            // Transmit transferable data immediately after creation
+            if (transferable) {
+                worker.postMessage({ type: "init", transferable });
+            }
         }
         return worker;
     };
@@ -141,8 +153,8 @@ export default function createSandBox(whiteList: API[], inject?: string) {
          */
         runDefaultExport: async (
             code: string,
-            args: any[],
-            timeout = 2000,
+            args: unknown[],
+            timeout = 5000,
         ): Promise<unknown> => {
             return new Promise((resolve, reject) => {
                 const w = initWorker();
@@ -151,7 +163,7 @@ export default function createSandBox(whiteList: API[], inject?: string) {
                 const timeoutId = setTimeout(() => {
                     reject(
                         new Error(
-                            `Timeout: Widget execution exceeded ${timeout}ms`,
+                            `Timeout: code running time exceeded ${timeout}ms`,
                         ),
                     );
                     w.terminate();
@@ -164,7 +176,7 @@ export default function createSandBox(whiteList: API[], inject?: string) {
                     else reject(new Error(e.data.error));
                 };
 
-                w.postMessage({ code: `${inject}\n${code}`, args });
+                w.postMessage({ type: "run", code, args });
             });
         },
 

@@ -419,6 +419,9 @@ function Content() {
                             }));
                         }}
                         onKeyDown={(e) => {
+                            if (e.nativeEvent.isComposing) {
+                                return;
+                            }
                             if (
                                 e.key === "Enter" &&
                                 !e.shiftKey &&
@@ -444,7 +447,6 @@ function Content() {
                                     return;
                                 }
                                 const files = await showFilePicker({
-                                    accept: "image/*,application/pdf,text/*,.csv,.xlsx,.json",
                                     multiple: true,
                                 });
                                 const remaining = 3 - input.assets.length;

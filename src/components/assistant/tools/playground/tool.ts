@@ -1,50 +1,19 @@
 import { z } from "zod";
 import { createTool, type History } from "@/assistant";
-import createSandBox, { API, type API as SandboxAPI } from "@/utils/sandbox";
-
-type PlaygroundFile = {
-    index: number;
-    name: string;
-    type: string;
-    size: number;
-    lastModified: number;
-    text: string;
-};
+import createSandBox from "@/utils/sandbox";
 
 function toErrorMessage(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
 }
 
-async function collectSessionFiles(history: History) {
+async function collectSessionFiles(
+    history: History,
+): Promise<Array<{ index: number; file: File }>> {
     const files = history.flatMap((msg) =>
         msg.role === "user" && msg.assets?.length ? msg.assets : [],
     );
-    const payload: PlaygroundFile[] = [];
-    for (let i = 0; i < files.length; i += 1) {
-        const file = files[i];
-        payload.push({
-            index: i + 1,
-            name: file.name,
-            type: file.type,
-            size: file.size,
-            lastModified: file.lastModified,
-            text: await file.text(),
-        });
-    }
-    return payload;
+    return files.map((file, i) => ({ index: i + 1, file }));
 }
-
-function buildInjectedGetFile(files: PlaygroundFile[]) {
-    return `
-const __PLAYGROUND_FILES__ = ${JSON.stringify(files)};
-globalThis.getFile = function(index) {
-  if (!Number.isInteger(index) || index <= 0) return null;
-  return __PLAYGROUND_FILES__.find((file) => file.index === index) ?? null;
-};
-`;
-}
-
-const defaultWhiteList = Object.keys(API) as SandboxAPI[];
 
 export const PlaygroundTool = createTool({
     name: "playground",
@@ -61,17 +30,6 @@ export const PlaygroundTool = createTool({
             .array(z.unknown())
             .optional()
             .describe("Arguments passed to the default-exported function."),
-        timeoutMs: z
-            .number()
-            .int()
-            .positive()
-            .max(30000)
-            .optional()
-            .describe("Execution timeout in milliseconds. Default: 2000."),
-        whiteList: z
-            .array(z.enum(Object.keys(API) as [SandboxAPI, ...SandboxAPI[]]))
-            .optional()
-            .describe("Allowed JS globals in sandbox worker."),
     }),
     returnSchema: z.object({
         success: z.boolean(),
@@ -83,18 +41,16 @@ export const PlaygroundTool = createTool({
             code: string;
             args?: unknown[];
             timeoutMs?: number;
-            whiteList?: SandboxAPI[];
         },
         ctx: { history: History },
     ) => {
         const { history } = ctx;
-        const files = await collectSessionFiles(history);
-        const inject = buildInjectedGetFile(files);
-        const sandbox = createSandBox(arg.whiteList ?? defaultWhiteList);
+        const transferable = await collectSessionFiles(history);
+        const sandbox = createSandBox([], undefined, transferable);
 
         try {
             const result = await sandbox.runDefaultExport(
-                `${inject}\n${arg.code}`,
+                `const getFile = (index) => globalThis.__FROM_TRANSFER__.find(f => f.index === index)?.file;\n${arg.code}`,
                 arg.args ?? [],
                 arg.timeoutMs ?? 2000,
             );
@@ -112,3 +68,16 @@ export const PlaygroundTool = createTool({
         }
     }) as never,
 });
+
+// Promise.resolve(
+//     PlaygroundTool.handler(
+//         {
+//             code: "export default function() { const file = getFile(1);return file.name; }",
+//         },
+//         {
+//             history: [
+//                 { role: "user", assets: [new File([], "test.txt")], raw: "" },
+//             ],
+//         },
+//     ),
+// ).then(console.log);
