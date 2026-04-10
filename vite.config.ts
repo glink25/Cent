@@ -75,15 +75,16 @@ export default defineConfig(({ mode }) => {
         build: {
             rollupOptions: {
                 output: {
-                    manualChunks: {
-                        dndkit: [
-                            "@dnd-kit/core",
-                            "@dnd-kit/modifiers",
-                            "@dnd-kit/sortable",
-                            "@dnd-kit/utilities",
-                        ],
-                        echarts: ["echarts"],
-                        reactDayPicker: ["react-day-picker"],
+                    manualChunks: (id) => {
+                        if (id.includes("@dnd-kit")) {
+                            return "dndkit";
+                        }
+                        if (id.includes("echarts")) {
+                            return "echarts";
+                        }
+                        if (id.includes("react-day-picker")) {
+                            return "reactDayPicker";
+                        }
                     },
                 },
             },
