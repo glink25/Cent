@@ -179,6 +179,9 @@ importers:
       zustand-computed:
         specifier: ^2.1.0
         version: 2.1.0(react@19.1.1)(zustand@5.0.8(@types/react@19.1.12)(immer@10.1.1)(react@19.1.1)(use-sync-external-store@1.5.0(react@19.1.1)))
+      zustand-indexeddb:
+        specifier: ^0.1.1
+        version: 0.1.1(zustand@5.0.8(@types/react@19.1.12)(immer@10.1.1)(react@19.1.1)(use-sync-external-store@1.5.0(react@19.1.1)))
     devDependencies:
       '@biomejs/biome':
         specifier: latest
@@ -5639,6 +5642,11 @@ packages:
     peerDependencies:
       react: '>=18.2.0 <20.0.0'
       zustand: '>=5.0.0 <6.0.0'
+
+  zustand-indexeddb@0.1.1:
+    resolution: {integrity: sha512-2IErbvNdzxHkPLRep53e2dRcX0TtDmc940aPyEjzLxAYWVxNY9crrtkufrE/k/jkvfxybuu8xN+emSdWFMVP6w==}
+    peerDependencies:
+      zustand: ^5.0.0
 
   zustand@5.0.8:
     resolution: {integrity: sha512-gyPKpIaxY9XcO2vSMrLbiER7QMAMGOQZVRdJ6Zi782jkbzZygq5GI9nG8g+sMgitRtndwaBSl7uiqC49o1SSiw==}
@@ -11685,6 +11693,10 @@ snapshots:
   zustand-computed@2.1.0(react@19.1.1)(zustand@5.0.8(@types/react@19.1.12)(immer@10.1.1)(react@19.1.1)(use-sync-external-store@1.5.0(react@19.1.1))):
     dependencies:
       react: 19.1.1
+      zustand: 5.0.8(@types/react@19.1.12)(immer@10.1.1)(react@19.1.1)(use-sync-external-store@1.5.0(react@19.1.1))
+
+  zustand-indexeddb@0.1.1(zustand@5.0.8(@types/react@19.1.12)(immer@10.1.1)(react@19.1.1)(use-sync-external-store@1.5.0(react@19.1.1))):
+    dependencies:
       zustand: 5.0.8(@types/react@19.1.12)(immer@10.1.1)(react@19.1.1)(use-sync-external-store@1.5.0(react@19.1.1))
 
   zustand@5.0.8(@types/react@19.1.12)(immer@10.1.1)(react@19.1.1)(use-sync-external-store@1.5.0(react@19.1.1)):

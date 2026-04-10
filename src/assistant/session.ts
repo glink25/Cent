@@ -103,7 +103,6 @@ export function createSession({
         history: History,
         round: number = 0,
     ): AbortablePromise<AsyncIterable<TurnResult>> => {
-        console.log("start history", history, round);
         let currentRequested: ReturnType<typeof provider.request>;
         let subAbort: (() => void) | null = null;
 
@@ -119,7 +118,6 @@ export function createSession({
                 const stream = await currentRequested;
                 for await (const chunk of stream) {
                     const assistantMessage = parseResult(chunk);
-                    console.log("assistantMessage", assistantMessage);
 
                     // 找出所有需要执行的工具消息
                     const toolIndices = assistantMessage.formatted.tools ?? [];

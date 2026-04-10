@@ -172,12 +172,6 @@ async function* parseOpenAIStream(
                         // 累加到全量变量中
                         fullThought += t;
                         fullAnswer += a;
-                        console.log(
-                            "[response yield]: fullThought",
-                            fullThought,
-                            "fullAnswer",
-                            fullAnswer,
-                        );
                         // 返回当前已累计的所有内容
                         yield { thought: fullThought, answer: fullAnswer };
                     }

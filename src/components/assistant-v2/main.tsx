@@ -22,8 +22,9 @@ import { createSession } from "@/assistant";
 import { showFilePicker } from "@/components/file-picker";
 import { useIntl } from "@/locale";
 import { Button } from "../ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger } from "../ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { MessageBubble } from "./message";
+import { useAssistantChatStore } from "./state";
 import { CentAIConfig } from "./tools";
 
 type Input = { text: string; assets: File[] };
@@ -59,7 +60,8 @@ const useAssistantContext = () => {
 function Root({ children }: { children?: ReactNode }) {
     const [input, setInput] = useState<Input>({ text: "", assets: [] });
     const [currentChatId, setCurrentChatId] = useState<Chat["id"]>();
-    const [chats, setChats] = useState<Chat[]>([]);
+    const chats = useAssistantChatStore((s) => s.chats);
+    const setChats = useAssistantChatStore((s) => s.setChats); // 只有chats需要被持久化
 
     const updateChat = useCallback(
         (chatId: string, updater: (prev: Chat, exist: boolean) => Chat) => {
@@ -76,7 +78,7 @@ function Root({ children }: { children?: ReactNode }) {
                 return newV;
             });
         },
-        [],
+        [setChats],
     );
 
     const currentChat = chats.find((c) => c.id === currentChatId);
@@ -108,7 +110,6 @@ function Root({ children }: { children?: ReactNode }) {
             }
             return currentChat;
         })();
-        console.log("start send message");
         const next = createSession({
             history: prevChat.history,
             ...CentAIConfig,
@@ -183,6 +184,8 @@ function Root({ children }: { children?: ReactNode }) {
 function Actions() {
     const t = useIntl();
     const { chats, currentChatId, setCurrentChatId } = useAssistantContext();
+    const setChats = useAssistantChatStore((s) => s.setChats);
+    const [isChatMenuOpen, setIsChatMenuOpen] = useState(false);
 
     return (
         <div className="flex items-center">
@@ -196,39 +199,83 @@ function Actions() {
                 <i className="icon-[mdi--comment-edit-outline] size-5"></i>
             </Button>
             {/* 会话切换 */}
-            <Select value={currentChatId} onValueChange={setCurrentChatId}>
-                <SelectTrigger className="border-none shadow-none [&>svg]:hidden !text-foreground">
-                    <i className="icon-[mdi--menu] size-5"></i>
-                </SelectTrigger>
-                {/* 历史聊天对话选择器，可以在这里切换聊天对话，注意切换对话后，之前的对话不会被终止，如果还在接收请求，需要有对应的标识（小圆点 */}
-                <SelectContent>
-                    {chats.length === 0 && (
-                        <div className="text-sm opacity-70 text-center">
-                            {t("no-chats")}
-                        </div>
-                    )}
-                    {chats.map((chat) => {
-                        const title =
-                            (
-                                chat.history.findLast(
-                                    (v) =>
-                                        v.role === "assistant" &&
-                                        v.formatted.overview?.length,
-                                ) as AssistantMessage | undefined
-                            )?.formatted.overview ?? t("untitled-chat");
-                        return (
-                            <SelectItem key={chat.id} value={chat.id}>
-                                <div className="flex items-center gap-2">
-                                    {chat.pending && (
-                                        <span className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+            <Popover open={isChatMenuOpen} onOpenChange={setIsChatMenuOpen}>
+                <PopoverTrigger asChild>
+                    <Button
+                        variant="ghost"
+                        className="border-none shadow-none !text-foreground px-2"
+                    >
+                        <i className="icon-[mdi--menu] size-5"></i>
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-52 p-1" align="end">
+                    <div className="max-h-72 overflow-y-auto">
+                        {chats.length === 0 && (
+                            <div className="px-2 py-3 text-sm opacity-70 text-center">
+                                {t("no-chats")}
+                            </div>
+                        )}
+                        {chats.map((chat) => {
+                            const title =
+                                (
+                                    chat.history.findLast(
+                                        (v) =>
+                                            v.role === "assistant" &&
+                                            v.formatted.overview?.length,
+                                    ) as AssistantMessage | undefined
+                                )?.formatted.overview ?? t("untitled-chat");
+                            return (
+                                <div
+                                    key={chat.id}
+                                    className={`group flex items-center gap-2 rounded-sm px-2 py-1 text-sm hover:bg-accent ${
+                                        currentChatId === chat.id
+                                            ? "bg-accent"
+                                            : ""
+                                    }`}
+                                >
+                                    {currentChatId === chat.id && (
+                                        <i className="ml-auto icon-[mdi--check]"></i>
                                     )}
-                                    <span>{title}</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setCurrentChatId(chat.id);
+                                            setIsChatMenuOpen(false);
+                                        }}
+                                        className="min-w-0 flex-1 flex items-center gap-2 text-left"
+                                    >
+                                        {chat.pending && (
+                                            <span className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                                        )}
+                                        <span className="truncate">
+                                            {title}
+                                        </span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            setChats((prev) =>
+                                                prev.filter(
+                                                    (c) => c.id !== chat.id,
+                                                ),
+                                            );
+                                            if (currentChatId === chat.id) {
+                                                setCurrentChatId(undefined);
+                                            }
+                                        }}
+                                        className="rounded-sm p-1 opacity-60 hover:opacity-100 hover:bg-accent text-foreground/80 flex justify-center items-center"
+                                        aria-label="Delete chat"
+                                    >
+                                        <i className="icon-[mdi--close] size-4"></i>
+                                    </button>
                                 </div>
-                            </SelectItem>
-                        );
-                    })}
-                </SelectContent>
-            </Select>
+                            );
+                        })}
+                    </div>
+                </PopoverContent>
+            </Popover>
         </div>
     );
 }
@@ -278,6 +325,9 @@ function Content() {
         }
     }, [currentChat?.history.length, currentChatId]);
 
+    const sendRef = useRef(send);
+    sendRef.current = send;
+
     return (
         <div className="w-full flex-1 flex flex-col overflow-hidden relative">
             <div className="hidden md:flex justify-center items-center py-2 h-12">
@@ -297,8 +347,9 @@ function Content() {
                         return <MessageBubble key={id} message={message} />;
                     })
                 ) : (
-                    <div className="w-full h-full flex justify-center items-center">
-                        Type to ask
+                    <div className="w-full h-full flex flex-col gap-4 justify-center items-center">
+                        <i className="icon-[mdi--shimmer-outline] size-12 text-lg bg-gradient-to-tr from-cyan-400 via-blue-500 to-purple-600"></i>
+                        {t("start-talk-to-ai")}
                     </div>
                 )}
             </div>
@@ -315,12 +366,8 @@ function Content() {
                                         ...v,
                                         text: question.prompt,
                                     }));
-                                    await new Promise<void>((res) => {
-                                        setTimeout(() => {
-                                            res();
-                                        }, 10);
-                                    });
-                                    send();
+                                    await Promise.resolve();
+                                    sendRef.current();
                                 }
                             }}
                             className="rounded-full border shadow py-1 px-2 text-xs hover:bg-muted cursor-pointer bg-background flex-shrink-0"
