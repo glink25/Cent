@@ -13,11 +13,7 @@ export type ToolCall = {
     raw: string;
 };
 
-export function parseResult(
-    result: ProviderRequestChunk,
-): (AssistantMessage | ToolMessage)[] {
-    const messages: (AssistantMessage | ToolMessage)[] = [];
-
+export function parseResult(result: ProviderRequestChunk): AssistantMessage {
     // 1. 初始化 AssistantMessage 基础结构
     const assistantMsg: AssistantMessage = {
         role: "assistant",
@@ -51,14 +47,12 @@ export function parseResult(
             // 使用 jsonrepair 修复可能截断或格式错误的 JSON
             const repairedJson = jsonrepair(rawToolContent);
             const parsedTool = JSON.parse(repairedJson);
-
-            messages.push({
-                role: "tool",
-                raw: rawToolContent,
-                formatted: {
-                    name: parsedTool.name || "unknown_tool",
-                    params: parsedTool.params || {},
-                },
+            if (!assistantMsg.formatted.tools) {
+                assistantMsg.formatted.tools = [];
+            }
+            assistantMsg.formatted.tools.push({
+                name: parsedTool.name || "unknown_tool",
+                params: parsedTool.params || {},
             });
         } catch (e) {
             console.error("Failed to parse tool content even with repair:", e);
@@ -71,10 +65,7 @@ export function parseResult(
         .replace(/\n{2,}/g, "\n")
         .trim();
 
-    // 将 AssistantMessage 放入数组首位
-    messages.unshift(assistantMsg);
-
-    return messages;
+    return assistantMsg;
 }
 
 /**

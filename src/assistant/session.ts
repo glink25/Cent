@@ -103,6 +103,7 @@ export function createSession({
         history: History,
         round: number = 0,
     ): AbortablePromise<AsyncIterable<TurnResult>> => {
+        console.log("start history", history, round);
         let currentRequested: ReturnType<typeof provider.request>;
         let subAbort: (() => void) | null = null;
 
@@ -117,32 +118,30 @@ export function createSession({
                 yield { history: [...history] };
                 const stream = await currentRequested;
                 for await (const chunk of stream) {
-                    const newMessages = parseResult(chunk);
+                    const assistantMessage = parseResult(chunk);
+                    console.log("assistantMessage", assistantMessage);
 
                     // 找出所有需要执行的工具消息
-                    const toolIndices = newMessages
-                        .map((m, i) => (m.role === "tool" ? i : -1))
-                        .filter((i) => i !== -1);
+                    const toolIndices = assistantMessage.formatted.tools ?? [];
 
                     // 如果这一轮没有工具调用，直接产出结果并结束
                     if (toolIndices.length === 0) {
-                        yield { history: [...history, ...newMessages] };
+                        yield { history: [...history, assistantMessage] };
                         continue;
                     }
 
                     // 2. 并行执行当前批次的所有工具
                     const toolExecutionPromises = toolIndices.map(
-                        async (idx) => {
-                            const tm = newMessages[idx] as ToolMessage;
+                        async ({ name, params }) => {
                             const startTime = Date.now();
                             try {
                                 const result = await executeToolCall(
                                     toolMap,
                                     {
-                                        name: tm.formatted.name,
-                                        params: tm.formatted.params,
+                                        name,
+                                        params,
                                     },
-                                    { history: [...history, ...newMessages] },
+                                    { history: [...history] },
                                 );
                                 const runningTime = Date.now() - startTime;
                                 return {
@@ -158,8 +157,8 @@ export function createSession({
                                     role: "tool",
                                     raw: `Error: ${error.message || String(error)}`,
                                     formatted: {
-                                        name: tm.formatted.name,
-                                        params: tm.formatted.params,
+                                        name: name,
+                                        params: params,
                                         runningTime,
                                         errors: error.message,
                                     },
@@ -173,12 +172,11 @@ export function createSession({
                         toolExecutionPromises,
                     );
 
-                    // 3. 将执行结果回填到 newMessages 中
-                    toolIndices.forEach((msgIdx, i) => {
-                        newMessages[msgIdx] = executedToolMessages[i];
-                    });
-
-                    const currentHistory = [...history, ...newMessages];
+                    const currentHistory = [
+                        ...history,
+                        assistantMessage,
+                        ...executedToolMessages,
+                    ];
 
                     // 产出包含所有工具结果的中间状态
                     yield { history: currentHistory };
@@ -191,6 +189,9 @@ export function createSession({
                     yield* toolStream;
 
                     subAbort = null;
+                    // Provider 返回的是累计文本；一旦出现 tool 标签，后续 chunk 仍会重复包含同一 tool。
+                    // 这里在处理完本批次工具后立即结束当前流，避免重复执行造成循环。
+                    return;
                 }
             }
 

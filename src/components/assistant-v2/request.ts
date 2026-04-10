@@ -172,6 +172,12 @@ async function* parseOpenAIStream(
                         // 累加到全量变量中
                         fullThought += t;
                         fullAnswer += a;
+                        console.log(
+                            "[response yield]: fullThought",
+                            fullThought,
+                            "fullAnswer",
+                            fullAnswer,
+                        );
                         // 返回当前已累计的所有内容
                         yield { thought: fullThought, answer: fullAnswer };
                     }
@@ -259,4 +265,38 @@ export async function createStreamingRequest(
     });
 }
 
-export { getAIConfig, parseOpenAIStream, parseGoogleStream };
+async function requestAITest(
+    messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
+    config: AIConfig,
+): Promise<void> {
+    const abortController = new AbortController();
+    const response = await createStreamingRequest(
+        config,
+        config.apiKey,
+        messages,
+        abortController.signal,
+    );
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+            `AI API 请求失败: ${response.status} ${response.statusText}. ${errorText}`,
+        );
+    }
+
+    const parser =
+        config.apiType === "google-ai-studio"
+            ? parseGoogleStream
+            : parseOpenAIStream;
+
+    for await (const chunk of parser(response)) {
+        if (chunk.answer?.trim() || chunk.thought?.trim()) {
+            abortController.abort();
+            return;
+        }
+    }
+
+    throw new Error("AI API 未返回有效内容");
+}
+
+export { getAIConfig, parseOpenAIStream, parseGoogleStream, requestAITest };

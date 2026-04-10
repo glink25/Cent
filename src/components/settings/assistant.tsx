@@ -8,7 +8,7 @@ import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
 import { cn } from "@/utils";
 import { decodeApiKey, encodeApiKey } from "@/utils/api-key";
-import { requestAI } from "../assistant/request";
+import { requestAITest } from "../assistant-v2/request";
 import createConfirmProvider from "../confirm";
 import modal from "../modal";
 import { Button } from "../ui/button";
@@ -102,7 +102,7 @@ function ConfigForm({
                 },
             ];
 
-            await requestAI(testMessages, testConfig);
+            await requestAITest(testMessages, testConfig);
             toast.success(t("connection-success"));
             return;
         } catch (error) {

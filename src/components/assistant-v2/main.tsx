@@ -108,6 +108,7 @@ function Root({ children }: { children?: ReactNode }) {
             }
             return currentChat;
         })();
+        console.log("start send message");
         const next = createSession({
             history: prevChat.history,
             ...CentAIConfig,

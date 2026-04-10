@@ -13,6 +13,7 @@ export type AssistantMessage = {
         thought?: string;
         answer?: string;
         overview?: string;
+        tools?: { name: string; params: unknown }[];
     };
 };
 
