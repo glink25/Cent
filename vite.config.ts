@@ -72,6 +72,22 @@ export default defineConfig(({ mode }) => {
     }
     return {
         plugins,
+        build: {
+            rollupOptions: {
+                output: {
+                    manualChunks: {
+                        dndkit: [
+                            "@dnd-kit/core",
+                            "@dnd-kit/modifiers",
+                            "@dnd-kit/sortable",
+                            "@dnd-kit/utilities",
+                        ],
+                        echarts: ["echarts"],
+                        reactDayPicker: ["react-day-picker"],
+                    },
+                },
+            },
+        },
         resolve: {
             alias: {
                 "@": resolve("./src"),

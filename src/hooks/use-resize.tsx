@@ -1,4 +1,4 @@
-import { throttle } from "echarts/core";
+import { throttle } from "lodash-es";
 import { useEffect } from "react";
 
 type Size = {
