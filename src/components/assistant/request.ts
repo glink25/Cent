@@ -1,6 +1,7 @@
 import type { AIConfig } from "@/ledger/extra-type";
 import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
+import { decodeApiKey } from "@/utils/api-key";
 import type { ProviderRequestChunk } from "../../assistant/type";
 
 function getAIConfig(): AIConfig {
@@ -263,12 +264,10 @@ async function requestAIWithConfig(
     messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
     config: AIConfig,
 ): Promise<string> {
-    const abortController = new AbortController();
     const response = await createStreamingRequest(
         config,
         config.apiKey,
         messages,
-        abortController.signal,
     );
 
     if (!response.ok) {
@@ -286,7 +285,6 @@ async function requestAIWithConfig(
     let fullAnswer = "";
     for await (const chunk of parser(response)) {
         if (chunk.answer?.trim() || chunk.thought?.trim()) {
-            abortController.abort();
             fullAnswer += chunk.answer || "";
         }
     }
@@ -296,7 +294,11 @@ async function requestAIWithConfig(
 export async function requestAI(
     messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
 ) {
-    return requestAIWithConfig(messages, getAIConfig());
+    const config = getAIConfig();
+    return requestAIWithConfig(messages, {
+        ...config,
+        apiKey: decodeApiKey(config.apiKey),
+    });
 }
 
 export {
