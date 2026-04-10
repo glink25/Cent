@@ -8,7 +8,7 @@
 import { create } from "chaty/core"
 
 // 创建一个新的对话
-const context = createContext({
+const context = createSession({
     provider: CustomAIRequestProvider,
     tools: ChatyTools, // 内置的必需工具
     systemPrompt: ChatySystemPrompt,
@@ -38,7 +38,7 @@ promisify.then(async(
 Core 本身不提供任何AI服务，所有AI API请求必须由调用方提供，可以通过如下方式创建一个完全自定义的Provider：
 
 ```javascript
-createContext({
+createSession({
     provider: {
         request: async({
             message, // string 本条消息用户输入的文本
@@ -54,7 +54,7 @@ createContext({
 或者也可以直接使用预先提供的包装方法，直接使用 OpenAI - Compatible 的接口：
 ```javascript
 import { createOpenAIProvider } from "chaty"
-createContext({
+createSession({
     provider: createOpenAIProvider({
         baseURL: 'https://your-api.com',
         apiKey: 'you api key',
@@ -86,13 +86,50 @@ const queryTool = createTool({
         return db.query({time: params.time, includes:params.query}) // {text:string,money:number}[]
     }
 })
-createContext({
+createSession({
     tools:[queryTool]
 })
 ```
 > 所有的工具都会被自动转换为AI友好的提示词），返回结果会被自动解析为标准类型。这些逻辑都被提前预设进默认prompt中了。
 > core的api调用策略是“token友好”，所有工具调用都是按需调用，其提供一个内置tool - listTools，允许AI主动获取有哪些工具可供使用。
 
+
+## Skills（技能/知识库）
+
+除了 `tools`（可执行能力）以外，Core 还支持注入一组 `skills`（可被模型按需读取的知识/流程/规范）。
+
+- **传入方式**：和 `tools` 一样，通过 `createSession({ skills: [...] })` 注入
+- **token 友好**：默认不把 skill 内容塞进 system prompt，只提供内置工具让模型按需查询/加载
+- **内置工具**：
+  - **`listSkills`**：只返回技能元数据（`{id,name,description}`）
+  - **`loadSkill`**：按 `id` 读取技能全文（markdown）
+
+示例（内联内容或懒加载二选一）：
+
+```ts
+import { createSession, type SkillInput } from "chaty/core"
+
+const skills: SkillInput[] = [
+  {
+    id: "sql-style",
+    name: "SQL 风格指南",
+    description: "团队 SQL 规范与常见坑",
+    loader: async () => (await fetch("/skills/sql-style.md")).text(),
+  },
+  {
+    id: "oncall-runbook",
+    name: "Oncall Runbook",
+    description: "告警排查流程与回滚手册",
+    content: "# Runbook\n\n...",
+  },
+]
+
+createSession({
+  provider,
+  tools,
+  skills,
+})
+```
 
 ## 目标
 
@@ -108,16 +145,16 @@ createContext({
 
 ## 边界划分
 
-### createContext
+### createSession
 
-- `createContext` 只需要返回 `next` 函数
+- `createSession` 只需要返回 `next` 函数
 - 不需要返回 context 对象
 - `next` 是本轮对话的唯一入口
 
 目标使用方式：
 
 ```ts
-const next = createContext({
+const next = createSession({
   history,
   provider,
   tools,
@@ -157,12 +194,12 @@ for await (const turn of stream) {
 
 ## 核心接口约束
 
-### createContext
+### createSession
 
 建议形态：
 
 ```ts
-createContext({
+createSession({
   history,
   provider,
   tools,
@@ -176,6 +213,7 @@ createContext({
 - `history`: 当前对话历史，可为空
 - `provider`: 上层提供的 AI 请求器
 - `tools`: 当前允许使用的工具列表
+- `skills`: 当前可用的技能（知识/流程/规范）列表，供模型按需 `listSkills` / `loadSkill`
 - `systemPrompt`: core 的系统提示词，同时承担协议约束职责
 - `maxToolRounds`: 单轮内允许的最大工具调用轮数，用于防止死循环
 
@@ -351,7 +389,7 @@ type ToolMessage = {
 
 ### 1. 初始化
 
-`createContext` 接收：
+`createSession` 接收：
 
 - `history`
 - `provider`
@@ -576,7 +614,7 @@ type Tool<P = unknown, R = unknown> = {
 
 优先统一：
 
-- `createContext` 输入参数
+- `createSession` 输入参数
 - `next` 返回类型
 - `Provider` 类型
 - `Message` / `History` / `TurnResult` 类型

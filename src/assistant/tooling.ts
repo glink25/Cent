@@ -6,6 +6,8 @@ import type {
     CreateToolInput,
     History,
     MinimalSchema,
+    ResolvedSkill,
+    SkillMeta,
     Tool,
     ToolJsonSchema,
     ToolMessage,
@@ -97,7 +99,7 @@ function formatToolError(
 }
 
 export function createListToolsTool(
-    tools: Tool[],
+    tools: Tool<any, any>[],
 ): Tool<{ names?: string[] }, ToolPromptDefinition[]> {
     const argSchema: MinimalSchema<{ names?: string[] }> = {
         safeParse(value: unknown) {
@@ -159,6 +161,156 @@ export function createListToolsTool(
             ),
             returnSchema: minimalSchemaToPromptJsonSchema(
                 "Array of tool prompt definitions including name, describe, argSchema and returnSchema.",
+            ),
+        }),
+    };
+}
+
+export function createListSkillsTool(
+    skills: Array<Pick<ResolvedSkill, "id" | "name" | "description">>,
+): Tool<{ ids?: string[] }, SkillMeta[]> {
+    const argSchema: MinimalSchema<{ ids?: string[] }> = {
+        safeParse(value: unknown) {
+            if (value === undefined || value === null) {
+                return { success: true as const, data: {} };
+            }
+            if (typeof value !== "object" || Array.isArray(value)) {
+                return {
+                    success: false as const,
+                    error: new Error("listSkills params must be an object."),
+                };
+            }
+            const ids = (value as { ids?: unknown }).ids;
+            if (
+                ids !== undefined &&
+                (!Array.isArray(ids) ||
+                    ids.some((item) => typeof item !== "string"))
+            ) {
+                return {
+                    success: false as const,
+                    error: new Error("listSkills ids must be a string array."),
+                };
+            }
+            return {
+                success: true as const,
+                data: value as { ids?: string[] },
+            };
+        },
+    };
+
+    const returnSchema: MinimalSchema<SkillMeta[]> = {
+        safeParse(value: unknown) {
+            return { success: true as const, data: value as SkillMeta[] };
+        },
+    };
+
+    return {
+        name: "listSkills",
+        describe:
+            "List available skills (metadata only). Use loadSkill to read full content.",
+        argSchema,
+        returnSchema,
+        handler: (input: { ids?: string[] }) => {
+            const ids = input?.ids;
+            const visible = ids?.length
+                ? skills.filter((s) => ids.includes(s.id))
+                : skills;
+            return visible.map((s) => ({
+                id: s.id,
+                name: s.name,
+                description: s.description,
+            }));
+        },
+        toPromptDefinition: () => ({
+            name: "listSkills",
+            describe:
+                "List available skills (metadata only). Use loadSkill to read full content.",
+            argSchema: minimalSchemaToPromptJsonSchema(
+                "Object with optional ids:string[] to fetch a subset of skills.",
+            ),
+            returnSchema: minimalSchemaToPromptJsonSchema(
+                "Array of skill metadata including id, name, description.",
+            ),
+        }),
+    };
+}
+
+export function createLoadSkillTool(
+    skillMap: Map<string, ResolvedSkill>,
+): Tool<
+    { id: string },
+    { id: string; name: string; description: string; content: string }
+> {
+    const argSchema: MinimalSchema<{ id: string }> = {
+        safeParse(value: unknown) {
+            if (
+                typeof value !== "object" ||
+                value === null ||
+                Array.isArray(value)
+            ) {
+                return {
+                    success: false as const,
+                    error: new Error("loadSkill params must be an object."),
+                };
+            }
+            const id = (value as { id?: unknown }).id;
+            if (typeof id !== "string" || !id.trim()) {
+                return {
+                    success: false as const,
+                    error: new Error(
+                        "loadSkill id must be a non-empty string.",
+                    ),
+                };
+            }
+            return { success: true as const, data: { id } };
+        },
+    };
+
+    const returnSchema: MinimalSchema<{
+        id: string;
+        name: string;
+        description: string;
+        content: string;
+    }> = {
+        safeParse(value: unknown) {
+            return {
+                success: true as const,
+                data: value as {
+                    id: string;
+                    name: string;
+                    description: string;
+                    content: string;
+                },
+            };
+        },
+    };
+
+    return {
+        name: "loadSkill",
+        describe: "Load a skill full markdown content by id.",
+        argSchema,
+        returnSchema,
+        handler: async ({ id }: { id: string }) => {
+            const skill = skillMap.get(id);
+            if (!skill) {
+                throw new Error(`Skill "${id}" not found.`);
+            }
+            const content = await skill.load();
+            return {
+                id: skill.id,
+                name: skill.name,
+                description: skill.description,
+                content,
+            };
+        },
+        toPromptDefinition: () => ({
+            name: "loadSkill",
+            describe: "Load a skill full markdown content by id.",
+            argSchema: minimalSchemaToPromptJsonSchema(
+                "Object with required id:string (from listSkills result).",
+            ),
+            returnSchema: minimalSchemaToPromptJsonSchema(
+                "Skill payload including id, name, description, content(markdown).",
             ),
         }),
     };

@@ -1,7 +1,9 @@
 import { parseResult } from "./parser";
 import { cloneHistory, createUserMessage } from "./shared";
 import {
+    createListSkillsTool,
     createListToolsTool,
+    createLoadSkillTool,
     executeToolCall,
     getInitialSystemPrompt,
 } from "./tooling";
@@ -10,6 +12,8 @@ import type {
     History,
     Next,
     Provider,
+    ResolvedSkill,
+    SkillInput,
     SystemMessage,
     Tool,
     ToolMessage, // 确保导入了 ToolMessage 类型
@@ -18,23 +22,60 @@ import type {
 
 const DEFAULT_MAX_TOOL_ROUNDS = 8;
 
-export function createContext({
+export function createSession({
     history = [],
     provider,
     tools,
+    skills,
     systemPrompt,
     maxToolRounds = DEFAULT_MAX_TOOL_ROUNDS,
 }: {
     history?: History;
     provider: Provider;
     tools: Tool[];
+    skills: SkillInput[];
     systemPrompt?: string;
     maxToolRounds?: number;
 }): Next {
     const incomingHistory = cloneHistory(history);
     const baseTools: Tool<any, any>[] = [...tools];
-    const listTool = createListToolsTool(baseTools);
-    const runtimeTools = [...baseTools, listTool];
+
+    const resolvedSkills: ResolvedSkill[] = (skills ?? []).map((s) => {
+        const id = (s as any).id ?? (s as any).name;
+        if (typeof id !== "string" || !id.trim()) {
+            throw new Error("Skill id must be a non-empty string.");
+        }
+        const name = (s as any).name ?? id;
+        const description = (s as any).description ?? "";
+        const inlineContent = (s as any).content;
+        const loader = (s as any).loader;
+
+        const load = async () => {
+            if (typeof inlineContent === "string") return inlineContent;
+            if (typeof loader === "function") return await loader();
+            return "";
+        };
+
+        return { id, name, description, load };
+    });
+    const skillMap = new Map<string, ResolvedSkill>(
+        resolvedSkills.map((s) => [s.id, s]),
+    );
+
+    const listSkillsTool = createListSkillsTool(resolvedSkills);
+    const loadSkillTool = createLoadSkillTool(skillMap);
+    const listTool = createListToolsTool([
+        ...baseTools,
+        listSkillsTool,
+        loadSkillTool,
+    ]);
+
+    const runtimeTools = [
+        ...baseTools,
+        listTool,
+        listSkillsTool,
+        loadSkillTool,
+    ];
     const toolMap = new Map<string, Tool<any, any>>(
         runtimeTools.map((tool) => [tool.name, tool]),
     );
@@ -47,7 +88,10 @@ export function createContext({
             role: "system",
             raw: `${p.raw}${c.raw.length ? `\n\nAdditional system prompt:\n${c.raw}` : ""}`,
         }),
-        { role: "system", raw: getInitialSystemPrompt([listTool]) },
+        {
+            role: "system",
+            raw: getInitialSystemPrompt([listTool, listSkillsTool]),
+        },
     );
 
     const persistedHistory = [

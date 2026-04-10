@@ -1,6 +1,5 @@
-export { createContext } from "./context";
+export { createSession } from "./session";
 export { createTool } from "./tooling";
-
 export type {
     AbortablePromise,
     AssistantMessage,
@@ -10,6 +9,10 @@ export type {
     NextInput,
     Provider,
     ProviderRequest,
+    ResolvedSkill,
+    Skill,
+    SkillInput,
+    SkillMeta,
     Tool,
     ToolJsonSchema,
     ToolMessage,

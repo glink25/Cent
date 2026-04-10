@@ -1,9 +1,9 @@
 import type { UserInfo } from "@/api/endpoints/type";
 import type { Budget } from "@/ledger/extra-type";
 import type { Bill, BillCategory, BillTag } from "@/ledger/type";
+import createSandBox from "../../../utils/sandbox";
 import compileWidget, { Permission } from "./compile";
 import InjectCode from "./global-inject.js?raw";
-import createSandBox from "./sandbox";
 
 type WidgetData = {
     billing?: Bill[];

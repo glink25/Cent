@@ -1,21 +1,12 @@
 import { decodeApiKey } from "@/utils/api-key";
-import type { AbortablePromise, History, Provider, ToolMessage } from "../core";
-import { withAbort } from "../core/shared";
+import type { History, Provider, ToolMessage } from "../../../assistant";
+import { withAbort } from "../../../assistant/shared";
 import {
     createStreamingRequest,
     getAIConfig,
     parseGoogleStream,
     parseOpenAIStream,
 } from "../request";
-
-function countHistoryAssets(history: History): number {
-    return history.reduce((count, msg) => {
-        if (msg.role === "user" && msg.assets) {
-            return count + msg.assets.length;
-        }
-        return count;
-    }, 0);
-}
 
 function assetsToPrompt(
     assets: File[] | undefined,

@@ -720,5 +720,8 @@
   "module-top-income": "最高收入",
   "available-modules": "可用模块",
   "widget-modules": "Widget模块",
-  "add-widget-module": "添加Widget模块"
+  "add-widget-module": "添加Widget模块",
+  "thought": "思考过程",
+  "untitled-chat": "新对话",
+  "no-chats": "暂无对话"
 }

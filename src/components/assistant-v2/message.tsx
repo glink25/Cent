@@ -1,9 +1,11 @@
 /** biome-ignore-all lint/security/noDangerouslySetInnerHtml: <explanation> */
 import { Collapsible } from "radix-ui";
 import snarkdown from "snarkdown";
-import type { Message } from "./core/type";
+import { useIntl } from "@/locale";
+import type { Message } from "../../assistant/type";
 
 export function MessageBubble({ message }: { message: Message }) {
+    const t = useIntl();
     switch (message.role) {
         case "user":
             return (
@@ -38,7 +40,7 @@ export function MessageBubble({ message }: { message: Message }) {
                         {message.formatted.thought && (
                             <details className="text-xs opacity-60 mb-2">
                                 <summary className="cursor-pointer hover:opacity-80">
-                                    思考过程
+                                    {t("thought")}
                                 </summary>
                                 <div className="mt-1 whitespace-pre-wrap select-all">
                                     {message.formatted.thought}

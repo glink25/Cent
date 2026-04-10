@@ -709,5 +709,8 @@
   "module-top-income": "Top Income",
   "available-modules": "Available Modules",
   "widget-modules": "Widget Modules",
-  "add-widget-module": "Add Widget Module"
+  "add-widget-module": "Add Widget Module",
+  "thought": "Thought",
+  "untitled-chat": "New Chat",
+  "no-chats": "No Chats"
 }

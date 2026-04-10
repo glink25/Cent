@@ -12,20 +12,19 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { v4 } from "uuid";
-import { showFilePicker } from "@/components/file-picker";
-import { useIntl } from "@/locale";
-import { Button } from "../ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger } from "../ui/select";
 import type {
     AbortablePromise,
     AssistantMessage,
     History,
     TurnResult,
-} from "./core";
-import { createContext as createChatContext } from "./core";
+} from "@/assistant";
+import { createSession } from "@/assistant";
+import { showFilePicker } from "@/components/file-picker";
+import { useIntl } from "@/locale";
+import { Button } from "../ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "../ui/select";
 import { MessageBubble } from "./message";
-import { CentAITools } from "./tools";
-import { CentAIProvider } from "./tools/provider";
+import { CentAIConfig } from "./tools";
 
 type Input = { text: string; assets: File[] };
 
@@ -109,10 +108,9 @@ function Root({ children }: { children?: ReactNode }) {
             }
             return currentChat;
         })();
-        const next = createChatContext({
+        const next = createSession({
             history: prevChat.history,
-            provider: CentAIProvider,
-            tools: CentAITools,
+            ...CentAIConfig,
         });
         setInput({ text: "", assets: [] });
 
@@ -182,6 +180,7 @@ function Root({ children }: { children?: ReactNode }) {
 }
 
 function Actions() {
+    const t = useIntl();
     const { chats, currentChatId, setCurrentChatId } = useAssistantContext();
 
     return (
@@ -204,7 +203,7 @@ function Actions() {
                 <SelectContent>
                     {chats.length === 0 && (
                         <div className="text-sm opacity-70 text-center">
-                            No Chats
+                            {t("no-chats")}
                         </div>
                     )}
                     {chats.map((chat) => {
@@ -215,7 +214,7 @@ function Actions() {
                                         v.role === "assistant" &&
                                         v.formatted.overview?.length,
                                 ) as AssistantMessage | undefined
-                            )?.formatted.overview ?? "New Chat";
+                            )?.formatted.overview ?? t("untitled-chat");
                         return (
                             <SelectItem key={chat.id} value={chat.id}>
                                 <div className="flex items-center gap-2">
@@ -246,6 +245,28 @@ function Content() {
     } = useAssistantContext();
     const currentChat = chats.find((c) => c.id === currentChatId);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
+
+    const PRESET_QUESTIONS = useMemo(
+        () => [
+            {
+                label: t("preset_question.analyze_ledger.label"),
+                prompt: t("preset_question.analyze_ledger.prompt"),
+            },
+            {
+                label: t("preset_question.monthly_budget.label"),
+                prompt: t("preset_question.monthly_budget.prompt"),
+            },
+            {
+                label: t("preset_question.anomaly_detection.label"),
+                prompt: t("preset_question.anomaly_detection.prompt"),
+            },
+            {
+                label: t("preset_question.annual_summary.label"),
+                prompt: t("preset_question.annual_summary.prompt"),
+            },
+        ],
+        [t],
+    );
 
     useEffect(() => {
         if (currentChat?.history.length && currentChatId) {
@@ -282,10 +303,30 @@ function Content() {
             </div>
             {/* 底部区域，用于展示消息输入框和提示 */}
             <div className="w-full absolute left-0 bottom-0 px-2 py-4 flex flex-col gap-2">
-                <div className="w-full flex overflow-x-auto scrollbar-hidden">
-                    <div className="rounded-full border shadow py-1 px-2 text-xs hover:bg-muted cursor-pointer bg-background">
-                        帮我分析账单
-                    </div>
+                <div className="w-full flex overflow-x-auto scrollbar-hidden gap-2">
+                    {PRESET_QUESTIONS.map((question, index) => (
+                        <button
+                            key={index}
+                            type="button"
+                            onClick={async () => {
+                                if (canSend) {
+                                    setInput((v) => ({
+                                        ...v,
+                                        text: question.prompt,
+                                    }));
+                                    await new Promise<void>((res) => {
+                                        setTimeout(() => {
+                                            res();
+                                        }, 10);
+                                    });
+                                    send();
+                                }
+                            }}
+                            className="rounded-full border shadow py-1 px-2 text-xs hover:bg-muted cursor-pointer bg-background flex-shrink-0"
+                        >
+                            {question.label}
+                        </button>
+                    ))}
                 </div>
                 {/* 消息输入窗口textarea，允许上传附件， 拥有与google gemini相似的发送按钮和界面*/}
                 <div className="rounded-2xl w-full border shadow p-1 flex flex-col gap-2 bg-background">
@@ -354,22 +395,18 @@ function Content() {
                                     toast.error("最多上传3个附件");
                                     return;
                                 }
-                                try {
-                                    const files = await showFilePicker({
-                                        accept: "image/*,application/pdf,text/*,.csv,.xlsx,.json",
-                                        multiple: true,
-                                    });
-                                    const remaining = 3 - input.assets.length;
-                                    setInput((v) => ({
-                                        ...v,
-                                        assets: [
-                                            ...v.assets,
-                                            ...files.slice(0, remaining),
-                                        ],
-                                    }));
-                                } catch {
-                                    // 用户取消选择
-                                }
+                                const files = await showFilePicker({
+                                    accept: "image/*,application/pdf,text/*,.csv,.xlsx,.json",
+                                    multiple: true,
+                                });
+                                const remaining = 3 - input.assets.length;
+                                setInput((v) => ({
+                                    ...v,
+                                    assets: [
+                                        ...v.assets,
+                                        ...files.slice(0, remaining),
+                                    ],
+                                }));
                             }}
                         >
                             <i className="icon-[mdi--plus] size-5"></i>

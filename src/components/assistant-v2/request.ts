@@ -1,7 +1,7 @@
 import type { AIConfig } from "@/ledger/extra-type";
 import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
-import type { ProviderRequestChunk } from "./core/type";
+import type { ProviderRequestChunk } from "../../assistant/type";
 
 function getAIConfig(): AIConfig {
     const userId = useUserStore.getState().id;

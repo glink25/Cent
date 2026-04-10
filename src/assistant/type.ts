@@ -110,6 +110,34 @@ export type CreateToolInput<
     ) => z.infer<ReturnSchema> | Promise<z.infer<ReturnSchema>>;
 };
 
+export type SkillMeta = {
+    /**
+     * Stable identifier for the skill.
+     * Recommended: short, url-safe string (e.g. "sql-guide", "my-skill").
+     */
+    id: string;
+    name: string;
+    description: string;
+};
+
+export type Skill = SkillMeta & {
+    /** Full markdown content of the skill. */
+    content: string;
+};
+
+export type SkillInput =
+    | Skill
+    | (SkillMeta & {
+          /** Inline content; if omitted, loader must be provided. */
+          content?: string;
+          /** Lazy loader to fetch the skill content on-demand. */
+          loader?: () => string | Promise<string>;
+      });
+
+export type ResolvedSkill = SkillMeta & {
+    load: () => Promise<string>;
+};
+
 export type NextInput = {
     message: string;
     assets?: File[];
