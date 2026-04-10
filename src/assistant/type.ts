@@ -95,7 +95,6 @@ export type Tool<Args = unknown, Returns = unknown> = {
         arg: Args,
         ctx: { history: History },
     ) => Returns | Promise<Returns>;
-    toPromptDefinition: () => ToolPromptDefinition;
 };
 
 export type CreateToolInput<

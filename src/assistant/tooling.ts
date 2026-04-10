@@ -1,11 +1,10 @@
-import type { z } from "zod";
+import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { parseWithSchema, stringifyJson } from "./shared";
 import systemPromptTemplate from "./system-prompt.md?raw";
 import type {
     CreateToolInput,
     History,
-    MinimalSchema,
     ResolvedSkill,
     SkillMeta,
     Tool,
@@ -16,6 +15,61 @@ import type {
 } from "./type";
 
 const SYSTEM_PROMPT_TOOLS_PLACEHOLDER = "{{TOOLS_JSON}}";
+const jsonObjectSchema = z.record(z.string(), z.unknown());
+
+const toolPromptDefinitionSchema = z.object({
+    name: z.string(),
+    describe: z.string(),
+    argSchema: jsonObjectSchema,
+    returnSchema: jsonObjectSchema,
+});
+
+const listToolsArgsSchema = z
+    .object({
+        names: z.array(z.string()).optional(),
+    })
+    .describe(
+        "Object with optional names:string[] to fetch a subset of tools.",
+    );
+
+const listToolsReturnsSchema = z
+    .array(toolPromptDefinitionSchema)
+    .describe(
+        "Array of tool prompt definitions including name, describe, argSchema and returnSchema.",
+    );
+
+const skillMetaSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string(),
+});
+
+const listSkillsArgsSchema = z
+    .object({
+        ids: z.array(z.string()).optional(),
+    })
+    .describe("Object with optional ids:string[] to fetch a subset of skills.");
+
+const listSkillsReturnsSchema = z
+    .array(skillMetaSchema)
+    .describe("Array of skill metadata including id, name, description.");
+
+const loadSkillArgsSchema = z
+    .object({
+        id: z.string().trim().min(1),
+    })
+    .describe("Object with required id:string (from listSkills result).");
+
+const loadSkillReturnsSchema = z
+    .object({
+        id: z.string(),
+        name: z.string(),
+        description: z.string(),
+        content: z.string(),
+    })
+    .describe(
+        "Skill payload including id, name, description, content(markdown).",
+    );
 
 export function isZodSchema(schema: unknown): schema is ZodLikeSchema {
     return (
@@ -55,6 +109,37 @@ function minimalSchemaToPromptJsonSchema(description: string): ToolJsonSchema {
     return {
         type: "object",
         description,
+    };
+}
+
+function toolSchemaToPromptJsonSchema(
+    toolName: string,
+    field: "argSchema" | "returnSchema",
+    schema: Tool["argSchema"] | Tool["returnSchema"],
+): ToolJsonSchema {
+    if (isZodSchema(schema)) {
+        const suffix = field === "argSchema" ? "Args" : "Returns";
+        return schemaToPromptJsonSchema(`${toolName}${suffix}`, schema);
+    }
+    return minimalSchemaToPromptJsonSchema(
+        `${toolName}.${field} is validated at runtime by a custom schema.`,
+    );
+}
+
+function toolToPromptDefinition(tool: Tool): ToolPromptDefinition {
+    return {
+        name: tool.name,
+        describe: tool.describe,
+        argSchema: toolSchemaToPromptJsonSchema(
+            tool.name,
+            "argSchema",
+            tool.argSchema,
+        ),
+        returnSchema: toolSchemaToPromptJsonSchema(
+            tool.name,
+            "returnSchema",
+            tool.returnSchema,
+        ),
     };
 }
 
@@ -101,116 +186,32 @@ function formatToolError(
 export function createListToolsTool(
     tools: Tool<any, any>[],
 ): Tool<{ names?: string[] }, ToolPromptDefinition[]> {
-    const argSchema: MinimalSchema<{ names?: string[] }> = {
-        safeParse(value: unknown) {
-            if (value === undefined || value === null) {
-                return { success: true as const, data: {} };
-            }
-            if (typeof value !== "object" || Array.isArray(value)) {
-                return {
-                    success: false as const,
-                    error: new Error("listTools params must be an object."),
-                };
-            }
-            const names = (value as { names?: unknown }).names;
-            if (
-                names !== undefined &&
-                (!Array.isArray(names) ||
-                    names.some((item) => typeof item !== "string"))
-            ) {
-                return {
-                    success: false as const,
-                    error: new Error("listTools names must be a string array."),
-                };
-            }
-            return {
-                success: true as const,
-                data: value as { names?: string[] },
-            };
-        },
-    };
-
-    const returnSchema: MinimalSchema<ToolPromptDefinition[]> = {
-        safeParse(value: unknown) {
-            return {
-                success: true as const,
-                data: value as ToolPromptDefinition[],
-            };
-        },
-    };
-
-    return {
+    return createTool({
         name: "listTools",
         describe:
             "List available tools and their argument and return schema summary.",
-        argSchema,
-        returnSchema,
-        handler: (input: { names?: string[] }) => {
+        argSchema: listToolsArgsSchema,
+        returnSchema: listToolsReturnsSchema,
+        handler: (input) => {
             const names = input?.names;
             const visibleTools = names?.length
                 ? tools.filter((tool) => names.includes(tool.name))
                 : tools;
-            return visibleTools.map((tool) => tool.toPromptDefinition());
+            return visibleTools.map(toolToPromptDefinition);
         },
-        toPromptDefinition: () => ({
-            name: "listTools",
-            describe:
-                "List available tools and their argument and return schema summary.",
-            argSchema: minimalSchemaToPromptJsonSchema(
-                "Object with optional names:string[] to fetch a subset of tools.",
-            ),
-            returnSchema: minimalSchemaToPromptJsonSchema(
-                "Array of tool prompt definitions including name, describe, argSchema and returnSchema.",
-            ),
-        }),
-    };
+    });
 }
 
 export function createListSkillsTool(
     skills: Array<Pick<ResolvedSkill, "id" | "name" | "description">>,
 ): Tool<{ ids?: string[] }, SkillMeta[]> {
-    const argSchema: MinimalSchema<{ ids?: string[] }> = {
-        safeParse(value: unknown) {
-            if (value === undefined || value === null) {
-                return { success: true as const, data: {} };
-            }
-            if (typeof value !== "object" || Array.isArray(value)) {
-                return {
-                    success: false as const,
-                    error: new Error("listSkills params must be an object."),
-                };
-            }
-            const ids = (value as { ids?: unknown }).ids;
-            if (
-                ids !== undefined &&
-                (!Array.isArray(ids) ||
-                    ids.some((item) => typeof item !== "string"))
-            ) {
-                return {
-                    success: false as const,
-                    error: new Error("listSkills ids must be a string array."),
-                };
-            }
-            return {
-                success: true as const,
-                data: value as { ids?: string[] },
-            };
-        },
-    };
-
-    const returnSchema: MinimalSchema<SkillMeta[]> = {
-        safeParse(value: unknown) {
-            return { success: true as const, data: value as SkillMeta[] };
-        },
-    };
-
-    return {
+    return createTool({
         name: "listSkills",
         describe:
             "List available skills (metadata only). Use loadSkill to read full content.",
-        argSchema,
-        returnSchema,
-        handler: (input: { ids?: string[] }) => {
+        argSchema: listSkillsArgsSchema,
+        returnSchema: listSkillsReturnsSchema,
+        handler: (input) => {
             const ids = input?.ids;
             const visible = ids?.length
                 ? skills.filter((s) => ids.includes(s.id))
@@ -221,18 +222,7 @@ export function createListSkillsTool(
                 description: s.description,
             }));
         },
-        toPromptDefinition: () => ({
-            name: "listSkills",
-            describe:
-                "List available skills (metadata only). Use loadSkill to read full content.",
-            argSchema: minimalSchemaToPromptJsonSchema(
-                "Object with optional ids:string[] to fetch a subset of skills.",
-            ),
-            returnSchema: minimalSchemaToPromptJsonSchema(
-                "Array of skill metadata including id, name, description.",
-            ),
-        }),
-    };
+    });
 }
 
 export function createLoadSkillTool(
@@ -241,56 +231,12 @@ export function createLoadSkillTool(
     { id: string },
     { id: string; name: string; description: string; content: string }
 > {
-    const argSchema: MinimalSchema<{ id: string }> = {
-        safeParse(value: unknown) {
-            if (
-                typeof value !== "object" ||
-                value === null ||
-                Array.isArray(value)
-            ) {
-                return {
-                    success: false as const,
-                    error: new Error("loadSkill params must be an object."),
-                };
-            }
-            const id = (value as { id?: unknown }).id;
-            if (typeof id !== "string" || !id.trim()) {
-                return {
-                    success: false as const,
-                    error: new Error(
-                        "loadSkill id must be a non-empty string.",
-                    ),
-                };
-            }
-            return { success: true as const, data: { id } };
-        },
-    };
-
-    const returnSchema: MinimalSchema<{
-        id: string;
-        name: string;
-        description: string;
-        content: string;
-    }> = {
-        safeParse(value: unknown) {
-            return {
-                success: true as const,
-                data: value as {
-                    id: string;
-                    name: string;
-                    description: string;
-                    content: string;
-                },
-            };
-        },
-    };
-
-    return {
+    return createTool({
         name: "loadSkill",
         describe: "Load a skill full markdown content by id.",
-        argSchema,
-        returnSchema,
-        handler: async ({ id }: { id: string }) => {
+        argSchema: loadSkillArgsSchema,
+        returnSchema: loadSkillReturnsSchema,
+        handler: async ({ id }) => {
             const skill = skillMap.get(id);
             if (!skill) {
                 throw new Error(`Skill "${id}" not found.`);
@@ -303,27 +249,17 @@ export function createLoadSkillTool(
                 content,
             };
         },
-        toPromptDefinition: () => ({
-            name: "loadSkill",
-            describe: "Load a skill full markdown content by id.",
-            argSchema: minimalSchemaToPromptJsonSchema(
-                "Object with required id:string (from listSkills result).",
-            ),
-            returnSchema: minimalSchemaToPromptJsonSchema(
-                "Skill payload including id, name, description, content(markdown).",
-            ),
-        }),
-    };
+    });
 }
 
-function buildToolsPromptBlock(tools: Tool<any, any>[]) {
-    const definitions = tools.map((tool) => tool.toPromptDefinition());
+function buildToolsPromptBlock(tools: Tool[]) {
+    const definitions = tools.map(toolToPromptDefinition);
     return stringifyJson(definitions);
 }
 
 export function mergeSystemPrompt(
     systemPrompt: string | undefined,
-    tools: Tool<any, any>[],
+    tools: Tool[],
 ) {
     const mergedTemplate = systemPromptTemplate.replace(
         SYSTEM_PROMPT_TOOLS_PLACEHOLDER,
@@ -389,14 +325,5 @@ export function createTool<
         argSchema,
         returnSchema,
         handler,
-        toPromptDefinition: () => ({
-            name,
-            describe,
-            argSchema: schemaToPromptJsonSchema(`${name}Args`, argSchema),
-            returnSchema: schemaToPromptJsonSchema(
-                `${name}Returns`,
-                returnSchema,
-            ),
-        }),
     };
 }

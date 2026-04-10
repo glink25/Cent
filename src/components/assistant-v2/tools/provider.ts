@@ -54,7 +54,7 @@ function historyToMessages(
                     : undefined;
             messages.push({
                 role: "user",
-                content: `${assetPrompt}/n${userContent}`,
+                content: `${assetPrompt ? `${assetPrompt}\n` : ""}${userContent}`,
             });
         } else if (msg.role === "assistant") {
             messages.push({ role: "assistant", content: msg.raw });
