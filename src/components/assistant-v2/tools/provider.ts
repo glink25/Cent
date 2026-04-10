@@ -53,18 +53,18 @@ function historyToMessages(
         content: string;
     }> = [];
 
-    let assetIndex = 1;
+    const assetIndex = 1;
     for (const msg of history) {
         if (msg.role === "user") {
-            let userContent = msg.raw;
-
-            if (msg.assets && msg.assets.length > 0) {
-                const assetPrompt = assetsToPrompt(msg.assets, assetIndex);
-                userContent = `${msg.raw}\n\n${assetPrompt}`;
-                assetIndex += msg.assets.length;
-            }
-
-            messages.push({ role: "user", content: userContent });
+            const userContent = msg.raw;
+            const assetPrompt =
+                msg.assets && msg.assets.length > 0
+                    ? assetsToPrompt(msg.assets, assetIndex)
+                    : undefined;
+            messages.push({
+                role: "user",
+                content: `${assetPrompt}/n${userContent}`,
+            });
         } else if (msg.role === "assistant") {
             messages.push({ role: "assistant", content: msg.raw });
         } else if (msg.role === "tool") {
@@ -91,18 +91,6 @@ export const CentAIProvider: Provider = {
         const promise = (async () => {
             const config = getAIConfig();
             const apiKey = decodeApiKey(config.apiKey);
-
-            const historyAssetsCount = countHistoryAssets(history);
-
-            const fullMessage = history.findLast((m) => m.role === "user");
-            if (fullMessage?.assets && fullMessage.assets.length > 0) {
-                const startIndex = historyAssetsCount + 1;
-                const assetPrompt = assetsToPrompt(
-                    fullMessage.assets,
-                    startIndex,
-                );
-                fullMessage.raw = `${fullMessage.raw}\n\n${assetPrompt}`;
-            }
 
             const messages = historyToMessages(history);
 

@@ -457,7 +457,7 @@ export default function Page() {
 
     return (
         <div className="w-full h-full overflow-hidden flex page-show">
-            <div className="w-full h-full p-2 flex flex-col items-center justify-center gap-4 overflow-hidden transition-width">
+            <div className="flex-1 h-full p-2 flex flex-col items-center justify-center gap-4 overflow-hidden transition-width">
                 <div className="w-full mx-2 max-w-[600px] flex flex-col gap-2">
                     <div className="w-full flex flex-col gap-2">
                         <div className="w-full flex">
@@ -564,7 +564,7 @@ export default function Page() {
             </div>
             <div
                 ref={sidePanelRef}
-                className="side-panel hidden md:flex w-[600px] empty:w-0 transition-all border-l"
+                className="side-panel hidden md:flex w-[400px] empty:w-0 transition-all border-l"
             ></div>
         </div>
     );

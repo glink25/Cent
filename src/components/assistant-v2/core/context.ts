@@ -59,7 +59,7 @@ export function createContext({
         history: History,
         round: number = 0,
     ): AbortablePromise<AsyncIterable<TurnResult>> => {
-        let currentRequested: any = null;
+        let currentRequested: ReturnType<typeof provider.request>;
         let subAbort: (() => void) | null = null;
 
         const execute = async (): Promise<AsyncIterable<TurnResult>> => {
@@ -68,10 +68,10 @@ export function createContext({
                 return (async function* () {})();
             }
             currentRequested = provider.request({ history });
-            const stream = await currentRequested;
 
             async function* createStream(): AsyncGenerator<TurnResult> {
                 yield { history: [...history] };
+                const stream = await currentRequested;
                 for await (const chunk of stream) {
                     const newMessages = parseResult(chunk);
 
@@ -90,8 +90,9 @@ export function createContext({
                     const toolExecutionPromises = toolIndices.map(
                         async (idx) => {
                             const tm = newMessages[idx] as ToolMessage;
+                            const startTime = Date.now();
                             try {
-                                return await executeToolCall(
+                                const result = await executeToolCall(
                                     toolMap,
                                     {
                                         name: tm.formatted.name,
@@ -99,18 +100,24 @@ export function createContext({
                                     },
                                     { history: [...history, ...newMessages] },
                                 );
+                                const runningTime = Date.now() - startTime;
+                                return {
+                                    ...result,
+                                    formatted: {
+                                        ...result.formatted,
+                                        runningTime,
+                                    },
+                                } as ToolMessage;
                             } catch (error: any) {
-                                // 工具执行失败，封装错误信息
+                                const runningTime = Date.now() - startTime;
                                 return {
                                     role: "tool",
                                     raw: `Error: ${error.message || String(error)}`,
                                     formatted: {
                                         name: tm.formatted.name,
                                         params: tm.formatted.params,
-                                        result: {
-                                            error: true,
-                                            details: error.message,
-                                        },
+                                        runningTime,
+                                        errors: error.message,
                                     },
                                 } as ToolMessage;
                             }

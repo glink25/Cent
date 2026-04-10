@@ -24,6 +24,7 @@ export type ToolMessage = {
         params: unknown;
         returns?: unknown;
         errors?: unknown;
+        runningTime?: number;
     };
 };
 
