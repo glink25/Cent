@@ -14,6 +14,8 @@ type GuideStore = {
     dynamicPromotionIds?: string[];
     // 拆分账单提示
     splitBillTipShows?: boolean;
+    // assistant v2首次气泡提示
+    assistantHintShows?: boolean;
     closedPromotionIds?: string[];
 };
 

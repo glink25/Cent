@@ -1,11 +1,18 @@
 import dayjs from "dayjs";
 import { Switch } from "radix-ui";
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import {
+    Fragment,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 import { useNavigate, useParams } from "react-router";
 import { useShallow } from "zustand/shallow";
 import { StorageDeferredAPI } from "@/api/storage";
 import type { AnalysisResult } from "@/api/storage/analysis";
-import { Assistant } from "@/components/assistant";
+import AssistantButton from "@/components/assistant-v2";
 import {
     BillFilterViewProvider,
     showBillFilterView,
@@ -310,7 +317,6 @@ export default function Page() {
             if (module === "base-analysis") {
                 return (
                     <Fragment key={module}>
-                        <Assistant env={envArg} />
                         {Part}
                         {tagStructure.length > 0 && (
                             <div className="rounded-md border p-2 w-full flex flex-col">
@@ -432,7 +438,6 @@ export default function Page() {
             return null;
         },
         [
-            envArg,
             Part,
             tagStructure,
             focusType,
@@ -448,106 +453,119 @@ export default function Page() {
         ],
     );
 
+    const sidePanelRef = useRef<HTMLDivElement>(null);
+
     return (
-        <div className="w-full h-full p-2 flex flex-col items-center justify-center gap-4 overflow-hidden page-show">
-            <div className="w-full mx-2 max-w-[600px] flex flex-col gap-2">
-                <div className="w-full flex flex-col gap-2">
-                    <div className="w-full flex">
-                        <div className="flex-1 flex gap-2 overflow-x-auto scrollbar-hidden">
-                            {allFilterViews.map((filter) => {
-                                const displayCurrency =
-                                    filter.displayCurrency === baseCurrency.id
-                                        ? undefined
-                                        : allCurrencies.find(
-                                              (v) =>
-                                                  v.id ===
-                                                  filter.displayCurrency,
-                                          );
-                                return (
-                                    <Button
-                                        key={filter.id}
-                                        size={"sm"}
-                                        className={cn(
-                                            filterViewId !== filter.id
-                                                ? "text-primary/50"
-                                                : "relative after:absolute after:bottom-[2px] after:left-3 after:w-[calc(100%-24px)] after:h-[2px] after:rounded-full after:bg-primary/20",
-                                        )}
-                                        variant="ghost"
-                                        onClick={() => {
-                                            setSliceId(undefined);
-                                            setFilterViewId(filter.id);
-                                        }}
-                                    >
-                                        {displayCurrency?.symbol}
-                                        {filter.name}
-                                    </Button>
-                                );
-                            })}
-                        </div>
-                        <div className="">
-                            <Button
-                                variant="ghost"
-                                onClick={toAddFilter}
-                                size="sm"
-                            >
-                                <i className="icon-[mdi--plus] size-4"></i>
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                onClick={toReOrder}
-                                size="sm"
-                            >
-                                <i className="icon-[mdi--menu] size-4"></i>
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-                <DateSliced
-                    {...dateSlicedProps}
-                    onClickSettings={toChangeFilter}
-                >
-                    <div className="flex items-center pr-2 relative">
-                        <Switch.Root
-                            checked={dimension === "user"}
-                            onCheckedChange={() => {
-                                setDimension((v) => {
-                                    return v === "category"
-                                        ? "user"
-                                        : "category";
-                                });
-                            }}
-                            className="relative z-[0] h-[29px] w-[54px] cursor-pointer rounded-sm bg-blackA6 outline-none bg-stone-300 group"
-                        >
-                            <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center gap-2 z-[1]">
-                                <i className="icon-[mdi--view-grid-outline] group-[data-[state=checked]]:text-white"></i>
-                                <i className="icon-[mdi--account-outline]"></i>
+        <div className="w-full h-full overflow-hidden flex page-show">
+            <div className="w-full h-full p-2 flex flex-col items-center justify-center gap-4 overflow-hidden transition-width">
+                <div className="w-full mx-2 max-w-[600px] flex flex-col gap-2">
+                    <div className="w-full flex flex-col gap-2">
+                        <div className="w-full flex">
+                            <div className="flex-1 flex gap-2 overflow-x-auto scrollbar-hidden">
+                                {allFilterViews.map((filter) => {
+                                    const displayCurrency =
+                                        filter.displayCurrency ===
+                                        baseCurrency.id
+                                            ? undefined
+                                            : allCurrencies.find(
+                                                  (v) =>
+                                                      v.id ===
+                                                      filter.displayCurrency,
+                                              );
+                                    return (
+                                        <Button
+                                            key={filter.id}
+                                            size={"sm"}
+                                            className={cn(
+                                                filterViewId !== filter.id
+                                                    ? "text-primary/50"
+                                                    : "relative after:absolute after:bottom-[2px] after:left-3 after:w-[calc(100%-24px)] after:h-[2px] after:rounded-full after:bg-primary/20",
+                                            )}
+                                            variant="ghost"
+                                            onClick={() => {
+                                                setSliceId(undefined);
+                                                setFilterViewId(filter.id);
+                                            }}
+                                        >
+                                            {displayCurrency?.symbol}
+                                            {filter.name}
+                                        </Button>
+                                    );
+                                })}
                             </div>
-                            <Switch.Thumb className="block size-[22px] translate-x-[4px] rounded-sm bg-background transition-transform duration-100 will-change-transform data-[state=checked]:translate-x-[28px]" />
-                        </Switch.Root>
+                            <div className="flex items-center">
+                                <Button
+                                    variant="ghost"
+                                    onClick={toAddFilter}
+                                    size="sm"
+                                >
+                                    <i className="icon-[mdi--plus] size-4"></i>
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    onClick={toReOrder}
+                                    size="sm"
+                                >
+                                    <i className="icon-[mdi--menu] size-4"></i>
+                                </Button>
+                                <AssistantButton sidePanelRef={sidePanelRef} />
+                            </div>
+                        </div>
                     </div>
-                </DateSliced>
-            </div>
-            <FocusTypeSelector
-                value={focusType}
-                onValueChange={(v) => {
-                    setFocusType(v);
-                    setSelectedCategoryId(undefined);
-                }}
-                money={totalMoneys}
-            />
-            <div className="w-full px-2 flex-1 flex justify-center overflow-y-auto">
-                <div className="w-full max-w-[600px] flex flex-col items-center gap-4 relative">
-                    {effectiveModules.map((module) => renderModule(module))}
-                    <div>
-                        <Button variant="ghost" onClick={() => seeDetails()}>
-                            {t("see-all-ledgers")}
-                            <i className="icon-[mdi--arrow-up-right]"></i>
-                        </Button>
-                    </div>
-                    <div className="w-full h-20 flex-shrink-0"></div>
+                    <DateSliced
+                        {...dateSlicedProps}
+                        onClickSettings={toChangeFilter}
+                    >
+                        <div className="flex items-center pr-2 relative">
+                            <Switch.Root
+                                checked={dimension === "user"}
+                                onCheckedChange={() => {
+                                    setDimension((v) => {
+                                        return v === "category"
+                                            ? "user"
+                                            : "category";
+                                    });
+                                }}
+                                className="relative z-[0] h-[29px] w-[54px] cursor-pointer rounded-sm bg-blackA6 outline-none bg-stone-300 group"
+                            >
+                                <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center gap-2 z-[1]">
+                                    <i className="icon-[mdi--view-grid-outline] group-[data-[state=checked]]:text-white"></i>
+                                    <i className="icon-[mdi--account-outline]"></i>
+                                </div>
+                                <Switch.Thumb className="block size-[22px] translate-x-[4px] rounded-sm bg-background transition-transform duration-100 will-change-transform data-[state=checked]:translate-x-[28px]" />
+                            </Switch.Root>
+                        </div>
+                    </DateSliced>
                 </div>
+                <FocusTypeSelector
+                    value={focusType}
+                    onValueChange={(v) => {
+                        setFocusType(v);
+                        setSelectedCategoryId(undefined);
+                    }}
+                    money={totalMoneys}
+                />
+                <div className="w-full px-2 flex-1 flex justify-center overflow-y-auto">
+                    <div className="w-full max-w-[600px] flex flex-col items-center gap-4 relative">
+                        {effectiveModules.map((module) => renderModule(module))}
+                        <div>
+                            <Button
+                                variant="ghost"
+                                onClick={() => seeDetails()}
+                            >
+                                {t("see-all-ledgers")}
+                                <i className="icon-[mdi--arrow-up-right]"></i>
+                            </Button>
+                        </div>
+                        <div className="w-full h-20 flex-shrink-0"></div>
+                    </div>
+                </div>
+                <BillFilterViewProvider />
             </div>
-            <BillFilterViewProvider />
+            <div
+                ref={sidePanelRef}
+                className="side-panel hidden md:flex w-[600px] empty:w-0 transition-all border-l"
+            ></div>
         </div>
     );
 }
