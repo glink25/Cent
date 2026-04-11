@@ -79,12 +79,7 @@ export type ToolSchema = ZodLikeSchema;
 
 export type ToolJsonSchema = Record<string, unknown>;
 
-export type ToolPromptDefinition = {
-    name: string;
-    describe: string;
-    argSchema?: ToolJsonSchema;
-    returnSchema: ToolJsonSchema;
-};
+export type ToolPromptDefinition = string;
 
 export type Tool<Args = unknown, Returns = unknown> = {
     name: string;

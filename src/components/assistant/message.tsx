@@ -69,7 +69,7 @@ export function MessageBubble({ message }: { message: Message }) {
                                 {message.formatted.name}
                             </span>
                         </div>
-                        {message.formatted.runningTime && (
+                        {message.formatted.runningTime !== undefined && (
                             <span className="opacity-60 text-[10px]">
                                 {message.formatted.runningTime}ms
                             </span>

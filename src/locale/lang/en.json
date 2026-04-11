@@ -589,7 +589,7 @@
   "start-talk-to-ai": "Start talk to AI",
   "input-your-questions": "Ask questions",
   "preset_question.analyze_ledger.label": "Analyze current ledger",
-  "preset_question.analyze_ledger.prompt": "Analyze the current ledger",
+  "preset_question.analyze_ledger.prompt": "First get the current environment information, then analyze the current bills based on the filter view configuration in the information",
   "preset_question.monthly_budget.label": "Help me create a monthly budget",
   "preset_question.monthly_budget.prompt": "Based on my spending this month and in the past, create a monthly budget that fits my habits to help reduce unnecessary expenses.",
   "preset_question.anomaly_detection.label": "Check for bill anomalies",

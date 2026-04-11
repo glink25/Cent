@@ -32,7 +32,7 @@ async function loadLedgerData(): Promise<ExportedJSON> {
 }
 
 export const QueryBillsTool = createTool({
-    name: "query_bills",
+    name: "queryBills",
     describe:
         "查询原始账单明细。用于按时间/分类/标签/关键字/金额筛选具体账单。注意如果没有设置合理筛选条件，该工具有可能返回大量账单数据，因此必须谨慎使用，适用场景：查找单笔交易时，或者有明确的时间范围。",
     argSchema: queryLikeSchema,
@@ -64,7 +64,7 @@ export const QueryBillsTool = createTool({
 });
 
 export const AnalyzeBillsTool = createTool({
-    name: "analyze_bills",
+    name: "analyzeBills",
     describe: "账单统计与分析。优先用于总额、占比、趋势和概况分析。",
     argSchema: queryLikeSchema.extend({
         groupBy: z
@@ -115,7 +115,7 @@ export const AnalyzeBillsTool = createTool({
 });
 
 export const GetAccountMetaTool = createTool({
-    name: "get_account_meta",
+    name: "getAccountMeta",
     describe: "获取账本信息，用于获取当前账本定义的分类结构和标签列表。",
     argSchema: z.object({}),
     returnSchema: z.object({

@@ -96,7 +96,19 @@ export const CentAIProvider: Provider = {
             const config = getAIConfig();
             const apiKey = decodeApiKey(config.apiKey);
 
-            const messages = historyToMessages(history);
+            const messages = await (async () => {
+                // glm-4-flash 模型需要特殊的 system prompt 来引导模型更好地理解工具调用和上下文，因此当使用该模型时，替换掉原有的 system prompt
+                if (config.model === "glm-4-flash") {
+                    const StrictSystemPrompt = await import(
+                        "./strict-system-prompt.md?raw"
+                    );
+                    return historyToMessages([
+                        { role: "system", raw: StrictSystemPrompt.default },
+                        ...history.filter((m) => m.role !== "system"),
+                    ]);
+                }
+                return historyToMessages(history);
+            })();
 
             abortController = new AbortController();
             if (aborted) {

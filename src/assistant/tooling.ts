@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { parseWithSchema, stringifyJson } from "./shared";
+import { parseWithSchema } from "./shared";
 import systemPromptTemplate from "./system-prompt.md?raw";
 import type {
     CreateToolInput,
@@ -13,20 +13,10 @@ import type {
 } from "./type";
 
 const SYSTEM_PROMPT_TOOLS_PLACEHOLDER = "{{TOOLS_JSON}}";
-const jsonObjectSchema = z.record(z.string(), z.unknown());
-
-const toolPromptDefinitionSchema = z.object({
-    name: z.string(),
-    describe: z.string(),
-    argSchema: jsonObjectSchema.optional(),
-    returnSchema: jsonObjectSchema,
-});
 
 const listToolsReturnsSchema = z
-    .array(toolPromptDefinitionSchema)
-    .describe(
-        "Array of tool prompt definitions including name, describe, argSchema and returnSchema.",
-    );
+    .string()
+    .describe("Array of tool prompt definitions as human-readable strings.");
 
 const skillMetaSchema = z.object({
     id: z.string(),
@@ -64,22 +54,31 @@ export function isZodSchema(schema: unknown): schema is ZodLikeSchema {
     );
 }
 
-function toolToPromptDefinition(tool: Tool): ToolPromptDefinition {
-    const cuttedToJSONSchema = (v: ZodLikeSchema) => {
-        const schema = z.toJSONSchema(v);
-        return {
-            ...schema,
-            $schema: undefined, // 去掉 $schema 字段，减少冗余信息
-        };
-    };
-    return {
-        name: tool.name,
-        describe: tool.describe,
-        argSchema: tool.argSchema
-            ? cuttedToJSONSchema(tool.argSchema)
-            : undefined,
-        returnSchema: cuttedToJSONSchema(tool.returnSchema),
-    };
+function describeSchemaSimply(schema: ZodLikeSchema | undefined): string {
+    if (!schema) return "None";
+    const jsonSchema = z.toJSONSchema(schema);
+    // 简单描述：如果有 description，使用它，否则返回类型或 'Complex schema'
+    if (jsonSchema.description) {
+        return jsonSchema.description;
+    }
+    if (typeof jsonSchema.type === "string") {
+        return jsonSchema.type;
+    }
+    return "Complex schema";
+}
+
+function describeSchema(schema: ZodLikeSchema | undefined): string {
+    if (!schema) return "None";
+    const jsonSchema = z.toJSONSchema(schema);
+    return `这是一份JSON Schema的描述：\n${JSON.stringify(jsonSchema)}`;
+}
+
+function toolToPromptDefinition(tool: Tool): string {
+    const argDesc = tool.argSchema
+        ? describeSchema(tool.argSchema)
+        : "No parameters";
+    const returnDesc = describeSchemaSimply(tool.returnSchema);
+    return `工具名称: ${tool.name}\n工具描述: ${tool.describe}\n工具接收的参数: ${argDesc}\n工具返回值类型: ${returnDesc}`;
 }
 
 function stringifyToolPayload(payload: unknown): string {
@@ -124,7 +123,7 @@ function formatToolError(
 
 export function createListToolsTool(
     tools: Tool<any, any>[],
-): Tool<undefined, ToolPromptDefinition[]> {
+): Tool<undefined, ToolPromptDefinition> {
     return createTool({
         name: "listTools",
         describe:
@@ -132,7 +131,7 @@ export function createListToolsTool(
         argSchema: undefined,
         returnSchema: listToolsReturnsSchema,
         handler: () => {
-            return tools.map(toolToPromptDefinition);
+            return `下面是所有可用工具的列表：\n\n${tools.map((tool, i) => `${i}. ${toolToPromptDefinition(tool)}`).join("\n\n")}`;
         },
     });
 }
@@ -185,7 +184,7 @@ export function createLoadSkillTool(
 
 function buildToolsPromptBlock(tools: Tool[]) {
     const definitions = tools.map(toolToPromptDefinition);
-    return stringifyJson(definitions);
+    return definitions.join("\n\n");
 }
 
 export function mergeSystemPrompt(
