@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Collapsible } from "radix-ui";
 import { useMemo } from "react";
 import { useForm } from "react-hook-form";
-import * as z from "zod/mini";
+import { z } from "zod";
 import { useTag } from "@/hooks/use-tag";
 import type { BillTagGroup } from "@/ledger/type";
 import { useIntl } from "@/locale";

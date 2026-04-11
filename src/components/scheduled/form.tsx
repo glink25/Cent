@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import { useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { v4 } from "uuid";
-import * as z from "zod/mini";
+import { z } from "zod";
 import { useShallow } from "zustand/shallow";
 import { Calendar } from "@/components/ui/calendar";
 import {

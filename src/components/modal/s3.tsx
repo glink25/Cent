@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
-import * as z from "zod/mini";
+import { z } from "zod";
 import { useIntl } from "@/locale";
 import createConfirmProvider from "../confirm";
 import { Button } from "../ui/button";

@@ -76,6 +76,9 @@ export default defineConfig(({ mode }) => {
             rollupOptions: {
                 output: {
                     manualChunks: (id) => {
+                        if (id.includes("zod")) {
+                            return "zod";
+                        }
                         if (id.includes("@dnd-kit")) {
                             return "dndkit";
                         }

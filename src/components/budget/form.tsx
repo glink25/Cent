@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import { CalendarIcon, Plus, X } from "lucide-react";
 import { useMemo } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
-import * as z from "zod/mini";
+import { z } from "zod";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
