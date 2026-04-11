@@ -10,7 +10,8 @@ import WidgetPreview from "./preview";
 
 export default function WidgetList({ onCancel }: { onCancel?: () => void }) {
     const t = useIntl();
-    const { widgets, remove, reorder, update } = useWidget();
+    const { widgets, remove, reorder, homeWidgets, toggleHomeWidget } =
+        useWidget();
 
     return (
         <PopupLayout
@@ -97,11 +98,11 @@ export default function WidgetList({ onCancel }: { onCancel?: () => void }) {
                                     {t("show-in-home")}
                                 </span>
                                 <Switch
-                                    checked={widget.showInHome ?? false}
-                                    onCheckedChange={async (checked) => {
-                                        await update(widget.id, {
-                                            showInHome: checked,
-                                        });
+                                    checked={homeWidgets.some(
+                                        (w) => w.id === widget.id,
+                                    )}
+                                    onCheckedChange={async () => {
+                                        await toggleHomeWidget(widget.id);
                                     }}
                                 />
                             </div>

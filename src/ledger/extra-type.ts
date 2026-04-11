@@ -109,6 +109,7 @@ export type PersonalMeta = {
     tagGroups?: BillTagGroup[];
     scheduleds?: Scheduled[];
     customCSS?: string;
+    homeWidgets?: string[]; // 首页展示的widget列表，元素为widget id
     assistant?: {
         bigmodel?: {
             apiKey?: string;

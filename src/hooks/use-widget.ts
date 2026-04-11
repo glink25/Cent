@@ -2,6 +2,7 @@ import { v4 } from "uuid";
 import { useShallow } from "zustand/shallow";
 import type { Widget } from "@/components/widget/type";
 import { useLedgerStore } from "@/store/ledger";
+import { useUserStore } from "@/store/user";
 
 export function useWidget() {
     const widgets = useLedgerStore(
@@ -65,6 +66,29 @@ export function useWidget() {
 
     const get = (id: string) => widgets.find((w) => w.id === id);
 
+    const { id: userId } = useUserStore();
+    const homeWidgets = useLedgerStore(
+        useShallow((state) => {
+            const personal = state.infos?.meta.personal?.[userId];
+            return (
+                widgets?.filter((widget) =>
+                    personal?.homeWidgets?.includes(widget.id),
+                ) ?? []
+            );
+        }),
+    );
+
+    const toggleHomeWidget = async (widgetId: string) => {
+        await useLedgerStore.getState().updatePersonalMeta((prev) => {
+            return {
+                ...prev,
+                homeWidgets: prev.homeWidgets?.includes(widgetId)
+                    ? prev.homeWidgets.filter((id) => id !== widgetId)
+                    : [...(prev.homeWidgets ?? []), widgetId],
+            };
+        });
+    };
+
     return {
         widgets,
         add,
@@ -72,5 +96,7 @@ export function useWidget() {
         remove,
         reorder,
         get,
+        homeWidgets,
+        toggleHomeWidget,
     };
 }

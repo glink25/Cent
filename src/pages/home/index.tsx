@@ -81,8 +81,7 @@ export default function Page() {
         return b.joiners.includes(userId) && b.start < Date.now();
     });
 
-    const { widgets } = useWidget();
-    const homeWidgets = widgets.filter((w) => w.showInHome);
+    const { homeWidgets } = useWidget();
 
     const budgetContainer = useRef<HTMLDivElement>(null);
     const widgetContainer = useRef<HTMLDivElement>(null);
