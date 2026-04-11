@@ -1,9 +1,9 @@
 import dayjs from "dayjs";
+import type { ViewType } from "@/components/stat/date-slice";
+import type { FocusType } from "@/components/stat/focus-type";
 import { BillCategories } from "@/ledger/category";
 import type { BillFilterView } from "@/ledger/extra-type";
 import { useLedgerStore } from "@/store/ledger";
-import type { ViewType } from "../stat/date-slice";
-import type { FocusType } from "../stat/focus-type";
 
 export type EnvArg = {
     filterView?: BillFilterView;
@@ -12,7 +12,13 @@ export type EnvArg = {
     range: number[];
 };
 
-export function getEnvPrompt(env?: EnvArg) {
+let currentEnv: EnvArg | undefined;
+
+export function setEnv(env: EnvArg) {
+    currentEnv = env;
+}
+
+function transformEnvToPrompt(env?: EnvArg) {
     if (!env) {
         return "";
     }
@@ -180,4 +186,8 @@ export function getEnvPrompt(env?: EnvArg) {
     );
 
     return parts.join("\n");
+}
+
+export function getEnvPrompt() {
+    return transformEnvToPrompt(currentEnv);
 }

@@ -8,7 +8,7 @@ import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
 import { cn } from "@/utils";
 import { decodeApiKey, encodeApiKey } from "@/utils/api-key";
-import { requestAI } from "../assistant/request";
+import { requestAIWithConfig } from "../assistant/request";
 import createConfirmProvider from "../confirm";
 import modal from "../modal";
 import { Button } from "../ui/button";
@@ -102,7 +102,7 @@ function ConfigForm({
                 },
             ];
 
-            await requestAI(testMessages, testConfig);
+            await requestAIWithConfig(testMessages, testConfig);
             toast.success(t("connection-success"));
             return;
         } catch (error) {
@@ -605,7 +605,7 @@ export default function AssistantSettingsItem() {
                     <div
                         className={cn(betaClassName, "flex items-center gap-2")}
                     >
-                        <i className="icon-[mdi--robot-outline] size-5"></i>
+                        <i className="icon-[mdi--shimmer-outline] size-5"></i>
                         {t("ai-assistant")}
                     </div>
                     <i className="icon-[mdi--chevron-right] size-5"></i>

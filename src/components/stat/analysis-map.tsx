@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { Bill } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import { useLedgerStore } from "@/store/ledger";
@@ -15,6 +15,25 @@ export default function AnalysisMap({
 }) {
     const t = useIntl();
     const mapConfig = useLedgerStore((state) => state.infos?.meta.map);
+
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [isVisible, setIsVisible] = useState(false);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setIsVisible(true);
+                    observer.disconnect();
+                }
+            },
+            { threshold: 0.1 },
+        );
+        if (containerRef.current) {
+            observer.observe(containerRef.current);
+        }
+        return () => observer.disconnect();
+    }, []);
 
     const amapKey = useMemo(
         () =>
@@ -37,7 +56,10 @@ export default function AnalysisMap({
     const hasLocationData = bills?.some((bill) => bill.location);
 
     return (
-        <div className="rounded-md border p-2 w-full flex flex-col relative">
+        <div
+            ref={containerRef}
+            className="rounded-md border p-2 w-full flex flex-col relative"
+        >
             <h2 className="font-medium text-lg my-3 text-center">
                 {t("ledger-footprint")}
             </h2>
@@ -45,7 +67,7 @@ export default function AnalysisMap({
                 <div className="text-center text-sm opacity-60 py-2">
                     {t("ledger-no-footprint-tip")}
                 </div>
-            ) : (
+            ) : isVisible ? (
                 <div
                     data-map-container
                     className="w-full h-[240px] md:h-[300px]"
@@ -58,7 +80,7 @@ export default function AnalysisMap({
                         />
                     </Suspense>
                 </div>
-            )}
+            ) : null}
         </div>
     );
 }

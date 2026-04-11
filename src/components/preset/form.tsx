@@ -29,6 +29,7 @@ const DEFAULT_EXPORT_SECTIONS: PresetExportSection[] = [
     "categories",
     "customFilters",
     "customCSS",
+    "widgets",
 ];
 
 function PresetExportDialogForm({
@@ -104,6 +105,15 @@ function PresetExportDialogForm({
                         }
                     />
                     <span>{t("preset-export-section-custom-css")}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                        checked={exportSections.includes("widgets")}
+                        onCheckedChange={(v) =>
+                            toggleExportSection("widgets", v === true)
+                        }
+                    />
+                    <span>{t("preset-export-section-widgets")}</span>
                 </div>
             </div>
             <DialogFooter className="gap-2 sm:gap-0 flex justify-end">
@@ -221,6 +231,9 @@ export default function PresetForm({ onCancel }: { onCancel?: () => void }) {
                 ),
                 [PRESET_MERGE_RISK.CSS_WOULD_CHANGE]: t(
                     "preset-merge-risk-css",
+                ),
+                [PRESET_MERGE_RISK.WIDGETS_WOULD_CHANGE]: t(
+                    "preset-merge-risk-widgets",
                 ),
             };
             try {

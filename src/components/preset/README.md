@@ -12,6 +12,7 @@
 - categories: 用户的分类数据
 - customFilters: 用户的筛选面板数据
 - customCSS: 用户的自定义样式
+- widgets: 用户的Widget配置
 
 它的主要UI如下：
 1，入口：预设功能入口位于`src/components/settings/preset.tsx`，通过设置页按钮进入具体的预设功能页
@@ -32,6 +33,7 @@
 - category: 如果值完全一致（JSON.stringify全等检测），则认为安全，否则：检查新预设与旧预设是否存在name/id相同的category，如果不存在则认为安全，否则标记对应风险 CATEGORY_WOULD_CHANGE
 - customFilters: 如果值完全一致（JSON.stringify全等检测），则认为安全，否则：检查新预设与旧预设是否存在name/id相同的customFilter，如果不存在则认为安全，否则标记对应风险 FILTERS_WOULD_CHANGE
 - customCSS:  如果值完全一致（JSON.stringify全等检测），则认为安全，否则标记对应风险 CSS_WOULD_CHANGE
+- widgets:  如果值完全一致（JSON.stringify全等检测），则认为安全，否则：检查新预设与旧预设是否存在name/id相同的widget，如果不存在则认为安全，否则标记对应风险 WIDGETS_WOULD_CHANGE
 检测函数需要返回不同风险对应的枚举值，并在用户导入预设后弹窗提醒用户所有的风险点。
 
 2，合并策略
@@ -40,6 +42,7 @@
 - categories: 如果旧预设存在name相同的 category ，保留旧预设的name和id，其余使用新预设中对应的category值；如果旧预设中存在id相同的category，使用新预设的category直接替换原来的category；否则将新预设的category追加到原有的category中
 - customFilters: 如果旧预设存在name相同的 customFilters ，保留旧预设的name和id，其余使用新预设中对应的customFilters值；如果旧预设中存在id相同的customFilters，使用新预设的customFilters直接替换原来的customFilters；否则将新预设的customFilters追加到原有的category中
 - customCSS: 直接追加新预设的css到原来的结尾（换行追加）
+- widgets: 如果旧预设存在name相同的widget，保留旧预设的name和id，其余使用新预设中对应的widget值；如果旧预设中存在id相同的widget，使用新预设的widget直接替换原来的widget；否则将新预设的widget追加到原有的widgets中
 
 注意，如果新预设中的某些配置没有值（undefined），则不需要更改原来的配置
 

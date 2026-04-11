@@ -1,11 +1,19 @@
 import dayjs from "dayjs";
 import { Switch } from "radix-ui";
-import { useEffect, useMemo, useState } from "react";
+import {
+    Fragment,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 import { useNavigate, useParams } from "react-router";
 import { useShallow } from "zustand/shallow";
 import { StorageDeferredAPI } from "@/api/storage";
 import type { AnalysisResult } from "@/api/storage/analysis";
-import { Assistant } from "@/components/assistant";
+import AssistantButton from "@/components/assistant";
+import { setEnv } from "@/components/assistant/tools/env";
 import {
     BillFilterViewProvider,
     showBillFilterView,
@@ -25,18 +33,33 @@ import {
 } from "@/components/stat/focus-type";
 import { TagItem } from "@/components/stat/static-item";
 import { Button } from "@/components/ui/button";
+import WidgetPreview from "@/components/widget/preview";
 import { useCurrency } from "@/hooks/use-currency";
 import {
     DefaultFilterViewId,
     useCustomFilters,
 } from "@/hooks/use-custom-filters";
 import { useTag } from "@/hooks/use-tag";
-import type { BillFilter, BillFilterView } from "@/ledger/extra-type";
+import { useWidget } from "@/hooks/use-widget";
+import type {
+    BillFilter,
+    BillFilterView,
+    BillFilterViewModule,
+} from "@/ledger/extra-type";
 import type { Bill } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
 import { cn } from "@/utils";
+
+const DefaultModuleOrder: BillFilterViewModule[] = [
+    "base-analysis",
+    "top-words",
+    "map",
+    "analysis",
+    "top-expense",
+    "top-income",
+];
 
 export default function Page() {
     const t = useIntl();
@@ -102,18 +125,21 @@ export default function Page() {
     );
 
     const navigate = useNavigate();
-    const seeDetails = (append?: Partial<BillFilter>) => {
-        navigate("/search", {
-            state: {
-                filter: {
-                    ...selectedFilter,
-                    start: realRange[0],
-                    end: realRange[1],
-                    ...append,
+    const seeDetails = useCallback(
+        (append?: Partial<BillFilter>) => {
+            navigate("/search", {
+                state: {
+                    filter: {
+                        ...selectedFilter,
+                        start: realRange[0],
+                        end: realRange[1],
+                        ...append,
+                    },
                 },
-            },
-        });
-    };
+            });
+        },
+        [navigate, selectedFilter, realRange],
+    );
 
     const [filtered, setFiltered] = useState<Bill[]>([]);
 
@@ -147,6 +173,12 @@ export default function Page() {
     });
 
     const totalMoneys = FocusTypes.map((t) => dataSources.total[t]);
+
+    const { widgets } = useWidget();
+
+    const effectiveModules = useMemo(() => {
+        return selectedFilterView?.modules ?? DefaultModuleOrder;
+    }, [selectedFilterView?.modules]);
 
     const { tags } = useTag();
     const tagStructure = useMemo(
@@ -271,204 +303,272 @@ export default function Page() {
         }),
         [selectedFilterView, focusType, viewType, realRange],
     );
-    return (
-        <div className="w-full h-full p-2 flex flex-col items-center justify-center gap-4 overflow-hidden page-show">
-            <div className="w-full mx-2 max-w-[600px] flex flex-col gap-2">
-                <div className="w-full flex flex-col gap-2">
-                    <div className="w-full flex">
-                        <div className="flex-1 flex gap-2 overflow-x-auto scrollbar-hidden">
-                            {allFilterViews.map((filter) => {
-                                const displayCurrency =
-                                    filter.displayCurrency === baseCurrency.id
-                                        ? undefined
-                                        : allCurrencies.find(
-                                              (v) =>
-                                                  v.id ===
-                                                  filter.displayCurrency,
-                                          );
-                                return (
-                                    <Button
-                                        key={filter.id}
-                                        size={"sm"}
-                                        className={cn(
-                                            filterViewId !== filter.id
-                                                ? "text-primary/50"
-                                                : "relative after:absolute after:bottom-[2px] after:left-3 after:w-[calc(100%-24px)] after:h-[2px] after:rounded-full after:bg-primary/20",
-                                        )}
-                                        variant="ghost"
-                                        onClick={() => {
-                                            setSliceId(undefined);
-                                            setFilterViewId(filter.id);
-                                        }}
-                                    >
-                                        {displayCurrency?.symbol}
-                                        {filter.name}
-                                    </Button>
-                                );
-                            })}
-                        </div>
-                        <div className="">
-                            <Button
-                                variant="ghost"
-                                onClick={toAddFilter}
-                                size="sm"
-                            >
-                                <i className="icon-[mdi--plus] size-4"></i>
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                onClick={toReOrder}
-                                size="sm"
-                            >
-                                <i className="icon-[mdi--menu] size-4"></i>
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-                <DateSliced
-                    {...dateSlicedProps}
-                    onClickSettings={toChangeFilter}
-                >
-                    <div className="flex items-center pr-2 relative">
-                        <Switch.Root
-                            checked={dimension === "user"}
-                            onCheckedChange={() => {
-                                setDimension((v) => {
-                                    return v === "category"
-                                        ? "user"
-                                        : "category";
-                                });
-                            }}
-                            className="relative z-[0] h-[29px] w-[54px] cursor-pointer rounded-sm bg-blackA6 outline-none bg-stone-300 group"
-                        >
-                            <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center gap-2 z-[1]">
-                                <i className="icon-[mdi--view-grid-outline] group-[data-[state=checked]]:text-white"></i>
-                                <i className="icon-[mdi--account-outline]"></i>
-                            </div>
-                            <Switch.Thumb className="block size-[22px] translate-x-[4px] rounded-sm bg-background transition-transform duration-100 will-change-transform data-[state=checked]:translate-x-[28px]" />
-                        </Switch.Root>
-                    </div>
-                </DateSliced>
-            </div>
-            <FocusTypeSelector
-                value={focusType}
-                onValueChange={(v) => {
-                    setFocusType(v);
-                    setSelectedCategoryId(undefined);
-                }}
-                money={totalMoneys}
-            />
-            <div className="w-full px-2 flex-1 flex justify-center overflow-y-auto">
-                <div className="w-full max-w-[600px] flex flex-col items-center gap-4 relative">
-                    <Assistant env={envArg} />
-                    {Part}
-                    {tagStructure.length > 0 && (
-                        <div className="rounded-md border p-2 w-full flex flex-col">
-                            <h2 className="font-medium text-lg my-3 text-center">
-                                {t("tag-details")}
-                            </h2>
-                            <div className="table w-full border-collapse">
-                                <div className="table-row-group divide-y">
-                                    {tagStructure.map((struct) => {
-                                        const index =
-                                            FocusTypes.indexOf(focusType);
-                                        const money = [
-                                            struct.income,
-                                            struct.expense,
-                                            struct.income - struct.expense,
-                                        ][index];
-                                        const total = totalMoneys[index];
-                                        return (
-                                            <TagItem
-                                                key={struct.id}
-                                                name={struct.name}
-                                                money={money}
-                                                total={total}
-                                                type={focusType}
-                                                onClick={() => {
-                                                    seeDetails({
-                                                        tags: [struct.id],
-                                                    });
-                                                }}
-                                            ></TagItem>
-                                        );
-                                    })}
+
+    setEnv(envArg);
+
+    const getBillsByFocusType = useCallback(
+        (type: FocusType) => {
+            if (type === "expense") return filteredExpenseBills;
+            if (type === "income") return filteredIncomeBills;
+            return filtered;
+        },
+        [filtered, filteredExpenseBills, filteredIncomeBills],
+    );
+
+    const renderModule = useCallback(
+        (module: BillFilterViewModule) => {
+            if (module === "base-analysis") {
+                return (
+                    <Fragment key={module}>
+                        {Part}
+                        {tagStructure.length > 0 && (
+                            <div className="rounded-md border p-2 w-full flex flex-col">
+                                <h2 className="font-medium text-lg my-3 text-center">
+                                    {t("tag-details")}
+                                </h2>
+                                <div className="table w-full border-collapse">
+                                    <div className="table-row-group divide-y">
+                                        {tagStructure.map((struct) => {
+                                            const index =
+                                                FocusTypes.indexOf(focusType);
+                                            const money = [
+                                                struct.income,
+                                                struct.expense,
+                                                struct.income - struct.expense,
+                                            ][index];
+                                            const total = totalMoneys[index];
+                                            return (
+                                                <TagItem
+                                                    key={struct.id}
+                                                    name={struct.name}
+                                                    money={money}
+                                                    total={total}
+                                                    type={focusType}
+                                                    onClick={() => {
+                                                        seeDetails({
+                                                            tags: [struct.id],
+                                                        });
+                                                    }}
+                                                ></TagItem>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </Fragment>
+                );
+            }
+            if (module === "top-words") {
+                return (
                     <AnalysisCloud
-                        bills={
-                            focusType === "expense"
-                                ? filteredExpenseBills
-                                : focusType === "income"
-                                  ? filteredIncomeBills
-                                  : filtered
-                        }
+                        key={module}
+                        bills={getBillsByFocusType(focusType)}
                     />
+                );
+            }
+            if (module === "map") {
+                return (
                     <AnalysisMap
-                        bills={
-                            focusType === "expense"
-                                ? filteredExpenseBills
-                                : focusType === "income"
-                                  ? filteredIncomeBills
-                                  : filtered
-                        }
+                        key={module}
+                        bills={getBillsByFocusType(focusType)}
                     />
-                    {analysis && (
-                        <div className="rounded-md border p-2 w-full flex flex-col">
-                            <h2 className="font-medium text-lg my-3 text-center">
-                                {t("analysis")}
-                            </h2>
-                            <AnalysisDetail
-                                analysis={analysis}
-                                type={focusType}
-                                unit={analysisUnit}
-                            />
+                );
+            }
+            if (module === "analysis") {
+                if (!analysis) return null;
+                return (
+                    <div
+                        key={module}
+                        className="rounded-md border p-2 w-full flex flex-col"
+                    >
+                        <h2 className="font-medium text-lg my-3 text-center">
+                            {t("analysis")}
+                        </h2>
+                        <AnalysisDetail
+                            analysis={analysis}
+                            type={focusType}
+                            unit={analysisUnit}
+                        />
+                    </div>
+                );
+            }
+            if (module === "top-expense") {
+                if (!dataSources.highestExpenseBill) return null;
+                return (
+                    <div key={module} className="rounded-md border p-2 w-full">
+                        {t("highest-expense")}:
+                        <BillItem
+                            className="w-full"
+                            bill={dataSources.highestExpenseBill}
+                            showTime
+                            onClick={() =>
+                                showBillInfo(dataSources.highestExpenseBill!)
+                            }
+                        />
+                    </div>
+                );
+            }
+            if (module === "top-income") {
+                if (!dataSources.highestIncomeBill) return null;
+                return (
+                    <div key={module} className="rounded-md border p-2 w-full">
+                        {t("highest-income")}:
+                        <BillItem
+                            className="w-full"
+                            bill={dataSources.highestIncomeBill}
+                            showTime
+                            onClick={() =>
+                                showBillInfo(dataSources.highestIncomeBill!)
+                            }
+                        />
+                    </div>
+                );
+            }
+            if (module.startsWith("widget-")) {
+                const widgetId = module.slice(7);
+                const widget = widgets.find((w) => w.id === widgetId);
+                if (!widget) return null;
+                return (
+                    <div key={module} className="rounded-md border w-full">
+                        <WidgetPreview
+                            widget={widget}
+                            bills={getBillsByFocusType(focusType)}
+                        />
+                    </div>
+                );
+            }
+            return null;
+        },
+        [
+            Part,
+            tagStructure,
+            focusType,
+            totalMoneys,
+            seeDetails,
+            getBillsByFocusType,
+            analysis,
+            analysisUnit,
+            dataSources.highestExpenseBill,
+            dataSources.highestIncomeBill,
+            t,
+            widgets,
+        ],
+    );
+
+    const sidePanelRef = useRef<HTMLDivElement>(null);
+
+    return (
+        <div className="w-full h-full overflow-hidden flex page-show">
+            <div className="flex-1 h-full p-2 flex flex-col items-center justify-center gap-4 overflow-hidden transition-width">
+                <div className="w-full mx-2 max-w-[600px] flex flex-col gap-2">
+                    <div className="w-full flex flex-col gap-2">
+                        <div className="w-full flex">
+                            <div className="flex-1 flex gap-2 overflow-x-auto scrollbar-hidden">
+                                {allFilterViews.map((filter) => {
+                                    const displayCurrency =
+                                        filter.displayCurrency ===
+                                        baseCurrency.id
+                                            ? undefined
+                                            : allCurrencies.find(
+                                                  (v) =>
+                                                      v.id ===
+                                                      filter.displayCurrency,
+                                              );
+                                    return (
+                                        <Button
+                                            key={filter.id}
+                                            size={"sm"}
+                                            className={cn(
+                                                filterViewId !== filter.id
+                                                    ? "text-primary/50"
+                                                    : "relative after:absolute after:bottom-[2px] after:left-3 after:w-[calc(100%-24px)] after:h-[2px] after:rounded-full after:bg-primary/20",
+                                            )}
+                                            variant="ghost"
+                                            onClick={() => {
+                                                setSliceId(undefined);
+                                                setFilterViewId(filter.id);
+                                            }}
+                                        >
+                                            {displayCurrency?.symbol}
+                                            {filter.name}
+                                        </Button>
+                                    );
+                                })}
+                            </div>
+                            <div className="flex items-center">
+                                <Button
+                                    variant="ghost"
+                                    onClick={toAddFilter}
+                                    size="sm"
+                                >
+                                    <i className="icon-[mdi--plus] size-4"></i>
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    onClick={toReOrder}
+                                    size="sm"
+                                >
+                                    <i className="icon-[mdi--menu] size-4"></i>
+                                </Button>
+                                <AssistantButton sidePanelRef={sidePanelRef} />
+                            </div>
                         </div>
-                    )}
-                    <div className="w-full flex flex-col gap-4">
-                        {dataSources.highestExpenseBill && (
-                            <div className="rounded-md border p-2">
-                                {t("highest-expense")}:
-                                <BillItem
-                                    className="w-full"
-                                    bill={dataSources.highestExpenseBill}
-                                    showTime
-                                    onClick={() =>
-                                        showBillInfo(
-                                            dataSources.highestExpenseBill!,
-                                        )
-                                    }
-                                />
-                            </div>
-                        )}
-                        {dataSources.highestIncomeBill && (
-                            <div className="rounded-md border p-2">
-                                {t("highest-income")}:
-                                <BillItem
-                                    className="w-full"
-                                    bill={dataSources.highestIncomeBill}
-                                    showTime
-                                    onClick={() =>
-                                        showBillInfo(
-                                            dataSources.highestIncomeBill!,
-                                        )
-                                    }
-                                />
-                            </div>
-                        )}
                     </div>
-                    <div>
-                        <Button variant="ghost" onClick={() => seeDetails()}>
-                            {t("see-all-ledgers")}
-                            <i className="icon-[mdi--arrow-up-right]"></i>
-                        </Button>
-                    </div>
-                    <div className="w-full h-20 flex-shrink-0"></div>
+                    <DateSliced
+                        {...dateSlicedProps}
+                        onClickSettings={toChangeFilter}
+                    >
+                        <div className="flex items-center pr-2 relative">
+                            <Switch.Root
+                                checked={dimension === "user"}
+                                onCheckedChange={() => {
+                                    setDimension((v) => {
+                                        return v === "category"
+                                            ? "user"
+                                            : "category";
+                                    });
+                                }}
+                                className="relative z-[0] h-[29px] w-[54px] cursor-pointer rounded-sm bg-blackA6 outline-none bg-stone-300 group"
+                            >
+                                <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center gap-2 z-[1]">
+                                    <i className="icon-[mdi--view-grid-outline] group-[data-[state=checked]]:text-white"></i>
+                                    <i className="icon-[mdi--account-outline]"></i>
+                                </div>
+                                <Switch.Thumb className="block size-[22px] translate-x-[4px] rounded-sm bg-background transition-transform duration-100 will-change-transform data-[state=checked]:translate-x-[28px]" />
+                            </Switch.Root>
+                        </div>
+                    </DateSliced>
                 </div>
+                <FocusTypeSelector
+                    value={focusType}
+                    onValueChange={(v) => {
+                        setFocusType(v);
+                        setSelectedCategoryId(undefined);
+                    }}
+                    money={totalMoneys}
+                />
+                <div className="w-full px-2 flex-1 flex justify-center overflow-y-auto">
+                    <div className="w-full max-w-[600px] flex flex-col items-center gap-4 relative">
+                        {effectiveModules.map((module) => renderModule(module))}
+                        <div>
+                            <Button
+                                variant="ghost"
+                                onClick={() => seeDetails()}
+                            >
+                                {t("see-all-ledgers")}
+                                <i className="icon-[mdi--arrow-up-right]"></i>
+                            </Button>
+                        </div>
+                        <div className="w-full h-20 flex-shrink-0"></div>
+                    </div>
+                </div>
+                <BillFilterViewProvider />
             </div>
-            <BillFilterViewProvider />
+            <div
+                ref={sidePanelRef}
+                className="side-panel hidden md:flex w-[400px] empty:w-0 transition-all border-l"
+            ></div>
         </div>
     );
 }

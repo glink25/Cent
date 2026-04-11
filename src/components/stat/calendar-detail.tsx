@@ -5,7 +5,7 @@ import { useLocale } from "@/locale";
 import { cn } from "@/utils";
 import { collaboratorColors } from "@/utils/color";
 import { toThousand } from "@/utils/number";
-import type { EnvArg } from "../assistant/env";
+import type { EnvArg } from "../assistant/tools/env";
 import type { FocusType } from "./focus-type";
 
 export interface CalendarCellSlotProps {

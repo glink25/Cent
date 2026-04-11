@@ -1,4 +1,5 @@
 // @annotation: Full 在这里并无实际作用，只是用于拓展一些额外内容，无需考虑，Full<T> 可视为等价于 T
+import type { Widget } from "@/components/widget/type";
 import type { Full } from "@/database/stash";
 // @annotation: 其他工具type，无需考虑
 import type {
@@ -126,6 +127,8 @@ export type GlobalMeta = {
         amapKey?: string;
         amapSecurityCode?: string;
     };
+    // Widget列表
+    widgets?: Widget[];
 };
 
 // 这是最终导出的核心JSON数据结构，使用这个数据结构可以直接被解析成可以识别的数据

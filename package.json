@@ -1,7 +1,7 @@
 {
 	"name": "oncent-next",
 	"private": true,
-	"version": "1.4",
+	"version": "1.5",
 	"type": "module",
 	"scripts": {
 		"dev": "vite --host",
@@ -10,7 +10,8 @@
 		"lint": "tsc -b && biome check --diagnostic-level error",
 		"preview": "vite preview --host --port 5173",
 		"check": "biome check --write",
-		"pre-commit": "pnpm run lint"
+		"pre-commit": "pnpm run lint",
+		"prepare": "husky"
 	},
 	"dependencies": {
 		"@aws-sdk/client-s3": "^3.972.0",
@@ -45,6 +46,7 @@
 		"immer": "^10.1.1",
 		"js-base64": "^3.7.8",
 		"jsondiffpatch": "^0.7.3",
+		"jsonrepair": "^3.13.3",
 		"lodash-es": "^4.17.21",
 		"lucide-react": "^0.544.0",
 		"motion": "^12.23.24",
@@ -67,7 +69,8 @@
 		"wordcloud": "^1.2.3",
 		"zod": "^4.1.11",
 		"zustand": "^5.0.8",
-		"zustand-computed": "^2.1.0"
+		"zustand-computed": "^2.1.0",
+		"zustand-indexeddb": "^0.1.1"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "latest",
@@ -95,7 +98,7 @@
 		"typescript": "~5.8.3",
 		"typescript-eslint": "^8.39.1",
 		"unplugin-info": "^1.2.4",
-		"vite": "^7.1.2",
+		"vite": "^8.0.8",
 		"vite-bundle-analyzer": "^1.2.3",
 		"vite-plugin-html": "^3.2.2",
 		"vite-plugin-info": "^0.4.1",

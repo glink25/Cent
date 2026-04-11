@@ -25,7 +25,8 @@ body {
 	overflow: hidden;
 }
 
-* {
+/*除了.select-all,.select-auto,.select-none,.select-text，其他都禁用选择*/
+*:not(.select-all):not(.select-auto):not(.select-none):not(.select-text) {
 	-webkit-touch-callout: none; /* iOS Safari */
 	-webkit-user-select: none; /* Chrome, Safari, Opera */
 	-moz-user-select: none; /* Firefox */
@@ -34,6 +35,7 @@ body {
 }
 
 input,
+textarea,
 input * {
 	-webkit-touch-callout: default;
 	-webkit-user-select: text;
