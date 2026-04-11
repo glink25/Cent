@@ -605,7 +605,7 @@ export default function AssistantSettingsItem() {
                     <div
                         className={cn(betaClassName, "flex items-center gap-2")}
                     >
-                        <i className="icon-[mdi--robot-outline] size-5"></i>
+                        <i className="icon-[mdi--shimmer-outline] size-5"></i>
                         {t("ai-assistant")}
                     </div>
                     <i className="icon-[mdi--chevron-right] size-5"></i>

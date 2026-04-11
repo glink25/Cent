@@ -10,7 +10,8 @@
 		"lint": "tsc -b && biome check --diagnostic-level error",
 		"preview": "vite preview --host --port 5173",
 		"check": "biome check --write",
-		"pre-commit": "pnpm run lint"
+		"pre-commit": "pnpm run lint",
+		"prepare": "husky"
 	},
 	"dependencies": {
 		"@aws-sdk/client-s3": "^3.972.0",

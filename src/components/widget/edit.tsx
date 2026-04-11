@@ -289,7 +289,7 @@ export default function WidgetEdit({
                                         <WidgetPreviewSkeleton />
                                     </div>
                                 ) : previewError ? (
-                                    <div className="text-red-500 text-xs whitespace-pre-wrap">
+                                    <div className="text-red-500 text-xs whitespace-pre-wrap select-text">
                                         {previewError}
                                     </div>
                                 ) : (

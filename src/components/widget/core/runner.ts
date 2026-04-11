@@ -118,25 +118,14 @@ export default async function runWidget(
         env,
     };
 
-    const sandbox = createSandBox(
-        [
-            "Date",
-            "Math",
-            "JSON",
-            "Array",
-            "Object",
-            "Number",
-            "String",
-            "Boolean",
-            "RegExp",
-            "Error",
-            "console",
-        ],
-        InjectCode,
-    );
+    const sandbox = createSandBox([]);
 
     try {
-        const rendered = await sandbox.runDefaultExport(widget.code, [ctx]);
+        const rendered = await sandbox.runDefaultExport(
+            `${InjectCode}\n${widget.code}`,
+            [ctx],
+            5000,
+        );
         return {
             success: true,
             result: rendered,
