@@ -548,6 +548,18 @@ export default function BillFilterForm({
                                 });
                             }}
                         ></StrictCascadeMultipleSelect>
+                        <Tag
+                            checked={form.matchAllTags}
+                            onCheckedChange={(v) => {
+                                setForm((prev) => ({
+                                    ...prev,
+                                    matchAllTags: v,
+                                }));
+                            }}
+                            className="text-xs bg-transparent shadow-md"
+                        >
+                            {t("match-all-tags")}
+                        </Tag>
                     </div>
                 </div>
             </div>

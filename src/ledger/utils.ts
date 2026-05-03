@@ -1,6 +1,7 @@
 import dayjs, { type Dayjs } from "dayjs";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
+import { intersection } from "lodash-es";
 import { numberToAmount } from "./bill";
 
 dayjs.extend(isSameOrBefore);
@@ -85,10 +86,18 @@ const isScheduledMatched = (bill: Bill, scheduled?: boolean) => {
     return scheduled === true ? bill.extra?.scheduledId : true;
 };
 
-const isTagsMatched = (bill: Bill, tagIds?: string[]) => {
-    return tagIds?.length
-        ? tagIds.some((c) => bill.tagIds?.some((t) => t === c))
-        : true;
+const isTagsMatched = (
+    bill: Bill,
+    tagIds?: string[],
+    matchAllTags?: boolean,
+) => {
+    if (!tagIds?.length) {
+        return true;
+    }
+
+    return matchAllTags
+        ? intersection(bill.tagIds, tagIds).length === tagIds.length
+        : tagIds.some((c) => bill.tagIds?.some((t) => t === c));
 };
 
 const isExcludeTagsMatched = (bill: Bill, tagIds?: string[]) => {
@@ -118,7 +127,7 @@ export const isBillMatched = (bill: Bill, filter: BillFilter) => {
         isAssetsMatched(bill, filter.assets) &&
         isScheduledMatched(bill, filter.scheduled) &&
         isCommentMatched(bill, filter.comment) &&
-        isTagsMatched(bill, filter.tags) &&
+        isTagsMatched(bill, filter.tags, filter.matchAllTags) &&
         isCurrenciesMatched(
             bill,
             filter.baseCurrency ?? DefaultBaseCurrencyId,

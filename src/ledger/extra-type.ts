@@ -54,6 +54,7 @@ export type BillFilter = Partial<{
     assets?: boolean;
     scheduled?: boolean;
     tags?: string[];
+    matchAllTags?: boolean;
     excludeTags?: string[];
     baseCurrency: string;
     currencies?: string[];
