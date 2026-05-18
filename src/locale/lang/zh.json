@@ -402,7 +402,7 @@
   "copy-success": "复制成功",
   "copy-failed": "复制失败",
   "please-enter-a-new-schema-name": "请输入新的方案名称",
-  "login-to-gitee": "使用Gitee登录",
+  "login-to-gitee": "使用 Gitee 登录",
   "please-enter-your-gitee-token": "请输入你的Gitee Token",
   "category.food_dining": "餐饮",
   "category.transport_travel": "交通与旅行",
