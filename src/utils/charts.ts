@@ -179,7 +179,10 @@ export function processBillDataForCharts(
         const totalDaily = dailyData.get(TOTAL_KEY)!;
         const userDaily = dailyData.get(creatorId)!;
         const categoryDetail = getCategory(bill.categoryId);
-        const majorCategory = categoryDetail.parent;
+        const majorCategory = categoryDetail.parent ?? {
+            id: categoryDetail.id,
+            name: categoryDetail.name,
+        };
         // --- b. 根据账单类型进行聚合 ---
         if (bill.type === "income") {
             totalDaily.income += amount;
