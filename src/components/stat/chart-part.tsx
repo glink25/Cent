@@ -69,7 +69,10 @@ export function useChartPart({
                         }
                         const parent = categories.find(
                             (c) => c.id === cate.parent,
-                        )!;
+                        );
+                        if (!parent) {
+                            return { ...cate, parent: { ...cate } };
+                        }
                         return { ...cate, parent };
                     },
                     getUserInfo: (id) => {
