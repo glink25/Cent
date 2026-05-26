@@ -24,6 +24,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
                     error: "[&_[data-icon]]:text-destructive",
                 },
             }}
+            position="top-center"
             {...props}
         />,
         document.body,

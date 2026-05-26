@@ -14,7 +14,7 @@ import { useUserStore } from "./user";
 
 const toastLib = import("sonner");
 
-export type EditBill = Omit<OutputType<Bill>, "id"> & {
+export type EditBill = Omit<OutputType<Bill>, "id" | "creatorId"> & {
     id?: Bill["id"];
     creatorId?: Bill["creatorId"];
 };

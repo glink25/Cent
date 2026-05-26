@@ -615,7 +615,10 @@ export default function EditorForm({
                             if (v === "r") {
                                 toConfirm();
                                 setTimeout(() => {
-                                    goAddBill();
+                                    goAddBill({
+                                        ...defaultBill,
+                                        time: billState.time,
+                                    });
                                 }, 10);
                             }
                         }}
