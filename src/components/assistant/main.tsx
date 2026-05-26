@@ -427,6 +427,11 @@ function Content() {
                     </div>
                 )}
             </div>
+            {/* 底部渐变模糊遮罩，让滚动到底部的内容逐渐隐入输入框背景 */}
+            <div
+                aria-hidden="true"
+                className="pointer-events-none absolute left-0 right-0 bottom-[-10px] h-[170px] bg-gradient-to-b from-transparent via-background/70 to-background/95 backdrop-blur-[2px] [mask-image:linear-gradient(to_bottom,transparent,black_40%)]"
+            />
             {/* 底部区域，用于展示消息输入框和提示 */}
             <div className="w-full absolute left-0 bottom-0 px-2 py-4 flex flex-col gap-2">
                 <div className="w-full flex overflow-x-auto scrollbar-hidden gap-2">
