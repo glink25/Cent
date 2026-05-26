@@ -7,7 +7,16 @@ import { useUserStore } from "@/store/user";
 import { isSpeechRecognitionSupported } from "../add-button/recognize";
 import createConfirmProvider from "../confirm";
 import { Button } from "../ui/button";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "../ui/select";
 import { Switch } from "../ui/switch";
+
+const FOLLOW_DEFAULT = "__default__";
 
 function Form({ onCancel }: { onCancel?: () => void }) {
     const t = useIntl();
@@ -35,6 +44,18 @@ function Form({ onCancel }: { onCancel?: () => void }) {
 
     const [voiceByKeyboard, setVoiceByKeyboard] =
         usePreference("voiceByKeyboard");
+
+    const [voiceAIConfigId, setVoiceAIConfigId] =
+        usePreference("voiceAIConfigId");
+
+    const defaultConfigName = configs.find(
+        (c) => c.id === defaultConfigId,
+    )?.name;
+    const selectedConfigExists =
+        voiceAIConfigId && configs.some((c) => c.id === voiceAIConfigId);
+    const selectValue = selectedConfigExists
+        ? (voiceAIConfigId as string)
+        : FOLLOW_DEFAULT;
 
     return (
         <PopupLayout
@@ -102,6 +123,46 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                         />
                     </div>
                 )}
+                {voiceEnabled && hasAIConfig && (
+                    <div className="w-full min-h-10 pb-2 flex justify-between items-center px-4 gap-2">
+                        <div className="text-sm min-w-0 flex-1">
+                            <div>{t("voice-ai-model")}</div>
+                            <div className="text-xs opacity-60">
+                                {t("voice-ai-model-description")}
+                            </div>
+                        </div>
+                        <Select
+                            value={selectValue}
+                            onValueChange={(value) => {
+                                setVoiceAIConfigId(
+                                    value === FOLLOW_DEFAULT
+                                        ? undefined
+                                        : value,
+                                );
+                            }}
+                        >
+                            <SelectTrigger className="w-40">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value={FOLLOW_DEFAULT}>
+                                    {t("follow-assistant-default")}
+                                    {defaultConfigName
+                                        ? ` (${defaultConfigName})`
+                                        : ""}
+                                </SelectItem>
+                                {configs.map((config) => (
+                                    <SelectItem
+                                        key={config.id}
+                                        value={config.id}
+                                    >
+                                        {config.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
             </div>
         </PopupLayout>
     );
@@ -109,7 +170,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
 
 const [VoiceSettingsProvider, showVoiceSettings] = createConfirmProvider(Form, {
     dialogTitle: "voice-recording-settings",
-    dialogModalClose: true,
+    dialogModalClose: false,
     contentClassName:
         "h-full w-full max-h-full max-w-full rounded-none sm:rounded-md sm:max-h-[min(520px,calc(100vh-32px))] sm:w-[90vw] sm:max-w-[500px]",
 });

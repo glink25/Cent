@@ -1,15 +1,22 @@
 import type { AIConfig } from "@/ledger/extra-type";
 import { useLedgerStore } from "@/store/ledger";
+import { usePreferenceStore } from "@/store/preference";
 import { useUserStore } from "@/store/user";
 import { decodeApiKey } from "@/utils/api-key";
 import type { ProviderRequestChunk } from "../../assistant/type";
 
-function getAIConfig(): AIConfig {
+function getAIConfig(configId?: string): AIConfig {
     const userId = useUserStore.getState().id;
     const assistantData =
         useLedgerStore.getState().infos?.meta.personal?.[userId]?.assistant;
 
     if (assistantData?.configs && assistantData.configs.length > 0) {
+        if (configId) {
+            const config = assistantData.configs.find((c) => c.id === configId);
+            if (config) {
+                return config;
+            }
+        }
         const defaultConfigId = assistantData.defaultConfigId;
         if (defaultConfigId) {
             const config = assistantData.configs.find(
@@ -301,8 +308,24 @@ export async function requestAI(
     });
 }
 
+function getVoiceAIConfig(): AIConfig {
+    const id = usePreferenceStore.getState().voiceAIConfigId;
+    return getAIConfig(id);
+}
+
+export async function requestAIForVoice(
+    messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
+) {
+    const config = getVoiceAIConfig();
+    return requestAIWithConfig(messages, {
+        ...config,
+        apiKey: decodeApiKey(config.apiKey),
+    });
+}
+
 export {
     getAIConfig,
+    getVoiceAIConfig,
     parseOpenAIStream,
     parseGoogleStream,
     requestAIWithConfig,

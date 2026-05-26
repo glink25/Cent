@@ -23,6 +23,8 @@ type State = {
     voiceRecordingEnabled?: boolean;
     /** 是否使用键盘输入代替语言识别 */
     voiceByKeyboard?: boolean;
+    /** 语音记账使用的 AI 配置 id；undefined 表示跟随 AI 助手默认 */
+    voiceAIConfigId?: string;
     /** 是否关闭设置页顶部的赞助横幅 */
     sponsorBannerClosed?: boolean;
     /** relayr中转服务配置 */
