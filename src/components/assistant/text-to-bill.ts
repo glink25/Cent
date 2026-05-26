@@ -10,7 +10,7 @@ import { locales } from "@/locale/utils";
 import { useCurrencyStore } from "@/store/currency";
 import { useLedgerStore } from "@/store/ledger";
 import { usePreferenceStore } from "@/store/preference";
-import { requestAI } from "./request";
+import { requestAIForVoice } from "./request";
 
 const getCategories = () => {
     const savedCategories = useLedgerStore.getState().infos?.meta.categories;
@@ -174,7 +174,7 @@ export const getCategoriesStr = () => {
 export async function parseTextToBill(text: string) {
     console.log("start parsing text:", text);
     const prompt = textToBillSystemPrompt(getCategoriesStr());
-    const result = await requestAI([
+    const result = await requestAIForVoice([
         { role: "system", content: prompt },
         {
             role: "user",

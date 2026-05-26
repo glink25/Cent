@@ -12,6 +12,7 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { v4 } from "uuid";
+import { useShallow } from "zustand/shallow";
 import type {
     AbortablePromise,
     AssistantMessage,
@@ -21,9 +22,10 @@ import type {
 import { createSession } from "@/assistant";
 import { showFilePicker } from "@/components/file-picker";
 import { useIntl } from "@/locale";
+import { useLedgerStore } from "@/store/ledger";
+import { useUserStore } from "@/store/user";
 import { Button } from "../ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import { DebugLogPanel } from "./debug-panel";
 import { MessageBubble } from "./message";
 import { useAssistantChatStore } from "./state";
 import { CentAIConfig } from "./tools";
@@ -182,6 +184,77 @@ function Root({ children }: { children?: ReactNode }) {
     );
 }
 
+function ModelSwitcher() {
+    const t = useIntl();
+    const userId = useUserStore((s) => s.id);
+    const { configs, defaultConfigId } = useLedgerStore(
+        useShallow((state) => {
+            const assistantData =
+                state.infos?.meta.personal?.[userId]?.assistant;
+            return {
+                configs: assistantData?.configs ?? [],
+                defaultConfigId: assistantData?.defaultConfigId,
+            };
+        }),
+    );
+    const [open, setOpen] = useState(false);
+
+    if (configs.length === 0) {
+        return null;
+    }
+
+    const currentConfig = configs.find((c) => c.id === defaultConfigId);
+    const label = currentConfig?.name ?? t("switch-model");
+
+    return (
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <button
+                    type="button"
+                    title={label}
+                    className="inline-flex items-center gap-1 h-8 px-2 rounded-full text-xs text-foreground/70 hover:text-foreground hover:bg-muted max-w-[140px] cursor-pointer"
+                >
+                    <span className="truncate">{label}</span>
+                    <i className="icon-[mdi--unfold-more-horizontal] size-3.5 flex-shrink-0 opacity-70"></i>
+                </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-52 p-1" align="start" side="top">
+                <div className="max-h-72 overflow-y-auto">
+                    {configs.map((config) => (
+                        <button
+                            type="button"
+                            key={config.id}
+                            onClick={() => {
+                                void useLedgerStore
+                                    .getState()
+                                    .updatePersonalMeta((prev) => {
+                                        if (!prev.assistant) {
+                                            prev.assistant = {};
+                                        }
+                                        prev.assistant.defaultConfigId =
+                                            config.id;
+                                        return prev;
+                                    });
+                                setOpen(false);
+                            }}
+                            className={`group flex w-full items-center gap-2 rounded-sm px-2 py-1 text-sm hover:bg-accent ${
+                                config.id === defaultConfigId ? "bg-accent" : ""
+                            }`}
+                        >
+                            <span className="truncate flex-1 text-left">
+                                {config.name}
+                            </span>
+                            {config.id === defaultConfigId && (
+                                <i className="icon-[mdi--check] size-4"></i>
+                            )}
+                        </button>
+                    ))}
+                </div>
+            </PopoverContent>
+        </Popover>
+    );
+}
+
 function Actions() {
     const t = useIntl();
     const { chats, currentChatId, setCurrentChatId } = useAssistantContext();
@@ -197,7 +270,7 @@ function Actions() {
                     setCurrentChatId(undefined);
                 }}
             >
-                <i className="icon-[mdi--comment-edit-outline] size-5"></i>
+                <i className="icon-[mdi--comment-add-outline] size-5"></i>
             </Button>
             {/* 会话切换 */}
             <Popover open={isChatMenuOpen} onOpenChange={setIsChatMenuOpen}>
@@ -331,7 +404,6 @@ function Content() {
 
     return (
         <div className="w-full flex-1 flex flex-col overflow-hidden relative">
-            <DebugLogPanel />
             <div className="hidden md:flex justify-center items-center py-2 h-12">
                 <div>{t("ai-assistant")}</div>
                 <div className="absolute right-2">
@@ -439,30 +511,33 @@ function Content() {
                         className="w-full h-10 p-2 resize-none !outline-none"
                     ></textarea>
                     <div className="flex justify-between items-center">
-                        {/* 附件上传按钮 */}
-                        <Button
-                            variant="ghost"
-                            className="rounded-full p-0 w-8 h-8"
-                            onClick={async () => {
-                                if (input.assets.length >= 3) {
-                                    toast.error("最多上传3个附件");
-                                    return;
-                                }
-                                const files = await showFilePicker({
-                                    multiple: true,
-                                });
-                                const remaining = 3 - input.assets.length;
-                                setInput((v) => ({
-                                    ...v,
-                                    assets: [
-                                        ...v.assets,
-                                        ...files.slice(0, remaining),
-                                    ],
-                                }));
-                            }}
-                        >
-                            <i className="icon-[mdi--plus] size-5"></i>
-                        </Button>
+                        <div className="flex items-center gap-1">
+                            {/* 附件上传按钮 */}
+                            <Button
+                                variant="ghost"
+                                className="rounded-full p-0 w-8 h-8"
+                                onClick={async () => {
+                                    if (input.assets.length >= 3) {
+                                        toast.error("最多上传3个附件");
+                                        return;
+                                    }
+                                    const files = await showFilePicker({
+                                        multiple: true,
+                                    });
+                                    const remaining = 3 - input.assets.length;
+                                    setInput((v) => ({
+                                        ...v,
+                                        assets: [
+                                            ...v.assets,
+                                            ...files.slice(0, remaining),
+                                        ],
+                                    }));
+                                }}
+                            >
+                                <i className="icon-[mdi--plus] size-5"></i>
+                            </Button>
+                            <ModelSwitcher />
+                        </div>
 
                         {/* 发送按钮，当前聊天窗口为pending时，改为中断按钮 */}
                         {currentChat?.pending ? (
