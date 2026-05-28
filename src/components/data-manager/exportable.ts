@@ -30,16 +30,36 @@ const unzipAsync = (data: Uint8Array) => {
     });
 };
 
-const zipAsync = (data: Record<string, Uint8Array>) => {
+const zipAsync = (data: Record<string, Uint8Array>, signal?: AbortSignal) => {
     return new Promise<Uint8Array>((resolve, reject) => {
-        zip(data, { level: 6 }, (error, zipped) => {
+        const terminate = zip(data, { level: 6 }, (error, zipped) => {
+            if (signal) {
+                signal.removeEventListener("abort", onAbort);
+            }
             if (error) {
                 reject(error);
                 return;
             }
             resolve(zipped);
         });
+        const onAbort = () => {
+            terminate();
+            reject(signal?.reason ?? new DOMException("Aborted", "AbortError"));
+        };
+        if (signal) {
+            if (signal.aborted) {
+                onAbort();
+                return;
+            }
+            signal.addEventListener("abort", onAbort);
+        }
     });
+};
+
+const throwIfAborted = (signal?: AbortSignal) => {
+    if (signal?.aborted) {
+        throw signal.reason ?? new DOMException("Aborted", "AbortError");
+    }
 };
 
 const getFileExtension = (fileName: string, fallbackType?: string) => {
@@ -210,24 +230,33 @@ export const processImportFile = async (backupFile: File) => {
     };
 };
 
-export const prepareExportFile = async (bookId: string) => {
+export const prepareExportFile = async (
+    bookId: string,
+    signal?: AbortSignal,
+) => {
+    throwIfAborted(signal);
     const [items, meta] = await Promise.all([
         StorageAPI.getAllItems(bookId),
         StorageAPI.getMeta(bookId),
     ]);
+    throwIfAborted(signal);
     const { items: exportedItems, files } = await mapExportImages(
         items,
         bookId,
     );
+    throwIfAborted(signal);
     const json = JSON.stringify({
         items: exportedItems,
         meta,
     } as ExportedJSON);
 
-    const zipped = await zipAsync({
-        [BACKUP_JSON_FILE]: strToU8(json),
-        ...files,
-    });
+    const zipped = await zipAsync(
+        {
+            [BACKUP_JSON_FILE]: strToU8(json),
+            ...files,
+        },
+        signal,
+    );
     const blob = new Blob([zipped as any], { type: "application/zip" });
 
     return { blob, ext: "cent.zip" };
