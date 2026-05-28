@@ -21,7 +21,7 @@ export default function PopupLayout({
     return (
         <div
             className={cn(
-                "flex-1 flex flex-col overflow-hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]",
+                "flex-1 flex flex-col overflow-hidden pt-[var(--safe-area-inset-top)] pb-[var(--safe-area-inset-bottom)]",
                 className,
             )}
         >

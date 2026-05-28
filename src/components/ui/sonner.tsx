@@ -10,7 +10,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
     return createPortal(
         <Sonner
             theme={theme as ToasterProps["theme"]}
-            className="toaster group !mt-[env(safe-area-inset-top)] !mb-[env(safe-area-inset-bottom)] pointer-events-auto"
+            className="toaster group !mt-[var(--safe-area-inset-top)] !mb-[var(--safe-area-inset-bottom)] pointer-events-auto"
             toastOptions={{
                 classNames: {
                     toast: "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",

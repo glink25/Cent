@@ -467,7 +467,7 @@ export default function EditorForm({
                 <div
                     className={cn(
                         "h-[calc(480px+160px*(var(--bekh,0.5)-0.5))] sm:h-[calc(380px+160px*(var(--bekh,0.5)-0.5))] min-h-[264px] max-h-[calc(100%-124px)]",
-                        "keyboard-field relative flex gap-2 flex-col justify-start bg-stone-900 sm:rounded-b-md text-[white] p-2 pb-[max(env(safe-area-inset-bottom),8px)]",
+                        "keyboard-field relative flex gap-2 flex-col justify-start bg-stone-900 sm:rounded-b-md text-[white] p-2 pb-[var(--safe-area-inset-bottom)]",
                     )}
                 >
                     <ResizeHandle />
