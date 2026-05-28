@@ -9,6 +9,21 @@
 
 @plugin "tailwindcss-animate";
 
+:root {
+	--titlebar-height: 0px;
+	/* Safe-area inset 兜底策略：top/bottom 最小 16px，避免在无原生安全区时贴边
+	   全局通过 var(--safe-area-inset-*) 引用，禁止直接使用 env() */
+	--safe-area-inset-top: max(env(safe-area-inset-top), 0px);
+	--safe-area-inset-right: env(safe-area-inset-right);
+	--safe-area-inset-bottom: max(env(safe-area-inset-bottom), 0px);
+	--safe-area-inset-left: env(safe-area-inset-left);
+	--safe-area-top: calc(var(--safe-area-inset-top) + var(--titlebar-height));
+}
+
+.is-macos-app {
+	--titlebar-height: 28px;
+}
+
 body {
 	width: 100vw;
 	height: 100vh;
@@ -20,8 +35,8 @@ body {
 #root {
 	width: 100%;
 	height: 100%;
-	padding: env(safe-area-inset-top) env(safe-area-inset-right)
-		env(safe-area-inset-bottom) env(safe-area-inset-left);
+	padding: var(--safe-area-top) var(--safe-area-inset-right)
+		var(--safe-area-inset-bottom) var(--safe-area-inset-left);
 	overflow: hidden;
 }
 

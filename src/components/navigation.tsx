@@ -22,8 +22,8 @@ export default function Navigation() {
         <div
             className="floating-tab fixed w-screen h-18 flex items-center justify-around sm:h-screen
          sm:w-18 sm:flex-col sm:justify-start z-[0] 
-         bottom-[calc(.25rem+env(safe-area-inset-bottom))]
-         sm:top-[env(safe-area-inset-top)] sm:left-[calc(.25rem+env(safe-area-inset-left))]"
+         bottom-[calc(.25rem+var(--safe-area-inset-bottom))]
+         sm:top-[var(--safe-area-top)] sm:left-[calc(.25rem+var(--safe-area-inset-left))]"
         >
             {/* search */}
             <button
