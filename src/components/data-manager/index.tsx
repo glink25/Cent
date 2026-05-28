@@ -52,13 +52,26 @@ function Form({ onCancel }: { onCancel?: () => void }) {
         if (!bookId) {
             return;
         }
-        const [stopLoading] = modal.loading();
-        const { blob, ext } = await prepareExportFile(bookId);
-        stopLoading();
-        await download(
-            blob,
-            `cent-backup-${bookId.replace("/", "-")}-${new Date().toISOString()}.${ext}`,
-        );
+        const controller = new AbortController();
+        const [stopLoading] = modal.loading({
+            onCancel: () => controller.abort(),
+        });
+        try {
+            const { blob, ext } = await prepareExportFile(
+                bookId,
+                controller.signal,
+            );
+            await download(
+                blob,
+                `cent-backup-${bookId.replace("/", "-")}-${new Date().toISOString()}.${ext}`,
+            );
+        } catch (e) {
+            if (!controller.signal.aborted) {
+                throw e;
+            }
+        } finally {
+            stopLoading();
+        }
     };
 
     const toImportFromOncent = async () => {
