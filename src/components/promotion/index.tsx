@@ -17,6 +17,16 @@ export type PromotionItem = {
 // 只有第一条会展示
 const WhatsNew: (PromotionItem & { action?: () => void })[] = [
     {
+        id: "cent-ios-released",
+        label: "cent-ios-released",
+        action: () => {
+            window.open(
+                "https://glink25.github.io/post/Cent-iOS%E7%89%88%E7%8E%B0%E5%B7%B2%E6%8E%A8%E5%87%BA/",
+                "_blank",
+            );
+        },
+    },
+    {
         id: "meet-widget-api",
         label: "meet-widget-api",
         action: () => {
