@@ -183,7 +183,7 @@ function BudgetDetail({
 
     const budgetRanges = useMemo(() => {
         return allRanges.map((range, index) => {
-            const latestTime = bills[0].time;
+            const latestTime = bills[0]?.time;
 
             const active = latestTime >= range[0].unix() * 1000;
             const totalReached = active
