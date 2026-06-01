@@ -28,3 +28,7 @@ initIntl(lang).then(() => {
 });
 
 registerLaunchQueue();
+
+import("./agent-api").then(({ bootAgentApi }) => {
+    void bootAgentApi();
+});

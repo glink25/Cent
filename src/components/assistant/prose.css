@@ -1,0 +1,110 @@
+/* 简易 Markdown 渲染样式（替代 @tailwindcss/typography 的 .prose）
+   仅由 MessageBubble 使用，随 assistant 懒加载 chunk 一同加载 */
+.prose {
+	color: var(--foreground);
+	line-height: 1.6;
+	word-break: break-word;
+}
+.prose > :first-child {
+	margin-top: 0;
+}
+.prose > :last-child {
+	margin-bottom: 0;
+}
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4 {
+	margin: 1em 0 0.5em;
+	font-weight: 600;
+	line-height: 1.3;
+}
+.prose h1 {
+	font-size: 1.5em;
+}
+.prose h2 {
+	font-size: 1.3em;
+}
+.prose h3 {
+	font-size: 1.15em;
+}
+.prose h4 {
+	font-size: 1em;
+}
+.prose p {
+	margin: 0.5em 0;
+}
+.prose a {
+	color: var(--tag-blue);
+	text-decoration: underline;
+}
+.prose strong {
+	font-weight: 600;
+}
+.prose ul,
+.prose ol {
+	margin: 0.5em 0;
+	padding-left: 1.5em;
+}
+.prose ul {
+	list-style: disc;
+}
+.prose ol {
+	list-style: decimal;
+}
+.prose li {
+	margin: 0.25em 0;
+}
+.prose blockquote {
+	margin: 0.5em 0;
+	padding-left: 0.75em;
+	border-left: 3px solid var(--border);
+	color: var(--muted-foreground);
+}
+.prose code {
+	padding: 0.1em 0.3em;
+	border-radius: 4px;
+	background: color-mix(in oklch, var(--foreground) 8%, transparent);
+	font-size: 0.9em;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.prose pre {
+	margin: 0.5em 0;
+	padding: 0.75em;
+	border-radius: 6px;
+	background: color-mix(in oklch, var(--foreground) 8%, transparent);
+	overflow-x: auto;
+}
+.prose pre code {
+	padding: 0;
+	background: transparent;
+	font-size: 0.85em;
+}
+.prose hr {
+	margin: 1em 0;
+	border: 0;
+	border-top: 1px solid var(--border);
+}
+.prose img {
+	max-width: 100%;
+	border-radius: 6px;
+}
+.prose table {
+	width: 100%;
+	margin: 0.5em 0;
+	border-collapse: collapse;
+	font-size: 0.9em;
+}
+.prose th,
+.prose td {
+	padding: 0.4em 0.6em;
+	border: 1px solid var(--border);
+	text-align: left;
+}
+.prose th {
+	background: var(--muted);
+	font-weight: 600;
+}
+.prose.prose-sm {
+	font-size: 0.875rem;
+}

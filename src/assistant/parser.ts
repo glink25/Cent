@@ -85,6 +85,8 @@ export function parseResult(result: ProviderRequestChunk): AssistantMessage {
     assistantMsg.formatted.answer = remainingText
         .replace(/\n{2,}/g, "\n")
         .replace(/<\s*\/\s*$/g, "")
+        .replace("<answer>", "")
+        .replace("</answer>", "")
         .trim();
 
     return assistantMsg;
