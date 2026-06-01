@@ -1,13 +1,16 @@
+import AMapLoader from "@amap/amap-jsapi-loader";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Bill } from "@/ledger/type";
 import { useIntl } from "@/locale";
-import type { AMapMap, AMapMarker } from "./amap-types";
+import "./amap-types";
 
 interface AMapContainerProps {
     bills?: Pick<Bill, "location" | "id" | "amount">[];
     amapKey?: string;
     amapSecurityCode?: string;
 }
+
+const DEFAULT_CENTER: [number, number] = [116.397428, 39.90923]; // 默认北京
 
 export default function AMapContainer({
     bills,
@@ -16,8 +19,8 @@ export default function AMapContainer({
 }: AMapContainerProps) {
     const t = useIntl();
     const mapRef = useRef<HTMLDivElement>(null);
-    const mapInstanceRef = useRef<AMapMap | null>(null);
-    const markersRef = useRef<AMapMarker[]>([]);
+    const mapInstanceRef = useRef<AMap.Map | null>(null);
+    const markersRef = useRef<AMap.Marker[]>([]);
     const [error, setError] = useState<string>("");
     const [sdkLoaded, setSdkLoaded] = useState(false); // 跟踪SDK加载状态
 
@@ -31,39 +34,27 @@ export default function AMapContainer({
             return;
         }
 
-        // 设置安全密钥
+        // 设置安全密钥（必须在 AMapLoader.load 之前设置）
         if (amapSecurityCode) {
             window._AMapSecurityConfig = {
                 securityJsCode: amapSecurityCode,
             };
         }
 
-        // 动态加载高德地图 JS API
-        const loadAMap = () => {
-            return new Promise<void>((resolve, reject) => {
-                if (window.AMap) {
-                    resolve();
-                    return;
-                }
+        let cancelled = false;
 
-                const script = document.createElement("script");
-                script.type = "text/javascript";
-                script.src = `https://webapi.amap.com/maps?v=2.0&key=${amapKey}`;
-                script.onload = () => resolve();
-                script.onerror = () =>
-                    reject(new Error(t("map-error-api-load-failed")));
-                document.head.appendChild(script);
-            });
-        };
-
-        loadAMap()
-            .then(() => {
-                if (!mapRef.current || !window.AMap) return;
+        // 使用官方加载器加载高德地图 JS API
+        AMapLoader.load({
+            key: amapKey,
+            version: "2.0",
+        })
+            .then((AMap: typeof window.AMap) => {
+                if (cancelled || !mapRef.current) return;
 
                 // 创建地图实例（默认中心点）
-                mapInstanceRef.current = new window.AMap.Map(mapRef.current, {
+                mapInstanceRef.current = new AMap.Map(mapRef.current, {
                     zoom: 12,
-                    center: [116.397428, 39.90923], // 默认北京
+                    center: DEFAULT_CENTER,
                     viewMode: "2D",
                     mapStyle: "amap://styles/normal",
                     showLabel: true,
@@ -71,12 +62,18 @@ export default function AMapContainer({
 
                 setSdkLoaded(true); // SDK加载完成
             })
-            .catch((err) => {
+            .catch((err: unknown) => {
+                if (cancelled) return;
                 console.error(t("map-error-load-failed"), err);
-                setError(err.message || t("map-error-load-failed"));
+                setError(
+                    err instanceof Error
+                        ? err.message
+                        : t("map-error-load-failed"),
+                );
             });
 
         return () => {
+            cancelled = true;
             // 清理地图实例
             if (mapInstanceRef.current) {
                 mapInstanceRef.current.destroy();
@@ -95,6 +92,7 @@ export default function AMapContainer({
         // 等待SDK加载完成和地图实例创建
         if (!sdkLoaded || !mapInstanceRef.current || !window.AMap) return;
 
+        const AMap = window.AMap;
         const mapInstance = mapInstanceRef.current;
 
         // 清除旧的标记点
@@ -105,7 +103,7 @@ export default function AMapContainer({
 
         if (billsWithLocation.length === 0) {
             // 没有位置数据时，重置地图中心到默认位置
-            mapInstance.setCenter([116.397428, 39.90923]);
+            mapInstance.setCenter(DEFAULT_CENTER);
             mapInstance.setZoom(12);
             return;
         }
@@ -123,25 +121,29 @@ export default function AMapContainer({
             ) / billsWithLocation.length;
 
         // 创建标记点
-        const markers: AMapMarker[] = billsWithLocation
+        const markers: AMap.Marker[] = billsWithLocation
             .map((bill) => {
                 const { location, amount } = bill;
-                if (!location || !window.AMap) return null;
+                if (!location) return null;
 
-                const marker = new window.AMap.Marker({
-                    position: [location.longitude, location.latitude],
+                const position: [number, number] = [
+                    location.longitude,
+                    location.latitude,
+                ];
+                const marker = new AMap.Marker({
+                    position,
                     title: `${t("map-marker-amount")}: ${(amount / 10000).toFixed(2)}`,
                     anchor: "bottom-center",
                     // 自定义标记图标
-                    icon: new window.AMap.Icon({
-                        size: new window.AMap.Size(25, 34),
+                    icon: new AMap.Icon({
+                        size: new AMap.Size(25, 34),
                         image: "//a.amap.com/jsapi_demos/static/demo-center/icons/poi-marker-default.png",
-                        imageSize: new window.AMap.Size(25, 34),
+                        imageSize: new AMap.Size(25, 34),
                     }),
                 });
 
                 // 添加信息窗体
-                const infoWindow = new window.AMap.InfoWindow({
+                const infoWindow = new AMap.InfoWindow({
                     content: `
                         <div style="padding: 12px; min-width: 150px;">
                             <p style="margin: 0; font-weight: bold; font-size: 14px; color: #333;">
@@ -155,16 +157,16 @@ export default function AMapContainer({
                             </p>
                         </div>
                     `,
-                    offset: new window.AMap.Pixel(0, -34),
+                    offset: new AMap.Pixel(0, -34),
                 });
 
                 marker.on("click", () => {
-                    infoWindow.open(mapInstance, marker.getPosition());
+                    infoWindow.open(mapInstance, position);
                 });
 
                 return marker;
             })
-            .filter((marker): marker is AMapMarker => marker !== null);
+            .filter((marker): marker is AMap.Marker => marker !== null);
 
         // 添加标记点到地图
         if (markers.length > 0) {
