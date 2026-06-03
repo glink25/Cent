@@ -298,14 +298,24 @@ function scanInto(
             continue;
         }
 
-        // state === "TOOL"：仅按字面量查找 </tool>，忽略 JSON 内部的 < / >
+        // state === "TOOL"：按字面量查找 </tool>，扫描期间忽略 JSON 内部的 < / >。
+        // 但若在闭合前又出现新的 <tool>，说明上一个 tool 未闭合（大模型常见错误，
+        // 会直接拼接多个 <tool> 块），此时以新的 <tool> 为界，避免把后续 <tool>
+        // 吞进 JSON 导致 jsonrepair 在 `<` 处 parse 失败。
+        // 注意：这意味着 tool 的 JSON 字符串值不应包含字面量 `<tool>`（保留分隔符）。
         const close = text.indexOf("</tool>", i);
-        if (close !== -1) {
+        const nextOpen = text.indexOf("<tool>", i);
+        if (nextOpen !== -1 && (close === -1 || nextOpen < close)) {
+            // 上一个 tool 未闭合但已被新的 <tool> 终止：尝试解析已有内容后从新块重新开始
+            pushTool(text.slice(i, nextOpen));
+            i = nextOpen + "<tool>".length;
+            // 保持 TOOL 状态
+        } else if (close !== -1) {
             pushTool(text.slice(i, close));
             i = close + "</tool>".length;
             state = "TEXT";
         } else {
-            // tool 未闭合，忽略整段
+            // tool 未闭合且无后续 <tool>，忽略整段（等待后续 chunk）
             i = len;
         }
     }
