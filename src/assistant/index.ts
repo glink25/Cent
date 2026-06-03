@@ -14,6 +14,7 @@ export type {
     SkillInput,
     SkillMeta,
     Tool,
+    ToolContext,
     ToolJsonSchema,
     ToolMessage,
     ToolPromptDefinition,

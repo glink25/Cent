@@ -513,7 +513,7 @@ function Content() {
                                 }
                             }
                         }}
-                        className="w-full h-10 p-2 resize-none !outline-none"
+                        className="w-full h-10 p-2 resize-none !outline-none text-sm"
                     ></textarea>
                     <div className="flex justify-between items-center">
                         <div className="flex items-center gap-1">

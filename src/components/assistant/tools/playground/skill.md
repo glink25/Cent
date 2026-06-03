@@ -54,6 +54,32 @@ export default function main(input) {
 }
 ```
 
+## Invoking other tools
+
+The runtime also injects a global async `tools` object. Every other tool registered in this
+session is available as `tools.<toolName>(params)` and returns a Promise:
+
+- `params` must match that tool's argument schema (see `listTools`).
+- It resolves with the tool's return value (matching its return schema), or rejects with an error.
+- Calls made through `tools` do **not** appear in the conversation — they are internal to this
+  playground run (just like `getFile`), so they do not consume context tokens.
+- `playground` cannot call itself.
+
+This lets you compute a payload and act on it in a single snippet, instead of emitting a large
+payload as a separate tool call. Example — build bills and import them directly:
+
+```js
+export default async function () {
+  const meta = await tools.getAccountMeta();
+  const items = [
+    { id: "1", type: "expense", categoryId: meta.categories[0].id, creatorId: 0,
+      amount: 123400, time: Date.now() },
+  ];
+  const res = await tools.importBills({ items, meta: {} });
+  return res; // { ok: true, imported: 1, strategy: "append" } 等
+}
+```
+
 ## Output
 
 - `success: true` with `result` when execution succeeds

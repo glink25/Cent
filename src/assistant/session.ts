@@ -16,6 +16,7 @@ import type {
     SkillInput,
     SystemMessage,
     Tool,
+    ToolContext,
     ToolMessage, // 确保导入了 ToolMessage 类型
     TurnResult,
 } from "./type";
@@ -70,7 +71,7 @@ export function createSession({
         ...baseTools,
     ]);
 
-    const runtimeTools = [
+    const runtimeTools: Tool<any, any>[] = [
         ...baseTools,
         listTool,
         listSkillsTool,
@@ -79,6 +80,13 @@ export function createSession({
     const toolMap = new Map<string, Tool<any, any>>(
         runtimeTools.map((tool) => [tool.name, tool]),
     );
+
+    // 构造工具执行上下文：除历史记录外，把本会话注册的全部工具一并暴露，
+    // 这样像 playground 这样的工具可以在内部发现并调用其它工具，而无需硬编码。
+    const makeCtx = (history: History): ToolContext => ({
+        history,
+        tools: runtimeTools,
+    });
 
     const systemMessage = [
         ...incomingHistory.filter((m) => m.role === "system"),
@@ -139,7 +147,7 @@ export function createSession({
                                         name,
                                         params,
                                     },
-                                    { history: [...history] },
+                                    makeCtx([...history]),
                                 );
                                 const runningTime = Date.now() - startTime;
                                 return {

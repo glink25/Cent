@@ -93,10 +93,31 @@ function createWorkerCode(whiteList: API[], inject?: string): string {
             }
         })();
         globalThis.__FROM_TRANSFER__ = [];
+
+        // --- Host RPC bridge ---
+        // 允许沙盒内代码通过 globalThis.__CALL_HOST__(name, params) 调用宿主侧函数（如其它工具）。
+        // 宿主收到 { type: 'rpc-call', id, name, params }，处理后回传 { type: 'rpc-result', id, success, result/error }。
+        const __RPC_PENDING__ = new Map();
+        let __rpcId = 0;
+        globalThis.__CALL_HOST__ = (name, params) => new Promise((resolve, reject) => {
+            const id = ++__rpcId;
+            __RPC_PENDING__.set(id, { resolve, reject });
+            self.postMessage({ type: 'rpc-call', id, name, params });
+        });
+
         ${inject}
         self.onmessage = async function(e) {
             if (e.data.type === 'init') {
                 globalThis.__FROM_TRANSFER__ = e.data.transferable;
+                return;
+            }
+            if (e.data.type === 'rpc-result') {
+                const pending = __RPC_PENDING__.get(e.data.id);
+                if (pending) {
+                    __RPC_PENDING__.delete(e.data.id);
+                    if (e.data.success) pending.resolve(e.data.result);
+                    else pending.reject(new Error(e.data.error));
+                }
                 return;
             }
             const { code, args } = e.data;
@@ -104,19 +125,19 @@ function createWorkerCode(whiteList: API[], inject?: string): string {
                 // 此时环境已经通过 IIFE 完成了加固，直接开始执行
                 const blob = new Blob([code], { type: 'application/javascript' });
                 const url = URL.createObjectURL(blob);
-                
+
                 try {
                     const userModule = await import(url);
                     const renderFn = userModule.default;
                     if (typeof renderFn !== 'function') throw new Error('Must export default a function');
 
                     const result = await renderFn(...args);
-                    self.postMessage({ success: true, result });
+                    self.postMessage({ type: 'result', success: true, result });
                 } finally {
                     URL.revokeObjectURL(url);
                 }
             } catch (error) {
-                self.postMessage({ success: false, error: error.message });
+                self.postMessage({ type: 'result', success: false, error: error.message });
             }
         };
     `;
@@ -129,6 +150,7 @@ export default function createSandBox(
     whiteList: API[],
     inject?: string,
     transferable?: Array<{ index: number; file: File }>,
+    onHostCall?: (name: string, params: unknown) => Promise<unknown>,
 ) {
     let worker: Worker | null = null;
     const workerCode = createWorkerCode(whiteList, inject);
@@ -159,21 +181,73 @@ export default function createSandBox(
             return new Promise((resolve, reject) => {
                 const w = initWorker();
 
-                // 超时逻辑保持不变...
-                const timeoutId = setTimeout(() => {
-                    reject(
-                        new Error(
-                            `Timeout: code running time exceeded ${timeout}ms`,
-                        ),
-                    );
-                    w.terminate();
-                    worker = null;
-                }, timeout);
+                // 超时只统计沙盒自身的计算时间：当存在正在进行的宿主 RPC 调用
+                // （例如 importBills 弹出的预览对话框在等待用户确认）时暂停计时，
+                // 全部完成后再重新计时，避免误判超时。
+                let timeoutId: ReturnType<typeof setTimeout> | null = null;
+                let inflightRpc = 0;
+                const disarm = () => {
+                    if (timeoutId !== null) {
+                        clearTimeout(timeoutId);
+                        timeoutId = null;
+                    }
+                };
+                const arm = () => {
+                    disarm();
+                    timeoutId = setTimeout(() => {
+                        reject(
+                            new Error(
+                                `Timeout: code running time exceeded ${timeout}ms`,
+                            ),
+                        );
+                        w.terminate();
+                        worker = null;
+                    }, timeout);
+                };
+                arm();
 
-                w.onmessage = (e) => {
-                    clearTimeout(timeoutId);
-                    if (e.data.success) resolve(e.data.result);
-                    else reject(new Error(e.data.error));
+                w.onmessage = async (e) => {
+                    const data = e.data;
+                    if (data?.type === "rpc-call") {
+                        inflightRpc++;
+                        disarm();
+                        try {
+                            if (!onHostCall) {
+                                throw new Error(
+                                    "Host calls are not supported in this sandbox.",
+                                );
+                            }
+                            const result = await onHostCall(
+                                data.name,
+                                data.params,
+                            );
+                            w.postMessage({
+                                type: "rpc-result",
+                                id: data.id,
+                                success: true,
+                                result,
+                            });
+                        } catch (error) {
+                            w.postMessage({
+                                type: "rpc-result",
+                                id: data.id,
+                                success: false,
+                                error:
+                                    error instanceof Error
+                                        ? error.message
+                                        : String(error),
+                            });
+                        } finally {
+                            inflightRpc--;
+                            if (inflightRpc === 0) arm();
+                        }
+                        return;
+                    }
+
+                    // 最终结果
+                    disarm();
+                    if (data.success) resolve(data.result);
+                    else reject(new Error(data.error));
                 };
 
                 w.postMessage({ type: "run", code, args });

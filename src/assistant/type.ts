@@ -81,6 +81,15 @@ export type ToolJsonSchema = Record<string, unknown>;
 
 export type ToolPromptDefinition = string;
 
+export type ToolContext = {
+    history: History;
+    /**
+     * 当前会话注册的全部工具（实际的 Tool 对象，含 handler）。
+     * 某个工具（如 playground）可据此发现并调用其它工具，无需任何硬编码。
+     */
+    tools: Tool[];
+};
+
 export type Tool<Args = unknown, Returns = unknown> = {
     name: string;
     describe: string;
@@ -88,7 +97,7 @@ export type Tool<Args = unknown, Returns = unknown> = {
     returnSchema: ToolSchema;
     handler: (
         arg: Args | undefined,
-        ctx: { history: History },
+        ctx: ToolContext,
     ) => Returns | Promise<Returns>;
 };
 
