@@ -97,7 +97,7 @@ export const PreviewForm = ({
             className="h-full overflow-hidden rounded-md"
             right={
                 <Button
-                    disabled={loading || availableCount <= 0}
+                    disabled={loading}
                     onClick={() => {
                         if (importStrategy === "append") {
                             onConfirm?.({
