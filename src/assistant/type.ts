@@ -150,3 +150,13 @@ export type NextInput = {
 export type Next = (
     input: NextInput,
 ) => AbortablePromise<AsyncIterable<TurnResult>>;
+
+/**
+ * createSession 的返回值：可作为 `next` 函数调用，同时附带会话级能力。
+ * `rerunToolCall` 按消息在会话历史中的下标定位某次工具调用并重新执行，
+ * 返回其结果（失败时抛出）。对话历史只会追加、下标稳定，故用下标定位即可。
+ * 执行逻辑内聚在会话内部，调用方无需关心工具如何分发。
+ */
+export type Session = Next & {
+    rerunToolCall: (messageIndex: number) => Promise<unknown>;
+};

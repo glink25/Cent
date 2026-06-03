@@ -35,6 +35,8 @@ The runtime also injects a global helper:
 - `lastModified`: file timestamp
 - `text`: file text content
 
+> ⚠️ **Important: always limit the length of the returned text to reduce token consumption.** `text` can be very large. When calling the tool, make sure the processing (slicing, filtering, aggregating, counting) happens inside the snippet and only return the necessary result instead of the whole text. Read and return the full file content only when it is truly necessary.
+
 `code` must export a default function:
 
 ```js

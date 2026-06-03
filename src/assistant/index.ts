@@ -10,6 +10,7 @@ export type {
     Provider,
     ProviderRequest,
     ResolvedSkill,
+    Session,
     Skill,
     SkillInput,
     SkillMeta,
