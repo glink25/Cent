@@ -410,9 +410,13 @@ function Content() {
                 label: t("preset_question.monthly_budget.label"),
                 prompt: t("preset_question.monthly_budget.prompt"),
             },
+            // {
+            //     label: t("preset_question.anomaly_detection.label"),
+            //     prompt: t("preset_question.anomaly_detection.prompt"),
+            // },
             {
-                label: t("preset_question.anomaly_detection.label"),
-                prompt: t("preset_question.anomaly_detection.prompt"),
+                label: t("preset_question.import_bills.label"),
+                prompt: t("preset_question.import_bills.prompt"),
             },
             {
                 label: t("preset_question.annual_summary.label"),
