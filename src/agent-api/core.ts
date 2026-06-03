@@ -42,6 +42,9 @@ export async function callTool(name: string, args: unknown): Promise<unknown> {
         }
         parsed = r.data;
     }
-    const out = await tool.handler(parsed as never, { history: [] });
+    const out = await tool.handler(parsed as never, {
+        history: [],
+        tools: CentAIConfig.tools,
+    });
     return out ?? null;
 }

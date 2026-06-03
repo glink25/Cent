@@ -3,10 +3,10 @@ import { parseWithSchema } from "./shared";
 import systemPromptTemplate from "./system-prompt.md?raw";
 import type {
     CreateToolInput,
-    History,
     ResolvedSkill,
     SkillMeta,
     Tool,
+    ToolContext,
     ToolMessage,
     ToolPromptDefinition,
     ZodLikeSchema,
@@ -212,7 +212,7 @@ export function getInitialSystemPrompt(tools: Tool<any, any>[]) {
 export async function executeToolCall(
     toolMap: Map<string, Tool>,
     toolCall: { name: string; params: unknown },
-    ctx: { history: History },
+    ctx: ToolContext,
 ): Promise<ToolMessage> {
     const tool = toolMap.get(toolCall.name);
     if (!tool) {

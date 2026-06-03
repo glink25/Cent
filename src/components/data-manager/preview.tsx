@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Full } from "@/database/stash";
+import { useCreators } from "@/hooks/use-creator";
 import PopupLayout from "@/layouts/popup-layout";
 import type { Bill, GlobalMeta } from "@/ledger/type";
 import { useIntl } from "@/locale";
@@ -9,6 +11,7 @@ import { Button } from "../ui/button";
 import { Label } from "../ui/label";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Switch } from "../ui/switch";
+import { buildMergedResolvers, PreviewBillItem } from "./preview-bill-item";
 
 export type PreviewState = {
     bills: Full<Bill>[];
@@ -27,6 +30,7 @@ export const PreviewForm = ({
     onConfirm?: (v?: PreviewState) => void;
 }) => {
     const t = useIntl();
+    const creators = useCreators();
 
     const [transformed, setTransformed] = useState<PreviewState["bills"]>([]);
     const [loading, setLoading] = useState(true);
@@ -90,6 +94,35 @@ export const PreviewForm = ({
         importStrategy === "append"
             ? availableAppend.length
             : (edit?.bills.length ?? 0);
+
+    // 跟随 toggle 决定展示的预览列表：append 仅展示去重后的可用条目，overlap 展示全部
+    const previewBills =
+        importStrategy === "append" ? availableAppend : transformed;
+
+    // 纯本地计算"假设合并后"的解析函数，绝不写入任何 store
+    const resolvers = useMemo(
+        () =>
+            buildMergedResolvers({
+                currentMeta: useLedgerStore.getState().infos?.meta,
+                incomingMeta: edit?.meta,
+                strategy: importStrategy,
+                asMine,
+                creators,
+                meLabel: t("me"),
+                unknownLabel: "unknown-user",
+                t,
+            }),
+        [edit?.meta, importStrategy, asMine, creators, t],
+    );
+
+    const listRef = useRef<HTMLDivElement>(null);
+    const rowVirtualizer = useVirtualizer({
+        count: previewBills.length,
+        getScrollElement: () => listRef.current,
+        estimateSize: () => 72,
+        overscan: 5,
+    });
+
     return (
         <PopupLayout
             title={"导入预览"}
@@ -97,7 +130,7 @@ export const PreviewForm = ({
             className="h-full overflow-hidden rounded-md"
             right={
                 <Button
-                    disabled={loading || availableCount <= 0}
+                    disabled={loading}
                     onClick={() => {
                         if (importStrategy === "append") {
                             onConfirm?.({
@@ -187,6 +220,46 @@ export const PreviewForm = ({
                             </div> */}
                         </div>
                     )}
+
+                    <div
+                        ref={listRef}
+                        className="flex-1 overflow-auto rounded-md border divide-y"
+                    >
+                        <div
+                            style={{
+                                height: `${rowVirtualizer.getTotalSize()}px`,
+                                width: "100%",
+                                position: "relative",
+                            }}
+                        >
+                            {rowVirtualizer
+                                .getVirtualItems()
+                                .map((virtualRow) => {
+                                    const bill = previewBills[virtualRow.index];
+                                    return (
+                                        <div
+                                            key={bill.id}
+                                            data-index={virtualRow.index}
+                                            ref={rowVirtualizer.measureElement}
+                                            style={{
+                                                position: "absolute",
+                                                top: `${virtualRow.start}px`,
+                                                left: 0,
+                                                width: "100%",
+                                            }}
+                                        >
+                                            <PreviewBillItem
+                                                bill={bill}
+                                                resolvers={resolvers}
+                                                showTime
+                                                showAssets
+                                                className="w-full"
+                                            />
+                                        </div>
+                                    );
+                                })}
+                        </div>
+                    </div>
                 </div>
                 {loading && (
                     <div className="absolute top-0 left-0 w-full h-full bg-background/60 flex items-center justify-center">

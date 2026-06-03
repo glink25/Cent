@@ -48,6 +48,7 @@ type AssistantContext = {
     canSend: boolean;
     send: () => void;
     abortCurrentChat: () => void;
+    rerunToolCall: (messageIndex: number) => void;
 };
 
 const AssistantContext = createContext<AssistantContext | null>(null);
@@ -164,6 +165,27 @@ function Root({ children }: { children?: ReactNode }) {
         }
     }, [input, currentChat, updateChat]);
 
+    const rerunToolCall = useCallback(
+        async (messageIndex: number) => {
+            const chat = chats.find((c) => c.id === currentChatId);
+            if (!chat) return;
+            // 重新运行的执行逻辑内聚在 session 内部，这里只负责定位会话与反馈结果。
+            const session = createSession({
+                history: chat.history,
+                ...CentAIConfig,
+            });
+            try {
+                const result = await session.rerunToolCall(messageIndex);
+                console.log("[rerun tool]", messageIndex, result);
+            } catch (error) {
+                toast.error(
+                    error instanceof Error ? error.message : String(error),
+                );
+            }
+        },
+        [chats, currentChatId],
+    );
+
     const ctx = useMemo(
         () => ({
             input,
@@ -174,8 +196,17 @@ function Root({ children }: { children?: ReactNode }) {
             canSend,
             send,
             abortCurrentChat,
+            rerunToolCall,
         }),
-        [input, chats, currentChatId, canSend, send, abortCurrentChat],
+        [
+            input,
+            chats,
+            currentChatId,
+            canSend,
+            send,
+            abortCurrentChat,
+            rerunToolCall,
+        ],
     );
     return (
         <AssistantContext.Provider value={ctx}>
@@ -364,6 +395,7 @@ function Content() {
         chats,
         currentChatId,
         abortCurrentChat,
+        rerunToolCall,
     } = useAssistantContext();
     const currentChat = chats.find((c) => c.id === currentChatId);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -418,7 +450,13 @@ function Content() {
                 {currentChat ? (
                     currentChat.history.map((message, i) => {
                         const id = i;
-                        return <MessageBubble key={id} message={message} />;
+                        return (
+                            <MessageBubble
+                                key={id}
+                                message={message}
+                                onRerunToolCall={() => rerunToolCall(i)}
+                            />
+                        );
                     })
                 ) : (
                     <div className="w-full h-full flex flex-col gap-4 justify-center items-center">
@@ -513,7 +551,7 @@ function Content() {
                                 }
                             }
                         }}
-                        className="w-full h-10 p-2 resize-none !outline-none"
+                        className="w-full h-10 p-2 resize-none !outline-none text-sm"
                     ></textarea>
                     <div className="flex justify-between items-center">
                         <div className="flex items-center gap-1">

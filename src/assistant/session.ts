@@ -13,9 +13,11 @@ import type {
     Next,
     Provider,
     ResolvedSkill,
+    Session,
     SkillInput,
     SystemMessage,
     Tool,
+    ToolContext,
     ToolMessage, // 确保导入了 ToolMessage 类型
     TurnResult,
 } from "./type";
@@ -36,7 +38,7 @@ export function createSession({
     skills: SkillInput[];
     systemPrompt?: string;
     maxToolRounds?: number;
-}): Next {
+}): Session {
     const incomingHistory = cloneHistory(history);
     const baseTools: Tool<any, any>[] = [...tools];
 
@@ -70,7 +72,7 @@ export function createSession({
         ...baseTools,
     ]);
 
-    const runtimeTools = [
+    const runtimeTools: Tool<any, any>[] = [
         ...baseTools,
         listTool,
         listSkillsTool,
@@ -79,6 +81,13 @@ export function createSession({
     const toolMap = new Map<string, Tool<any, any>>(
         runtimeTools.map((tool) => [tool.name, tool]),
     );
+
+    // 构造工具执行上下文：除历史记录外，把本会话注册的全部工具一并暴露，
+    // 这样像 playground 这样的工具可以在内部发现并调用其它工具，而无需硬编码。
+    const makeCtx = (history: History): ToolContext => ({
+        history,
+        tools: runtimeTools,
+    });
 
     const systemMessage = [
         ...incomingHistory.filter((m) => m.role === "system"),
@@ -139,7 +148,7 @@ export function createSession({
                                         name,
                                         params,
                                     },
-                                    { history: [...history] },
+                                    makeCtx([...history]),
                                 );
                                 const runningTime = Date.now() - startTime;
                                 return {
@@ -207,11 +216,33 @@ export function createSession({
         return promise;
     };
 
-    const next: Next = ({ message, assets }) => {
+    const next = (({ message, assets }) => {
         const history = [...persistedHistory];
         const userMessage = createUserMessage(message, assets);
         history.push(userMessage);
         return start(history, 0); // 初始 round 为 0
+    }) as Session;
+
+    // 会话级能力：按消息下标在历史中定位某次工具调用并重新执行，复用统一的参数校验与分发。
+    // 下标对应创建会话时传入（即界面展示）的历史数组，对话只追加、下标稳定。
+    next.rerunToolCall = async (messageIndex: number) => {
+        const target = incomingHistory[messageIndex];
+        if (!target || target.role !== "tool") {
+            throw new Error(`No tool call at history index ${messageIndex}.`);
+        }
+        const result = await executeToolCall(
+            toolMap,
+            {
+                name: target.formatted.name,
+                params: target.formatted.params,
+            },
+            makeCtx([...persistedHistory]),
+        );
+        if (result.formatted.errors !== undefined) {
+            const err = result.formatted.errors;
+            throw err instanceof Error ? err : new Error(JSON.stringify(err));
+        }
+        return result.formatted.returns;
     };
 
     return next;

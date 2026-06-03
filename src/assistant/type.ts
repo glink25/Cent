@@ -81,6 +81,15 @@ export type ToolJsonSchema = Record<string, unknown>;
 
 export type ToolPromptDefinition = string;
 
+export type ToolContext = {
+    history: History;
+    /**
+     * 当前会话注册的全部工具（实际的 Tool 对象，含 handler）。
+     * 某个工具（如 playground）可据此发现并调用其它工具，无需任何硬编码。
+     */
+    tools: Tool[];
+};
+
 export type Tool<Args = unknown, Returns = unknown> = {
     name: string;
     describe: string;
@@ -88,7 +97,7 @@ export type Tool<Args = unknown, Returns = unknown> = {
     returnSchema: ToolSchema;
     handler: (
         arg: Args | undefined,
-        ctx: { history: History },
+        ctx: ToolContext,
     ) => Returns | Promise<Returns>;
 };
 
@@ -141,3 +150,13 @@ export type NextInput = {
 export type Next = (
     input: NextInput,
 ) => AbortablePromise<AsyncIterable<TurnResult>>;
+
+/**
+ * createSession 的返回值：可作为 `next` 函数调用，同时附带会话级能力。
+ * `rerunToolCall` 按消息在会话历史中的下标定位某次工具调用并重新执行，
+ * 返回其结果（失败时抛出）。对话历史只会追加、下标稳定，故用下标定位即可。
+ * 执行逻辑内聚在会话内部，调用方无需关心工具如何分发。
+ */
+export type Session = Next & {
+    rerunToolCall: (messageIndex: number) => Promise<unknown>;
+};
