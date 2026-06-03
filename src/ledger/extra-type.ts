@@ -100,6 +100,11 @@ export type AIConfig = {
     apiUrl: string;
     model: string;
     apiType: "open-ai-compatible" | "google-ai-studio"; // 支持OpenAI兼容和Google AI Studio两种API格式
+    /**
+     * 单次生成的最大 token 数。推理模型（如 deepseek 系列）思考阶段也会消耗该预算，
+     * 设置过小会在思考未完成时就被 finish_reason="length" 截断。不填则使用默认值。
+     */
+    maxTokens?: number;
 };
 
 // 个人配置，不需要转换，可以略过

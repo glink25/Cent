@@ -256,7 +256,8 @@ export async function createStreamingRequest(
     const headers = buildStreamingHeaders(config.apiType, apiKey);
     const body = buildStreamingBody(config, messages, {
         temperature: 0.7,
-        max_tokens: 2000,
+        // 默认提高到 8192：推理模型的思考过程也消耗 token，2000 太小会在思考阶段就被截断。
+        max_tokens: config.maxTokens ?? 8192,
     });
 
     return fetch(url, {
