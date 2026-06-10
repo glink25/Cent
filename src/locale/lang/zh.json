@@ -695,6 +695,8 @@
   "map-marker-accuracy": "位置精度",
   "map-error-configure-in-settings": "请在设置中配置地图 API Key",
   "ledger-no-footprint-tip": "暂无足迹，记账时记得勾选位置哦",
+  "map-location-picker-title": "选择位置",
+  "map-location-picker-confirm": "使用此位置",
   "quick-entry-settings": "快捷记账",
   "enable-relayr": "开启 Relayr 服务",
   "enable-relayr-description": "启用 Relayr 中转服务以支持快捷记账功能",

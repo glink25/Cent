@@ -1,5 +1,6 @@
 import { Switch } from "radix-ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import useCategory from "@/hooks/use-category";
 import { useCurrency } from "@/hooks/use-currency";
 import { useWheelScrollX } from "@/hooks/use-wheel-scroll";
@@ -9,9 +10,10 @@ import { ExpenseBillCategories, IncomeBillCategories } from "@/ledger/category";
 import type { Bill } from "@/ledger/type";
 import { categoriesGridClassName } from "@/ledger/utils";
 import { useIntl } from "@/locale";
-import type { EditBill } from "@/store/ledger";
+import { type EditBill, useLedgerStore } from "@/store/ledger";
 import { usePreferenceStore } from "@/store/preference";
 import { cn } from "@/utils";
+import { decodeApiKey } from "@/utils/api-key";
 import { getPredictNow } from "@/utils/predict";
 import { showTagList } from "../bill-tag";
 import { showCategoryList } from "../category";
@@ -22,6 +24,10 @@ import { FORMAT_IMAGE_SUPPORTED, showFilePicker } from "../file-picker";
 import SmartImage from "../image";
 import IOSUnscrolledInput from "../input";
 import Calculator from "../keyboard";
+import {
+    LocationPickerProvider,
+    showLocationPicker,
+} from "../map/location-picker";
 import CurrentLocation from "../simple-location";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "../ui/select";
 import { goAddBill } from ".";
@@ -160,6 +166,37 @@ export default function EditorForm({
             return { ...v, images: [...(v.images ?? []), file] };
         });
     };
+
+    const mapConfig = useLedgerStore((state) => state.infos?.meta.map);
+    const amapKey = useMemo(
+        () =>
+            mapConfig?.amapKey ? decodeApiKey(mapConfig.amapKey) : undefined,
+        [mapConfig?.amapKey],
+    );
+    const amapSecurityCode = useMemo(
+        () =>
+            mapConfig?.amapSecurityCode
+                ? decodeApiKey(mapConfig.amapSecurityCode)
+                : undefined,
+        [mapConfig?.amapSecurityCode],
+    );
+    const handlePickLocation = useCallback(async () => {
+        if (!billState.location) return;
+        if (!amapKey || !amapSecurityCode) {
+            toast.warning(t("map-error-no-api-key"));
+            return;
+        }
+        try {
+            const location = await showLocationPicker({
+                location: billState.location,
+                amapKey,
+                amapSecurityCode,
+            });
+            setBillState((prev) => ({ ...prev, location }));
+        } catch {
+            // Dialog cancellation should keep the original location untouched.
+        }
+    }, [amapKey, amapSecurityCode, billState.location, t]);
 
     const locationRef = useRef<HTMLButtonElement>(null);
     const isAdd = useRef(!edit);
@@ -520,7 +557,13 @@ export default function EditorForm({
                                             });
                                         }}
                                     >
-                                        <i className="w-5 icon-[mdi--location-radius]"></i>
+                                        <button
+                                            type="button"
+                                            className="px-1 flex items-center justify-center"
+                                            onClick={handlePickLocation}
+                                        >
+                                            <i className="w-5 icon-[mdi--location-radius]"></i>
+                                        </button>
                                     </Deletable>
                                 ) : (
                                     <CurrentLocation
@@ -624,6 +667,7 @@ export default function EditorForm({
                         }}
                     />
                 </div>
+                <LocationPickerProvider />
             </PopupLayout>
         </Calculator.Root>
     );

@@ -683,6 +683,8 @@
   "map-marker-accuracy": "Location accuracy",
   "map-error-configure-in-settings": "Please configure map API Key in settings",
   "ledger-no-footprint-tip": "No footprint yet, remember to check location when adding bills",
+  "map-location-picker-title": "Choose Location",
+  "map-location-picker-confirm": "Use this location",
   "quick-entry-settings": "Quick Entry",
   "enable-relayr": "Enable Relayr Service",
   "enable-relayr-description": "Enable Relayr relay service to support quick entry functionality",
