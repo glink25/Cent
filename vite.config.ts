@@ -18,18 +18,28 @@ export default defineConfig(({ mode }) => {
     const plugins: PluginOption[] = [
         Info(),
         createHtmlPlugin({
-            inject: {
-                data: {
-                    VITE_GTAG_SCRIPT: env.VITE_GTAG_SCRIPT || "",
-                    injectPresetScript: buildSync({
-                        entryPoints: ["src/inline/load-preset.ts"],
-                        bundle: true,
-                        minify: true,
-                        write: false,
-                        format: "iife",
-                    }).outputFiles[0].text,
+            pages: [
+                {
+                    filename: "index.html",
+                    template: "index.html",
+                    injectOptions: {
+                        data: {
+                            VITE_GTAG_SCRIPT: env.VITE_GTAG_SCRIPT || "",
+                            injectPresetScript: buildSync({
+                                entryPoints: ["src/inline/load-preset.ts"],
+                                bundle: true,
+                                minify: true,
+                                write: false,
+                                format: "iife",
+                            }).outputFiles[0].text,
+                        },
+                    },
                 },
-            },
+                {
+                    filename: "ai-chat.html",
+                    template: "ai-chat.html",
+                },
+            ],
         }),
         react(),
         svgr(),
