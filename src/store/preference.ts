@@ -25,6 +25,8 @@ type State = {
     voiceByKeyboard?: boolean;
     /** 语音记账使用的 AI 配置 id；undefined 表示跟随 AI 助手默认 */
     voiceAIConfigId?: string;
+    /** 语音记账自定义 prompt 模板；undefined 表示使用默认模板 */
+    voicePromptTemplate?: string;
     /** 是否关闭设置页顶部的赞助横幅 */
     sponsorBannerClosed?: boolean;
     /** relayr中转服务配置 */

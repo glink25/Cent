@@ -36,7 +36,11 @@ const navigationHandler = async (params: any) => {
 // 不处理 .well-known、__headers 等站点元数据路径，直接走网络
 registerRoute(
     new NavigationRoute(navigationHandler, {
-        denylist: [/\/\.well-known(\/|$)/, /\/__headers(\/|$)/],
+        denylist: [
+            /\/\.well-known(\/|$)/,
+            /\/__headers(\/|$)/,
+            /\/ai-chat(\.html)?(\/|$)/,
+        ],
     }),
 );
 
