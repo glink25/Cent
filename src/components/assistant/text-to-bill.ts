@@ -10,6 +10,7 @@ import { locales } from "@/locale/utils";
 import { useCurrencyStore } from "@/store/currency";
 import { useLedgerStore } from "@/store/ledger";
 import { usePreferenceStore } from "@/store/preference";
+import { useUserStore } from "@/store/user";
 import { requestAIForVoice } from "./request";
 
 const getCategories = () => {
@@ -22,24 +23,20 @@ const getCategories = () => {
     return categories;
 };
 
-export const textToBillSystemPrompt = (
-    categoriesStr: string,
-    withTime: boolean = true,
-) => {
-    const locale = locales.find(
-        (l) => l.name === usePreferenceStore.getState().locale,
-    )?.label;
-    const timeStr = withTime
-        ? `**当前时间**: ${dayjs().format("YYYY-MM-DD HH:mm:ss")}`
-        : "";
-    return `请通过给出的记账系统分类信息数据，从用户提供的文本中提取出关键的分类、金额和备注信息，使其能够准确快速地录入记账系统中，请严格按照给定规范给出回答
+/**
+ * 语音记账默认 prompt 模板。
+ * 动态内容通过 {{变量}} 占位符表示，发起请求时由 renderVoicePrompt 替换为实际值。
+ * 可用变量见 getVoicePromptVariables：
+ *   {{currentTime}} {{locale}} {{categories}} {{tags}} {{tagGroups}}
+ */
+export const DEFAULT_VOICE_PROMPT_TEMPLATE = `请通过给出的记账系统分类信息数据，从用户提供的文本中提取出关键的分类、金额和备注信息，使其能够准确快速地录入记账系统中，请严格按照给定规范给出回答
 ## 当前环境信息
-${timeStr}
-**用户的语言偏好**: ${locale}
+**当前时间**: {{currentTime}}
+**用户的语言偏好**: {{locale}}
 
 下面是用户所有的分类：
 \`\`\`plaintext
-${categoriesStr}
+{{categories}}
 \`\`\`
 请严格按照xml规范返回你的分析结果，格式如下：
 <Thought>
@@ -60,6 +57,74 @@ time=2026-01-01 12:00:00
 </Bill>
 接下来用户将会提供文本供你分析：
 `;
+
+/**
+ * 构建语音记账 prompt 中可用的变量及其当前值。
+ * 占位符语法为 {{变量名}}。
+ */
+export const getVoicePromptVariables = (): Record<string, string> => {
+    const meta = useLedgerStore.getState().infos?.meta;
+    const userId = useUserStore.getState().id;
+
+    const locale =
+        locales.find((l) => l.name === usePreferenceStore.getState().locale)
+            ?.label ?? "";
+
+    const tags = meta?.tags ?? [];
+    const tagsStr = tags.map((v) => v.name).join(", ");
+
+    const tagGroups = userId ? (meta?.personal?.[userId]?.tagGroups ?? []) : [];
+    const tagGroupsStr = tagGroups
+        .map((group) => {
+            const groupTags = (group.tagIds ?? [])
+                .map((tid) => tags.find((t) => t.id === tid)?.name)
+                .filter((v): v is string => Boolean(v));
+            return `${group.name}: ${groupTags.join(" ")}`;
+        })
+        .join("\n");
+
+    return {
+        currentTime: dayjs().format("YYYY-MM-DD HH:mm:ss"),
+        locale,
+        categories: getCategoriesStr(),
+        tags: tagsStr,
+        tagGroups: tagGroupsStr,
+    };
+};
+
+/**
+ * 将模板中的 {{变量}} 占位符替换为实际值。未知变量保持原样。
+ */
+export const renderVoicePrompt = (template: string): string => {
+    const variables = getVoicePromptVariables();
+    return template.replace(/\{\{\s*(\w+)\s*\}\}/g, (match, name) =>
+        name in variables ? variables[name] : match,
+    );
+};
+
+/**
+ * 获取当前生效的 prompt 模板：优先使用用户本地保存的自定义模板，否则使用默认模板。
+ */
+export const getVoicePromptTemplate = (): string =>
+    usePreferenceStore.getState().voicePromptTemplate ??
+    DEFAULT_VOICE_PROMPT_TEMPLATE;
+
+/**
+ * 生成一份完全内联（无占位符）的语音记账 prompt，供快捷指令等外部场景导出使用。
+ * withTime 为 false 时不注入当前时间（导出的静态 prompt 不应包含会过期的时间）。
+ */
+export const textToBillSystemPrompt = (
+    categoriesStr: string,
+    withTime: boolean = true,
+) => {
+    const { currentTime, locale } = getVoicePromptVariables();
+    const timeStr = withTime ? `**当前时间**: ${currentTime}` : "";
+    return DEFAULT_VOICE_PROMPT_TEMPLATE.replace(
+        "**当前时间**: {{currentTime}}",
+        timeStr,
+    )
+        .replace("{{locale}}", locale)
+        .replace("{{categories}}", categoriesStr);
 };
 
 /**
@@ -173,7 +238,7 @@ export const getCategoriesStr = () => {
 
 export async function parseTextToBill(text: string) {
     console.log("start parsing text:", text);
-    const prompt = textToBillSystemPrompt(getCategoriesStr());
+    const prompt = renderVoicePrompt(getVoicePromptTemplate());
     const result = await requestAIForVoice([
         { role: "system", content: prompt },
         {

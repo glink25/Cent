@@ -1,4 +1,5 @@
 import { useShallow } from "zustand/shallow";
+import { DEFAULT_VOICE_PROMPT_TEMPLATE } from "@/components/assistant/text-to-bill";
 import PopupLayout from "@/layouts/popup-layout";
 import { useIntl } from "@/locale";
 import { useLedgerStore } from "@/store/ledger";
@@ -48,6 +49,10 @@ function Form({ onCancel }: { onCancel?: () => void }) {
     const [voiceAIConfigId, setVoiceAIConfigId] =
         usePreference("voiceAIConfigId");
 
+    const [voicePromptTemplate, setVoicePromptTemplate] = usePreference(
+        "voicePromptTemplate",
+    );
+
     const defaultConfigName = configs.find(
         (c) => c.id === defaultConfigId,
     )?.name;
@@ -65,7 +70,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
         >
             <div className="flex-1 flex flex-col overflow-y-auto py-4">
                 {/* 语音记账开关 */}
-                <div className="w-full min-h-10 pb-2 flex justify-between items-center px-4 gap-2">
+                <div className="w-full min-h-10 pb-4 flex-shrink-0 flex justify-between items-center px-4 gap-2">
                     <div className="text-sm">
                         <div>{t("enable-voice-recording")}</div>
                         <div className="text-xs opacity-60">
@@ -106,7 +111,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                     </div>
                 )}
                 {voiceEnabled && (
-                    <div className="w-full min-h-10 pb-2 flex justify-between items-center px-4 gap-2">
+                    <div className="w-full min-h-10 pb-4 flex-shrink-0 flex justify-between items-center px-4 gap-2">
                         <div className="text-sm">
                             <div>
                                 {t("use-keyboard-input-instead-of-voice")}
@@ -124,7 +129,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                     </div>
                 )}
                 {voiceEnabled && hasAIConfig && (
-                    <div className="w-full min-h-10 pb-2 flex justify-between items-center px-4 gap-2">
+                    <div className="w-full min-h-10 pb-4 flex-shrink-0 flex justify-between items-center px-4 gap-2">
                         <div className="text-sm min-w-0 flex-1">
                             <div>{t("voice-ai-model")}</div>
                             <div className="text-xs opacity-60">
@@ -161,6 +166,62 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                                 ))}
                             </SelectContent>
                         </Select>
+                    </div>
+                )}
+                {voiceEnabled && hasAIConfig && (
+                    <div className="w-full px-4 pb-2 flex flex-col gap-2">
+                        <div className="flex justify-between items-start gap-2">
+                            <div className="text-sm min-w-0 flex-1">
+                                <div>{t("voice-custom-prompt")}</div>
+                                <div className="text-xs opacity-60">
+                                    {t("voice-custom-prompt-description")}
+                                </div>
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                    setVoicePromptTemplate(undefined);
+                                }}
+                            >
+                                {t("voice-custom-prompt-reset")}
+                            </Button>
+                        </div>
+                        <textarea
+                            className="w-full min-h-60 border rounded-lg p-2 text-xs font-mono"
+                            value={
+                                voicePromptTemplate ??
+                                DEFAULT_VOICE_PROMPT_TEMPLATE
+                            }
+                            onChange={(e) => {
+                                setVoicePromptTemplate(e.currentTarget.value);
+                            }}
+                        />
+                        <div className="text-xs opacity-60 flex flex-col gap-1">
+                            <div>{t("voice-prompt-variables-title")}</div>
+                            <ul className="list-disc pl-4 space-y-0.5">
+                                <li>
+                                    <code>{"{{categories}}"}</code> —{" "}
+                                    {t("voice-prompt-var-categories")}
+                                </li>
+                                <li>
+                                    <code>{"{{tags}}"}</code> —{" "}
+                                    {t("voice-prompt-var-tags")}
+                                </li>
+                                <li>
+                                    <code>{"{{tagGroups}}"}</code> —{" "}
+                                    {t("voice-prompt-var-tag-groups")}
+                                </li>
+                                <li>
+                                    <code>{"{{currentTime}}"}</code> —{" "}
+                                    {t("voice-prompt-var-current-time")}
+                                </li>
+                                <li>
+                                    <code>{"{{locale}}"}</code> —{" "}
+                                    {t("voice-prompt-var-locale")}
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                 )}
             </div>
