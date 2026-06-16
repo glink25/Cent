@@ -251,6 +251,8 @@
   "click-tag-to-edit": "click tag to edit",
   "budget-description": "Manage you expenses",
   "experimental-functions": "Experiment",
+  "use-ai-chat-html-assistant": "Use standalone AI Chat",
+  "use-ai-chat-html-assistant-description": "Open the cross-platform ai-chat.html assistant with AI requests and tools injected by the host",
   "auto-locate-when-add-bill": "Auto locate when add transaction",
   "auto-locate-when-add-bill-description": "Active after manully grant permission",
   "enter-add-bill-when-reduce-motion-changed-description": "Maybe useful with iOS shortcuts",

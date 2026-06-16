@@ -1,0 +1,162 @@
+import type { ZodType, z } from "zod";
+
+export type UserMessage = {
+    role: "user";
+    raw: string;
+    assets?: File[];
+};
+
+export type AssistantMessage = {
+    role: "assistant";
+    raw: string;
+    formatted: {
+        thought?: string;
+        answer?: string;
+        overview?: string;
+        tools?: { name: string; params: unknown }[];
+    };
+};
+
+export type ToolMessage = {
+    role: "tool";
+    raw: string;
+    formatted: {
+        name: string;
+        params: unknown;
+        returns?: unknown;
+        errors?: unknown;
+        runningTime?: number;
+    };
+};
+
+export type SystemMessage = {
+    role: "system";
+    raw: string;
+};
+
+export type Message =
+    | UserMessage
+    | AssistantMessage
+    | ToolMessage
+    | SystemMessage;
+export type History = Message[];
+
+export type AbortablePromise<T = unknown> = Promise<T> & {
+    abort: () => void;
+};
+
+export type ProviderRequest = {
+    history: History;
+};
+
+export type ProviderRequestChunk = { thought?: string; answer: string };
+
+export type Provider = {
+    request: (
+        params: ProviderRequest,
+    ) => AbortablePromise<AsyncIterable<ProviderRequestChunk>>;
+};
+
+export type TurnResult = {
+    history: History;
+};
+
+export type ZodLikeSchema = ZodType;
+
+export type MinimalSchema<T = unknown> = {
+    safeParse: (value: unknown) =>
+        | {
+              success: true;
+              data: T;
+          }
+        | {
+              success: false;
+              error: unknown;
+          };
+};
+
+export type ToolSchema = ZodLikeSchema;
+
+export type ToolJsonSchema = Record<string, unknown>;
+
+export type ToolPromptDefinition = string;
+
+export type ToolContext = {
+    history: History;
+    /**
+     * 当前会话注册的全部工具（实际的 Tool 对象，含 handler）。
+     * 某个工具（如 playground）可据此发现并调用其它工具，无需任何硬编码。
+     */
+    tools: Tool[];
+};
+
+export type Tool<Args = unknown, Returns = unknown> = {
+    name: string;
+    describe: string;
+    argSchema?: ToolSchema;
+    returnSchema: ToolSchema;
+    handler: (
+        arg: Args | undefined,
+        ctx: ToolContext,
+    ) => Returns | Promise<Returns>;
+};
+
+export type CreateToolInput<
+    ArgsSchema extends ZodLikeSchema | undefined,
+    ReturnSchema extends ZodLikeSchema,
+> = {
+    name: string;
+    describe: string;
+    argSchema?: ArgsSchema;
+    returnSchema: ReturnSchema;
+    handler: (
+        arg: ArgsSchema extends undefined ? undefined : z.infer<ArgsSchema>,
+    ) => z.infer<ReturnSchema> | Promise<z.infer<ReturnSchema>>;
+};
+
+export type SkillMeta = {
+    /**
+     * Stable identifier for the skill.
+     * Recommended: short, url-safe string (e.g. "sql-guide", "my-skill").
+     */
+    id: string;
+    name: string;
+    description: string;
+};
+
+export type Skill = SkillMeta & {
+    /** Full markdown content of the skill. */
+    content: string;
+};
+
+export type SkillInput =
+    | Skill
+    | (SkillMeta & {
+          /** Inline content; if omitted, loader must be provided. */
+          content?: string;
+          /** Lazy loader to fetch the skill content on-demand. */
+          loader?: () => string | Promise<string>;
+      });
+
+export type ResolvedSkill = SkillMeta & {
+    load: () => Promise<string>;
+};
+
+export type NextInput = {
+    message: string;
+    assets?: File[];
+};
+
+export type Next = (
+    input: NextInput,
+) => AbortablePromise<AsyncIterable<TurnResult>>;
+
+/**
+ * createSession 的返回值：可作为 `next` 函数调用，同时附带会话级能力。
+ * `rerunToolCall` 按消息在会话历史中的下标定位某次工具调用并重新执行，
+ * 返回其结果（失败时抛出）。对话历史只会追加、下标稳定，故用下标定位即可。
+ * 执行逻辑内聚在会话内部，调用方无需关心工具如何分发。
+ */
+export type Session = Next & {
+    rerunToolCall: (messageIndex: number) => Promise<unknown>;
+};

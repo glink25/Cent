@@ -29,6 +29,8 @@ type State = {
     voicePromptTemplate?: string;
     /** 是否关闭设置页顶部的赞助横幅 */
     sponsorBannerClosed?: boolean;
+    /** 是否使用独立 ai-chat.html 承载 AI 助手 */
+    useAiChatHtmlAssistant?: boolean;
     /** relayr中转服务配置 */
     relayr?: {
         enable?: boolean;

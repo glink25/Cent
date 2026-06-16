@@ -251,6 +251,8 @@
   "click-tag-to-edit": "点击标签进行编辑",
   "budget-description": "管理预算和支出",
   "experimental-functions": "实验性功能",
+  "use-ai-chat-html-assistant": "使用独立 AI Chat 助手",
+  "use-ai-chat-html-assistant-description": "通过 ai-chat.html 展示跨平台通用助手，AI 请求和工具由宿主注入执行",
   "auto-locate-when-add-bill": "新增记账时自动记录位置",
   "auto-locate-when-add-bill-description": "需要先手动授权位置权限后生效",
   "enter-add-bill-when-reduce-motion-changed": "【减弱动态效果】变化时进入新增记账页",

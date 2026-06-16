@@ -6,7 +6,9 @@ import {
     useState,
 } from "react";
 import { createPortal } from "react-dom";
+import { AIChatFrame } from "@/ai-chat/frame";
 import { useIsDesktop } from "@/hooks/use-media-query";
+import { usePreferenceStore } from "@/store/preference";
 import createConfirmProvider from "../confirm";
 import { HintTooltip } from "../hint";
 import AssistantForm from "./form";
@@ -21,6 +23,15 @@ const [AssistantFormProvider, , showAssistant] = createConfirmProvider(
     },
 );
 
+const [AIChatFrameProvider, , showAIChatFrame] = createConfirmProvider(
+    AIChatFrame,
+    {
+        dialogTitle: "AI Chat",
+        contentClassName:
+            "h-full w-full max-h-full max-w-full rounded-none sm:rounded-md sm:max-h-[min(520px,calc(100vh-32px))] sm:w-[90vw] sm:max-w-[500px]",
+    },
+);
+
 const buttonGradient =
     "bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.5)] ";
 
@@ -30,9 +41,13 @@ export default function AssistantButton({
     sidePanelRef: RefObject<HTMLElement | null>;
 }) {
     const isDesktop = useIsDesktop();
+    const useAiChatHtmlAssistant = usePreferenceStore(
+        (s) => s.useAiChatHtmlAssistant,
+    );
     const [isMobileAssistantShows, setIsMobileAssistantShows] = useState(false);
     const [isDesktopAssistantShows, setIsDesktopAssistantShows] =
         useState(false);
+    const [isDesktopAIChatShows, setIsDesktopAIChatShows] = useState(false);
     const dismissMobileAssistantRef = useRef<() => void>(undefined);
 
     const toShowMobileAssistant = useCallback(() => {
@@ -45,6 +60,19 @@ export default function AssistantButton({
     }, []);
 
     const toShowAssistant = () => {
+        if (useAiChatHtmlAssistant) {
+            if (isDesktop) {
+                setIsDesktopAIChatShows((v) => !v);
+            } else {
+                const { promise, cancel } = showAIChatFrame();
+                dismissMobileAssistantRef.current = cancel;
+                setIsMobileAssistantShows(true);
+                promise.finally(() => {
+                    setIsMobileAssistantShows(false);
+                });
+            }
+            return;
+        }
         if (isDesktop) {
             setIsDesktopAssistantShows((v) => !v);
         } else {
@@ -52,22 +80,37 @@ export default function AssistantButton({
         }
     };
 
-    const isAssistantShows = isDesktopAssistantShows || isMobileAssistantShows;
+    const isAssistantShows =
+        isDesktopAssistantShows ||
+        isDesktopAIChatShows ||
+        isMobileAssistantShows;
 
     useEffect(() => {
         if (isDesktop) {
             dismissMobileAssistantRef.current?.();
 
             if (isAssistantShows) {
-                setIsDesktopAssistantShows(true);
+                if (useAiChatHtmlAssistant) {
+                    setIsDesktopAIChatShows(true);
+                    setIsDesktopAssistantShows(false);
+                } else {
+                    setIsDesktopAssistantShows(true);
+                    setIsDesktopAIChatShows(false);
+                }
             }
         } else {
             setIsDesktopAssistantShows(false);
-            if (isAssistantShows) {
+            setIsDesktopAIChatShows(false);
+            if (isAssistantShows && !useAiChatHtmlAssistant) {
                 toShowMobileAssistant();
             }
         }
-    }, [isDesktop, isAssistantShows, toShowMobileAssistant]);
+    }, [
+        isDesktop,
+        isAssistantShows,
+        toShowMobileAssistant,
+        useAiChatHtmlAssistant,
+    ]);
     return (
         <MainAssistant.Root>
             <HintTooltip
@@ -85,9 +128,13 @@ export default function AssistantButton({
                 </button>
             </HintTooltip>
             <AssistantFormProvider />
+            <AIChatFrameProvider />
             {isDesktopAssistantShows &&
                 sidePanelRef.current &&
                 createPortal(<MainAssistant.Content />, sidePanelRef.current)}
+            {isDesktopAIChatShows &&
+                sidePanelRef.current &&
+                createPortal(<AIChatFrame />, sidePanelRef.current)}
         </MainAssistant.Root>
     );
 }

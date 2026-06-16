@@ -39,6 +39,9 @@ function Form({ onCancel }: { onCancel?: () => void }) {
         disableHashModeOnAndroidStandaloneMode,
         setDisableHashModeOnAndroidStandaloneMode,
     ] = usePreference("disableHashModeOnAndroidStandaloneMode");
+    const [useAiChatHtmlAssistant, setUseAiChatHtmlAssistant] = usePreference(
+        "useAiChatHtmlAssistant",
+    );
 
     const hashModeStatus = getEnableHashMode();
     return (
@@ -167,6 +170,18 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                             onCheckedChange={
                                 setDisableHashModeOnAndroidStandaloneMode
                             }
+                        />
+                    </div>
+                    <div className="w-full min-h-10 pb-2 flex justify-between items-center px-4">
+                        <div className="text-sm">
+                            <div>{t("use-ai-chat-html-assistant")}</div>
+                            <div className="text-xs opacity-60">
+                                {t("use-ai-chat-html-assistant-description")}
+                            </div>
+                        </div>
+                        <Switch
+                            checked={Boolean(useAiChatHtmlAssistant)}
+                            onCheckedChange={setUseAiChatHtmlAssistant}
                         />
                     </div>
                 </div>
