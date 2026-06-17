@@ -780,14 +780,14 @@
   "zen-regenerate": "重新生成",
   "zen-save-today-zen": "保存今日 Zen",
   "zen-close": "关闭",
-  "zen-today-completed-title": "今天的 Zen 已完成",
-  "zen-today-completed-hint": "明天会开启新的入口。今天可以回来看看这张结语。",
+  "zen-today-completed-title": "今日 Zen 已完成",
+  "zen-today-completed-hint": "一日事，一日毕",
   "zen-select-book-first": "请先选择一个账本",
   "zen-saved-toast": "今日 Zen 已保存",
   "zen-header-label": "cent zen",
   "zen-loading-open": "正在打开今日 Zen",
   "zen-error-title": "Zen 暂时无法打开",
-  "zen-loading-period": "正在让 Zen 选择这次要回看的时间",
+  "zen-loading-period": "正在进入 Zen 模式...",
   "zen-completed-label": "completed",
   "zen-fallback-theme-title": "这次想从哪里轻轻看一眼？",
   "zen-fallback-theme-subtitle": "选一个方向就好，不需要把这段时间解释完整。",
@@ -822,5 +822,6 @@
   "zen-fallback-intention-title": "下一段时间，想温和地试试看什么？",
   "zen-fallback-intention-suggestion-1": "先观察一次让钱流走的触发点。",
   "zen-fallback-intention-suggestion-2": "给一个高频支出留一个更从容的替代选择。",
-  "zen-fallback-intention-suggestion-3": "保留真正带来照顾感的消费。"
+  "zen-fallback-intention-suggestion-3": "保留真正带来照顾感的消费。",
+  "zen-loading-period-desc-1": "放松呼吸，等待是醇厚的秘诀"
 }

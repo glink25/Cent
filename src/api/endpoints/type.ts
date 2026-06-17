@@ -1,6 +1,7 @@
 import type { Modal } from "@/components/modal";
 import type { Action, Full } from "@/database/stash";
 import type { Bill } from "@/ledger/type";
+import type { ZenPost } from "@/zen/types";
 export type ChangeListener = (args: { bookId: string }) => void;
 
 export type UserInfo = {
@@ -38,6 +39,15 @@ export type SyncEndpoint = {
     getMeta: (bookId: string) => Promise<any>;
     getAllItems: (bookId: string) => Promise<Full<Bill>[]>;
     onChange(listener: (args: { bookId: string }) => void): () => void;
+
+    /** zen 模式数据：与账单同 store 共存，独立切片为 zen-*.json */
+    batchZen: (
+        bookId: string,
+        actions: Action<ZenPost>[],
+        overlap?: boolean,
+    ) => Promise<void>;
+    getAllZenItems: (bookId: string) => Promise<Full<ZenPost>[]>;
+    onZenChange(listener: (args: { bookId: string }) => void): () => void;
 
     getIsNeedSync: () => Promise<boolean>;
     onSync: (processor: (finished: Promise<void>) => void) => () => void;

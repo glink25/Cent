@@ -4,7 +4,10 @@ import { BillIndexedDBStorage } from "@/database/storage";
 import type { Bill } from "@/ledger/type";
 import { createTidal } from "@/tidal";
 import { checkS3Config, createS3Syncer } from "@/tidal/s3";
+import type { ZenPost } from "@/zen/types";
 import type { SyncEndpointFactory } from "../type";
+
+const ZEN_ENTRY_NAME = "zen";
 
 const config = {
     repoPrefix: "cent-journal",
@@ -63,20 +66,34 @@ export const S3Endpoint: SyncEndpointFactory = {
             throw new Error("S3 auth not found");
         }
 
+        const s3SyncerConfig = {
+            endpoint: auth.endpoint,
+            region: auth.region,
+            accessKeyId: auth.accessKeyId,
+            secretAccessKey: auth.secretAccessKey,
+            bucket: auth.bucket,
+            baseDir: auth.baseDir || "cent",
+            forcePathStyle: auth.forcePathStyle || false,
+            sessionToken: auth.sessionToken,
+        };
         const repo = createTidal<Bill>({
             storageFactory: (name) => new BillIndexedDBStorage(`book-${name}`),
             entryName: config.entryName,
             syncerFactory: () =>
                 createS3Syncer({
                     ...config,
-                    endpoint: auth.endpoint,
-                    region: auth.region,
-                    accessKeyId: auth.accessKeyId,
-                    secretAccessKey: auth.secretAccessKey,
-                    bucket: auth.bucket,
-                    baseDir: auth.baseDir || "cent",
-                    forcePathStyle: auth.forcePathStyle || false,
-                    sessionToken: auth.sessionToken,
+                    ...s3SyncerConfig,
+                }),
+        });
+        const zenRepo = createTidal<ZenPost>({
+            storageFactory: (name) =>
+                new BillIndexedDBStorage(`book-${name}--${ZEN_ENTRY_NAME}`),
+            entryName: ZEN_ENTRY_NAME,
+            syncerFactory: () =>
+                createS3Syncer({
+                    ...config,
+                    ...s3SyncerConfig,
+                    entryName: ZEN_ENTRY_NAME,
                 }),
         });
 
@@ -93,15 +110,20 @@ export const S3Endpoint: SyncEndpointFactory = {
             return meta._s3UserAliases;
         };
 
+        // ledger 与 zen 顺序同步，保持单一上传通道
         const scheduler = new Scheduler(async (signal) => {
-            const [finished, cancel] = repo.sync();
-            signal.onabort = cancel;
-            await finished;
+            const [ledgerFinished, cancelLedger] = repo.sync();
+            signal.onabort = cancelLedger;
+            await ledgerFinished;
+            const [zenFinished, cancelZen] = zenRepo.sync();
+            signal.onabort = cancelZen;
+            await zenFinished;
         });
 
         return {
             logout: async () => {
                 await repo.detach();
+                await zenRepo.detach();
             },
             getUserInfo: async () => {
                 const Me = {
@@ -137,7 +159,7 @@ export const S3Endpoint: SyncEndpointFactory = {
             },
             createBook: repo.create,
             initBook: async (name) => {
-                await repo.init(name);
+                await Promise.all([repo.init(name), zenRepo.init(name)]);
                 repo.getMeta(name).then((meta?: S3PrivateMeta) => {
                     const customUserName = auth.customUserName;
                     if (!customUserName) {
@@ -173,7 +195,15 @@ export const S3Endpoint: SyncEndpointFactory = {
             getAllItems: repo.getAllItems,
             onChange: repo.onChange,
 
-            getIsNeedSync: repo.hasStashes,
+            batchZen: async (...args) => {
+                await zenRepo.batch(...args);
+                scheduler.schedule();
+            },
+            getAllZenItems: zenRepo.getAllItems,
+            onZenChange: zenRepo.onChange,
+
+            getIsNeedSync: async () =>
+                (await repo.hasStashes()) || (await zenRepo.hasStashes()),
             onSync: scheduler.onProcess.bind(scheduler),
             toSync: scheduler.schedule.bind(scheduler),
 

@@ -1,6 +1,9 @@
 import type { History } from "@/assistant";
+import type { Bill } from "@/ledger/type";
 
 export type ZenDayId = string;
+
+type UserId = Bill["creatorId"];
 
 export type ZenMood =
     | "calm"
@@ -206,7 +209,7 @@ export type ZenSessionStep = {
 export type ZenSessionState = {
     id: ZenDayId;
     bookId: string;
-    userId: string | number;
+    userId: UserId;
     period: ZenPeriod;
     mood?: ZenMood;
     selectedTheme?: ZenTheme;
@@ -222,7 +225,11 @@ export type ZenSessionState = {
 };
 
 export type ZenPost = {
-    id: ZenDayId;
+    // id 规则：`zen-${date}-${userId}`
+    id: string;
+    userId: UserId;
+    // 该 zen 归属的日子（毫秒时间戳），用于本地 item 表的 "time" 索引排序
+    time: number;
     bookId: string;
     period: ZenPeriod;
     mood?: ZenMood;

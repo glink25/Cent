@@ -1,3 +1,4 @@
+import "./zen.css";
 import dayjs from "dayjs";
 import {
     type CSSProperties,
@@ -16,7 +17,7 @@ import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
 import { cn } from "@/utils";
 import { buildZenContext } from "./analyzer";
-import { getZenDayId, getZenSessionKey } from "./date";
+import { getZenDayId, getZenSessionKey, getZenStyleIndex } from "./date";
 import { requestNextZenStep } from "./director";
 import { createFallbackEpilogueStep } from "./fallback";
 import { getPersonalZenPosts, getZenPostById, upsertZenPost } from "./posts";
@@ -108,8 +109,11 @@ function buildZenPost(session: ZenSessionState, epilogue: ZenUIStep): ZenPost {
             : (createFallbackEpilogueStep(session)
                   .component as ZenEpilogueCard);
     const now = Date.now();
+    const userId = session.userId;
     return {
-        id: session.id,
+        id: `zen-${session.id}-${userId}`,
+        userId,
+        time: session.period.start,
         bookId: session.bookId,
         period: session.period,
         mood: session.mood,
@@ -134,8 +138,7 @@ function CardShell({
     return (
         <div
             className={cn(
-                "zen-card-enter relative flex min-h-0 flex-1 overflow-hidden rounded-[2rem] bg-white/58 text-stone-900 shadow-[0_28px_90px_rgba(117,86,51,0.18)] ring-1 ring-white/45 backdrop-blur-3xl dark:bg-stone-950/46 dark:text-stone-50 dark:shadow-[0_28px_90px_rgba(0,0,0,0.34)] dark:ring-white/10",
-                "before:pointer-events-none before:absolute before:inset-x-8 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent dark:before:via-white/20",
+                "zen-card zen-card-enter relative flex min-h-0 flex-1 overflow-hidden rounded-[2rem] backdrop-blur-3xl",
                 className,
             )}
         >
@@ -170,7 +173,7 @@ function ZenCardLayout({
                 {children}
             </div>
             {footer && (
-                <div className="shrink-0 bg-white/10 px-5 pb-5 pt-3 shadow-[0_-18px_36px_rgba(255,255,255,0.12)] backdrop-blur-xl sm:px-7 sm:pb-7 dark:bg-black/5 dark:shadow-[0_-18px_36px_rgba(0,0,0,0.12)]">
+                <div className="zen-footer shrink-0 px-5 pb-5 pt-3 backdrop-blur-xl sm:px-7 sm:pb-7">
                     {footer}
                 </div>
             )}
@@ -188,7 +191,7 @@ function ZenSurface({
     return (
         <div
             className={cn(
-                "rounded-[1.35rem] bg-white/38 p-4 text-stone-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-white/38 backdrop-blur-2xl dark:bg-white/8 dark:text-stone-100 dark:ring-white/10",
+                "zen-surface rounded-[1.35rem] p-4 backdrop-blur-2xl",
                 className,
             )}
         >
@@ -228,11 +231,8 @@ function ZenButton({
         <button
             type="button"
             className={cn(
-                "inline-flex min-h-12 items-center justify-center rounded-full px-6 text-sm font-medium transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/80 disabled:pointer-events-none disabled:opacity-45",
-                variant === "primary" &&
-                    "bg-stone-900/88 text-white shadow-[0_14px_34px_rgba(74,54,33,0.24)] hover:bg-stone-800 hover:shadow-[0_18px_42px_rgba(74,54,33,0.3)] dark:bg-amber-100/90 dark:text-stone-950 dark:hover:bg-amber-50",
-                variant === "ghost" &&
-                    "bg-white/24 text-stone-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.35)] ring-1 ring-white/30 backdrop-blur-xl hover:bg-white/42 dark:bg-white/8 dark:text-stone-200 dark:ring-white/10 dark:hover:bg-white/14",
+                "zen-btn inline-flex min-h-12 items-center justify-center rounded-full px-6 text-sm font-medium transition duration-300 disabled:pointer-events-none disabled:opacity-45",
+                variant === "ghost" && "zen-btn--ghost backdrop-blur-xl",
                 className,
             )}
             {...props}
@@ -254,19 +254,13 @@ function ZenOptionButton({
         <button
             type="button"
             className={cn(
-                "group relative min-h-16 overflow-hidden rounded-[1.35rem] bg-white/28 p-4 text-left text-stone-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] ring-1 ring-white/35 backdrop-blur-2xl transition duration-300 hover:-translate-y-0.5 hover:bg-white/44 disabled:pointer-events-none disabled:opacity-55 dark:bg-white/7 dark:text-stone-100 dark:ring-white/10 dark:hover:bg-white/12",
-                active &&
-                    "bg-amber-100/48 text-stone-950 shadow-[0_18px_45px_rgba(180,128,67,0.18),inset_0_1px_0_rgba(255,255,255,0.55)] ring-amber-200/70 dark:bg-amber-200/16 dark:text-amber-50 dark:ring-amber-100/24",
+                "zen-option group relative min-h-16 overflow-hidden rounded-[1.35rem] p-4 text-left backdrop-blur-2xl transition duration-300 hover:-translate-y-0.5 disabled:pointer-events-none disabled:opacity-55",
+                active && "zen-option--active",
                 className,
             )}
             {...props}
         >
-            <span
-                className={cn(
-                    "pointer-events-none absolute inset-y-3 left-0 w-1 rounded-full bg-transparent transition",
-                    active && "bg-amber-300/80 dark:bg-amber-200/60",
-                )}
-            />
+            <span className="zen-option-bar pointer-events-none absolute inset-y-3 left-0 w-1 rounded-full transition" />
             <span className="relative block">{children}</span>
         </button>
     );
@@ -300,14 +294,14 @@ function ThemeSelector({
         <CardShell>
             <ZenCardLayout
                 header={
-                    <h2 className="text-2xl font-semibold tracking-normal text-stone-950 dark:text-stone-50">
+                    <h2 className="text-2xl font-semibold tracking-normal zen-heading">
                         {card.title}
                     </h2>
                 }
             >
                 <div className="space-y-6">
                     {card.subtitle && (
-                        <p className="mt-3 text-sm leading-7 text-stone-600 dark:text-stone-300">
+                        <p className="mt-3 text-sm leading-7 zen-text-muted">
                             {card.subtitle}
                         </p>
                     )}
@@ -324,13 +318,13 @@ function ThemeSelector({
                                         {option.title}
                                     </div>
                                     {option.id === card.recommendedOptionId && (
-                                        <span className="shrink-0 rounded-full bg-amber-200/55 px-2.5 py-1 text-[11px] text-amber-950 shadow-sm dark:bg-amber-100/18 dark:text-amber-100">
+                                        <span className="zen-badge shrink-0 rounded-full px-2.5 py-1 text-[11px] shadow-sm">
                                             Zen
                                         </span>
                                     )}
                                 </div>
                                 {option.subtitle && (
-                                    <div className="mt-2 text-sm leading-6 text-stone-600 dark:text-stone-300">
+                                    <div className="mt-2 text-sm leading-6 zen-text-muted">
                                         {option.subtitle}
                                     </div>
                                 )}
@@ -338,7 +332,7 @@ function ThemeSelector({
                         ))}
                     </div>
                     {card.reason && (
-                        <p className="text-xs leading-5 text-stone-500 dark:text-stone-400">
+                        <p className="text-xs leading-5 zen-text-subtle">
                             {card.reason}
                         </p>
                     )}
@@ -365,7 +359,7 @@ function BillFocusCardView({
         <CardShell>
             <ZenCardLayout
                 header={
-                    <h2 className="text-2xl font-semibold tracking-normal text-stone-950 dark:text-stone-50">
+                    <h2 className="text-2xl font-semibold tracking-normal zen-heading">
                         {card.title}
                     </h2>
                 }
@@ -389,7 +383,7 @@ function BillFocusCardView({
             >
                 <div className="space-y-6">
                     {card.description && (
-                        <p className="mt-3 text-sm leading-7 text-stone-600 dark:text-stone-300">
+                        <p className="mt-3 text-sm leading-7 zen-text-muted">
                             {card.description}
                         </p>
                     )}
@@ -399,16 +393,16 @@ function BillFocusCardView({
                                 <ZenSurface key={bill.id}>
                                     <div className="flex items-start justify-between gap-3">
                                         <div className="min-w-0">
-                                            <div className="truncate text-sm font-medium text-stone-900 dark:text-stone-50">
+                                            <div className="zen-heading truncate text-sm font-medium">
                                                 {bill.categoryName}
                                             </div>
-                                            <div className="mt-1 text-xs text-stone-500 dark:text-stone-400">
+                                            <div className="mt-1 text-xs zen-text-subtle">
                                                 {dayjs(bill.time).format(
                                                     "YYYY-MM-DD",
                                                 )}
                                             </div>
                                         </div>
-                                        <div className="shrink-0 rounded-full bg-white/36 px-3 py-1 text-sm font-semibold text-stone-800 dark:bg-white/8 dark:text-stone-100">
+                                        <div className="zen-chip shrink-0 rounded-full px-3 py-1 text-sm font-semibold">
                                             {formatZenAmount(
                                                 bill.amount,
                                                 context.summary.currency,
@@ -416,20 +410,20 @@ function BillFocusCardView({
                                         </div>
                                     </div>
                                     {bill.comment && (
-                                        <div className="mt-3 text-xs leading-5 text-stone-500 dark:text-stone-400">
+                                        <div className="mt-3 text-xs leading-5 zen-text-subtle">
                                             {bill.comment}
                                         </div>
                                     )}
                                 </ZenSurface>
                             ))
                         ) : (
-                            <ZenSurface className="text-sm leading-6 text-stone-600 dark:text-stone-300">
+                            <ZenSurface className="text-sm leading-6 zen-text-muted">
                                 {t("zen-bill-focus-empty")}
                             </ZenSurface>
                         )}
                     </div>
                     {card.question && (
-                        <p className="rounded-[1.25rem] bg-amber-50/42 p-4 text-sm leading-7 text-stone-700 dark:bg-amber-100/8 dark:text-stone-200">
+                        <p className="zen-surface zen-surface--accent rounded-[1.25rem] p-4 text-sm leading-7">
                             {card.question}
                         </p>
                     )}
@@ -465,7 +459,7 @@ function ChoiceCardView({
         <CardShell>
             <ZenCardLayout
                 header={
-                    <h2 className="text-2xl font-semibold tracking-normal text-stone-950 dark:text-stone-50">
+                    <h2 className="text-2xl font-semibold tracking-normal zen-heading">
                         {card.title}
                     </h2>
                 }
@@ -495,7 +489,7 @@ function ChoiceCardView({
             >
                 <div className="space-y-6">
                     {card.description && (
-                        <p className="mt-3 text-sm leading-7 text-stone-600 dark:text-stone-300">
+                        <p className="mt-3 text-sm leading-7 zen-text-muted">
                             {card.description}
                         </p>
                     )}
@@ -513,7 +507,7 @@ function ChoiceCardView({
                                         {option.label}
                                     </div>
                                     {option.description && (
-                                        <div className="mt-2 text-sm leading-6 text-stone-600 dark:text-stone-300">
+                                        <div className="mt-2 text-sm leading-6 zen-text-muted">
                                             {option.description}
                                         </div>
                                     )}
@@ -541,7 +535,7 @@ function InsightCard({
         <CardShell>
             <ZenCardLayout
                 header={
-                    <h2 className="text-2xl font-semibold tracking-normal text-stone-950 dark:text-stone-50">
+                    <h2 className="text-2xl font-semibold tracking-normal zen-heading">
                         {card.title}
                     </h2>
                 }
@@ -564,7 +558,7 @@ function InsightCard({
                 }
             >
                 <div>
-                    <p className="mt-4 rounded-[1.5rem] bg-white/28 p-5 text-sm leading-8 text-stone-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.35)] ring-1 ring-white/28 backdrop-blur-xl dark:bg-white/7 dark:text-stone-300 dark:ring-white/10">
+                    <p className="zen-surface zen-text-muted mt-4 rounded-[1.5rem] p-5 text-sm leading-8 backdrop-blur-xl">
                         {card.body}
                     </p>
                 </div>
@@ -588,7 +582,7 @@ function ShredderCardView({
         <CardShell>
             <ZenCardLayout
                 header={
-                    <h2 className="text-2xl font-semibold tracking-normal text-stone-950 dark:text-stone-50">
+                    <h2 className="text-2xl font-semibold tracking-normal zen-heading">
                         {card.title}
                     </h2>
                 }
@@ -614,7 +608,7 @@ function ShredderCardView({
                 }
             >
                 <div className="space-y-6">
-                    <p className="mt-3 text-sm leading-7 text-stone-600 dark:text-stone-300">
+                    <p className="mt-3 text-sm leading-7 zen-text-muted">
                         {t("zen-shredder-helper")}
                     </p>
                 </div>
@@ -623,19 +617,19 @@ function ShredderCardView({
                         <ZenSurface key={item.id} className="p-4">
                             <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
-                                    <div className="truncate text-sm font-medium text-stone-900 dark:text-stone-50">
+                                    <div className="zen-heading truncate text-sm font-medium">
                                         {item.label}
                                     </div>
                                     {(item.description ||
                                         item.categoryName) && (
-                                        <div className="mt-2 text-xs leading-5 text-stone-500 dark:text-stone-400">
+                                        <div className="mt-2 text-xs leading-5 zen-text-subtle">
                                             {item.description ??
                                                 item.categoryName}
                                         </div>
                                     )}
                                 </div>
                                 {typeof item.amount === "number" && (
-                                    <div className="shrink-0 rounded-full bg-white/36 px-3 py-1 text-sm font-semibold text-stone-800 dark:bg-white/8 dark:text-stone-100">
+                                    <div className="zen-chip shrink-0 rounded-full px-3 py-1 text-sm font-semibold">
                                         {item.amount.toFixed(2)}
                                     </div>
                                 )}
@@ -689,7 +683,7 @@ function SliderCardView({
         <CardShell>
             <ZenCardLayout
                 header={
-                    <h2 className="text-2xl font-semibold tracking-normal text-stone-950 dark:text-stone-50">
+                    <h2 className="text-2xl font-semibold tracking-normal zen-heading">
                         {card.title}
                     </h2>
                 }
@@ -706,13 +700,13 @@ function SliderCardView({
             >
                 <div className="space-y-7">
                     {card.description && (
-                        <p className="mt-3 text-sm leading-7 text-stone-600 dark:text-stone-300">
+                        <p className="mt-3 text-sm leading-7 zen-text-muted">
                             {card.description}
                         </p>
                     )}
                 </div>
                 <div className="space-y-4">
-                    <div className="rounded-[1.5rem] bg-white/24 px-4 py-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.35)] ring-1 ring-white/30 backdrop-blur-xl dark:bg-white/7 dark:ring-white/10">
+                    <div className="zen-surface rounded-[1.5rem] px-4 py-5 backdrop-blur-xl">
                         <input
                             type="range"
                             min={card.minValue}
@@ -730,7 +724,7 @@ function SliderCardView({
                             className="zen-range w-full"
                         />
                     </div>
-                    <div className="flex justify-between gap-4 text-xs leading-5 text-stone-500 dark:text-stone-400">
+                    <div className="flex justify-between gap-4 text-xs leading-5 zen-text-subtle">
                         <span>{card.minLabel}</span>
                         <span className="text-right">{card.maxLabel}</span>
                     </div>
@@ -756,7 +750,7 @@ function BudgetAdjustCardView({
         <CardShell>
             <ZenCardLayout
                 header={
-                    <h2 className="text-2xl font-semibold tracking-normal text-stone-950 dark:text-stone-50">
+                    <h2 className="text-2xl font-semibold tracking-normal zen-heading">
                         {card.title}
                     </h2>
                 }
@@ -779,15 +773,15 @@ function BudgetAdjustCardView({
                 }
             >
                 <div className="space-y-6">
-                    <p className="mt-3 text-sm leading-7 text-stone-600 dark:text-stone-300">
+                    <p className="mt-3 text-sm leading-7 zen-text-muted">
                         {card.reason}
                     </p>
                     <div className="grid gap-3 sm:grid-cols-3">
                         <ZenSurface>
-                            <div className="text-xs text-stone-500 dark:text-stone-400">
+                            <div className="text-xs zen-text-subtle">
                                 {t("zen-budget-current")}
                             </div>
-                            <div className="mt-2 text-lg font-semibold text-stone-950 dark:text-stone-50">
+                            <div className="mt-2 text-lg font-semibold zen-heading">
                                 {formatZenAmount(
                                     card.currentBudget,
                                     context.summary.currency,
@@ -795,21 +789,21 @@ function BudgetAdjustCardView({
                             </div>
                         </ZenSurface>
                         <ZenSurface>
-                            <div className="text-xs text-stone-500 dark:text-stone-400">
+                            <div className="text-xs zen-text-subtle">
                                 {t("zen-budget-used")}
                             </div>
-                            <div className="mt-2 text-lg font-semibold text-stone-950 dark:text-stone-50">
+                            <div className="mt-2 text-lg font-semibold zen-heading">
                                 {formatZenAmount(
                                     card.currentUsed ?? 0,
                                     context.summary.currency,
                                 )}
                             </div>
                         </ZenSurface>
-                        <ZenSurface className="bg-amber-100/42 dark:bg-amber-100/10">
-                            <div className="text-xs text-stone-500 dark:text-stone-400">
+                        <ZenSurface className="zen-surface--accent">
+                            <div className="text-xs zen-text-subtle">
                                 {t("zen-budget-suggested")}
                             </div>
-                            <div className="mt-2 text-lg font-semibold text-stone-950 dark:text-stone-50">
+                            <div className="mt-2 text-lg font-semibold zen-heading">
                                 {formatZenAmount(
                                     card.suggestedBudget,
                                     context.summary.currency,
@@ -822,7 +816,7 @@ function BudgetAdjustCardView({
                             {card.categoryName}
                         </ZenSurface>
                     )}
-                    <p className="text-xs leading-5 text-stone-500 dark:text-stone-400">
+                    <p className="text-xs leading-5 zen-text-subtle">
                         {t("zen-budget-non-mutating-hint")}
                     </p>
                 </div>
@@ -846,13 +840,13 @@ function FreeInputCardView({
         <CardShell>
             <ZenCardLayout
                 header={
-                    <h2 className="text-2xl font-semibold tracking-normal text-stone-950 dark:text-stone-50">
+                    <h2 className="text-2xl font-semibold tracking-normal zen-heading">
                         {card.title}
                     </h2>
                 }
                 footer={
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <span className="text-xs text-stone-500 dark:text-stone-400">
+                        <span className="text-xs zen-text-subtle">
                             {value.length}/{card.maxLength}
                         </span>
                         <ZenActions className="pt-0">
@@ -875,7 +869,7 @@ function FreeInputCardView({
             >
                 <div className="space-y-5">
                     {card.helperText && (
-                        <p className="mt-3 text-sm leading-7 text-stone-600 dark:text-stone-300">
+                        <p className="mt-3 text-sm leading-7 zen-text-muted">
                             {card.helperText}
                         </p>
                     )}
@@ -885,7 +879,7 @@ function FreeInputCardView({
                         maxLength={card.maxLength}
                         placeholder={card.placeholder}
                         onChange={(event) => setValue(event.target.value)}
-                        className="min-h-36 w-full resize-none rounded-[1.5rem] bg-white/34 p-5 text-sm leading-7 text-stone-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] ring-1 ring-white/35 backdrop-blur-2xl outline-none placeholder:text-stone-400 focus-visible:ring-2 focus-visible:ring-amber-200/80 disabled:opacity-60 dark:bg-white/8 dark:text-stone-100 dark:ring-white/10 dark:placeholder:text-stone-500"
+                        className="min-h-36 zen-input w-full resize-none rounded-[1.5rem] p-5 text-sm leading-7 backdrop-blur-2xl outline-none disabled:opacity-60"
                     />
                 </div>
             </ZenCardLayout>
@@ -910,7 +904,7 @@ function IntentionCardView({
         <CardShell>
             <ZenCardLayout
                 header={
-                    <h2 className="text-2xl font-semibold tracking-normal text-stone-950 dark:text-stone-50">
+                    <h2 className="text-2xl font-semibold tracking-normal zen-heading">
                         {card.title}
                     </h2>
                 }
@@ -933,7 +927,7 @@ function IntentionCardView({
                 }
             >
                 <div className="space-y-6">
-                    <p className="mt-3 text-sm leading-7 text-stone-600 dark:text-stone-300">
+                    <p className="mt-3 text-sm leading-7 zen-text-muted">
                         {t("zen-intention-helper")}
                     </p>
                     <div className="grid gap-3">
@@ -960,7 +954,7 @@ function IntentionCardView({
                             maxLength={160}
                             placeholder={t("zen-intention-placeholder")}
                             onChange={(event) => setCustom(event.target.value)}
-                            className="min-h-28 w-full resize-none rounded-[1.5rem] bg-white/34 p-5 text-sm leading-7 text-stone-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] ring-1 ring-white/35 backdrop-blur-2xl outline-none placeholder:text-stone-400 focus-visible:ring-2 focus-visible:ring-amber-200/80 disabled:opacity-60 dark:bg-white/8 dark:text-stone-100 dark:ring-white/10 dark:placeholder:text-stone-500"
+                            className="min-h-28 zen-input w-full resize-none rounded-[1.5rem] p-5 text-sm leading-7 backdrop-blur-2xl outline-none disabled:opacity-60"
                         />
                     )}
                 </div>
@@ -985,14 +979,14 @@ function Epilogue({
         step.component.type === "ZenEpilogueCard" ? step.component : undefined;
     if (!card) return null;
     return (
-        <CardShell className="bg-white/62 dark:bg-stone-950/52">
+        <CardShell className="zen-card--solid">
             <ZenCardLayout
                 header={
                     <div>
-                        <p className="text-xs uppercase tracking-[0.18em] text-stone-500 dark:text-stone-400">
+                        <p className="text-xs uppercase tracking-[0.18em] zen-text-subtle">
                             {t("zen-completed-label")}
                         </p>
-                        <h2 className="mt-3 text-3xl font-semibold tracking-normal text-stone-950 dark:text-stone-50">
+                        <h2 className="mt-3 text-3xl font-semibold tracking-normal zen-heading">
                             {card.title}
                         </h2>
                     </div>
@@ -1013,10 +1007,10 @@ function Epilogue({
                 }
             >
                 <div className="space-y-6">
-                    <blockquote className="rounded-[1.6rem] bg-amber-50/55 p-5 text-base leading-8 text-stone-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] ring-1 ring-white/35 dark:bg-amber-100/10 dark:text-amber-50 dark:ring-amber-100/10">
+                    <blockquote className="zen-quote rounded-[1.6rem] p-5 text-base leading-8">
                         {card.quote}
                     </blockquote>
-                    <p className="text-sm leading-8 text-stone-600 dark:text-stone-300">
+                    <p className="text-sm leading-8 zen-text-muted">
                         {card.summary}
                     </p>
                     {card.intention && (
@@ -1043,14 +1037,14 @@ function CompletedView({
 }) {
     const t = useIntl();
     return (
-        <CardShell className="bg-white/62 dark:bg-stone-950/52">
+        <CardShell className="zen-card--solid">
             <ZenCardLayout
                 header={
                     <div>
-                        <p className="text-xs uppercase tracking-[0.18em] text-stone-500 dark:text-stone-400">
+                        <p className="text-xs uppercase tracking-[0.18em] zen-text-subtle">
                             {post.id}
                         </p>
-                        <h2 className="mt-3 text-3xl font-semibold tracking-normal text-stone-950 dark:text-stone-50">
+                        <h2 className="mt-3 text-3xl font-semibold tracking-normal zen-heading">
                             {t("zen-today-completed-title")}
                         </h2>
                     </div>
@@ -1071,7 +1065,7 @@ function CompletedView({
                 }
             >
                 <div className="space-y-6">
-                    <p className="text-sm leading-7 text-stone-600 dark:text-stone-300">
+                    <p className="text-sm leading-7 zen-text-muted">
                         {t("zen-today-completed-hint")}
                     </p>
                     {post.theme && (
@@ -1079,10 +1073,10 @@ function CompletedView({
                             {post.theme.title}
                         </ZenSurface>
                     )}
-                    <blockquote className="rounded-[1.6rem] bg-amber-50/55 p-5 text-base leading-8 text-stone-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] ring-1 ring-white/35 dark:bg-amber-100/10 dark:text-amber-50 dark:ring-amber-100/10">
+                    <blockquote className="zen-quote rounded-[1.6rem] p-5 text-base leading-8">
                         {post.quote}
                     </blockquote>
-                    <p className="text-sm leading-8 text-stone-600 dark:text-stone-300">
+                    <p className="text-sm leading-8 zen-text-muted">
                         {post.summary}
                     </p>
                     {post.intention && (
@@ -1106,6 +1100,7 @@ function ZenDialogForm({
     const [state, setState] = useState<ZenDialogState>({ type: "loading" });
     const [pending, setPending] = useState(false);
     const todayLabel = useMemo(() => dayjs().format("YYYY-MM-DD"), []);
+    const styleIndex = useMemo(() => getZenStyleIndex(), []);
 
     useEffect(() => {
         let cancelled = false;
@@ -1348,24 +1343,25 @@ function ZenDialogForm({
     return (
         <div
             className={cn(
-                "zen-gradient-drift relative min-h-full overflow-hidden text-stone-900 dark:text-stone-50",
+                "zen-root zen-text zen-gradient-drift relative h-full overflow-hidden",
+                `zen-style-${styleIndex}`,
                 isBackgroundFocused && "zen-gradient-focus",
             )}
         >
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_12%,rgba(255,255,255,0.58),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.28),rgba(255,255,255,0.02))] dark:bg-[radial-gradient(circle_at_50%_8%,rgba(255,244,214,0.12),transparent_35%),linear-gradient(180deg,rgba(0,0,0,0.08),rgba(0,0,0,0.3))]" />
+            <div className="zen-overlay pointer-events-none absolute inset-0" />
             <div className="relative mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col gap-5 px-4 py-5 sm:px-6 sm:py-7">
-                <div className="flex shrink-0 items-center justify-between gap-3 rounded-full bg-white/22 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.38)] ring-1 ring-white/26 backdrop-blur-2xl dark:bg-white/7 dark:ring-white/10">
+                <div className="zen-header-bar flex shrink-0 items-center justify-between gap-3 rounded-full px-3 py-2 backdrop-blur-2xl">
                     <div>
-                        <div className="text-xs uppercase tracking-[0.2em] text-stone-600 dark:text-stone-300">
+                        <div className="text-xs uppercase tracking-[0.2em] zen-text-muted">
                             {t("zen-header-label")}
                         </div>
-                        <div className="text-sm text-stone-500 dark:text-stone-400">
+                        <div className="text-sm zen-text-subtle">
                             {todayLabel}
                         </div>
                     </div>
                     <button
                         type="button"
-                        className="grid size-11 place-items-center rounded-full bg-white/28 text-stone-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] ring-1 ring-white/30 backdrop-blur-xl transition hover:bg-white/46 hover:text-stone-900 dark:bg-white/8 dark:text-stone-300 dark:ring-white/10 dark:hover:bg-white/14"
+                        className="zen-close-btn grid size-11 place-items-center rounded-full backdrop-blur-xl transition"
                         onClick={onCancel}
                     >
                         <i className="icon-[mdi--close] size-5"></i>
@@ -1374,8 +1370,8 @@ function ZenDialogForm({
 
                 {state.type === "loading" && (
                     <CardShell className="min-h-72">
-                        <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center text-sm text-stone-600 dark:text-stone-300">
-                            <div className="rounded-full bg-white/28 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] ring-1 ring-white/30 backdrop-blur-xl dark:bg-white/8 dark:ring-white/10">
+                        <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center text-sm zen-text-muted">
+                            <div className="zen-surface rounded-full p-4 backdrop-blur-xl">
                                 <Loading className="[&_i]:size-6" />
                             </div>
                             <div>{t("zen-loading-open")}</div>
@@ -1387,7 +1383,7 @@ function ZenDialogForm({
                     <CardShell>
                         <ZenCardLayout
                             header={
-                                <h2 className="text-2xl font-semibold text-stone-950 dark:text-stone-50">
+                                <h2 className="text-2xl font-semibold zen-heading">
                                     {t("zen-error-title")}
                                 </h2>
                             }
@@ -1399,7 +1395,7 @@ function ZenDialogForm({
                                 </ZenActions>
                             }
                         >
-                            <p className="text-sm leading-7 text-stone-600 dark:text-stone-300">
+                            <p className="text-sm leading-7 zen-text-muted">
                                 {state.message}
                             </p>
                         </ZenCardLayout>
@@ -1417,11 +1413,14 @@ function ZenDialogForm({
 
                 {state.type === "active" && !activeStep && (
                     <CardShell>
-                        <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center text-sm text-stone-600 dark:text-stone-300">
-                            <div className="rounded-full bg-white/28 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] ring-1 ring-white/30 backdrop-blur-xl dark:bg-white/8 dark:ring-white/10">
+                        <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center zen-text-muted">
+                            <div className="zen-surface rounded-full p-4 backdrop-blur-xl">
                                 <Loading className="[&_i]:size-6" />
                             </div>
                             <div>{t("zen-loading-period")}</div>
+                            <div className="text-sm">
+                                {t("zen-loading-period-desc-1")}
+                            </div>
                         </div>
                     </CardShell>
                 )}

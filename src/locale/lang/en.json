@@ -770,13 +770,13 @@
   "zen-save-today-zen": "Save Today's Zen",
   "zen-close": "Close",
   "zen-today-completed-title": "Today's Zen is Complete",
-  "zen-today-completed-hint": "A new entry opens tomorrow. You can come back today to revisit this epilogue.",
+  "zen-today-completed-hint": "One day, one entry.",
   "zen-select-book-first": "Please select a ledger book first",
   "zen-saved-toast": "Today's Zen saved",
   "zen-header-label": "cent zen",
   "zen-loading-open": "Opening today's Zen...",
   "zen-error-title": "Zen is Unavailable",
-  "zen-loading-period": "Zen is selecting the review period...",
+  "zen-loading-period": "Entering Zen mode...",
   "zen-completed-label": "completed",
   "zen-fallback-theme-title": "Where would you like to take a gentle look?",
   "zen-fallback-theme-subtitle": "Just pick one direction — no need to explain everything.",
@@ -811,5 +811,6 @@
   "zen-fallback-intention-title": "What would you like to gently try next?",
   "zen-fallback-intention-suggestion-1": "Notice one trigger that lets money quietly flow away.",
   "zen-fallback-intention-suggestion-2": "Give one frequent expense a calmer alternative.",
-  "zen-fallback-intention-suggestion-3": "Keep the spending that truly feels caring."
+  "zen-fallback-intention-suggestion-3": "Keep the spending that truly feels caring.",
+  "zen-loading-period-desc-1": "Relax. Patience is the key."
 }

@@ -5,8 +5,11 @@ import type { Bill } from "@/ledger/type";
 import { t } from "@/locale";
 import { createTidal } from "@/tidal";
 import { createGithubSyncer } from "@/tidal/github";
+import type { ZenPost } from "@/zen/types";
 import type { SyncEndpointFactory } from "../type";
 import { createLoginAPI } from "./login";
+
+const ZEN_ENTRY_NAME = "zen";
 
 const config = {
     repoPrefix: "cent-journal",
@@ -45,6 +48,17 @@ export const GithubEndpoint: SyncEndpointFactory = {
                     repoPrefix: config.repoPrefix,
                 }),
         });
+        const zenRepo = createTidal<ZenPost>({
+            storageFactory: (name) =>
+                new BillIndexedDBStorage(`book-${name}--${ZEN_ENTRY_NAME}`),
+            entryName: ZEN_ENTRY_NAME,
+            syncerFactory: () =>
+                createGithubSyncer({
+                    auth: LoginAPI.getToken,
+                    entryName: ZEN_ENTRY_NAME,
+                    repoPrefix: config.repoPrefix,
+                }),
+        });
 
         const toBookName = (bookId: string) => {
             const [owner, repo] = bookId.split("/");
@@ -65,15 +79,20 @@ export const GithubEndpoint: SyncEndpointFactory = {
             return Promise.reject();
         };
 
+        // ledger 与 zen 顺序同步：避免对同一 git ref 并发提交导致 non-fast-forward
         const scheduler = new Scheduler(async (signal) => {
-            const [finished, cancel] = repo.sync();
-            signal.onabort = cancel;
-            await finished;
+            const [ledgerFinished, cancelLedger] = repo.sync();
+            signal.onabort = cancelLedger;
+            await ledgerFinished;
+            const [zenFinished, cancelZen] = zenRepo.sync();
+            signal.onabort = cancelZen;
+            await zenFinished;
         });
 
         return {
             logout: async () => {
                 repo.detach();
+                zenRepo.detach();
             },
             getUserInfo: repo.getUserInfo,
             getCollaborators: repo.getCollaborators,
@@ -84,7 +103,9 @@ export const GithubEndpoint: SyncEndpointFactory = {
                 return res.map((v) => ({ id: v, name: toBookName(v) }));
             },
             createBook: repo.create,
-            initBook: repo.init,
+            initBook: async (name) => {
+                await Promise.all([repo.init(name), zenRepo.init(name)]);
+            },
             deleteBook,
             inviteForBook,
 
@@ -96,7 +117,15 @@ export const GithubEndpoint: SyncEndpointFactory = {
             getAllItems: repo.getAllItems,
             onChange: repo.onChange,
 
-            getIsNeedSync: repo.hasStashes,
+            batchZen: async (...args) => {
+                await zenRepo.batch(...args);
+                scheduler.schedule();
+            },
+            getAllZenItems: zenRepo.getAllItems,
+            onZenChange: zenRepo.onChange,
+
+            getIsNeedSync: async () =>
+                (await repo.hasStashes()) || (await zenRepo.hasStashes()),
             onSync: scheduler.onProcess.bind(scheduler),
             toSync: scheduler.schedule.bind(scheduler),
 

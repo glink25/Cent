@@ -11,6 +11,21 @@ export function getZenDayId(now = dayjs()): ZenDayId {
     return now.format("YYYY-MM-DD");
 }
 
+/** 可用的 Zen 预设风格数量，与 zen.css 中的 .zen-style-{0..N-1} 一一对应。 */
+export const ZEN_STYLE_COUNT = 5;
+
+/**
+ * 按日期计算出一个稳定的预设风格序号（当天不变，逐日轮换）。
+ * 使用 day-of-year 取模，避免引入 dayjs dayOfYear 插件。
+ */
+export function getZenStyleIndex(
+    now = dayjs(),
+    count = ZEN_STYLE_COUNT,
+): number {
+    const dayOfYear = now.diff(now.startOf("year"), "day");
+    return ((dayOfYear % count) + count) % count;
+}
+
 export function getDailyZenPeriod(now = dayjs()): ZenPeriod {
     return {
         type: "daily",

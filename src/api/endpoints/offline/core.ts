@@ -13,15 +13,13 @@ export type OfflineStorageConfig = {
     storage: (storeFullBame: string) => StashStorage;
 };
 
-type Item = Bill;
-
 const PREFIX = "offline/";
 
 const toBookName = (bookId: string) => {
     return bookId.replace(`book-${PREFIX}`, "");
 };
 
-export class OfflineStorage {
+export class OfflineStorage<Item extends BaseItem = Bill> {
     protected readonly config: Required<OfflineStorageConfig>;
 
     constructor(config: OfflineStorageConfig) {
@@ -32,14 +30,18 @@ export class OfflineStorage {
     async fetchAllStore() {
         try {
             const databases = await indexedDB.databases();
-            return databases
-                .map((db) => db.name)
-                .filter((name) => name !== undefined)
-                .filter((name) => name.startsWith(`book-${PREFIX}`))
-                .map((name) => ({
-                    id: name.replace("book-", ""),
-                    name: toBookName(name),
-                }));
+            return (
+                databases
+                    .map((db) => db.name)
+                    .filter((name) => name !== undefined)
+                    .filter((name) => name.startsWith(`book-${PREFIX}`))
+                    // 排除额外 entry（如 zen）的本地库，避免被当成账本列出
+                    .filter((name) => !name!.includes("--"))
+                    .map((name) => ({
+                        id: name.replace("book-", ""),
+                        name: toBookName(name),
+                    }))
+            );
         } catch (error) {
             console.error("获取数据库列表时出错:", error);
             return [];
