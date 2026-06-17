@@ -75,6 +75,69 @@ export type FreeInputCard = {
     helperText?: string;
 };
 
+export type BillFocusCard = {
+    type: "BillFocusCard";
+    title: string;
+    description?: string;
+    billIds: string[];
+    displayMode: "single" | "group" | "timeline";
+    question?: string;
+};
+
+export type ChoiceCardOption = {
+    id: string;
+    label: string;
+    description?: string;
+};
+
+export type ChoiceCard = {
+    type: "ChoiceCard";
+    title: string;
+    description?: string;
+    options: ChoiceCardOption[];
+    allowMultiple: boolean;
+    allowSkip: boolean;
+};
+
+export type ShredderCardAction = "keep" | "pause" | "observe" | "reduce";
+
+export type ShredderCardItem = {
+    id: string;
+    label: string;
+    description?: string;
+    amount?: number;
+    categoryName?: string;
+    billIds?: string[];
+};
+
+export type ShredderCard = {
+    type: "ShredderCard";
+    title: string;
+    items: ShredderCardItem[];
+    actions: ShredderCardAction[];
+};
+
+export type BudgetAdjustCard = {
+    type: "BudgetAdjustCard";
+    title: string;
+    categoryId?: string;
+    categoryName?: string;
+    currentBudget: number;
+    currentUsed?: number;
+    suggestedBudget: number;
+    reason: string;
+    confirmAction: string;
+};
+
+export type IntentionCard = {
+    type: "IntentionCard";
+    title: string;
+    suggestions: string[];
+    customInputEnabled: boolean;
+    duration: "day" | "week" | "month";
+    reminderEnabled: boolean;
+};
+
 export type ZenEpilogueCard = {
     type: "ZenEpilogueCard";
     title: string;
@@ -90,6 +153,11 @@ export type ZenComponent =
     | InsightTextCard
     | SliderCard
     | FreeInputCard
+    | BillFocusCard
+    | ChoiceCard
+    | ShredderCard
+    | BudgetAdjustCard
+    | IntentionCard
     | ZenEpilogueCard;
 
 export type ZenUIStep = {
@@ -188,8 +256,17 @@ export type ZenFocusDecision = {
 export type ZenSignalType =
     | "high_frequency_micro_spending"
     | "large_unusual_expense"
+    | "subscription_leak"
     | "income_spike"
+    | "category_over_budget"
+    | "category_drop"
     | "healthy_balance"
+    | "social_spending"
+    | "self_improvement_spending"
+    | "time_saving_spending"
+    | "emotional_spending"
+    | "planned_purchase"
+    | "unplanned_purchase"
     | "flat_day";
 
 export type ZenSignal = {
@@ -225,7 +302,34 @@ export type ZenContext = {
         count: number;
         type: "income" | "expense";
     }[];
+    budgets: {
+        id: string;
+        title: string;
+        periodStart: number;
+        periodEnd: number;
+        totalBudget: number;
+        totalUsed: number;
+        ratio: number;
+        status: "normal" | "near_limit" | "over_limit";
+        categories?: {
+            id: string;
+            name: string;
+            budget: number;
+            used: number;
+            ratio: number;
+            status: "normal" | "near_limit" | "over_limit";
+        }[];
+    }[];
     signals: ZenSignal[];
+    candidateGroups: {
+        id: string;
+        label: string;
+        reason: string;
+        billIds: string[];
+        totalAmount: number;
+        categoryName?: string;
+        signalType?: ZenSignalType;
+    }[];
     candidateBills: {
         id: string;
         type: "income" | "expense";

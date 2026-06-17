@@ -1,6 +1,11 @@
 import dayjs from "dayjs";
+import {
+    budgetEncountered,
+    budgetRange,
+    budgetTotal,
+} from "@/components/budget/util";
 import { amountToNumber } from "@/ledger/bill";
-import { ExpenseBillCategories, IncomeBillCategories } from "@/ledger/category";
+import { BillCategories } from "@/ledger/category";
 import type { Bill, GlobalMeta } from "@/ledger/type";
 import {
     getCalendarPosition,
@@ -28,18 +33,78 @@ type ZenPeriodAnalysis = Omit<
 >;
 
 function categoryNameById(meta: GlobalMeta | undefined) {
-    const categories = [
-        ...ExpenseBillCategories,
-        ...IncomeBillCategories,
-        ...(meta?.categories ?? []),
-    ];
+    const categories = getAllCategories(meta);
     const map = new Map(categories.map((category) => [category.id, category]));
     return (id: string) => map.get(id)?.name ?? id;
+}
+
+function getAllCategories(meta: GlobalMeta | undefined) {
+    return [...BillCategories, ...(meta?.categories ?? [])];
 }
 
 function trimComment(comment: string | undefined) {
     if (!comment) return undefined;
     return comment.length > 40 ? `${comment.slice(0, 40)}...` : comment;
+}
+
+function includesAnyKeyword(value: string | undefined, keywords: string[]) {
+    if (!value) return false;
+    const lower = value.toLowerCase();
+    return keywords.some((keyword) => lower.includes(keyword.toLowerCase()));
+}
+
+function isProbablySubscription(bill: Bill, categoryName: string) {
+    return includesAnyKeyword(`${categoryName} ${bill.comment ?? ""}`, [
+        "订阅",
+        "会员",
+        "自动续费",
+        "月费",
+        "年费",
+        "subscription",
+        "membership",
+        "premium",
+        "netflix",
+        "spotify",
+        "icloud",
+    ]);
+}
+
+function signalDeviation(ratio: number): ZenSignal["deviationLevel"] {
+    if (ratio >= 1.2) return "extreme";
+    if (ratio >= 1) return "high";
+    if (ratio >= 0.8) return "medium";
+    if (ratio >= 0.6) return "mild";
+    return "normal";
+}
+
+function buildCandidateGroup({
+    id,
+    label,
+    reason,
+    bills,
+    categoryName,
+    signalType,
+}: {
+    id: string;
+    label: string;
+    reason: string;
+    bills: Bill[];
+    categoryName?: string;
+    signalType?: ZenSignal["type"];
+}): ZenContext["candidateGroups"][number] | undefined {
+    if (bills.length === 0) return undefined;
+    return {
+        id,
+        label,
+        reason,
+        billIds: bills.map((bill) => bill.id).slice(0, 8),
+        totalAmount: bills.reduce(
+            (total, bill) => total + amountToNumber(bill.amount),
+            0,
+        ),
+        categoryName,
+        signalType,
+    };
 }
 
 export function analyzeZenPeriod({
@@ -52,8 +117,12 @@ export function analyzeZenPeriod({
     period: ZenPeriod;
 }): ZenPeriodAnalysis {
     const getCategoryName = categoryNameById(meta);
+    const allCategories = getAllCategories(meta);
     const periodBills = bills.filter(
         (bill) => bill.time >= period.start && bill.time <= period.end,
+    );
+    const periodExpenseBills = periodBills.filter(
+        (bill) => bill.type === "expense",
     );
 
     let expenseTotal = 0;
@@ -97,20 +166,23 @@ export function analyzeZenPeriod({
         .slice(0, 5)
         .map(({ billIds: _billIds, ...category }) => category);
 
-    const candidateBills = [...periodBills]
+    const summarizeBill = (bill: Bill) => ({
+        id: bill.id,
+        type: bill.type,
+        categoryId: bill.categoryId,
+        categoryName: getCategoryName(bill.categoryId),
+        amount: amountToNumber(bill.amount),
+        time: bill.time,
+        comment: trimComment(bill.comment),
+    });
+
+    const topCandidateBills = [...periodBills]
         .sort((a, b) => b.amount - a.amount)
         .slice(0, 8)
-        .map((bill) => ({
-            id: bill.id,
-            type: bill.type,
-            categoryId: bill.categoryId,
-            categoryName: getCategoryName(bill.categoryId),
-            amount: amountToNumber(bill.amount),
-            time: bill.time,
-            comment: trimComment(bill.comment),
-        }));
+        .map(summarizeBill);
 
     const signals: ZenSignal[] = [];
+    const candidateGroups: ZenContext["candidateGroups"] = [];
     const topExpenseCategory = [...categoryMap.values()]
         .filter((category) => category.type === "expense")
         .sort((a, b) => b.count - a.count)[0];
@@ -124,6 +196,17 @@ export function analyzeZenPeriod({
             billIds: topExpenseCategory.billIds.slice(0, 5),
             deviationLevel: topExpenseCategory.count >= 6 ? "high" : "medium",
         });
+        const group = buildCandidateGroup({
+            id: `category-${topExpenseCategory.id}`,
+            label: topExpenseCategory.name,
+            reason: "这类支出在本次周期里出现得比较频繁。",
+            bills: periodBills.filter(
+                (bill) => bill.categoryId === topExpenseCategory.id,
+            ),
+            categoryName: topExpenseCategory.name,
+            signalType: "high_frequency_micro_spending",
+        });
+        if (group) candidateGroups.push(group);
     }
 
     const largestExpense = periodBills
@@ -141,6 +224,291 @@ export function analyzeZenPeriod({
             amount: amountToNumber(largestExpense.amount),
             billIds: [largestExpense.id],
             deviationLevel: "high",
+        });
+        const group = buildCandidateGroup({
+            id: `large-${largestExpense.id}`,
+            label: getCategoryName(largestExpense.categoryId),
+            reason: "这笔支出占本周期支出的比例较高。",
+            bills: [largestExpense],
+            categoryName: getCategoryName(largestExpense.categoryId),
+            signalType: "large_unusual_expense",
+        });
+        if (group) candidateGroups.push(group);
+    }
+
+    const subscriptionBills = periodExpenseBills.filter((bill) =>
+        isProbablySubscription(bill, getCategoryName(bill.categoryId)),
+    );
+    if (subscriptionBills.length > 0) {
+        signals.push({
+            type: "subscription_leak",
+            count: subscriptionBills.length,
+            amount: subscriptionBills.reduce(
+                (total, bill) => total + amountToNumber(bill.amount),
+                0,
+            ),
+            billIds: subscriptionBills.map((bill) => bill.id).slice(0, 5),
+            deviationLevel: subscriptionBills.length >= 3 ? "medium" : "mild",
+        });
+        const group = buildCandidateGroup({
+            id: "subscription-leak",
+            label: "订阅与自动续费",
+            reason: "这些支出看起来像订阅、会员或周期性扣费。",
+            bills: subscriptionBills,
+            signalType: "subscription_leak",
+        });
+        if (group) candidateGroups.push(group);
+    }
+
+    const keywordSignals: {
+        type: ZenSignal["type"];
+        id: string;
+        label: string;
+        reason: string;
+        keywords: string[];
+    }[] = [
+        {
+            type: "social_spending",
+            id: "social-spending",
+            label: "人际关系里的支出",
+            reason: "备注或分类里出现了聚会、礼物、请客等社交线索。",
+            keywords: [
+                "聚会",
+                "礼物",
+                "请客",
+                "朋友",
+                "家庭",
+                "社交",
+                "gift",
+                "party",
+            ],
+        },
+        {
+            type: "self_improvement_spending",
+            id: "self-improvement",
+            label: "为未来的自己花钱",
+            reason: "这些支出可能与学习、健康或长期成长有关。",
+            keywords: [
+                "课程",
+                "学习",
+                "书",
+                "健身",
+                "培训",
+                "教育",
+                "course",
+                "book",
+                "gym",
+            ],
+        },
+        {
+            type: "time_saving_spending",
+            id: "time-saving",
+            label: "用钱购买时间",
+            reason: "这些支出可能是在替你节省时间或精力。",
+            keywords: [
+                "外卖",
+                "打车",
+                "快递",
+                "配送",
+                "代办",
+                "taxi",
+                "uber",
+                "delivery",
+            ],
+        },
+        {
+            type: "emotional_spending",
+            id: "emotional-spending",
+            label: "情绪的缓冲垫",
+            reason: "备注或分类里出现了安慰、奖励、疲惫后的补偿线索。",
+            keywords: [
+                "奶茶",
+                "咖啡",
+                "甜品",
+                "奖励",
+                "安慰",
+                "放松",
+                "coffee",
+                "dessert",
+            ],
+        },
+        {
+            type: "planned_purchase",
+            id: "planned-purchase",
+            label: "计划内消费",
+            reason: "备注里出现了计划、预算或预订等线索。",
+            keywords: [
+                "计划",
+                "预算",
+                "预订",
+                "预约",
+                "planned",
+                "budget",
+                "booking",
+            ],
+        },
+        {
+            type: "unplanned_purchase",
+            id: "unplanned-purchase",
+            label: "计划外支出",
+            reason: "备注里出现了临时、补买、应急等线索。",
+            keywords: [
+                "临时",
+                "突然",
+                "应急",
+                "补买",
+                "忘记",
+                "unplanned",
+                "urgent",
+            ],
+        },
+    ];
+
+    for (const item of keywordSignals) {
+        const matched = periodExpenseBills.filter((bill) =>
+            includesAnyKeyword(
+                `${getCategoryName(bill.categoryId)} ${bill.comment ?? ""}`,
+                item.keywords,
+            ),
+        );
+        if (matched.length === 0) continue;
+        signals.push({
+            type: item.type,
+            count: matched.length,
+            amount: matched.reduce(
+                (total, bill) => total + amountToNumber(bill.amount),
+                0,
+            ),
+            billIds: matched.map((bill) => bill.id).slice(0, 5),
+            deviationLevel: matched.length >= 3 ? "medium" : "mild",
+        });
+        const group = buildCandidateGroup({
+            id: item.id,
+            label: item.label,
+            reason: item.reason,
+            bills: matched,
+            signalType: item.type,
+        });
+        if (group) candidateGroups.push(group);
+    }
+
+    const periodLength = period.end - period.start;
+    const previousPeriod = {
+        ...period,
+        start: period.start - periodLength - 1,
+        end: period.start - 1,
+    };
+    const previousTopById = new Map<
+        string,
+        { id: string; name: string; amount: number }
+    >();
+    for (const bill of bills.filter(
+        (item) =>
+            item.type === "expense" &&
+            item.time >= previousPeriod.start &&
+            item.time <= previousPeriod.end,
+    )) {
+        const prev = previousTopById.get(bill.categoryId) ?? {
+            id: bill.categoryId,
+            name: getCategoryName(bill.categoryId),
+            amount: 0,
+        };
+        prev.amount += amountToNumber(bill.amount);
+        previousTopById.set(bill.categoryId, prev);
+    }
+    for (const category of topCategories.filter(
+        (item) => item.type === "expense",
+    )) {
+        const previous = previousTopById.get(category.id);
+        if (
+            previous &&
+            previous.amount >= category.amount * 2 &&
+            previous.amount - category.amount >= 10
+        ) {
+            signals.push({
+                type: "category_drop",
+                categoryId: category.id,
+                categoryName: category.name,
+                amount: previous.amount - category.amount,
+                deviationLevel: "medium",
+            });
+            break;
+        }
+    }
+
+    const budgets = (meta?.budgets ?? []).flatMap((budget) => {
+        const [, currentRange] = budgetRange(budget, period.end);
+        if (!currentRange) return [];
+        const [start, end] = currentRange;
+        if (end.valueOf() < period.start || start.valueOf() > period.end) {
+            return [];
+        }
+        const encountered = budgetEncountered(
+            budget,
+            bills,
+            currentRange,
+            allCategories,
+        );
+        const totalBudget = budgetTotal(budget);
+        const ratio = totalBudget > 0 ? encountered.totalUsed / totalBudget : 0;
+        const categories = budget.categoriesBudget?.map((category) => {
+            const used =
+                encountered.categoriesUsed?.find(
+                    (item) => item.id === category.id,
+                )?.used ?? 0;
+            const categoryRatio =
+                category.budget > 0 ? used / category.budget : 0;
+            return {
+                id: category.id,
+                name: getCategoryName(category.id),
+                budget: category.budget,
+                used,
+                ratio: categoryRatio,
+                status:
+                    categoryRatio >= 1
+                        ? "over_limit"
+                        : categoryRatio >= 0.8
+                          ? "near_limit"
+                          : "normal",
+            } as const;
+        });
+        return [
+            {
+                id: budget.id,
+                title: budget.title,
+                periodStart: start.valueOf(),
+                periodEnd: end.valueOf(),
+                totalBudget,
+                totalUsed: encountered.totalUsed,
+                ratio,
+                status:
+                    ratio >= 1
+                        ? "over_limit"
+                        : ratio >= 0.8
+                          ? "near_limit"
+                          : "normal",
+                categories,
+            } as const,
+        ];
+    });
+
+    for (const budget of budgets) {
+        if (budget.status === "normal") continue;
+        signals.push({
+            type: "category_over_budget",
+            amount: budget.totalUsed,
+            deviationLevel: signalDeviation(budget.ratio),
+        });
+        const overCategory = budget.categories?.find(
+            (category) => category.status !== "normal",
+        );
+        if (!overCategory) continue;
+        signals.push({
+            type: "category_over_budget",
+            categoryId: overCategory.id,
+            categoryName: overCategory.name,
+            amount: overCategory.used,
+            deviationLevel: signalDeviation(overCategory.ratio),
         });
     }
 
@@ -163,6 +531,17 @@ export function analyzeZenPeriod({
         });
     }
 
+    const periodBillMap = new Map(periodBills.map((bill) => [bill.id, bill]));
+    const candidateBillIds = new Set([
+        ...topCandidateBills.map((bill) => bill.id),
+        ...candidateGroups.flatMap((group) => group.billIds),
+    ]);
+    const candidateBills = [...candidateBillIds]
+        .map((id) => periodBillMap.get(id))
+        .filter((bill): bill is Bill => Boolean(bill))
+        .slice(0, 20)
+        .map(summarizeBill);
+
     return {
         period,
         summary: {
@@ -173,7 +552,9 @@ export function analyzeZenPeriod({
             currency: meta?.baseCurrency ?? "CNY",
         },
         topCategories,
+        budgets,
         signals,
+        candidateGroups: candidateGroups.slice(0, 8),
         candidateBills,
     };
 }

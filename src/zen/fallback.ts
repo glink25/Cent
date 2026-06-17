@@ -56,6 +56,52 @@ function buildThemeOptions(context: ZenContext) {
         ];
     }
 
+    if (firstSignal?.type === "subscription_leak") {
+        return [
+            {
+                id: "subscription-shredder",
+                title: "悄悄流走的订阅",
+                subtitle: "看看哪些自动扣费还值得留下",
+                tags: ["minimalism", "subscription_leak"],
+            },
+            {
+                id: "small-leaks",
+                title: "低感知的小流失",
+                subtitle: "不急着取消，先辨认它们",
+                tags: ["observe_only", "minimalism"],
+            },
+            {
+                id: "keep-what-serves",
+                title: "保留真正服务你的选择",
+                subtitle: "把有价值的留下，把模糊的放进观察",
+                tags: ["gratitude", "cancel_or_reduce"],
+            },
+        ];
+    }
+
+    if (firstSignal?.type === "category_over_budget") {
+        return [
+            {
+                id: "gentle-budget-adjust",
+                title: "给预算一点呼吸",
+                subtitle: "把预算当作提醒，而不是压力",
+                tags: ["adjust_budget", "control"],
+            },
+            {
+                id: "budget-trigger",
+                title: "预算背后的触发点",
+                subtitle: "看看是哪种生活情境推高了支出",
+                tags: ["reflective", "control"],
+            },
+            {
+                id: "smaller-next-step",
+                title: "下一步只小一点点",
+                subtitle: "用一个容易做到的动作收束",
+                tags: ["create_intention"],
+            },
+        ];
+    }
+
     if (topCategory) {
         return [
             {
@@ -196,14 +242,28 @@ export function createFallbackReflectionStep({
         sessionId: session.id,
         intent: "reflection",
         progress: { current: round, max: 5, shouldEndSoon: true },
-        component: {
-            type: "FreeInputCard",
-            title: t("zen-fallback-input-title"),
-            placeholder: t("zen-fallback-input-placeholder"),
-            inputMode: "text",
-            maxLength: 160,
-            helperText: t("zen-fallback-input-helper"),
-        },
+        component:
+            round >= 4
+                ? {
+                      type: "IntentionCard",
+                      title: t("zen-fallback-intention-title"),
+                      suggestions: [
+                          t("zen-fallback-intention-suggestion-1"),
+                          t("zen-fallback-intention-suggestion-2"),
+                          t("zen-fallback-intention-suggestion-3"),
+                      ],
+                      customInputEnabled: true,
+                      duration: "week",
+                      reminderEnabled: false,
+                  }
+                : {
+                      type: "FreeInputCard",
+                      title: t("zen-fallback-input-title"),
+                      placeholder: t("zen-fallback-input-placeholder"),
+                      inputMode: "text",
+                      maxLength: 160,
+                      helperText: t("zen-fallback-input-helper"),
+                  },
         nextPolicy: {
             waitForUserInput: true,
             allowedUserActions: ["submit", "skip"],

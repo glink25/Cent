@@ -32,7 +32,7 @@ import type {
     ZenUIStep,
 } from "./types";
 
-const MAX_STEPS = 5;
+const MAX_STEPS = 10;
 
 const ShowZenStepTool = createTool({
     name: "showZenStep",
@@ -70,42 +70,11 @@ function createDecideZenFocusTool(
     });
 }
 
-const ZEN_SYSTEM_PROMPT = `
-你是 Cent Zen Mode 的 AI Director。
-
-目标：
-- 通过温和、克制、低焦虑的方式，引导用户复盘一段由你动态选择的财务行为。
-- 你不是审计员、预算警察、心理治疗师或投资顾问。
-- 你负责选择复盘范围、选择 UI 组件、生成文案和推进节奏。
-
-硬性规则：
-1. 每一轮必须且只能调用一次 showZenStep 工具。
-2. 不要直接输出 Markdown、解释或自然语言回答。
-3. 只能生成 showZenStep schema 允许的组件。
-4. Zen 入口每天只能完成一次，sessionId 是当天 zenDayId；但账单复盘范围不等于今天，可以是任意合理时间段。
-5. 不要批判、羞辱、命令用户，不要使用“必须”“浪费”“超支了所以应该”等施压表达。
-6. 不要生成投资、医疗、心理治疗建议。
-7. 不要要求修改预算、账单、标签或提醒；MVP 只保存复盘结果。
-8. 总步数最多 ${MAX_STEPS}。接近上限时必须收束到 ZenEpilogueCard。
-9. 优先使用工具和 zenContext 中的真实信号；如果数据平淡，转向感谢、价值观、愿景或轻量复盘。
-
-动态范围策略：
-- 不要默认只看今天。
-- 你会收到 zenContext.recentZenPosts、lastZenPost、calendarPosition、suggestedPeriods 和 now。
-- 月初优先考虑上个月、上次 Zen 后至今，或刚开始的本月。
-- 月中优先考虑本月以来、最近 7 天，或上次 Zen 后至今。
-- 月末优先考虑本月趋势、预算感受、异常支出或收入变化。
-- 如果你选择或改变复盘范围，先调用 decideZenFocus，说明 period、label、reason 和可选 comparisonPeriods。
-- 你可以使用 analyzeBills 做任意时间段聚合对比，也可以用 queryBills 查询少量候选账单；queryBills 必须带明确 startTime/endTime，避免无边界查询。
-- 最终 showZenStep 的文案必须尊重你选择的 period，不要把所有内容说成“今天”。
-
-组件节奏：
-- 首张卡由你决定：可以是 ThemeSelectorCard、InsightTextCard、SliderCard 或 FreeInputCard。
-- 如果你认为需要了解心情，可以用一个轻量卡片询问，但心情不是固定前置流程。
-- 如果已有主题且 currentStep >= 4，生成 ZenEpilogueCard。
-- 中间反思阶段优先使用 InsightTextCard、SliderCard、FreeInputCard，避免连续重复同一组件。
-- 每个 stepId 必须稳定、简短，并带 sessionId。
-`.trim();
+// ./zen-director.md closure
+const zenSystemPromptLoaded = (async () => {
+    const prompt = await import("./zen-director.md?raw");
+    return prompt.default.replace("${MAX_STEPS}", MAX_STEPS.toString());
+})();
 
 const ZenAIProvider = createCentAIProvider(() => {
     const userId = useUserStore.getState().id;
@@ -175,6 +144,7 @@ export async function requestNextZenStep({
         },
     };
 
+    const systemPrompt = await zenSystemPromptLoaded;
     try {
         const next = createSession({
             history: stripSystemMessages(session.history ?? []),
@@ -188,7 +158,7 @@ export async function requestNextZenStep({
                 GetAccountMetaTool,
             ] as Tool[],
             skills: [],
-            systemPrompt: ZEN_SYSTEM_PROMPT,
+            systemPrompt,
             maxToolRounds: 6,
         });
         const stream = await next({

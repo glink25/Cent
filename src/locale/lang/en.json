@@ -794,5 +794,22 @@
   "zen-fallback-epilogue-title": "That's all for now",
   "zen-fallback-epilogue-quote": "See your money a little more clearly, and hold yourself a little more lightly.",
   "zen-fallback-epilogue-summary": "This Zen didn't ask you to change anything — it just gently helped you look back at the choices you made.",
-  "zen-fallback-epilogue-intention": "Make one small, unhurried decision in the next period."
+  "zen-fallback-epilogue-intention": "Make one small, unhurried decision in the next period.",
+  "zen-bill-focus-empty": "The bills linked to this card are not in the local summary right now. You can continue.",
+  "zen-shredder-helper": "This only records your reflection. It will not cancel subscriptions, delete bills, or change data.",
+  "zen-shredder-action-keep": "Keep",
+  "zen-shredder-action-pause": "Pause",
+  "zen-shredder-action-observe": "Observe",
+  "zen-shredder-action-reduce": "Reduce",
+  "zen-budget-current": "Current budget",
+  "zen-budget-used": "Used",
+  "zen-budget-suggested": "Suggested budget",
+  "zen-budget-non-mutating-hint": "This is saved only as a Zen reflection suggestion. Your budget settings will not be changed.",
+  "zen-budget-observe": "Observe first",
+  "zen-intention-helper": "Choose a light intention that has a real chance of fitting the next period.",
+  "zen-intention-placeholder": "Write your own small intention",
+  "zen-fallback-intention-title": "What would you like to gently try next?",
+  "zen-fallback-intention-suggestion-1": "Notice one trigger that lets money quietly flow away.",
+  "zen-fallback-intention-suggestion-2": "Give one frequent expense a calmer alternative.",
+  "zen-fallback-intention-suggestion-3": "Keep the spending that truly feels caring."
 }

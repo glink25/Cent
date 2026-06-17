@@ -87,6 +87,73 @@ const FreeInputCardSchema = z.object({
     helperText: z.string().optional(),
 });
 
+const BillFocusCardSchema = z.object({
+    type: z.literal("BillFocusCard"),
+    title: z.string().min(1),
+    description: z.string().optional(),
+    billIds: z.array(z.string()).min(1).max(12),
+    displayMode: z.enum(["single", "group", "timeline"]),
+    question: z.string().optional(),
+});
+
+const ChoiceCardOptionSchema = z.object({
+    id: z.string().min(1),
+    label: z.string().min(1),
+    description: z.string().optional(),
+});
+
+const ChoiceCardSchema = z.object({
+    type: z.literal("ChoiceCard"),
+    title: z.string().min(1),
+    description: z.string().optional(),
+    options: z.array(ChoiceCardOptionSchema).min(2).max(8),
+    allowMultiple: z.boolean(),
+    allowSkip: z.boolean(),
+});
+
+const ShredderCardSchema = z.object({
+    type: z.literal("ShredderCard"),
+    title: z.string().min(1),
+    items: z
+        .array(
+            z.object({
+                id: z.string().min(1),
+                label: z.string().min(1),
+                description: z.string().optional(),
+                amount: z.number().optional(),
+                categoryName: z.string().optional(),
+                billIds: z.array(z.string()).optional(),
+            }),
+        )
+        .min(1)
+        .max(8),
+    actions: z
+        .array(z.enum(["keep", "pause", "observe", "reduce"]))
+        .min(1)
+        .max(4),
+});
+
+const BudgetAdjustCardSchema = z.object({
+    type: z.literal("BudgetAdjustCard"),
+    title: z.string().min(1),
+    categoryId: z.string().optional(),
+    categoryName: z.string().optional(),
+    currentBudget: z.number().nonnegative(),
+    currentUsed: z.number().nonnegative().optional(),
+    suggestedBudget: z.number().nonnegative(),
+    reason: z.string().min(1),
+    confirmAction: z.string().min(1),
+});
+
+const IntentionCardSchema = z.object({
+    type: z.literal("IntentionCard"),
+    title: z.string().min(1),
+    suggestions: z.array(z.string().min(1)).min(1).max(6),
+    customInputEnabled: z.boolean(),
+    duration: z.enum(["day", "week", "month"]),
+    reminderEnabled: z.boolean(),
+});
+
 const ZenEpilogueCardSchema = z.object({
     type: z.literal("ZenEpilogueCard"),
     title: z.string().min(1),
@@ -102,6 +169,11 @@ export const ZenComponentSchema = z.discriminatedUnion("type", [
     InsightTextCardSchema,
     SliderCardSchema,
     FreeInputCardSchema,
+    BillFocusCardSchema,
+    ChoiceCardSchema,
+    ShredderCardSchema,
+    BudgetAdjustCardSchema,
+    IntentionCardSchema,
     ZenEpilogueCardSchema,
 ]);
 

@@ -805,5 +805,22 @@
   "zen-fallback-epilogue-title": "这次就到这里",
   "zen-fallback-epilogue-quote": "把钱看清楚一点，也把自己放轻一点。",
   "zen-fallback-epilogue-summary": "这次 Zen 没有要求你改变什么，只是帮你把这段时间里的选择温和地看了一遍。",
-  "zen-fallback-epilogue-intention": "下一段时间做一个更从容的小决定。"
+  "zen-fallback-epilogue-intention": "下一段时间做一个更从容的小决定。",
+  "zen-bill-focus-empty": "这张卡关联的账单暂时不在本地摘要里，可以先继续。",
+  "zen-shredder-helper": "这里只记录你的观察，不会取消订阅、删除账单或修改任何数据。",
+  "zen-shredder-action-keep": "保留",
+  "zen-shredder-action-pause": "暂停",
+  "zen-shredder-action-observe": "观察",
+  "zen-shredder-action-reduce": "减少",
+  "zen-budget-current": "当前预算",
+  "zen-budget-used": "已使用",
+  "zen-budget-suggested": "建议预算",
+  "zen-budget-non-mutating-hint": "这只会保存为 Zen 复盘建议，不会修改你的预算设置。",
+  "zen-budget-observe": "先观察",
+  "zen-intention-helper": "选一个轻一点、下个阶段真的有机会做到的意图。",
+  "zen-intention-placeholder": "写下你自己的小意图",
+  "zen-fallback-intention-title": "下一段时间，想温和地试试看什么？",
+  "zen-fallback-intention-suggestion-1": "先观察一次让钱流走的触发点。",
+  "zen-fallback-intention-suggestion-2": "给一个高频支出留一个更从容的替代选择。",
+  "zen-fallback-intention-suggestion-3": "保留真正带来照顾感的消费。"
 }
