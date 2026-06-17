@@ -9,6 +9,8 @@ export type {
     NextInput,
     Provider,
     ProviderRequest,
+    ProviderRequestChunk,
+    ProviderToolCall,
     ResolvedSkill,
     Session,
     Skill,

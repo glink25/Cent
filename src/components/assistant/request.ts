@@ -3,7 +3,15 @@ import { useLedgerStore } from "@/store/ledger";
 import { usePreferenceStore } from "@/store/preference";
 import { useUserStore } from "@/store/user";
 import { decodeApiKey } from "@/utils/api-key";
-import type { ProviderRequestChunk } from "../../assistant/type";
+import type { ProviderRequestChunk, Tool } from "../../assistant";
+import { getAdapter } from "./adapters";
+import type { ChatMessage } from "./adapters/types";
+
+/** 纯文本消息（语音解析 / 连通性测试等非 ReAct 路径使用）。 */
+export type TextMessage = {
+    role: "system" | "user" | "assistant";
+    content: string;
+};
 
 function getAIConfig(configId?: string): AIConfig {
     const userId = useUserStore.getState().id;
@@ -43,221 +51,24 @@ function getAIConfig(configId?: string): AIConfig {
     throw new Error("未找到 AI 配置，请先在设置中配置 AI API");
 }
 
-function buildStreamingUrl(config: AIConfig): string {
-    if (config.apiType === "google-ai-studio") {
-        const baseUrl = config.apiUrl.endsWith("/")
-            ? config.apiUrl.slice(0, -1)
-            : config.apiUrl;
-        return `${baseUrl}/v1beta/models/${config.model}:streamGenerateContent?alt=sse`;
-    } else {
-        return config.apiUrl.endsWith("/")
-            ? `${config.apiUrl}chat/completions`
-            : `${config.apiUrl}/chat/completions`;
-    }
-}
-
-function buildStreamingHeaders(
-    apiType: AIConfig["apiType"],
-    apiKey: string,
-): Record<string, string> {
-    const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-    };
-
-    if (apiType === "google-ai-studio") {
-        headers["x-goog-api-key"] = apiKey;
-    } else {
-        headers["Authorization"] = `Bearer ${apiKey}`;
-    }
-
-    return headers;
-}
-
-function buildStreamingBody(
-    config: AIConfig,
-    messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
-    options?: {
-        temperature?: number;
-        max_tokens?: number;
-        maxOutputTokens?: number;
-    },
-): unknown {
-    if (config.apiType === "google-ai-studio") {
-        const contents: Array<{
-            role: "user" | "model";
-            parts: Array<{ text: string }>;
-        }> = [];
-
-        let systemInstruction: string | undefined;
-
-        for (const msg of messages) {
-            if (msg.role === "system") {
-                if (systemInstruction) {
-                    systemInstruction += "\n\n" + msg.content;
-                } else {
-                    systemInstruction = msg.content;
-                }
-            } else {
-                const role = msg.role === "user" ? "user" : "model";
-                contents.push({
-                    role,
-                    parts: [{ text: msg.content }],
-                });
-            }
-        }
-
-        const requestBody: {
-            contents: typeof contents;
-            systemInstruction?: { parts: Array<{ text: string }> };
-            generationConfig?: {
-                temperature?: number;
-                maxOutputTokens?: number;
-            };
-        } = {
-            contents,
-            generationConfig: {
-                temperature: options?.temperature ?? 0.7,
-                maxOutputTokens:
-                    options?.maxOutputTokens ?? options?.max_tokens ?? 2000,
-            },
-        };
-
-        if (systemInstruction) {
-            requestBody.systemInstruction = {
-                parts: [{ text: systemInstruction }],
-            };
-        }
-
-        return requestBody;
-    } else {
-        return {
-            model: config.model,
-            messages,
-            stream: true,
-            temperature: options?.temperature ?? 0.7,
-            max_tokens: options?.max_tokens ?? 2000,
-        };
-    }
-}
-type StreamChunk = ProviderRequestChunk;
-// open ai和google studio api有时候会返回原生思考字段，请将这两个方法修改为返回ReadableStream<{thought:string,answer:string}>,将原生的thought解析出来
-
-async function* parseOpenAIStream(
-    response: Response,
-): AsyncIterable<StreamChunk> {
-    const reader = response.body!.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-
-    // 维护全量内容
-    let fullThought = "";
-    let fullAnswer = "";
-
-    try {
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split("\n");
-            buffer = lines.pop() || "";
-
-            for (const line of lines) {
-                const trimmedLine = line.trim();
-                if (!trimmedLine || !trimmedLine.startsWith("data: ")) continue;
-
-                const jsonStr = trimmedLine.slice(6);
-                if (jsonStr === "[DONE]") continue;
-
-                try {
-                    const data = JSON.parse(jsonStr);
-                    const delta = data.choices?.[0]?.delta;
-
-                    const t = delta?.reasoning_content || "";
-                    const a = delta?.content || "";
-
-                    if (t || a) {
-                        // 累加到全量变量中
-                        fullThought += t;
-                        fullAnswer += a;
-                        // 返回当前已累计的所有内容
-                        yield { thought: fullThought, answer: fullAnswer };
-                    }
-                } catch (error) {
-                    console.warn("Failed to parse OpenAI SSE line:", error);
-                }
-            }
-        }
-    } finally {
-        reader.releaseLock();
-    }
-}
-async function* parseGoogleStream(
-    response: Response,
-): AsyncIterable<StreamChunk> {
-    const reader = response.body!.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-
-    // 维护全量内容
-    let fullThought = "";
-    let fullAnswer = "";
-
-    try {
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split("\n");
-            buffer = lines.pop() || "";
-
-            for (const line of lines) {
-                const trimmedLine = line.trim();
-                if (!trimmedLine || !trimmedLine.startsWith("data: ")) continue;
-
-                const jsonStr = trimmedLine.slice(6);
-                try {
-                    const data = JSON.parse(jsonStr);
-                    const parts = data.candidates?.[0]?.content?.parts || [];
-
-                    let hasNewContent = false;
-                    for (const part of parts) {
-                        if (part.thought === true || "thought" in part) {
-                            fullThought += part.text || "";
-                            hasNewContent = true;
-                        } else {
-                            fullAnswer += part.text || "";
-                            hasNewContent = true;
-                        }
-                    }
-
-                    if (hasNewContent) {
-                        // 返回包含之前所有内容的完整对象
-                        yield { thought: fullThought, answer: fullAnswer };
-                    }
-                } catch (error) {
-                    console.warn("Failed to parse Google SSE line:", error);
-                }
-            }
-        }
-    } finally {
-        reader.releaseLock();
-    }
-}
-
+/**
+ * 发起一次流式请求。所有协议相关逻辑（URL/鉴权头/请求体/流解析）都由对应的
+ * adapter 负责，这里只是「取 adapter → fetch」。
+ */
 export async function createStreamingRequest(
     config: AIConfig,
     apiKey: string,
-    messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
+    messages: ChatMessage[],
+    tools: Tool[],
     abortSignal?: AbortSignal,
 ): Promise<Response> {
-    const url = buildStreamingUrl(config);
-    const headers = buildStreamingHeaders(config.apiType, apiKey);
-    const body = buildStreamingBody(config, messages, {
+    const adapter = getAdapter(config.apiType);
+    const url = adapter.buildUrl(config);
+    const headers = adapter.buildHeaders(config, apiKey);
+    const body = adapter.buildBody(config, messages, tools, {
         temperature: 0.7,
-        // 默认提高到 8192：推理模型的思考过程也消耗 token，2000 太小会在思考阶段就被截断。
-        max_tokens: config.maxTokens ?? 8192,
+        // 默认 8192：推理模型的思考过程也消耗 token，太小会在思考阶段就被截断。
+        maxTokens: config.maxTokens ?? 8192,
     });
 
     return fetch(url, {
@@ -268,14 +79,22 @@ export async function createStreamingRequest(
     });
 }
 
+function parseStream(
+    config: AIConfig,
+    response: Response,
+): AsyncIterable<ProviderRequestChunk> {
+    return getAdapter(config.apiType).parseStream(response);
+}
+
 async function requestAIWithConfig(
-    messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
+    messages: TextMessage[],
     config: AIConfig,
 ): Promise<string> {
     const response = await createStreamingRequest(
         config,
         config.apiKey,
-        messages,
+        messages as ChatMessage[],
+        [],
     );
 
     if (!response.ok) {
@@ -285,13 +104,8 @@ async function requestAIWithConfig(
         );
     }
 
-    const parser =
-        config.apiType === "google-ai-studio"
-            ? parseGoogleStream
-            : parseOpenAIStream;
-
     let fullAnswer = "";
-    for await (const chunk of parser(response)) {
+    for await (const chunk of parseStream(config, response)) {
         if (chunk.answer?.trim() || chunk.thought?.trim()) {
             fullAnswer = chunk.answer || "";
         }
@@ -299,9 +113,7 @@ async function requestAIWithConfig(
     return fullAnswer;
 }
 
-export async function requestAI(
-    messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
-) {
+export async function requestAI(messages: TextMessage[]) {
     const config = getAIConfig();
     return requestAIWithConfig(messages, {
         ...config,
@@ -314,9 +126,7 @@ function getVoiceAIConfig(): AIConfig {
     return getAIConfig(id);
 }
 
-export async function requestAIForVoice(
-    messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
-) {
+export async function requestAIForVoice(messages: TextMessage[]) {
     const config = getVoiceAIConfig();
     return requestAIWithConfig(messages, {
         ...config,
@@ -324,10 +134,4 @@ export async function requestAIForVoice(
     });
 }
 
-export {
-    getAIConfig,
-    getVoiceAIConfig,
-    parseOpenAIStream,
-    parseGoogleStream,
-    requestAIWithConfig,
-};
+export { getAIConfig, getVoiceAIConfig, parseStream, requestAIWithConfig };

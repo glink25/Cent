@@ -1,12 +1,8 @@
 import { decodeApiKey } from "@/utils/api-key";
 import type { History, Provider, ToolMessage } from "../../../assistant";
 import { withAbort } from "../../../assistant/shared";
-import {
-    createStreamingRequest,
-    getAIConfig,
-    parseGoogleStream,
-    parseOpenAIStream,
-} from "../request";
+import type { ChatMessage } from "../adapters/types";
+import { createStreamingRequest, getAIConfig, parseStream } from "../request";
 
 function assetsToPrompt(
     assets: File[] | undefined,
@@ -48,13 +44,8 @@ function toolMessageToContent(toolMsg: ToolMessage): string {
     return content;
 }
 
-function historyToMessages(
-    history: History,
-): Array<{ role: "system" | "user" | "assistant"; content: string }> {
-    const messages: Array<{
-        role: "system" | "user" | "assistant";
-        content: string;
-    }> = [];
+function historyToMessages(history: History): ChatMessage[] {
+    const messages: ChatMessage[] = [];
 
     const assetIndex = 1;
     for (const msg of history) {
@@ -69,10 +60,18 @@ function historyToMessages(
                 content: `${assetPrompt ? `${assetPrompt}\n` : ""}${userContent}`,
             });
         } else if (msg.role === "assistant") {
-            messages.push({ role: "assistant", content: msg.raw });
-        } else if (msg.role === "tool") {
+            const tools = msg.formatted.tools;
             messages.push({
-                role: "user",
+                role: "assistant",
+                content: msg.formatted.answer ?? "",
+                ...(tools && tools.length > 0 ? { toolCalls: tools } : {}),
+            });
+        } else if (msg.role === "tool") {
+            // 工具结果作为带 tool_call_id 的原生 tool 消息回传，由 adapter 翻译。
+            messages.push({
+                role: "tool",
+                toolCallId: msg.formatted.id ?? "",
+                name: msg.formatted.name,
                 content: toolMessageToContent(msg),
             });
         } else if (msg.role === "system") {
@@ -87,28 +86,14 @@ function historyToMessages(
 }
 
 export const CentAIProvider: Provider = {
-    request({ history }) {
-        console.log("History:", history);
+    request({ history, tools }) {
         let aborted = false;
         let abortController: AbortController | null = null;
 
         const promise = (async () => {
             const config = getAIConfig();
             const apiKey = decodeApiKey(config.apiKey);
-
-            const messages = await (async () => {
-                // glm-4-flash 模型需要特殊的 system prompt 来引导模型更好地理解工具调用和上下文，因此当使用该模型时，替换掉原有的 system prompt
-                if (config.model === "glm-4-flash") {
-                    const StrictSystemPrompt = await import(
-                        "./strict-system-prompt.md?raw"
-                    );
-                    return historyToMessages([
-                        { role: "system", raw: StrictSystemPrompt.default },
-                        ...history.filter((m) => m.role !== "system"),
-                    ]);
-                }
-                return historyToMessages(history);
-            })();
+            const messages = historyToMessages(history);
 
             abortController = new AbortController();
             if (aborted) {
@@ -119,6 +104,7 @@ export const CentAIProvider: Provider = {
                 config,
                 apiKey,
                 messages,
+                tools,
                 abortController.signal,
             );
 
@@ -129,11 +115,7 @@ export const CentAIProvider: Provider = {
                 );
             }
 
-            if (config.apiType === "google-ai-studio") {
-                return parseGoogleStream(response);
-            } else {
-                return parseOpenAIStream(response);
-            }
+            return parseStream(config, response);
         })();
 
         return withAbort(promise, () => {

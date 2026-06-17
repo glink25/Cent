@@ -302,3 +302,12 @@ button {
 	--collaborator-color-8: var(--category-color-8);
 	--collaborator-color-9: var(--category-color-9);
 }
+
+.scrollbar-hidden {
+	-ms-overflow-style: none;
+	scrollbar-width: none;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+	display: none;
+}

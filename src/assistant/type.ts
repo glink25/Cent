@@ -13,7 +13,7 @@ export type AssistantMessage = {
         thought?: string;
         answer?: string;
         overview?: string;
-        tools?: { name: string; params: unknown }[];
+        tools?: { id: string; name: string; params: unknown }[];
     };
 };
 
@@ -21,6 +21,8 @@ export type ToolMessage = {
     role: "tool";
     raw: string;
     formatted: {
+        /** 原生 tool_call_id，用于把工具结果回传给对应的 assistant 调用。 */
+        id?: string;
         name: string;
         params: unknown;
         returns?: unknown;
@@ -47,9 +49,29 @@ export type AbortablePromise<T = unknown> = Promise<T> & {
 
 export type ProviderRequest = {
     history: History;
+    /** 本会话注册的全部工具，Provider 据此构造请求的原生 `tools` 字段。 */
+    tools: Tool[];
 };
 
-export type ProviderRequestChunk = { thought?: string; answer: string };
+/** 一次原生工具调用（OpenAI tool_call / Google functionCall 归一化后的形态）。 */
+export type ProviderToolCall = {
+    id: string;
+    name: string;
+    params: unknown;
+    /**
+     * Gemini 思考模型会给每个 functionCall 附带 thoughtSignature，回传对话时必须
+     * 原样带回，否则 400。仅 Google adapter 使用，其它协议忽略。
+     */
+    thoughtSignature?: string;
+};
+
+export type ProviderRequestChunk = {
+    thought?: string;
+    answer: string;
+    /** 仅在流结束、参数完整时填充。 */
+    toolCalls?: ProviderToolCall[];
+    finishReason?: "stop" | "tool_calls" | "length" | (string & {});
+};
 
 export type Provider = {
     request: (
