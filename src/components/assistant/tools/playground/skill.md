@@ -61,7 +61,7 @@ export default function main(input) {
 The runtime also injects a global async `tools` object. Every other tool registered in this
 session is available as `tools.<toolName>(params)` and returns a Promise:
 
-- `params` must match that tool's argument schema (see `listTools`).
+- `params` must match that tool's argument schema (shown in the tool's definition).
 - It resolves with the tool's return value (matching its return schema), or rejects with an error.
 - Calls made through `tools` do **not** appear in the conversation — they are internal to this
   playground run (just like `getFile`), so they do not consume context tokens.
