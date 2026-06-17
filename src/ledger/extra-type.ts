@@ -1,3 +1,4 @@
+import type { ZenPost } from "@/zen/types";
 import type { Bill, BillType } from "./type";
 
 /** 标签组可以快捷收纳标签，可以略过
@@ -113,6 +114,12 @@ export type PersonalMeta = {
     rates?: Record<string, number>;
     tagGroups?: BillTagGroup[];
     scheduleds?: Scheduled[];
+    zenPosts?: ZenPost[];
+    zen?: {
+        aiConfigId?: string;
+        frequency?: "daily" | "weekly" | "monthly" | "yearly";
+        scheduledTime?: string;
+    };
     customCSS?: string;
     homeWidgets?: string[]; // 首页展示的widget列表，元素为widget id
     assistant?: {

@@ -85,42 +85,48 @@ function historyToMessages(history: History): ChatMessage[] {
     return messages;
 }
 
-export const CentAIProvider: Provider = {
-    request({ history, tools }) {
-        let aborted = false;
-        let abortController: AbortController | null = null;
+export function createCentAIProvider(
+    getConfigId?: () => string | undefined,
+): Provider {
+    return {
+        request({ history, tools }) {
+            let aborted = false;
+            let abortController: AbortController | null = null;
 
-        const promise = (async () => {
-            const config = getAIConfig();
-            const apiKey = decodeApiKey(config.apiKey);
-            const messages = historyToMessages(history);
+            const promise = (async () => {
+                const config = getAIConfig(getConfigId?.());
+                const apiKey = decodeApiKey(config.apiKey);
+                const messages = historyToMessages(history);
 
-            abortController = new AbortController();
-            if (aborted) {
-                abortController.abort();
-            }
+                abortController = new AbortController();
+                if (aborted) {
+                    abortController.abort();
+                }
 
-            const response = await createStreamingRequest(
-                config,
-                apiKey,
-                messages,
-                tools,
-                abortController.signal,
-            );
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(
-                    `AI API 请求失败: ${response.status} ${response.statusText}. ${errorText}`,
+                const response = await createStreamingRequest(
+                    config,
+                    apiKey,
+                    messages,
+                    tools,
+                    abortController.signal,
                 );
-            }
 
-            return parseStream(config, response);
-        })();
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(
+                        `AI API 请求失败: ${response.status} ${response.statusText}. ${errorText}`,
+                    );
+                }
 
-        return withAbort(promise, () => {
-            aborted = true;
-            abortController?.abort();
-        });
-    },
-};
+                return parseStream(config, response);
+            })();
+
+            return withAbort(promise, () => {
+                aborted = true;
+                abortController?.abort();
+            });
+        },
+    };
+}
+
+export const CentAIProvider: Provider = createCentAIProvider();

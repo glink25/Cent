@@ -31,6 +31,7 @@ import { useUserStore } from "@/store/user";
 import { cn } from "@/utils";
 import { filterOrderedBillListByTimeRange } from "@/utils/filter";
 import { denseDate } from "@/utils/time";
+import { showZenDialog } from "@/zen";
 
 let ledgerAnimationShows = false;
 
@@ -159,6 +160,15 @@ export default function Page() {
                             {currentBook.name}
                         </button>
                     )}
+                    <button
+                        type="button"
+                        className="absolute bottom-2 right-4 text-xs opacity-70 cursor-pointer transition hover:opacity-100"
+                        onClick={() => {
+                            showZenDialog().catch(() => {});
+                        }}
+                    >
+                        {t("zen-button-label")}
+                    </button>
                 </div>
                 <Promotion />
                 {homeWidgets.length > 0 && (
@@ -220,7 +230,7 @@ export default function Page() {
                 </div>
                 <HintTooltip
                     persistKey={"cloudSyncHintShows"}
-                    content={"等待云同步完成后，其他设备即可获取最新的账单数据"}
+                    content={t("zen-cloud-sync-tooltip")}
                 >
                     <button
                         type="button"
