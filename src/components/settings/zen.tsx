@@ -1,6 +1,7 @@
 import { useZen } from "@/hooks/use-zen";
 import PopupLayout from "@/layouts/popup-layout";
 import { useIntl } from "@/locale";
+import { cn } from "@/utils";
 import createConfirmProvider from "../confirm";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -132,6 +133,8 @@ const [ZenSettingsProvider, showZenSettings] = createConfirmProvider(Form, {
 });
 
 export default function ZenSettingsItem() {
+    const tagNewClassName = `relative after:content-['new'] after:rounded after:bg-[red] after:text-white after:px-[2px] after:text-[8px] after:block after:absolute after:top-0 after:right-0 after:translate-x-[calc(100%+4px)]`;
+
     const t = useIntl();
     return (
         <div className="zen-settings">
@@ -140,10 +143,15 @@ export default function ZenSettingsItem() {
                     showZenSettings();
                 }}
                 variant="ghost"
-                className="w-full py-4 rounded-none h-auto"
+                className={"w-full py-4 rounded-none h-auto"}
             >
                 <div className="w-full px-4 flex justify-between items-center">
-                    <div className="flex items-center gap-2">
+                    <div
+                        className={cn(
+                            tagNewClassName,
+                            "flex items-center gap-2",
+                        )}
+                    >
                         <i className="icon-[mdi--meditation] size-5"></i>
                         {t("zen-settings-title")}
                     </div>
