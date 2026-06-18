@@ -59,7 +59,7 @@ function ZenPostsForm({ onCancel }: { onCancel?: () => void }) {
     return (
         <div
             className={cn(
-                "zen-root zen-text relative flex h-full flex-col overflow-hidden p-4 sm:p-6",
+                "zen-root zen-text relative flex h-full flex-col overflow-hidden px-4 sm:px-6 pt-[max(var(--safe-area-inset-top),20px)] pb-[max(var(--safe-area-inset-bottom),20px)]",
                 `zen-style-${styleName}`,
             )}
         >
