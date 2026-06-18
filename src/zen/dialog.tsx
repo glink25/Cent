@@ -1322,6 +1322,10 @@ function ZenDialogForm({
                     updatedAt: Date.now(),
                 };
                 await updateActive(current, nextSession, nextContext);
+            } catch (error) {
+                const message =
+                    error instanceof Error ? error.message : String(error);
+                setState({ type: "error", message });
             } finally {
                 setPending(false);
             }

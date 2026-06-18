@@ -212,57 +212,44 @@ export async function requestNextZenStep({
     };
 
     const systemPrompt = await zenSystemPromptLoaded;
-    try {
-        const runDirector = async (correction?: string) => {
-            const next = createSession({
-                history: stripSystemMessages(session.history ?? []),
-                provider: ZenAIProvider,
-                tools: [
-                    DecideZenFocusTool,
-                    ShowZenStepTool,
-                    GetRecentZenPostsTool,
-                    AnalyzeBillsTool,
-                    QueryBillsTool,
-                    GetAccountMetaTool,
-                ] as Tool[],
-                skills: [],
-                systemPrompt,
-                maxToolRounds: 6,
-            });
-            const stream = await next({
-                message: JSON.stringify({ ...payload, correction }),
-                assets: [],
-            });
-            let history: History = session.history ?? [];
-            for await (const chunk of stream) history = chunk.history;
-            const step = getLatestZenStep(history);
-            if (!step) throw new Error("AI did not submit a Zen UI step.");
-            return { step, history };
-        };
+    const runDirector = async (correction?: string) => {
+        const next = createSession({
+            history: stripSystemMessages(session.history ?? []),
+            provider: ZenAIProvider,
+            tools: [
+                DecideZenFocusTool,
+                ShowZenStepTool,
+                GetRecentZenPostsTool,
+                AnalyzeBillsTool,
+                QueryBillsTool,
+                GetAccountMetaTool,
+            ] as Tool[],
+            skills: [],
+            systemPrompt,
+            maxToolRounds: 6,
+        });
+        const stream = await next({
+            message: JSON.stringify({ ...payload, correction }),
+            assets: [],
+        });
+        let history: History = session.history ?? [];
+        for await (const chunk of stream) history = chunk.history;
+        const step = getLatestZenStep(history);
+        if (!step) throw new Error("AI did not submit a Zen UI step.");
+        return { step, history };
+    };
 
-        let result = await runDirector();
-        const firstInvalidReason = invalidStepReason(
-            result.step,
-            session,
-            context,
-        );
-        if (firstInvalidReason) {
-            result = await runDirector(firstInvalidReason);
-        }
-        const finalInvalidReason = invalidStepReason(
-            result.step,
-            session,
-            context,
-        );
-        if (finalInvalidReason) throw new Error(finalInvalidReason);
-        return {
-            step: normalizeStepProgress(result.step, session),
-            history: stripSystemMessages(result.history),
-            usedFallback: false,
-            focusDecision: latestFocusDecision,
-        };
-    } catch (error) {
-        console.warn("[zen] fallback step used", error);
-        return createFallbackResult(session, context);
+    let result = await runDirector();
+    const firstInvalidReason = invalidStepReason(result.step, session, context);
+    if (firstInvalidReason) {
+        result = await runDirector(firstInvalidReason);
     }
+    const finalInvalidReason = invalidStepReason(result.step, session, context);
+    if (finalInvalidReason) throw new Error(finalInvalidReason);
+    return {
+        step: normalizeStepProgress(result.step, session),
+        history: stripSystemMessages(result.history),
+        usedFallback: false,
+        focusDecision: latestFocusDecision,
+    };
 }

@@ -130,10 +130,10 @@ export default function SettingsForm({
                         <div className="text-xs opacity-60 px-8">{t("ai")}</div>
                         <div className="flex flex-col divide-y">
                             <AssistantSettingsItem />
+                            <ZenSettingsItem />
                             <AgentApiSettingsItem />
                             {showRelyr && <QuickEntrySettingsItem />}
                             <VoiceSettingsItem />
-                            <ZenSettingsItem />
                         </div>
                     </div>
                     <div>

@@ -42,8 +42,14 @@ function Form({ onCancel }: { onCancel?: () => void }) {
             onBack={onCancel}
             className="h-full overflow-hidden"
         >
-            <div className="flex-1 flex flex-col overflow-y-auto py-4">
-                <div className="w-full min-h-10 pb-4 flex-shrink-0 flex justify-between items-center px-4 gap-2">
+            <div className="flex-1 flex flex-col overflow-y-auto py-4 divide-y">
+                <div className="w-full min-h-10 pb-4 flex-shrink-0 flex flex-col justify-between items-center px-4 gap-2">
+                    <i className="icon-[mdi--meditation] size-10"></i>
+                    <div className="text-center text-xs opacity-70">
+                        {t("zen-settings-desc")}
+                    </div>
+                </div>
+                <div className="w-full min-h-10 flex-shrink-0 flex py-2 justify-between items-center px-4 gap-2">
                     <div className="text-sm min-w-0 flex-1">
                         <div>{t("zen-enable")}</div>
                         <div className="text-xs opacity-60">
@@ -64,7 +70,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                         }}
                     />
                 </div>
-                <div className="w-full min-h-10 pb-4 flex-shrink-0 flex justify-between items-center px-4 gap-2">
+                <div className="w-full min-h-10 flex-shrink-0 flex py-2 justify-between items-center px-4 gap-2">
                     <div className="text-sm min-w-0 flex-1">
                         <div>{t("zen-ai-model")}</div>
                     </div>
@@ -98,7 +104,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                     </Select>
                 </div>
 
-                <div className="w-full min-h-10 pb-4 flex-shrink-0 flex justify-between items-center px-4 gap-2">
+                <div className="w-full min-h-10 flex-shrink-0 flex py-2 justify-between items-center px-4 gap-2">
                     <div className="text-sm min-w-0 flex-1">
                         <div>{t("zen-scheduled-time")}</div>
                     </div>
