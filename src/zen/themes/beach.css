@@ -6,7 +6,7 @@
  * 上方涌下、漫过画面后安静淡去退回，二者相差半个周期交替起落。
  * 迁移自 beach.html：严格保留核心海浪动画与玻璃表单质感。
  * ============================================================ */
-.zen-root.zen-style-2 {
+.zen-root.zen-style-beach {
 	position: relative; /* 为海浪伪元素提供定位基准 */
 	overflow: hidden;
 
@@ -129,8 +129,8 @@
 }
 
 /* 海浪冲刷层（迁移自 beach.html body::before / body::after，waveWash） */
-.zen-root.zen-style-2::before,
-.zen-root.zen-style-2::after {
+.zen-root.zen-style-beach::before,
+.zen-root.zen-style-beach::after {
 	content: "";
 	position: absolute;
 	z-index: 0;
@@ -214,10 +214,10 @@
 	animation: zen-wave-wash 18s ease-in-out infinite;
 }
 /* 第二道浪错峰半个周期，与第一道交替起落 */
-.zen-root.zen-style-2::after {
+.zen-root.zen-style-beach::after {
 	animation-delay: -9s;
 }
-.dark .zen-root.zen-style-2 {
+.dark .zen-root.zen-style-beach {
 	/* same with light */
 }
 
@@ -250,15 +250,15 @@
 
 /* 降低动态偏好：停掉海浪动画，留一道静止的浪（迁移自 beach.html） */
 @media (prefers-reduced-motion: reduce) {
-	.zen-root.zen-style-2::before,
-	.zen-root.zen-style-2::after {
+	.zen-root.zen-style-beach::before,
+	.zen-root.zen-style-beach::after {
 		animation: none;
 	}
-	.zen-root.zen-style-2::before {
+	.zen-root.zen-style-beach::before {
 		opacity: 0.82;
 		transform: translate3d(0, 18vh, 0);
 	}
-	.zen-root.zen-style-2::after {
+	.zen-root.zen-style-beach::after {
 		opacity: 0;
 	}
 }

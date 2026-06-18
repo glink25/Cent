@@ -11,8 +11,21 @@ export function getZenDayId(now = dayjs()): ZenDayId {
     return now.format("YYYY-MM-DD");
 }
 
-/** 可用的 Zen 预设风格数量，与 zen.css 中的 .zen-style-{0..N-1} 一一对应。 */
-export const ZEN_STYLE_COUNT = 5;
+/**
+ * 可用的 Zen 预设风格名（语义化），与 zen.css / themes/*.css 中的
+ * .zen-style-{name} 选择器一一对应；数组顺序即每日轮换顺序。
+ * `default` 直接沿用 zen.css 基线 token，无独立选择器。
+ */
+export const ZEN_STYLE_NAMES = [
+    "default",
+    "aurora",
+    "beach",
+    "red-moon",
+    "rain",
+    "star-night",
+] as const;
+
+export type ZenStyleName = (typeof ZEN_STYLE_NAMES)[number];
 
 /**
  * 按日期计算出一个稳定的预设风格序号（当天不变，逐日轮换）。
@@ -20,10 +33,15 @@ export const ZEN_STYLE_COUNT = 5;
  */
 export function getZenStyleIndex(
     now = dayjs(),
-    count = ZEN_STYLE_COUNT,
+    count = ZEN_STYLE_NAMES.length,
 ): number {
     const dayOfYear = now.diff(now.startOf("year"), "day");
     return ((dayOfYear % count) + count) % count;
+}
+
+/** 当天对应的语义化风格名，用于拼出 `zen-style-{name}` 类。 */
+export function getZenStyleName(now = dayjs()): ZenStyleName {
+    return ZEN_STYLE_NAMES[getZenStyleIndex(now)];
 }
 
 export function getDailyZenPeriod(now = dayjs()): ZenPeriod {

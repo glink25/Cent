@@ -17,7 +17,7 @@ import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
 import { cn } from "@/utils";
 import { buildZenContext } from "./analyzer";
-import { getZenDayId, getZenSessionKey, getZenStyleIndex } from "./date";
+import { getZenDayId, getZenSessionKey, getZenStyleName } from "./date";
 import { requestNextZenStep } from "./director";
 import { createFallbackEpilogueStep } from "./fallback";
 import { getPersonalZenPosts, getZenPostById, upsertZenPost } from "./posts";
@@ -154,7 +154,7 @@ function CardShell({
  * 当前所有主题（流动/沙滩/红日/繁星）均由纯 CSS 伪元素实现，不经过此处；
  * 保留此扩展点以便未来需要多节点粒子的主题接入。
  */
-function ZenBackdropFx(_props: { styleIndex: number }) {
+function ZenBackdropFx(_props: { styleName: string }) {
     return null;
 }
 
@@ -1104,7 +1104,7 @@ function ZenDialogForm({
     const [state, setState] = useState<ZenDialogState>({ type: "loading" });
     const [pending, setPending] = useState(false);
     const todayLabel = useMemo(() => dayjs().format("YYYY-MM-DD"), []);
-    const styleIndex = useMemo(() => getZenStyleIndex(), []);
+    const styleName = useMemo(() => getZenStyleName(), []);
 
     useEffect(() => {
         let cancelled = false;
@@ -1349,12 +1349,12 @@ function ZenDialogForm({
             data-status={pending ? "loading" : "ready"}
             className={cn(
                 "zen-root zen-text zen-gradient-drift relative h-full overflow-hidden",
-                `zen-style-1 ${styleIndex}`,
+                `zen-style-${styleName}`,
                 isBackgroundFocused && "zen-gradient-focus",
             )}
         >
             <div className="zen-overlay pointer-events-none absolute inset-0" />
-            <ZenBackdropFx styleIndex={styleIndex} />
+            <ZenBackdropFx styleName={styleName} />
             <div className="relative mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col gap-5 px-4 py-5 sm:px-6 sm:py-7">
                 <div className="zen-header-bar flex shrink-0 items-center justify-between gap-3 rounded-full px-3 py-2">
                     <div>

@@ -50,7 +50,7 @@
 	initial-value: 0;
 }
 
-.zen-root.zen-style-4 {
+.zen-root.zen-style-rain {
 	position: relative; /* 为雨丝 / 涟漪伪元素提供定位基准 */
 	overflow: hidden;
 
@@ -157,7 +157,7 @@
 /* 雨丝层（迁移自 rain.html body::before，rainFall）
  * 整层 rotate(-14deg)，background-position-y 向下移动，
  * 雨丝方向与位移方向保持一致不错位。 */
-.zen-root.zen-style-4::before {
+.zen-root.zen-style-rain::before {
 	content: "";
 	position: absolute;
 	inset: -35vh -24vw;
@@ -199,7 +199,7 @@
 }
 
 /* 底部涟漪层（迁移自 rain.html body::after，rippleField） */
-.zen-root.zen-style-4::after {
+.zen-root.zen-style-rain::after {
 	content: "";
 	position: absolute;
 	inset: 0;
@@ -236,7 +236,7 @@
 	animation: zen-rain-ripple 8.6s linear infinite;
 }
 
-.dark .zen-root.zen-style-4 {
+.dark .zen-root.zen-style-rain {
 	/* same with light */
 }
 

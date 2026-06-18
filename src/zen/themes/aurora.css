@@ -6,7 +6,7 @@
  * ::before 为强模糊多彩光斑随 aurora-flow 流动，
  * ::after 为锥形渐变随 aurora-drift 漂移。
  * ============================================================ */
-.zen-root.zen-style-1 {
+.zen-root.zen-style-aurora {
 	position: relative;
 	overflow: hidden;
 
@@ -122,7 +122,7 @@
 		0 10px 26px rgba(126, 88, 255, 0.4), 0 0 0 7px rgba(255, 255, 255, 0.6);
 }
 /* 强模糊多彩光斑层（随 aurora-flow 缓缓流动） */
-.zen-root.zen-style-1::before {
+.zen-root.zen-style-aurora::before {
 	content: "";
 	position: absolute;
 	inset: -35%;
@@ -164,7 +164,7 @@
 	animation: aurora-flow 18s ease-in-out infinite alternate;
 }
 /* 锥形渐变层（更柔的底色流动，随 aurora-drift 漂移） */
-.zen-root.zen-style-1::after {
+.zen-root.zen-style-aurora::after {
 	content: "";
 	position: absolute;
 	inset: -20%;
@@ -187,7 +187,7 @@
 	mask: radial-gradient(circle at 50% 50%, #000 10%, transparent 58%);
 	animation: aurora-drift 28s ease-in-out infinite alternate;
 }
-.dark .zen-root.zen-style-1 {
+.dark .zen-root.zen-style-aurora {
 	/* same with light */
 }
 

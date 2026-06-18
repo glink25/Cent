@@ -2,7 +2,7 @@
  * 预设 3：红日 redmoon已完成)
  * ============================================================ */
 
-.zen-root.zen-style-3 {
+.zen-root.zen-style-red-moon {
 	position: relative; /* 必须：为伪元素提供定位基准 */
 	background: #000000; /* 保持父级纯黑底色 */
 	overflow: hidden; /* 开启裁剪，防止红日放大时溢出画布 */
@@ -152,6 +152,6 @@
 		background-position: 0% -2%;
 	}
 }
-.dark .zen-root.zen-style-3 {
+.dark .zen-root.zen-style-red-moon {
 	/* same with light */
 }

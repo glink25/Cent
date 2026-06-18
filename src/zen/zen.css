@@ -9,11 +9,12 @@
  * 设计：语义化 CSS 变量 + 语义类。
  * - `.zen-root` 定义所有主题 token 的「基线默认值」（亮色玻璃风），作为各风格未覆盖项的回退。
  * - `.dark .zen-root` 定义基线暗色值。
- * - `.zen-root.zen-style-{0..4}` 为 5 个自包含动效主题，在各自块内整体覆盖背景、强调色族
- *   及（深底主题）文字/卡片等 token；`.dark` 版只写「same as light」，忽略系统明暗。
+ * - `.zen-root.zen-style-{aurora,beach,red-moon,rain,star-night}` 为各自包含的动效主题，
+ *   在各自块内整体覆盖背景、强调色族及（深底主题）文字/卡片等 token；
+ *   `.dark` 版只写「same as light」，忽略系统明暗。`zen-style-default` 直接沿用本文件基线 token。
  * - 语义类（.zen-card / .zen-surface / .zen-btn …）只引用 token，预设切换即整体重新着色。
  *
- * 风格索引由 src/zen/date.ts 的 getZenStyleIndex() 按日期计算，每天稳定轮换。
+ * 风格名由 src/zen/date.ts 的 getZenStyleName() 按日期计算，每天稳定轮换。
  */
 
 /* ============================================================
@@ -523,17 +524,15 @@
 	.zen-gradient-drift,
 	.zen-gradient-focus,
 	.zen-card-enter,
-	.zen-root.zen-style-0::before,
-	.zen-root.zen-style-0::after,
-	.zen-root.zen-style-1::before,
-	.zen-root.zen-style-1::after,
-	.zen-root.zen-style-2::before,
-	.zen-root.zen-style-2::after,
-	.zen-root.zen-style-3::before,
-	.zen-root.zen-style-4::before,
-	.zen-root.zen-style-4::after,
-	.zen-root.zen-style-5::before,
-	.zen-root.zen-style-5::after {
+	.zen-root.zen-style-aurora::before,
+	.zen-root.zen-style-aurora::after,
+	.zen-root.zen-style-beach::before,
+	.zen-root.zen-style-beach::after,
+	.zen-root.zen-style-red-moon::before,
+	.zen-root.zen-style-rain::before,
+	.zen-root.zen-style-rain::after,
+	.zen-root.zen-style-star-night::before,
+	.zen-root.zen-style-star-night::after {
 		animation: none;
 	}
 }

@@ -8,7 +8,7 @@
  * 迁移自 star-night.html：严格保留核心星空/月亮动画与玻璃表单质感。
  * ============================================================ */
 
-.zen-root.zen-style-5 {
+.zen-root.zen-style-star-night {
 	position: relative; /* 为月亮 / 星空伪元素提供定位基准 */
 	overflow: hidden;
 
@@ -122,7 +122,7 @@
 
 /* 固定月亮层（迁移自 star-night.html body::before）
  * 月亮不参与旋转，只做极轻微的光晕呼吸 moonBreath。 */
-.zen-root.zen-style-5::before {
+.zen-root.zen-style-star-night::before {
 	content: "";
 	position: absolute;
 	top: 12%;
@@ -149,7 +149,7 @@
 /* 星空层（迁移自 star-night.html body::after）
  * 整片星空作为一个巨大平面，围绕屏幕下方同一点（transform-origin 50% 82%）
  * 缓慢旋转 skyRotate，叠加 starBreath 让星光明暗呼吸。 */
-.zen-root.zen-style-5::after {
+.zen-root.zen-style-star-night::after {
 	content: "";
 	position: absolute;
 	left: 50%;
@@ -199,7 +199,7 @@
 		zen-star-breath 8s ease-in-out infinite;
 }
 
-.dark .zen-root.zen-style-5 {
+.dark .zen-root.zen-style-star-night {
 	/* same with light */
 }
 

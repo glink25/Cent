@@ -139,14 +139,14 @@ export default function Page() {
             <div className="flex flex-wrap flex-col w-full gap-2">
                 <div
                     data-today-overview
-                    className="bg-stone-800 text-background dark:bg-foreground/20 dark:text-foreground relative h-20 w-full flex justify-end rounded-lg sm:flex-1 p-4"
+                    className="bg-stone-800 text-background dark:bg-foreground/20 dark:text-foreground relative h-20 w-full flex justify-end rounded-lg sm:flex-1 px-4 py-2"
                 >
                     <span className="absolute top-2 left-4">
                         {denseDate(currentDate)}
                     </span>
                     <AnimatedNumber
                         value={currentDateAmount}
-                        className="font-bold text-4xl "
+                        className="font-bold text-4xl pb-4"
                     />
                     {currentBook && (
                         <button
@@ -162,7 +162,7 @@ export default function Page() {
                     )}
                     <button
                         type="button"
-                        className="absolute bottom-2 right-4 text-xs opacity-70 cursor-pointer transition hover:opacity-100"
+                        className="absolute bottom-2 rounded-full bg-background/20 inline-flex justify-center items-center px-2 right-4 text-xs opacity-70 cursor-pointer transition hover:opacity-100"
                         onClick={() => {
                             showZenDialog().catch(() => {});
                         }}
