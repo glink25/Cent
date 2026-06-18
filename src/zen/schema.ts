@@ -190,7 +190,7 @@ export const ZenUIStepSchema = z.object({
     ]),
     progress: z.object({
         current: z.number().int().min(1),
-        max: z.number().int().min(1).max(5),
+        max: z.number().int().min(1).max(12),
         shouldEndSoon: z.boolean(),
     }),
     dataBindings: z
@@ -205,6 +205,24 @@ export const ZenUIStepSchema = z.object({
         waitForUserInput: z.boolean(),
         allowedUserActions: z.array(z.string()).min(1),
     }),
+    directorState: z
+        .object({
+            phase: z.enum([
+                "focus",
+                "evidence",
+                "meaning",
+                "pattern",
+                "intention",
+                "closing",
+            ]),
+            coveredDimensions: z.array(
+                z.enum(["data_pattern", "context_motivation", "feeling_value"]),
+            ),
+            lastResponseSummary: z.string().max(200).optional(),
+            insightSummary: z.string().max(200).optional(),
+            openQuestion: z.string().max(200).optional(),
+        })
+        .optional(),
 });
 
 export const ZenPostSchema = z.object({

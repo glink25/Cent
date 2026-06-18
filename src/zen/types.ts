@@ -34,6 +34,37 @@ export type ZenUIStepIntent =
     | "summary"
     | "ending";
 
+export type ZenExplorationDimension =
+    | "data_pattern"
+    | "context_motivation"
+    | "feeling_value";
+
+export type ZenExplorationPhase =
+    | "focus"
+    | "evidence"
+    | "meaning"
+    | "pattern"
+    | "intention"
+    | "closing";
+
+export type ZenJourneyPlan = {
+    daysSinceLastZen?: number;
+    targetSteps: number;
+    earliestEpilogueStep: number;
+    hardMaxSteps: number;
+    extensionUsed: boolean;
+};
+
+export type ZenExplorationState = {
+    phase: ZenExplorationPhase;
+    coveredDimensions: ZenExplorationDimension[];
+    meaningfulResponseCount: number;
+    consecutiveSkips: number;
+    lastResponseSummary?: string;
+    insightSummary?: string;
+    openQuestion?: string;
+};
+
 export type ThemeSelectorCard = {
     type: "ThemeSelectorCard";
     title: string;
@@ -183,6 +214,15 @@ export type ZenUIStep = {
         waitForUserInput: boolean;
         allowedUserActions: string[];
     };
+    /** AI Director 的隐藏编排状态，不直接渲染。 */
+    directorState?: Pick<
+        ZenExplorationState,
+        | "phase"
+        | "coveredDimensions"
+        | "lastResponseSummary"
+        | "insightSummary"
+        | "openQuestion"
+    >;
 };
 
 export type ZenInsight = {
@@ -217,6 +257,8 @@ export type ZenSessionState = {
     steps: ZenSessionStep[];
     extractedInsights: ZenInsight[];
     finalIntention?: ZenIntention;
+    journeyPlan: ZenJourneyPlan;
+    exploration: ZenExplorationState;
     status: "active" | "completed" | "cancelled";
     currentStep?: ZenUIStep;
     history?: History;
@@ -345,5 +387,11 @@ export type ZenContext = {
         amount: number;
         time: number;
         comment?: string;
+    }[];
+    habitPatterns: {
+        id: string;
+        label: string;
+        evidence: string;
+        billIds: string[];
     }[];
 };

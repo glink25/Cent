@@ -764,6 +764,8 @@ type ZenSessionState = {
   steps: ZenSessionStep[];
   extractedInsights: ZenInsight[];
   finalIntention?: ZenIntention;
+  journeyPlan: ZenJourneyPlan;
+  exploration: ZenExplorationState;
   status: "active" | "completed" | "cancelled";
   createdAt: number;
   updatedAt: number;
@@ -803,7 +805,7 @@ AI 角色：
 5. 不要制造羞耻感。
 6. 不要给投资、医疗、心理治疗建议。
 7. 除非用户确认，不要要求修改预算或账单。
-8. 交互最多 5 轮，接近上限时必须收束。
+8. 旅程长度根据距离上次 Zen 的时间在 4-10 张之间计算；只有达到最低探索深度后才能收束，绝对上限为 12 张。
 9. 优先使用用户最近数据中的真实信号。
 10. 如果数据平淡，则转向感谢、价值观、愿景或轻量复盘。
 
@@ -843,9 +845,14 @@ AI 角色：
   "sessionState": {},
   "lastUserInput": {},
   "constraints": {
-    "maxSteps": 5,
-    "currentStep": 3,
-    "mustEndIfCurrentStepGte": 5,
+    "targetSteps": 8,
+    "earliestEpilogueStep": 8,
+    "hardMaxSteps": 8,
+    "currentStep": 5,
+    "minimumExploration": {
+      "requiredCoveredDimensions": 2,
+      "requiredMeaningfulResponses": 2
+    },
     "avoidComponentTypes": ["SliderCard"],
     "recentUsedCardTags": ["time_exchange"]
   }
@@ -1047,11 +1054,11 @@ Zen Mode 可以成为 Cent 区别于传统记账 App 的核心体验。
 
 它将记账从“记录过去”推进到“理解自己”，从“预算控制”推进到“财务正念”，从“图表分析”推进到“AI 生成式复盘”。
 
-产品上，它应该是一段短、柔和、可重复但不重复的沉浸体验。
+产品上，它应该是一段柔和、可重复但不重复的沉浸体验；刚完成过 Zen 时保持轻盈，间隔越久则允许更充分地探索。
 
 技术上，它应该是一个由 AI Director 驱动的 Generative UI 系统：前端提供安全、可控、可组合的交互组件；AI 只负责选择组件、生成文案和推进节奏；本地分析器负责把账单数据转化为稳定、低敏、结构化的上下文。
 
-第一版不需要做得很复杂。只要完成“AI 生成主题 → 用户选择 → AI 生成 2-3 张反思卡 → 生成结语与意图”，就已经可以验证 Zen Mode 的核心价值。
+核心路径是“AI 生成主题 → 用户选择 → 围绕事实、情境与感受逐层探索 → 生成结语与意图”。编排层负责最低探索深度和结束边界，避免 AI 过早追求闭环。
 
 # 与项目结合
 

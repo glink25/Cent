@@ -480,7 +480,11 @@ export function createFallbackReflectionStep({
     context: ZenContext;
 }): ZenUIStep {
     const round = session.steps.length;
-    const factory = MOCK_STEP_SEQUENCE[round] ?? buildInsightStep;
+    const candidate = MOCK_STEP_SEQUENCE[round];
+    const factory =
+        !candidate || candidate === buildIntentionStep
+            ? buildFreeInputStep
+            : candidate;
     return factory({ session, context, round });
 }
 

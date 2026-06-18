@@ -14,7 +14,12 @@ import {
 import { createCentAIProvider } from "@/components/assistant/tools/provider";
 import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
-import { createFallbackZenStep } from "./fallback";
+import {
+    createFallbackEpilogueStep,
+    createFallbackReflectionStep,
+    createFallbackZenStep,
+} from "./fallback";
+import { canShowEpilogue, canShowIntention } from "./journey";
 import { getPersonalZenPosts } from "./posts";
 import {
     ZenFocusDecisionSchema,
@@ -27,8 +32,6 @@ import type {
     ZenSessionState,
     ZenUIStep,
 } from "./types";
-
-const MAX_STEPS = 10;
 
 const ShowZenStepTool = createTool({
     name: "showZenStep",
@@ -69,7 +72,7 @@ function createDecideZenFocusTool(
 // ./zen-director.md closure
 const zenSystemPromptLoaded = (async () => {
     const prompt = await import("./zen-director.md?raw");
-    return prompt.default.replace("${MAX_STEPS}", MAX_STEPS.toString());
+    return prompt.default;
 })();
 
 const ZenAIProvider = createCentAIProvider(() => {
@@ -95,6 +98,50 @@ function getLatestZenStep(history: History): ZenUIStep | undefined {
 
 function getFallbackStep(session: ZenSessionState, context: ZenContext) {
     return createFallbackZenStep({ session, context });
+}
+
+function normalizeStepProgress(
+    step: ZenUIStep,
+    session: ZenSessionState,
+): ZenUIStep {
+    const current = Math.max(1, session.steps.length + 1);
+    return {
+        ...step,
+        sessionId: session.id,
+        progress: {
+            current,
+            max: session.journeyPlan.hardMaxSteps,
+            shouldEndSoon:
+                current >= session.journeyPlan.earliestEpilogueStep - 1,
+        },
+    };
+}
+
+function invalidStepReason(
+    step: ZenUIStep,
+    session: ZenSessionState,
+    context: ZenContext,
+) {
+    const current = session.steps.length + 1;
+    if (
+        step.component.type === "ZenEpilogueCard" &&
+        !canShowEpilogue(session, context, current)
+    ) {
+        return "结语出现得太早：继续承接用户回答，并探索尚未覆盖的维度。";
+    }
+    if (
+        step.component.type === "IntentionCard" &&
+        !canShowIntention(session, context)
+    ) {
+        return "意图卡出现得太早：先探索至少两个维度，并获得至少两次有效回应。";
+    }
+    if (
+        current >= session.journeyPlan.hardMaxSteps &&
+        step.component.type !== "ZenEpilogueCard"
+    ) {
+        return "已经到达硬上限，本轮必须生成 ZenEpilogueCard。";
+    }
+    return undefined;
 }
 
 export async function requestNextZenStep({
@@ -124,9 +171,15 @@ export async function requestNextZenStep({
         },
         lastUserInput,
         constraints: {
-            maxSteps: MAX_STEPS,
+            targetSteps: session.journeyPlan.targetSteps,
+            earliestEpilogueStep: session.journeyPlan.earliestEpilogueStep,
+            hardMaxSteps: session.journeyPlan.hardMaxSteps,
             currentStep: Math.max(1, session.steps.length + 1),
-            mustEndIfCurrentStepGte: MAX_STEPS,
+            minimumExploration: {
+                requiredCoveredDimensions: 2,
+                requiredMeaningfulResponses: 2,
+            },
+            extensionUsed: session.journeyPlan.extensionUsed,
             avoidComponentTypes: previousComponentType
                 ? [previousComponentType]
                 : [],
@@ -136,46 +189,66 @@ export async function requestNextZenStep({
 
     const systemPrompt = await zenSystemPromptLoaded;
     try {
-        const next = createSession({
-            history: stripSystemMessages(session.history ?? []),
-            provider: ZenAIProvider,
-            tools: [
-                DecideZenFocusTool,
-                ShowZenStepTool,
-                GetRecentZenPostsTool,
-                AnalyzeBillsTool,
-                QueryBillsTool,
-                GetAccountMetaTool,
-            ] as Tool[],
-            skills: [],
-            systemPrompt,
-            maxToolRounds: 6,
-        });
-        const stream = await next({
-            message: JSON.stringify(payload),
-            assets: [],
-        });
+        const runDirector = async (correction?: string) => {
+            const next = createSession({
+                history: stripSystemMessages(session.history ?? []),
+                provider: ZenAIProvider,
+                tools: [
+                    DecideZenFocusTool,
+                    ShowZenStepTool,
+                    GetRecentZenPostsTool,
+                    AnalyzeBillsTool,
+                    QueryBillsTool,
+                    GetAccountMetaTool,
+                ] as Tool[],
+                skills: [],
+                systemPrompt,
+                maxToolRounds: 6,
+            });
+            const stream = await next({
+                message: JSON.stringify({ ...payload, correction }),
+                assets: [],
+            });
+            let history: History = session.history ?? [];
+            for await (const chunk of stream) history = chunk.history;
+            const step = getLatestZenStep(history);
+            if (!step) throw new Error("AI did not submit a Zen UI step.");
+            return { step, history };
+        };
 
-        let latestHistory: History = session.history ?? [];
-        for await (const chunk of stream) {
-            latestHistory = chunk.history;
+        let result = await runDirector();
+        const firstInvalidReason = invalidStepReason(
+            result.step,
+            session,
+            context,
+        );
+        if (firstInvalidReason) {
+            result = await runDirector(firstInvalidReason);
         }
-
-        const step = getLatestZenStep(latestHistory);
-        if (!step) {
-            throw new Error("AI did not submit a Zen UI step.");
-        }
+        const finalInvalidReason = invalidStepReason(
+            result.step,
+            session,
+            context,
+        );
+        if (finalInvalidReason) throw new Error(finalInvalidReason);
         return {
-            step,
-            history: stripSystemMessages(latestHistory),
+            step: normalizeStepProgress(result.step, session),
+            history: stripSystemMessages(result.history),
             usedFallback: false,
             focusDecision: latestFocusDecision,
         };
     } catch (error) {
         console.warn("[zen] fallback step used", error);
-        const fallback = await getFallbackStep(session, context);
+        const current = session.steps.length + 1;
+        const fallback =
+            current >= session.journeyPlan.hardMaxSteps
+                ? createFallbackEpilogueStep(session)
+                : await getFallbackStep(session, context);
+        const guardedFallback = invalidStepReason(fallback, session, context)
+            ? createFallbackReflectionStep({ session, context })
+            : fallback;
         return {
-            step: fallback,
+            step: normalizeStepProgress(guardedFallback, session),
             history: stripSystemMessages(session.history ?? []),
             usedFallback: true,
             focusDecision: undefined,

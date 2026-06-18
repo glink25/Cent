@@ -133,6 +133,72 @@ export function analyzeZenPeriod({
     const periodExpenseBills = periodBills.filter(
         (bill) => bill.type === "expense",
     );
+    const habitPatterns: ZenContext["habitPatterns"] = [];
+
+    const weekendBills = periodExpenseBills.filter((bill) => {
+        const day = dayjs(bill.time).day();
+        return day === 0 || day === 6;
+    });
+    if (
+        periodExpenseBills.length >= 4 &&
+        weekendBills.length / periodExpenseBills.length >= 0.6
+    ) {
+        habitPatterns.push({
+            id: "weekend-concentration",
+            label: "支出更多发生在周末",
+            evidence: `${weekendBills.length}/${periodExpenseBills.length} 笔支出发生在周末。`,
+            billIds: weekendBills.slice(0, 8).map((bill) => bill.id),
+        });
+    }
+
+    const timeBuckets = [
+        { id: "morning", label: "上午", start: 5, end: 11 },
+        { id: "afternoon", label: "下午", start: 11, end: 17 },
+        { id: "evening", label: "晚上", start: 17, end: 23 },
+        { id: "late-night", label: "深夜", start: 23, end: 29 },
+    ].map((bucket) => {
+        const matched = periodExpenseBills.filter((bill) => {
+            const hour = dayjs(bill.time).hour();
+            const normalizedHour = hour < 5 ? hour + 24 : hour;
+            return (
+                normalizedHour >= bucket.start && normalizedHour < bucket.end
+            );
+        });
+        return { ...bucket, bills: matched };
+    });
+    const dominantTime = timeBuckets.sort(
+        (a, b) => b.bills.length - a.bills.length,
+    )[0];
+    if (
+        dominantTime &&
+        dominantTime.bills.length >= 3 &&
+        dominantTime.bills.length / periodExpenseBills.length >= 0.5
+    ) {
+        habitPatterns.push({
+            id: `time-${dominantTime.id}`,
+            label: `支出集中在${dominantTime.label}`,
+            evidence: `${dominantTime.bills.length}/${periodExpenseBills.length} 笔支出发生在${dominantTime.label}。`,
+            billIds: dominantTime.bills.slice(0, 8).map((bill) => bill.id),
+        });
+    }
+
+    const comments = new Map<string, Bill[]>();
+    for (const bill of periodExpenseBills) {
+        const comment = bill.comment?.trim().toLowerCase();
+        if (!comment || comment.length < 2) continue;
+        comments.set(comment, [...(comments.get(comment) ?? []), bill]);
+    }
+    const repeatedComment = [...comments.entries()].sort(
+        (a, b) => b[1].length - a[1].length,
+    )[0];
+    if (repeatedComment && repeatedComment[1].length >= 2) {
+        habitPatterns.push({
+            id: "repeated-comment",
+            label: "相似的消费场景反复出现",
+            evidence: `“${trimComment(repeatedComment[0])}”出现了 ${repeatedComment[1].length} 次。`,
+            billIds: repeatedComment[1].slice(0, 8).map((bill) => bill.id),
+        });
+    }
 
     let expenseTotal = 0;
     let incomeTotal = 0;
@@ -441,6 +507,15 @@ export function analyzeZenPeriod({
                 amount: previous.amount - category.amount,
                 deviationLevel: "medium",
             });
+            habitPatterns.push({
+                id: `category-drop-${category.id}`,
+                label: `${category.name}支出频率或金额正在回落`,
+                evidence: `相比上一相同周期，金额减少了 ${Math.round(previous.amount - category.amount)}。`,
+                billIds: periodBills
+                    .filter((bill) => bill.categoryId === category.id)
+                    .slice(0, 8)
+                    .map((bill) => bill.id),
+            });
             break;
         }
     }
@@ -565,6 +640,7 @@ export function analyzeZenPeriod({
         signals,
         candidateGroups: candidateGroups.slice(0, 8),
         candidateBills,
+        habitPatterns: habitPatterns.slice(0, 6),
     };
 }
 

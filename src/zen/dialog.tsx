@@ -20,6 +20,14 @@ import { buildZenContext } from "./analyzer";
 import { getZenDayId, getZenSessionKey, getZenStyleName } from "./date";
 import { requestNextZenStep } from "./director";
 import { createFallbackEpilogueStep } from "./fallback";
+import {
+    createZenExplorationState,
+    createZenJourneyPlan,
+    extendZenJourney,
+    hydrateZenSession,
+    mergeDirectorState,
+    recordZenResponse,
+} from "./journey";
 import { getPersonalZenPosts, getZenPostById, upsertZenPost } from "./posts";
 import {
     deleteZenSession,
@@ -57,7 +65,10 @@ type ZenDialogState =
 
 function cardSummary(component: ZenComponent, userInput: unknown) {
     if (component.type === "ThemeSelectorCard") {
-        return `选择主题：${String(userInput || "")}`;
+        const selected = component.options.find(
+            (option) => option.id === userInput,
+        );
+        return `选择主题：${selected?.title ?? String(userInput || "跳过")}`;
     }
     if (component.type === "SliderCard") {
         return `${component.title}：${String(userInput)}`;
@@ -69,9 +80,15 @@ function cardSummary(component: ZenComponent, userInput: unknown) {
         return `${component.title}：${String(userInput || "看过")}`;
     }
     if (component.type === "ChoiceCard") {
-        const value = Array.isArray(userInput)
-            ? userInput.join("、")
-            : String(userInput || "跳过");
+        const ids = Array.isArray(userInput) ? userInput : [userInput];
+        const value = ids
+            .filter(Boolean)
+            .map(
+                (id) =>
+                    component.options.find((option) => option.id === id)
+                        ?.label ?? String(id),
+            )
+            .join("、");
         return `${component.title}：${value}`;
     }
     if (component.type === "ShredderCard") {
@@ -972,11 +989,13 @@ function Epilogue({
     pending,
     onFinish,
     onRestart,
+    onContinue,
 }: {
     step: ZenUIStep;
     pending: boolean;
     onFinish: () => void;
     onRestart: () => void;
+    onContinue?: () => void;
 }) {
     const t = useIntl();
     const card =
@@ -997,13 +1016,23 @@ function Epilogue({
                 }
                 footer={
                     <ZenActions className="pt-0">
-                        <ZenButton
-                            variant="ghost"
-                            disabled={pending}
-                            onClick={onRestart}
-                        >
-                            {t("zen-regenerate")}
-                        </ZenButton>
+                        {onContinue ? (
+                            <ZenButton
+                                variant="ghost"
+                                disabled={pending}
+                                onClick={onContinue}
+                            >
+                                {t("zen-explore-deeper")}
+                            </ZenButton>
+                        ) : (
+                            <ZenButton
+                                variant="ghost"
+                                disabled={pending}
+                                onClick={onRestart}
+                            >
+                                {t("zen-regenerate")}
+                            </ZenButton>
+                        )}
                         <ZenButton disabled={pending} onClick={onFinish}>
                             {t("zen-save-today-zen")}
                         </ZenButton>
@@ -1143,7 +1172,7 @@ function ZenDialogForm({
                 const now = Date.now();
                 const session: ZenSessionState =
                     restored?.status === "active"
-                        ? restored
+                        ? hydrateZenSession(restored, context.lastZenPost, now)
                         : {
                               id: zenDayId,
                               bookId,
@@ -1151,6 +1180,11 @@ function ZenDialogForm({
                               period: context.period,
                               steps: [],
                               extractedInsights: [],
+                              journeyPlan: createZenJourneyPlan(
+                                  context.lastZenPost,
+                                  now,
+                              ),
+                              exploration: createZenExplorationState(),
                               status: "active",
                               createdAt: now,
                               updatedAt: now,
@@ -1216,6 +1250,20 @@ function ZenDialogForm({
                     focusDecision: nextContext.focusDecision,
                     currentStep: step,
                     history,
+                    exploration: mergeDirectorState(session.exploration, step),
+                    extractedInsights: step.directorState?.insightSummary
+                        ? [
+                              ...session.extractedInsights.filter(
+                                  (item) =>
+                                      item.text !==
+                                      step.directorState?.insightSummary,
+                              ),
+                              {
+                                  id: `insight-${step.stepId}`,
+                                  text: step.directorState.insightSummary,
+                              },
+                          ]
+                        : session.extractedInsights,
                     updatedAt: Date.now(),
                 };
                 await updateActive(current, nextSession, nextContext);
@@ -1258,6 +1306,8 @@ function ZenDialogForm({
                 period: context.period,
                 steps: [],
                 extractedInsights: [],
+                journeyPlan: createZenJourneyPlan(context.lastZenPost, now),
+                exploration: createZenExplorationState(),
                 status: "active",
                 createdAt: now,
                 updatedAt: now,
@@ -1328,6 +1378,10 @@ function ZenDialogForm({
                 selectedTheme,
                 finalIntention,
                 steps: [...state.session.steps, newStep],
+                exploration: recordZenResponse(
+                    state.session.exploration,
+                    userInput,
+                ),
                 updatedAt: Date.now(),
             };
             await updateActive(state, nextSession);
@@ -1335,6 +1389,23 @@ function ZenDialogForm({
         },
         [requestStep, state, updateActive, t],
     );
+
+    const continueDeeper = useCallback(async () => {
+        if (
+            state.type !== "active" ||
+            state.session.journeyPlan.extensionUsed
+        ) {
+            return;
+        }
+        const nextSession: ZenSessionState = {
+            ...state.session,
+            journeyPlan: extendZenJourney(state.session.journeyPlan),
+            currentStep: undefined,
+            updatedAt: Date.now(),
+        };
+        await updateActive(state, nextSession);
+        await requestStep(state, nextSession, "continue_deeper");
+    }, [requestStep, state, updateActive]);
 
     const activeStep =
         state.type === "active" ? state.session.currentStep : undefined;
@@ -1512,6 +1583,12 @@ function ZenDialogForm({
                         pending={pending}
                         onFinish={() => submitStep("finish")}
                         onRestart={restartZen}
+                        onContinue={
+                            state.type === "active" &&
+                            !state.session.journeyPlan.extensionUsed
+                                ? continueDeeper
+                                : undefined
+                        }
                     />
                 )}
             </div>
