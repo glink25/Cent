@@ -1,0 +1,213 @@
+/* ============================================================
+ * 预设 1：流动色彩 Aurora（鲜亮颜料毛玻璃 / 多层光斑流动）
+ * 自包含明亮浅底主题：奶油粉 + 浅水蓝柔和底色，整体覆盖语义 token
+ * 让深色文字在亮底上可读；.dark 版本忽略系统明暗，与浅色一致。
+ * 像明亮颜料在毛玻璃下缓缓流淌——
+ * ::before 为强模糊多彩光斑随 aurora-flow 流动，
+ * ::after 为锥形渐变随 aurora-drift 漂移。
+ * ============================================================ */
+.zen-root.zen-style-1 {
+	position: relative;
+	overflow: hidden;
+
+	/* 1. 柔和底色：奶油粉 + 浅水蓝 */
+	--bg-cream: #fff0e8;
+	--bg-blush: #ffdbe7;
+	--bg-aqua: #b6f4f0;
+	--bg-ice: #e7f7ff;
+
+	/* 2. 主流动色：明亮大胆的颜料感 */
+	--aurora-pink: #ff70a6;
+	--aurora-rose: #ff94d2;
+	--aurora-coral: #ff765f;
+	--aurora-orange: #ff8b4e;
+	--aurora-cyan: #61ddff;
+	--aurora-teal: #00a8b2;
+	--aurora-purple: #7e58ff;
+
+	--zen-bg:
+		radial-gradient(circle at 50% 46%, var(--aurora-pink) 0, transparent 40%),
+		radial-gradient(circle at 44% 52%, var(--aurora-purple) 0, transparent 38%),
+		radial-gradient(circle at 57% 50%, var(--aurora-cyan) 0, transparent 38%),
+		radial-gradient(circle at 50% 58%, var(--aurora-teal) 0, transparent 36%),
+		radial-gradient(
+			circle at 50% 48%,
+			var(--bg-cream) 0,
+			var(--bg-blush) 42%,
+			var(--bg-aqua) 74%,
+			var(--bg-ice) 100%
+		);
+	--zen-overlay: none;
+
+	--zen-card-bg: linear-gradient(
+		145deg,
+		rgba(255, 255, 255, 0.62),
+		rgba(255, 255, 255, 0.32)
+	);
+	--zen-card-ring: rgba(255, 255, 255, 0.6);
+	--zen-card-shadow: 0 32px 80px rgba(120, 48, 110, 0.2);
+	--zen-card-hairline: linear-gradient(
+		to right,
+		transparent,
+		rgba(255, 255, 255, 0.9),
+		transparent
+	);
+	--zen-surface-bg: rgba(255, 255, 255, 0.42);
+	--zen-surface-ring: rgba(255, 255, 255, 0.6);
+
+	--zen-heading: #3a1538;
+	--zen-text: rgba(58, 21, 56, 0.92);
+	--zen-text-muted: rgba(58, 21, 56, 0.66);
+	--zen-text-subtle: rgba(58, 21, 56, 0.48);
+
+	--zen-btn-bg: linear-gradient(
+		135deg,
+		var(--aurora-pink),
+		var(--aurora-purple)
+	);
+	--zen-btn-bg-hover: linear-gradient(
+		135deg,
+		var(--aurora-coral),
+		var(--aurora-purple)
+	);
+	--zen-btn-text: #ffffff;
+	--zen-btn-shadow: 0 18px 42px rgba(126, 88, 255, 0.28);
+	--zen-btn-shadow-hover: 0 24px 54px rgba(126, 88, 255, 0.36);
+
+	--zen-ghost-bg: rgba(255, 255, 255, 0.42);
+	--zen-ghost-bg-hover: rgba(255, 255, 255, 0.62);
+	--zen-ghost-ring: rgba(255, 255, 255, 0.6);
+	--zen-ghost-text: rgba(58, 21, 56, 0.92);
+
+	--zen-option-bg: rgba(255, 255, 255, 0.4);
+	--zen-option-bg-hover: rgba(255, 255, 255, 0.6);
+	--zen-option-ring: rgba(255, 255, 255, 0.56);
+	--zen-option-text: rgba(58, 21, 56, 0.92);
+
+	--zen-input-bg: rgba(255, 255, 255, 0.5);
+	--zen-input-ring: rgba(255, 255, 255, 0.62);
+	--zen-input-text: rgba(58, 21, 56, 0.94);
+	--zen-input-placeholder: rgba(58, 21, 56, 0.45);
+
+	--zen-chip-bg: rgba(255, 255, 255, 0.55);
+	--zen-chip-text: rgba(58, 21, 56, 0.92);
+	--zen-header-bg: rgba(255, 255, 255, 0.4);
+	--zen-header-ring: rgba(255, 255, 255, 0.55);
+	--zen-close-bg: rgba(255, 255, 255, 0.46);
+	--zen-close-bg-hover: rgba(255, 255, 255, 0.66);
+	--zen-close-ring: rgba(255, 255, 255, 0.56);
+	--zen-close-text: rgba(58, 21, 56, 0.66);
+	--zen-close-text-hover: #3a1538;
+	--zen-footer-bg: none;
+	--zen-footer-shadow: none;
+	--zen-slider-rest: rgba(126, 88, 255, 0.28);
+
+	--zen-accent: var(--aurora-purple);
+	--zen-accent-light: var(--aurora-rose);
+	--zen-accent-strong: var(--aurora-pink);
+	--zen-accent-soft: rgba(126, 88, 255, 0.16);
+	--zen-accent-ring: rgba(126, 88, 255, 0.45);
+	--zen-accent-text: #ffffff;
+	--zen-accent-shadow: 0 18px 45px rgba(126, 88, 255, 0.3);
+	--zen-quote-bg: rgba(255, 255, 255, 0.46);
+	--zen-quote-ring: rgba(255, 255, 255, 0.6);
+	--zen-badge-bg: linear-gradient(
+		135deg,
+		var(--aurora-pink),
+		var(--aurora-purple)
+	);
+	--zen-badge-text: #ffffff;
+	--zen-ring-focus: rgba(126, 88, 255, 0.6);
+	--zen-thumb-shadow:
+		0 10px 26px rgba(126, 88, 255, 0.4), 0 0 0 7px rgba(255, 255, 255, 0.6);
+}
+/* 强模糊多彩光斑层（随 aurora-flow 缓缓流动） */
+.zen-root.zen-style-1::before {
+	content: "";
+	position: absolute;
+	inset: -35%;
+	z-index: 0;
+	pointer-events: none;
+	background:
+		radial-gradient(
+			circle at 48% 44%,
+			color-mix(in srgb, var(--aurora-pink) 92%, transparent) 0 8%,
+			transparent 26%
+		),
+		radial-gradient(
+			circle at 56% 50%,
+			color-mix(in srgb, var(--aurora-purple) 90%, transparent) 0 9%,
+			transparent 28%
+		),
+		radial-gradient(
+			circle at 44% 54%,
+			color-mix(in srgb, var(--aurora-cyan) 88%, transparent) 0 8%,
+			transparent 26%
+		),
+		radial-gradient(
+			circle at 54% 42%,
+			color-mix(in srgb, var(--aurora-teal) 88%, transparent) 0 9%,
+			transparent 28%
+		),
+		radial-gradient(
+			circle at 46% 58%,
+			color-mix(in srgb, var(--aurora-orange) 92%, transparent) 0 9%,
+			transparent 28%
+		);
+	filter: blur(54px) saturate(1.35);
+	opacity: 0.7;
+	mix-blend-mode: multiply;
+	transform-origin: center;
+	/* 中心聚拢、向外发散淡出 */
+	-webkit-mask: radial-gradient(circle at 50% 50%, #000 18%, transparent 62%);
+	mask: radial-gradient(circle at 50% 50%, #000 18%, transparent 62%);
+	animation: aurora-flow 18s ease-in-out infinite alternate;
+}
+/* 锥形渐变层（更柔的底色流动，随 aurora-drift 漂移） */
+.zen-root.zen-style-1::after {
+	content: "";
+	position: absolute;
+	inset: -20%;
+	z-index: -1;
+	pointer-events: none;
+	background: conic-gradient(
+		from 120deg at 50% 50%,
+		color-mix(in srgb, var(--aurora-pink) 50%, transparent),
+		color-mix(in srgb, var(--aurora-purple) 46%, transparent),
+		color-mix(in srgb, var(--aurora-cyan) 46%, transparent),
+		color-mix(in srgb, var(--aurora-teal) 44%, transparent),
+		color-mix(in srgb, var(--aurora-rose) 48%, transparent),
+		color-mix(in srgb, var(--aurora-pink) 50%, transparent)
+	);
+	filter: blur(80px) saturate(1.5);
+	opacity: 0.55;
+	transform-origin: center;
+	/* 中心聚拢、向外发散淡出 */
+	-webkit-mask: radial-gradient(circle at 50% 50%, #000 10%, transparent 58%);
+	mask: radial-gradient(circle at 50% 50%, #000 10%, transparent 58%);
+	animation: aurora-drift 28s ease-in-out infinite alternate;
+}
+.dark .zen-root.zen-style-1 {
+	/* same with light */
+}
+
+@keyframes aurora-flow {
+	0% {
+		transform: translate3d(-4%, -3%, 0) rotate(0deg) scale(1);
+	}
+	45% {
+		transform: translate3d(5%, -1%, 0) rotate(18deg) scale(1.08);
+	}
+	100% {
+		transform: translate3d(2%, 6%, 0) rotate(-14deg) scale(1.14);
+	}
+}
+
+@keyframes aurora-drift {
+	0% {
+		transform: translate3d(4%, -5%, 0) rotate(0deg) scale(1.05);
+	}
+	100% {
+		transform: translate3d(-5%, 5%, 0) rotate(38deg) scale(1.2);
+	}
+}

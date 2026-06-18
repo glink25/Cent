@@ -1,0 +1,313 @@
+/* ============================================================
+ * 预设 4：落雨 Rain（深青雨夜玻璃 / 雨丝下落 + 涟漪散开）
+ * 自包含深底主题：青绿雨夜暗底，整体覆盖语义 token 让浅色文字可读；
+ * .dark 版本只写「same with light」忽略系统明暗。
+ * ::before 为倾斜下落的雨丝层（rainFall，整层 rotate(-14deg) 让雨丝方向
+ * 与位移方向一致），::after 为底部涟漪层（rippleField，借 @property 动画
+ * 半径 --rN 与不透明度 --oN 让四处水面错峰泛起圈圈涟漪后散去）。
+ * 迁移自 rain.html：严格保留核心雨丝/涟漪动画与玻璃表单质感。
+ * ============================================================ */
+
+/* 涟漪半径 / 不透明度可动画自定义属性（迁移自 rain.html @property） */
+@property --zen-rain-r1 {
+	syntax: "<percentage>";
+	inherits: false;
+	initial-value: 0%;
+}
+@property --zen-rain-r2 {
+	syntax: "<percentage>";
+	inherits: false;
+	initial-value: 0%;
+}
+@property --zen-rain-r3 {
+	syntax: "<percentage>";
+	inherits: false;
+	initial-value: 0%;
+}
+@property --zen-rain-r4 {
+	syntax: "<percentage>";
+	inherits: false;
+	initial-value: 0%;
+}
+@property --zen-rain-o1 {
+	syntax: "<number>";
+	inherits: false;
+	initial-value: 0;
+}
+@property --zen-rain-o2 {
+	syntax: "<number>";
+	inherits: false;
+	initial-value: 0;
+}
+@property --zen-rain-o3 {
+	syntax: "<number>";
+	inherits: false;
+	initial-value: 0;
+}
+@property --zen-rain-o4 {
+	syntax: "<number>";
+	inherits: false;
+	initial-value: 0;
+}
+
+.zen-root.zen-style-4 {
+	position: relative; /* 为雨丝 / 涟漪伪元素提供定位基准 */
+	overflow: hidden;
+
+	/* 青绿雨夜暗底（迁移自 rain.html body 背景，四层供 gradient-drift 复用） */
+	--zen-bg:
+		radial-gradient(
+			circle at 50% 18%,
+			rgba(196, 226, 224, 0.22),
+			transparent 34%
+		),
+		radial-gradient(
+			circle at 16% 82%,
+			rgba(73, 112, 122, 0.28),
+			transparent 36%
+		),
+		radial-gradient(
+			circle at 86% 70%,
+			rgba(89, 128, 132, 0.16),
+			transparent 30%
+		), linear-gradient(180deg, #17272d 0%, #101e24 52%, #0b171c 100%);
+	--zen-overlay: none;
+
+	/* 卡片（迁移自 rain.html main 的玻璃质感） */
+	--zen-card-bg: linear-gradient(
+		180deg,
+		rgba(255, 255, 255, 0.15),
+		rgba(255, 255, 255, 0.07)
+	);
+	--zen-card-ring: rgba(226, 246, 244, 0.2);
+	--zen-card-shadow: 0 30px 90px rgba(0, 0, 0, 0.34);
+	--zen-card-hairline: linear-gradient(
+		to right,
+		transparent,
+		rgba(230, 255, 250, 0.42),
+		transparent
+	);
+
+	--zen-surface-bg: rgba(255, 255, 255, 0.1);
+	--zen-surface-ring: rgba(226, 246, 244, 0.18);
+	--zen-surface-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+
+	/* 文字（迁移自 rain.html #eef7f6 / 半透明青白） */
+	--zen-heading: #eef7f6;
+	--zen-text: rgba(238, 247, 246, 0.92);
+	--zen-text-muted: rgba(231, 246, 244, 0.72);
+	--zen-text-subtle: rgba(231, 246, 244, 0.5);
+
+	/* 主按钮（迁移自 rain.html button 的薄荷青渐变） */
+	--zen-btn-bg: linear-gradient(135deg, #d8f3ee, #a9d7d4);
+	--zen-btn-bg-hover: linear-gradient(135deg, #e4f7f3, #b8e0dd);
+	--zen-btn-text: #123136;
+	--zen-btn-shadow: 0 14px 34px rgba(128, 192, 190, 0.25);
+	--zen-btn-shadow-hover: 0 18px 42px rgba(128, 192, 190, 0.32);
+
+	--zen-ghost-bg: rgba(255, 255, 255, 0.1);
+	--zen-ghost-bg-hover: rgba(255, 255, 255, 0.18);
+	--zen-ghost-ring: rgba(226, 246, 244, 0.2);
+	--zen-ghost-text: rgba(238, 247, 246, 0.92);
+	--zen-ghost-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+
+	--zen-option-bg: rgba(255, 255, 255, 0.09);
+	--zen-option-bg-hover: rgba(255, 255, 255, 0.16);
+	--zen-option-ring: rgba(226, 246, 244, 0.18);
+	--zen-option-text: rgba(238, 247, 246, 0.92);
+	--zen-option-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+
+	/* 输入（迁移自 rain.html input 玻璃质感与青白文字 / 占位符） */
+	--zen-input-bg: rgba(255, 255, 255, 0.115);
+	--zen-input-ring: rgba(255, 255, 255, 0.14);
+	--zen-input-text: #edf8f6;
+	--zen-input-placeholder: rgba(232, 247, 244, 0.44);
+
+	--zen-chip-bg: rgba(255, 255, 255, 0.12);
+	--zen-chip-text: rgba(238, 247, 246, 0.92);
+	--zen-header-bg: rgba(255, 255, 255, 0.08);
+	--zen-header-ring: rgba(226, 246, 244, 0.16);
+	--zen-header-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+	--zen-close-bg: rgba(255, 255, 255, 0.1);
+	--zen-close-bg-hover: rgba(255, 255, 255, 0.18);
+	--zen-close-ring: rgba(226, 246, 244, 0.18);
+	--zen-close-text: rgba(231, 246, 244, 0.72);
+	--zen-close-text-hover: #eef7f6;
+	--zen-footer-bg: none;
+	--zen-footer-shadow: none;
+	--zen-slider-rest: rgba(255, 255, 255, 0.14);
+
+	/* 强调色族（薄荷青） */
+	--zen-accent: #a9d7d4;
+	--zen-accent-light: #d8f3ee;
+	--zen-accent-strong: rgba(216, 243, 238, 0.85);
+	--zen-accent-soft: rgba(169, 215, 212, 0.18);
+	--zen-accent-ring: rgba(216, 243, 238, 0.4);
+	--zen-accent-text: #eef7f6;
+	--zen-accent-shadow: 0 18px 45px rgba(0, 0, 0, 0.32);
+	--zen-quote-bg: rgba(216, 243, 238, 0.1);
+	--zen-quote-ring: rgba(226, 246, 244, 0.2);
+	--zen-badge-bg: rgba(216, 243, 238, 0.85);
+	--zen-badge-text: #123136;
+	--zen-ring-focus: rgba(216, 243, 238, 0.7);
+	--zen-thumb-shadow:
+		0 10px 26px rgba(0, 0, 0, 0.4), 0 0 0 7px rgba(216, 243, 238, 0.28);
+}
+
+/* 雨丝层（迁移自 rain.html body::before，rainFall）
+ * 整层 rotate(-14deg)，background-position-y 向下移动，
+ * 雨丝方向与位移方向保持一致不错位。 */
+.zen-root.zen-style-4::before {
+	content: "";
+	position: absolute;
+	inset: -35vh -24vw;
+	z-index: 0;
+	pointer-events: none;
+
+	transform: rotate(-14deg);
+	transform-origin: center;
+
+	background-image:
+		radial-gradient(
+			ellipse 0.8px 26px at 42px 38px,
+			rgba(225, 245, 248, 0.16) 0 52%,
+			transparent 72%
+		),
+		radial-gradient(
+			ellipse 1px 38px at 86px 62px,
+			rgba(235, 250, 251, 0.26) 0 54%,
+			transparent 74%
+		),
+		radial-gradient(
+			ellipse 1.3px 54px at 128px 90px,
+			rgba(255, 255, 255, 0.34) 0 56%,
+			transparent 76%
+		);
+	background-size:
+		260px 330px,
+		340px 430px,
+		460px 560px;
+	background-position:
+		0 -330px,
+		80px -430px,
+		-120px -560px;
+	background-repeat: repeat;
+
+	opacity: 0.9;
+	filter: blur(0.15px);
+	animation: zen-rain-fall 1.05s linear infinite;
+}
+
+/* 底部涟漪层（迁移自 rain.html body::after，rippleField） */
+.zen-root.zen-style-4::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	pointer-events: none;
+
+	background:
+		radial-gradient(
+			ellipse 130px 34px at 18% 84%,
+			transparent calc(var(--zen-rain-r1) - 1.2%),
+			rgba(207, 237, 238, var(--zen-rain-o1)) var(--zen-rain-r1),
+			transparent calc(var(--zen-rain-r1) + 1.4%)
+		),
+		radial-gradient(
+			ellipse 170px 42px at 45% 90%,
+			transparent calc(var(--zen-rain-r2) - 1.1%),
+			rgba(224, 249, 247, var(--zen-rain-o2)) var(--zen-rain-r2),
+			transparent calc(var(--zen-rain-r2) + 1.3%)
+		),
+		radial-gradient(
+			ellipse 120px 30px at 70% 82%,
+			transparent calc(var(--zen-rain-r3) - 1.2%),
+			rgba(188, 225, 230, var(--zen-rain-o3)) var(--zen-rain-r3),
+			transparent calc(var(--zen-rain-r3) + 1.4%)
+		),
+		radial-gradient(
+			ellipse 190px 46px at 86% 93%,
+			transparent calc(var(--zen-rain-r4) - 1%),
+			rgba(230, 250, 249, var(--zen-rain-o4)) var(--zen-rain-r4),
+			transparent calc(var(--zen-rain-r4) + 1.2%)
+		);
+
+	mask-image: linear-gradient(to bottom, transparent 50%, black 68%, black 100%);
+	animation: zen-rain-ripple 8.6s linear infinite;
+}
+
+.dark .zen-root.zen-style-4 {
+	/* same with light */
+}
+
+/* 雨丝下落：整层 background-position 自上方落到原点（迁移自 rainFall） */
+@keyframes zen-rain-fall {
+	from {
+		background-position:
+			0 -330px,
+			80px -430px,
+			-120px -560px;
+	}
+	to {
+		background-position:
+			0 0,
+			80px 0,
+			-120px 0;
+	}
+}
+
+/* 涟漪散开：四处水面错峰泛起圈圈涟漪后淡去（迁移自 rippleField） */
+@keyframes zen-rain-ripple {
+	0% {
+		--zen-rain-r1: 0%;
+		--zen-rain-r2: 0%;
+		--zen-rain-r3: 0%;
+		--zen-rain-r4: 0%;
+		--zen-rain-o1: 0;
+		--zen-rain-o2: 0;
+		--zen-rain-o3: 0;
+		--zen-rain-o4: 0;
+	}
+	9% {
+		--zen-rain-r1: 8%;
+		--zen-rain-o1: 0.46;
+	}
+	22% {
+		--zen-rain-r1: 25%;
+		--zen-rain-o1: 0;
+	}
+	28% {
+		--zen-rain-r2: 7%;
+		--zen-rain-o2: 0.42;
+	}
+	44% {
+		--zen-rain-r2: 27%;
+		--zen-rain-o2: 0;
+	}
+	50% {
+		--zen-rain-r3: 7%;
+		--zen-rain-o3: 0.4;
+	}
+	66% {
+		--zen-rain-r3: 24%;
+		--zen-rain-o3: 0;
+	}
+	70% {
+		--zen-rain-r4: 8%;
+		--zen-rain-o4: 0.44;
+	}
+	88% {
+		--zen-rain-r4: 26%;
+		--zen-rain-o4: 0;
+	}
+	100% {
+		--zen-rain-r1: 0%;
+		--zen-rain-r2: 0%;
+		--zen-rain-r3: 0%;
+		--zen-rain-r4: 0%;
+		--zen-rain-o1: 0;
+		--zen-rain-o2: 0;
+		--zen-rain-o3: 0;
+		--zen-rain-o4: 0;
+	}
+}

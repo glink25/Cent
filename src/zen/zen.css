@@ -1,9 +1,16 @@
+@import "./themes/aurora.css";
+@import "./themes/beach.css";
+@import "./themes/red-moon.css";
+@import "./themes/rain.css";
+@import "./themes/star-night.css";
+
 /* Zen 模式弹窗样式
  *
  * 设计：语义化 CSS 变量 + 语义类。
- * - `.zen-root` 定义所有主题 token 的默认值（亮色 = 风格 0「暖沙」）。
- * - `.dark .zen-root` 定义默认暗色值。
- * - `.zen-root.zen-style-{1..4}` 与 `.dark .zen-root.zen-style-{1..4}` 仅覆盖背景与强调色族。
+ * - `.zen-root` 定义所有主题 token 的「基线默认值」（亮色玻璃风），作为各风格未覆盖项的回退。
+ * - `.dark .zen-root` 定义基线暗色值。
+ * - `.zen-root.zen-style-{0..4}` 为 5 个自包含动效主题，在各自块内整体覆盖背景、强调色族
+ *   及（深底主题）文字/卡片等 token；`.dark` 版只写「same as light」，忽略系统明暗。
  * - 语义类（.zen-card / .zen-surface / .zen-btn …）只引用 token，预设切换即整体重新着色。
  *
  * 风格索引由 src/zen/date.ts 的 getZenStyleIndex() 按日期计算，每天稳定轮换。
@@ -217,360 +224,14 @@
 		0 10px 28px rgba(0, 0, 0, 0.36), 0 0 0 7px rgba(245, 208, 151, 0.16);
 }
 
-/* ============================================================
- * 预设 1：冷雾 Cool Mist（蓝 / 石板）
- * ============================================================ */
-.zen-root.zen-style-1 {
-	--zen-bg:
-		radial-gradient(
-			circle at 18% 22%,
-			rgba(186, 212, 240, 0.46),
-			transparent 31%
-		),
-		radial-gradient(
-			circle at 82% 14%,
-			rgba(214, 224, 236, 0.42),
-			transparent 30%
-		),
-		radial-gradient(
-			circle at 52% 84%,
-			rgba(206, 214, 235, 0.34),
-			transparent 36%
-		), linear-gradient(135deg, #f3f7fb 0%, #eef1f6 43%, #eaf0f4 100%);
-	--zen-accent: #5b8fd1;
-	--zen-accent-light: #a9cdf0;
-	--zen-accent-strong: rgba(96, 165, 250, 0.8);
-	--zen-accent-soft: rgba(191, 219, 254, 0.5);
-	--zen-accent-ring: rgba(147, 197, 253, 0.7);
-	--zen-accent-text: #0f2747;
-	--zen-accent-shadow: 0 18px 45px rgba(70, 110, 170, 0.18);
-	--zen-quote-bg: rgba(219, 234, 254, 0.55);
-	--zen-badge-bg: rgba(191, 219, 254, 0.6);
-	--zen-badge-text: #1e3a5f;
-	--zen-ring-focus: rgba(147, 197, 253, 0.8);
-	--zen-thumb-shadow:
-		0 10px 26px rgba(46, 84, 138, 0.28), 0 0 0 7px rgba(191, 219, 254, 0.4);
-}
-
-.dark .zen-root.zen-style-1 {
-	--zen-bg:
-		radial-gradient(circle at 18% 18%, rgba(67, 99, 140, 0.3), transparent 32%),
-		radial-gradient(
-			circle at 84% 18%,
-			rgba(80, 104, 128, 0.24),
-			transparent 31%
-		),
-		radial-gradient(
-			circle at 46% 86%,
-			rgba(90, 104, 140, 0.22),
-			transparent 38%
-		), linear-gradient(135deg, #161a20 0%, #1b2026 46%, #181d24 100%);
-	--zen-accent: #6fa3d6;
-	--zen-accent-light: #bcd6f0;
-	--zen-accent-strong: rgba(147, 197, 253, 0.6);
-	--zen-accent-soft: rgba(147, 197, 253, 0.16);
-	--zen-accent-ring: rgba(191, 219, 254, 0.24);
-	--zen-accent-text: #eaf2fb;
-	--zen-quote-bg: rgba(191, 219, 254, 0.1);
-	--zen-badge-bg: rgba(191, 219, 254, 0.18);
-	--zen-badge-text: #dbeafe;
-	--zen-thumb-shadow:
-		0 10px 28px rgba(0, 0, 0, 0.36), 0 0 0 7px rgba(151, 180, 245, 0.16);
-}
-
-/* ============================================================
- * 预设 2：晨曦 Rose Dawn（玫瑰 / 粉）
- * ============================================================ */
-.zen-root.zen-style-2 {
-	--zen-bg:
-		radial-gradient(
-			circle at 18% 22%,
-			rgba(255, 205, 210, 0.48),
-			transparent 31%
-		),
-		radial-gradient(
-			circle at 82% 14%,
-			rgba(255, 224, 214, 0.42),
-			transparent 30%
-		),
-		radial-gradient(
-			circle at 52% 84%,
-			rgba(255, 214, 230, 0.34),
-			transparent 36%
-		), linear-gradient(135deg, #fff5f3 0%, #fdeeee 43%, #fbf0f4 100%);
-	--zen-accent: #db6f8e;
-	--zen-accent-light: #f6c0d2;
-	--zen-accent-strong: rgba(244, 114, 182, 0.8);
-	--zen-accent-soft: rgba(251, 207, 232, 0.5);
-	--zen-accent-ring: rgba(249, 168, 212, 0.7);
-	--zen-accent-text: #4a1126;
-	--zen-accent-shadow: 0 18px 45px rgba(170, 70, 110, 0.18);
-	--zen-quote-bg: rgba(252, 231, 243, 0.55);
-	--zen-badge-bg: rgba(251, 207, 232, 0.6);
-	--zen-badge-text: #6b1840;
-	--zen-ring-focus: rgba(249, 168, 212, 0.8);
-	--zen-thumb-shadow:
-		0 10px 26px rgba(150, 46, 90, 0.28), 0 0 0 7px rgba(251, 207, 232, 0.4);
-}
-
-.dark .zen-root.zen-style-2 {
-	--zen-bg:
-		radial-gradient(circle at 18% 18%, rgba(150, 67, 95, 0.3), transparent 32%),
-		radial-gradient(circle at 84% 18%, rgba(128, 80, 96, 0.24), transparent 31%),
-		radial-gradient(
-			circle at 46% 86%,
-			rgba(140, 90, 110, 0.22),
-			transparent 38%
-		), linear-gradient(135deg, #201619 0%, #261b20 46%, #241820 100%);
-	--zen-accent: #d68aa6;
-	--zen-accent-light: #f0c6d6;
-	--zen-accent-strong: rgba(249, 168, 212, 0.6);
-	--zen-accent-soft: rgba(249, 168, 212, 0.16);
-	--zen-accent-ring: rgba(251, 207, 232, 0.24);
-	--zen-accent-text: #fbeaf2;
-	--zen-quote-bg: rgba(251, 207, 232, 0.1);
-	--zen-badge-bg: rgba(251, 207, 232, 0.18);
-	--zen-badge-text: #fce7f3;
-	--zen-thumb-shadow:
-		0 10px 28px rgba(0, 0, 0, 0.36), 0 0 0 7px rgba(245, 151, 193, 0.16);
-}
-
-/* ============================================================
- * 预设 3：红日 redmoon (优化版)
- * ============================================================ */
-
-/* 呼吸动画：使用 transform 替代 background-size */
-@keyframes moon-breath {
+@keyframes twinkle {
 	0%,
 	100% {
-		/* 原始大小和位置 */
-
-		background-size: 100% 100%;
-
-		background-position: 0% 0%;
+		opacity: 1;
 	}
-
 	50% {
-		/* 放大背景，同时必须肉眼可见地微调 position 来补偿它产生的位移 */
-
-		/* 下面的具体百分比需要根据容器看板肉眼反复微调，极难对齐 */
-
-		background-size: 104% 104%;
-
-		background-position: 0% -2%;
+		opacity: 0.3;
 	}
-}
-
-.zen-root.zen-style-3 {
-	position: relative; /* 必须：为伪元素提供定位基准 */
-	background: #000000; /* 保持父级纯黑底色 */
-	overflow: hidden; /* 开启裁剪，防止红日放大时溢出画布 */
-
-	--moon-size: 55%;
-	--zen-bg: radial-gradient(
-		circle at -10% -40%,
-		#ff0000 0%,
-		#ae3737 var(--moon-size),
-		transparent calc(var(--moon-size) + 0.1%)
-	);
-
-	/* 使用 ::before 伪元素独立绘制红日 */
-	&::before {
-		content: "";
-		position: absolute;
-		top: 0;
-		left: 0;
-		width: 120%;
-		height: 120%;
-		background: var(--zen-bg) no-repeat;
-		background-size: 100% 100%;
-		z-index: 0; /* 确保在父级背景之上，但在内容文本之下 */
-		pointer-events: none;
-
-		/* * 【核心魔法】将缩放中心设置为与径向渐变的圆心完全一致（-10% -40%）。
-         * 这样无论怎么放大缩小，红日都会死死锚定在原位，绝不发生一丝一毫的肉眼可见位移！
-         */
-		transform-origin: -10% -40%;
-
-		/* 默认开启呼吸动画 */
-		animation: moon-breath 10s infinite ease-in-out;
-	}
-	&::before {
-		transition: transform 1s ease-in-out 0.5s;
-	}
-	/* 当状态为 loading 时，切换为缩小动画 */
-	&[data-status="loading"]::before {
-		transform: scale(0.6);
-		animation-duration: 4s;
-	}
-	@media (max-width: 640px) {
-		&[data-status="loading"]::before {
-			transform: scale(0.9) translateY(-30%);
-		}
-	}
-	.zen-option-bar {
-		border-radius: 0;
-	}
-	.zen-option {
-		border-radius: 0;
-	}
-	.zen-card--solid {
-		background: none;
-	}
-	--zen-overlay: none;
-	--zen-card-hairline: none;
-	--zen-card-bg: none;
-	--zen-card-shadow: none;
-	--zen-header-bg: none;
-	--zen-header-ring: none;
-	--zen-header-shadow: none;
-	--zen-text: white;
-	--zen-text-muted: white;
-	--zen-text-subtle: white;
-	--zen-close-text: white;
-	--zen-close-bg: none;
-	--zen-close-ring: none;
-	--zen-close-shadow: none;
-	--zen-heading: white;
-	--zen-option-bg: none;
-	--zen-option-ring: none;
-	--zen-option-shadow: none;
-	--zen-option-text: white;
-	--zen-option-bg-hover: none;
-	--zen-option-text-hover: white;
-	--zen-option-active-bg: none;
-	--zen-option-active-text: white;
-	--zen-footer-bg: none;
-	--zen-footer-shadow: none;
-	--zen-ghost-bg: none;
-	--zen-ghost-ring: none;
-	--zen-ghost-shadow: none;
-	--zen-ghost-text: white;
-	--zen-surface-bg: none;
-	--zen-surface-ring: none;
-	--zen-surface-shadow: none;
-	--zen-accent: black;
-	--zen-accent-light: black;
-	--zen-slider-progress: black;
-	--zen-slider-rest: white;
-	.zen-range::-webkit-slider-thumb {
-		width: 8px;
-		height: 8px;
-		margin-top: -2px;
-		background: white;
-		box-shadow:
-			0 10px 26px rgba(38, 110, 70, 0.28),
-			0 0 0 7px rgba(187, 247, 208, 0.4);
-	}
-	.zen-range::-moz-range-progress {
-		background: white;
-	}
-	.zen-range::-webkit-slider-runnable-track {
-		box-shadow: none;
-		height: 4px;
-	}
-	--zen-accent-strong: white;
-	--zen-accent-soft: none;
-	--zen-accent-ring: none;
-	--zen-accent-text: white;
-	--zen-accent-shadow: none;
-	--zen-badge-bg: white;
-	--zen-badge-text: black;
-	.zen-quote {
-		border-radius: 0;
-		border-left: 2px solid white;
-	}
-	--zen-quote-bg: none;
-	--zen-quote-ring: none;
-	--zen-quote-shadow: none;
-	--zen-input-text: white;
-	--zen-input-placeholder: white;
-	--zen-input-ring: none;
-	--zen-input-shadow: none;
-	--zen-ring-focus: rgba(221, 221, 221, 0.8);
-}
-
-.dark .zen-root.zen-style-3 {
-	--zen-bg:
-		radial-gradient(circle at 18% 18%, rgba(67, 140, 95, 0.28), transparent 32%),
-		radial-gradient(
-			circle at 84% 18%,
-			rgba(80, 128, 104, 0.24),
-			transparent 31%
-		),
-		radial-gradient(
-			circle at 46% 86%,
-			rgba(90, 140, 110, 0.22),
-			transparent 38%
-		), linear-gradient(135deg, #161d18 0%, #1b241e 46%, #18241d 100%);
-	--zen-accent: #6bbd86;
-	--zen-accent-light: #bce0c6;
-	--zen-accent-strong: rgba(134, 239, 172, 0.6);
-	--zen-accent-soft: rgba(134, 239, 172, 0.16);
-	--zen-accent-ring: rgba(187, 247, 208, 0.24);
-	--zen-accent-text: #eafaf0;
-	--zen-quote-bg: rgba(187, 247, 208, 0.1);
-	--zen-badge-bg: rgba(187, 247, 208, 0.18);
-	--zen-badge-text: #dcfce7;
-	--zen-thumb-shadow:
-		0 10px 28px rgba(0, 0, 0, 0.36), 0 0 0 7px rgba(151, 245, 180, 0.16);
-}
-
-/* ============================================================
- * 预设 4：暮光 Twilight（紫罗兰 / 靛）
- * ============================================================ */
-.zen-root.zen-style-4 {
-	--zen-bg:
-		radial-gradient(
-			circle at 18% 22%,
-			rgba(214, 205, 245, 0.48),
-			transparent 31%
-		),
-		radial-gradient(
-			circle at 82% 14%,
-			rgba(224, 214, 240, 0.42),
-			transparent 30%
-		),
-		radial-gradient(
-			circle at 52% 84%,
-			rgba(206, 210, 245, 0.36),
-			transparent 36%
-		), linear-gradient(135deg, #f6f4fc 0%, #f1eef9 43%, #eeeefb 100%);
-	--zen-accent: #8b6fd1;
-	--zen-accent-light: #cdbcf0;
-	--zen-accent-strong: rgba(167, 139, 250, 0.8);
-	--zen-accent-soft: rgba(221, 214, 254, 0.5);
-	--zen-accent-ring: rgba(196, 181, 253, 0.7);
-	--zen-accent-text: #2a1147;
-	--zen-accent-shadow: 0 18px 45px rgba(110, 70, 170, 0.18);
-	--zen-quote-bg: rgba(237, 233, 254, 0.55);
-	--zen-badge-bg: rgba(221, 214, 254, 0.6);
-	--zen-badge-text: #3b1d6b;
-	--zen-ring-focus: rgba(196, 181, 253, 0.8);
-	--zen-thumb-shadow:
-		0 10px 26px rgba(90, 46, 150, 0.28), 0 0 0 7px rgba(221, 214, 254, 0.4);
-}
-
-.dark .zen-root.zen-style-4 {
-	--zen-bg:
-		radial-gradient(circle at 18% 18%, rgba(99, 67, 140, 0.3), transparent 32%),
-		radial-gradient(circle at 84% 18%, rgba(96, 80, 128, 0.24), transparent 31%),
-		radial-gradient(
-			circle at 46% 86%,
-			rgba(104, 90, 140, 0.22),
-			transparent 38%
-		), linear-gradient(135deg, #1a1620 0%, #1f1b26 46%, #1c1824 100%);
-	--zen-accent: #a78bd6;
-	--zen-accent-light: #cdbcf0;
-	--zen-accent-strong: rgba(196, 181, 253, 0.6);
-	--zen-accent-soft: rgba(196, 181, 253, 0.16);
-	--zen-accent-ring: rgba(221, 214, 254, 0.24);
-	--zen-accent-text: #f0eafb;
-	--zen-quote-bg: rgba(221, 214, 254, 0.1);
-	--zen-badge-bg: rgba(221, 214, 254, 0.18);
-	--zen-badge-text: #ede9fe;
-	--zen-thumb-shadow:
-		0 10px 28px rgba(0, 0, 0, 0.36), 0 0 0 7px rgba(200, 180, 245, 0.16);
 }
 
 /* ============================================================
@@ -861,7 +522,18 @@
 @media (prefers-reduced-motion: reduce) {
 	.zen-gradient-drift,
 	.zen-gradient-focus,
-	.zen-card-enter {
+	.zen-card-enter,
+	.zen-root.zen-style-0::before,
+	.zen-root.zen-style-0::after,
+	.zen-root.zen-style-1::before,
+	.zen-root.zen-style-1::after,
+	.zen-root.zen-style-2::before,
+	.zen-root.zen-style-2::after,
+	.zen-root.zen-style-3::before,
+	.zen-root.zen-style-4::before,
+	.zen-root.zen-style-4::after,
+	.zen-root.zen-style-5::before,
+	.zen-root.zen-style-5::after {
 		animation: none;
 	}
 }

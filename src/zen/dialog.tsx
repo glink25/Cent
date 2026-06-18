@@ -149,6 +149,15 @@ function CardShell({
     );
 }
 
+/**
+ * 背景装饰层：为需要多个 DOM 节点的动效主题注入粒子。
+ * 当前所有主题（流动/沙滩/红日/繁星）均由纯 CSS 伪元素实现，不经过此处；
+ * 保留此扩展点以便未来需要多节点粒子的主题接入。
+ */
+function ZenBackdropFx(_props: { styleIndex: number }) {
+    return null;
+}
+
 function ZenCardLayout({
     header,
     children,
@@ -1340,11 +1349,12 @@ function ZenDialogForm({
             data-status={pending ? "loading" : "ready"}
             className={cn(
                 "zen-root zen-text zen-gradient-drift relative h-full overflow-hidden",
-                `zen-style-${styleIndex}`,
+                `zen-style-1 ${styleIndex}`,
                 isBackgroundFocused && "zen-gradient-focus",
             )}
         >
             <div className="zen-overlay pointer-events-none absolute inset-0" />
+            <ZenBackdropFx styleIndex={styleIndex} />
             <div className="relative mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col gap-5 px-4 py-5 sm:px-6 sm:py-7">
                 <div className="zen-header-bar flex shrink-0 items-center justify-between gap-3 rounded-full px-3 py-2">
                     <div>
