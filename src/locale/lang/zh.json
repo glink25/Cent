@@ -824,5 +824,19 @@
   "zen-fallback-intention-suggestion-1": "先观察一次让钱流走的触发点。",
   "zen-fallback-intention-suggestion-2": "给一个高频支出留一个更从容的替代选择。",
   "zen-fallback-intention-suggestion-3": "保留真正带来照顾感的消费。",
-  "zen-loading-period-desc-1": "放松呼吸，等待是醇厚的秘诀"
+  "zen-loading-period-desc-1": "放松呼吸，等待是醇厚的秘诀",
+  "zen-settings-title": "Zen 设置",
+  "zen-ai-model": "Zen AI 模型",
+  "zen-follow-default": "跟随默认",
+  "zen-scheduled-time": "出现时间",
+  "zen-enable": "开启 Zen",
+  "zen-enable-requires-ai": "需先配置 AI 才能开启",
+  "zen-enable-desc": "每天留一点时间，温和地回看自己的财务生活。",
+  "zen-enable-tip": "Zen 将在你设定的时间开放。",
+  "zen-locked-title": "今日 Zen 尚未开启",
+  "zen-locked-desc": "{time} 后可进入今日 Zen。",
+  "zen-view-history": "查看往期 Zen",
+  "zen-posts-title": "往期 Zen",
+  "zen-posts-empty": "暂无往期 Zen",
+  "zen-overview-ready": "进入 Zen"
 }

@@ -11,29 +11,29 @@ import {
 import { toast } from "sonner";
 import createConfirmProvider from "@/components/confirm";
 import Loading from "@/components/loading";
+import {
+    getPersonalZenPosts,
+    getZenPostById,
+    refreshZenPosts,
+    upsertZenPost,
+} from "@/hooks/use-zen";
 import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
 import { cn } from "@/utils";
 import { buildZenContext } from "./analyzer";
-import { getZenDayId, getZenSessionKey, getZenStyleName } from "./date";
+import { getZenDayId, getZenStyleName, isZenEntranceOpen } from "./date";
 import { requestNextZenStep } from "./director";
 import { createFallbackEpilogueStep } from "./fallback";
 import {
     createZenExplorationState,
     createZenJourneyPlan,
     extendZenJourney,
-    hydrateZenSession,
     mergeDirectorState,
     recordZenResponse,
 } from "./journey";
-import { getPersonalZenPosts, getZenPostById, upsertZenPost } from "./posts";
-import {
-    deleteZenSession,
-    getZenSession,
-    putZenSession,
-} from "./session-storage";
+import { showZenPosts } from "./posts-list";
 import type {
     BillFocusCard,
     BudgetAdjustCard,
@@ -55,12 +55,12 @@ import type {
 type ZenDialogState =
     | { type: "loading" }
     | { type: "error"; message: string }
+    | { type: "locked"; scheduledTime: string }
     | { type: "completed"; post: ZenPost }
     | {
           type: "active";
           session: ZenSessionState;
           context: ZenContext;
-          key: string;
       };
 
 function cardSummary(component: ZenComponent, userInput: unknown) {
@@ -103,17 +103,27 @@ function cardSummary(component: ZenComponent, userInput: unknown) {
     return component.title;
 }
 
-function createSessionStep(step: ZenUIStep, userInput: unknown) {
+function createSessionStep(
+    step: ZenUIStep,
+    userInput: unknown,
+    context: ZenContext,
+) {
+    const relatedBillIds =
+        step.dataBindings?.billIds ??
+        (step.component.type === "BillFocusCard"
+            ? step.component.billIds
+            : undefined);
     return {
         stepId: step.stepId,
         componentType: step.component.type,
+        component: step.component,
+        intent: step.intent,
         aiPromptSummary: cardSummary(step.component, userInput),
         userInput,
-        relatedBillIds:
-            step.dataBindings?.billIds ??
-            (step.component.type === "BillFocusCard"
-                ? step.component.billIds
-                : undefined),
+        billSnapshots: relatedBillIds
+            ? resolveBoundBills(relatedBillIds, context)
+            : undefined,
+        relatedBillIds,
         relatedCategoryIds: step.dataBindings?.categoryIds,
         createdAt: Date.now(),
     };
@@ -138,6 +148,16 @@ function buildZenPost(session: ZenSessionState, epilogue: ZenUIStep): ZenPost {
         summary: component.summary,
         quote: component.quote,
         intention: component.intention ?? session.finalIntention?.text,
+        steps: session.steps.map((step) => ({
+            stepId: step.stepId,
+            intent: step.intent,
+            component: step.component,
+            userInput: step.userInput,
+            billSnapshots: step.billSnapshots,
+            relatedBillIds: step.relatedBillIds,
+            relatedCategoryIds: step.relatedCategoryIds,
+            createdAt: step.createdAt,
+        })),
         cardSummaries: session.steps.map((step) => step.aiPromptSummary),
         tags: session.selectedTheme?.tags ?? [],
         createdAt: session.createdAt,
@@ -1062,11 +1082,13 @@ function CompletedView({
     pending,
     onClose,
     onRestart,
+    onViewHistory,
 }: {
     post: ZenPost;
     pending: boolean;
     onClose?: () => void;
     onRestart: () => void;
+    onViewHistory: () => void;
 }) {
     const t = useIntl();
     return (
@@ -1083,7 +1105,10 @@ function CompletedView({
                     </div>
                 }
                 footer={
-                    <ZenActions className="pt-0">
+                    <ZenActions className="pt-0 flex-wrap">
+                        <ZenButton variant="ghost" onClick={onViewHistory}>
+                            {t("zen-view-history")}
+                        </ZenButton>
                         <ZenButton
                             variant="ghost"
                             disabled={pending}
@@ -1123,6 +1148,43 @@ function CompletedView({
     );
 }
 
+function LockedView({
+    scheduledTime,
+    onClose,
+    onViewHistory,
+}: {
+    scheduledTime: string;
+    onClose?: () => void;
+    onViewHistory: () => void;
+}) {
+    const t = useIntl();
+    return (
+        <CardShell className="zen-card--solid">
+            <ZenCardLayout
+                header={
+                    <h2 className="text-2xl font-semibold zen-heading">
+                        {t("zen-locked-title")}
+                    </h2>
+                }
+                footer={
+                    <ZenActions className="pt-0">
+                        <ZenButton variant="ghost" onClick={onViewHistory}>
+                            {t("zen-view-history")}
+                        </ZenButton>
+                        <ZenButton onClick={onClose}>
+                            {t("zen-close")}
+                        </ZenButton>
+                    </ZenActions>
+                }
+            >
+                <p className="text-sm leading-7 zen-text-muted">
+                    {t("zen-locked-desc", { time: scheduledTime })}
+                </p>
+            </ZenCardLayout>
+        </CardShell>
+    );
+}
+
 function ZenDialogForm({
     onCancel,
 }: {
@@ -1146,6 +1208,7 @@ function ZenDialogForm({
                 }
                 const zenDayId = getZenDayId();
                 const bills = await useLedgerStore.getState().refreshBillList();
+                await refreshZenPosts();
                 const meta = useLedgerStore.getState().infos?.meta;
                 const completed = getZenPostById(zenDayId);
                 if (completed) {
@@ -1155,45 +1218,38 @@ function ZenDialogForm({
                     return;
                 }
 
-                const key = getZenSessionKey({
-                    bookId,
-                    userId,
-                    zenDayId,
-                });
+                const scheduledTime =
+                    meta?.personal?.[userId]?.zen?.scheduledTime ?? "21:00";
+                if (!isZenEntranceOpen(scheduledTime)) {
+                    if (!cancelled) {
+                        setState({ type: "locked", scheduledTime });
+                    }
+                    return;
+                }
+
                 const recentZenPosts = getPersonalZenPosts();
-                const restored = await getZenSession(key);
                 const context = buildZenContext({
                     zenDayId,
                     bills,
                     meta,
                     recentZenPosts,
-                    focusDecision: restored?.focusDecision,
                 });
                 const now = Date.now();
-                const session: ZenSessionState =
-                    restored?.status === "active"
-                        ? hydrateZenSession(restored, context.lastZenPost, now)
-                        : {
-                              id: zenDayId,
-                              bookId,
-                              userId,
-                              period: context.period,
-                              steps: [],
-                              extractedInsights: [],
-                              journeyPlan: createZenJourneyPlan(
-                                  context.lastZenPost,
-                                  now,
-                              ),
-                              exploration: createZenExplorationState(),
-                              status: "active",
-                              createdAt: now,
-                              updatedAt: now,
-                          };
-                if (!restored) {
-                    await putZenSession(key, session);
-                }
+                const session: ZenSessionState = {
+                    id: zenDayId,
+                    bookId,
+                    userId,
+                    period: context.period,
+                    steps: [],
+                    extractedInsights: [],
+                    journeyPlan: createZenJourneyPlan(context.lastZenPost, now),
+                    exploration: createZenExplorationState(),
+                    status: "active",
+                    createdAt: now,
+                    updatedAt: now,
+                };
                 if (!cancelled) {
-                    setState({ type: "active", session, context, key });
+                    setState({ type: "active", session, context });
                 }
             } catch (error) {
                 const message =
@@ -1210,12 +1266,11 @@ function ZenDialogForm({
     }, [t]);
 
     const updateActive = useCallback(
-        async (
+        (
             current: Extract<ZenDialogState, { type: "active" }>,
             session: ZenSessionState,
             context = current.context,
         ) => {
-            await putZenSession(current.key, session);
             setState({ ...current, context, session });
         },
         [],
@@ -1283,13 +1338,6 @@ function ZenDialogForm({
                 throw new Error("请先选择一个账本");
             }
             const zenDayId = getZenDayId();
-            const key = getZenSessionKey({
-                bookId,
-                userId,
-                zenDayId,
-            });
-            await deleteZenSession(key);
-
             const bills = await useLedgerStore.getState().refreshBillList();
             const meta = useLedgerStore.getState().infos?.meta;
             const context = buildZenContext({
@@ -1312,8 +1360,7 @@ function ZenDialogForm({
                 createdAt: now,
                 updatedAt: now,
             };
-            await putZenSession(key, session);
-            setState({ type: "active", session, context, key });
+            setState({ type: "active", session, context });
         } catch (error) {
             const message =
                 error instanceof Error ? error.message : String(error);
@@ -1339,7 +1386,6 @@ function ZenDialogForm({
                 try {
                     const post = buildZenPost(state.session, currentStep);
                     await upsertZenPost(post);
-                    await deleteZenSession(state.key);
                     setState({ type: "completed", post });
                     toast.success(t("zen-saved-toast"));
                 } finally {
@@ -1348,7 +1394,11 @@ function ZenDialogForm({
                 return;
             }
 
-            const newStep = createSessionStep(currentStep, userInput);
+            const newStep = createSessionStep(
+                currentStep,
+                userInput,
+                state.context,
+            );
             let selectedTheme = state.session.selectedTheme;
             let finalIntention = state.session.finalIntention;
             if (currentStep.component.type === "ThemeSelectorCard") {
@@ -1479,12 +1529,25 @@ function ZenDialogForm({
                     </CardShell>
                 )}
 
+                {state.type === "locked" && (
+                    <LockedView
+                        scheduledTime={state.scheduledTime}
+                        onClose={onCancel}
+                        onViewHistory={() => {
+                            showZenPosts().catch(() => {});
+                        }}
+                    />
+                )}
+
                 {state.type === "completed" && (
                     <CompletedView
                         post={state.post}
                         pending={pending}
                         onClose={onCancel}
                         onRestart={restartZen}
+                        onViewHistory={() => {
+                            showZenPosts().catch(() => {});
+                        }}
                     />
                 )}
 

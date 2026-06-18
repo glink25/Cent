@@ -236,11 +236,34 @@ export type ZenIntention = {
     duration?: "day" | "week";
 };
 
+export type ZenBillSnapshot = {
+    id: string;
+    type: "income" | "expense";
+    categoryName: string;
+    amount: number;
+    time: number;
+    comment?: string;
+};
+
+export type ZenPostStep = {
+    stepId: string;
+    intent?: ZenUIStepIntent;
+    component: ZenComponent;
+    userInput?: unknown;
+    billSnapshots?: ZenBillSnapshot[];
+    relatedBillIds?: string[];
+    relatedCategoryIds?: string[];
+    createdAt: number;
+};
+
 export type ZenSessionStep = {
     stepId: string;
     componentType: ZenComponent["type"];
+    component: ZenComponent;
+    intent?: ZenUIStepIntent;
     aiPromptSummary: string;
     userInput?: unknown;
+    billSnapshots?: ZenBillSnapshot[];
     relatedBillIds?: string[];
     relatedCategoryIds?: string[];
     createdAt: number;
@@ -279,6 +302,7 @@ export type ZenPost = {
     summary: string;
     quote: string;
     intention?: string;
+    steps?: ZenPostStep[];
     cardSummaries: string[];
     tags: string[];
     createdAt: number;

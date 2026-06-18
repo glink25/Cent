@@ -12,15 +12,16 @@ import {
     QueryBillsTool,
 } from "@/components/assistant/tools/ledger-tools";
 import { createCentAIProvider } from "@/components/assistant/tools/provider";
+import { getPersonalZenPosts } from "@/hooks/use-zen";
 import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
+import { isZenFallbackDevMode } from "./dev";
 import {
     createFallbackEpilogueStep,
     createFallbackReflectionStep,
     createFallbackZenStep,
 } from "./fallback";
 import { canShowEpilogue, canShowIntention } from "./journey";
-import { getPersonalZenPosts } from "./posts";
 import {
     ZenFocusDecisionSchema,
     ZenPostSchema,
@@ -117,6 +118,26 @@ function normalizeStepProgress(
     };
 }
 
+async function createFallbackResult(
+    session: ZenSessionState,
+    context: ZenContext,
+) {
+    const current = session.steps.length + 1;
+    const fallback =
+        current >= session.journeyPlan.hardMaxSteps
+            ? createFallbackEpilogueStep(session)
+            : await getFallbackStep(session, context);
+    const guardedFallback = invalidStepReason(fallback, session, context)
+        ? createFallbackReflectionStep({ session, context })
+        : fallback;
+    return {
+        step: normalizeStepProgress(guardedFallback, session),
+        history: stripSystemMessages(session.history ?? []),
+        usedFallback: true,
+        focusDecision: undefined,
+    };
+}
+
 function invalidStepReason(
     step: ZenUIStep,
     session: ZenSessionState,
@@ -158,6 +179,9 @@ export async function requestNextZenStep({
     usedFallback: boolean;
     focusDecision?: ZenFocusDecision;
 }> {
+    if (isZenFallbackDevMode()) {
+        return createFallbackResult(session, context);
+    }
     const previousComponentType = session.currentStep?.component.type;
     let latestFocusDecision: ZenFocusDecision | undefined;
     const DecideZenFocusTool = createDecideZenFocusTool((decision) => {
@@ -239,19 +263,6 @@ export async function requestNextZenStep({
         };
     } catch (error) {
         console.warn("[zen] fallback step used", error);
-        const current = session.steps.length + 1;
-        const fallback =
-            current >= session.journeyPlan.hardMaxSteps
-                ? createFallbackEpilogueStep(session)
-                : await getFallbackStep(session, context);
-        const guardedFallback = invalidStepReason(fallback, session, context)
-            ? createFallbackReflectionStep({ session, context })
-            : fallback;
-        return {
-            step: normalizeStepProgress(guardedFallback, session),
-            history: stripSystemMessages(session.history ?? []),
-            usedFallback: true,
-            focusDecision: undefined,
-        };
+        return createFallbackResult(session, context);
     }
 }

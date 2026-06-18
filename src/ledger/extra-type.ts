@@ -116,8 +116,8 @@ export type PersonalMeta = {
     scheduleds?: Scheduled[];
     zenPosts?: ZenPost[];
     zen?: {
+        enabled?: boolean;
         aiConfigId?: string;
-        frequency?: "daily" | "weekly" | "monthly" | "yearly";
         scheduledTime?: string;
     };
     customCSS?: string;

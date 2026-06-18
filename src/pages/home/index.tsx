@@ -1,4 +1,5 @@
 import dayjs from "dayjs";
+import "@/zen/overview.css";
 import {
     useCallback,
     useEffect,
@@ -22,6 +23,7 @@ import WidgetPreview from "@/components/widget/preview";
 import { useBudget } from "@/hooks/use-budget";
 import { useSnap } from "@/hooks/use-snap";
 import { useWidget } from "@/hooks/use-widget";
+import { useZenOverview } from "@/hooks/use-zen";
 import { amountToNumber } from "@/ledger/bill";
 import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
@@ -31,7 +33,6 @@ import { useUserStore } from "@/store/user";
 import { cn } from "@/utils";
 import { filterOrderedBillListByTimeRange } from "@/utils/filter";
 import { denseDate } from "@/utils/time";
-import { showZenDialog } from "@/zen";
 
 let ledgerAnimationShows = false;
 
@@ -59,6 +60,8 @@ export default function Page() {
                 : "icon-[mdi--cloud-remove-outline] text-red-600";
 
     const [currentDate, setCurrentDate] = useState(dayjs());
+    const zenOverview = useZenOverview();
+    const showZenOverview = zenOverview.ready;
     const ledgerRef = useRef<any>(null);
 
     const currentDateBills = useMemo(() => {
@@ -134,12 +137,17 @@ export default function Page() {
     useEffect(() => {
         ledgerAnimationShows = true;
     }, []);
+
     return (
         <div className="w-full h-full p-2 flex flex-col overflow-hidden page-show">
             <div className="flex flex-wrap flex-col w-full gap-2">
                 <div
                     data-today-overview
-                    className="bg-stone-800 text-background dark:bg-foreground/20 dark:text-foreground relative h-20 w-full flex justify-end rounded-lg sm:flex-1 px-4 py-2"
+                    className={cn(
+                        "bg-stone-800 text-background dark:bg-foreground/20 dark:text-foreground relative h-20 w-full flex justify-end rounded-lg sm:flex-1 px-4 py-2 overflow-hidden transition-colors",
+                        showZenOverview &&
+                            `zen-overview zen-overview-style-${zenOverview.styleName}`,
+                    )}
                 >
                     <span className="absolute top-2 left-4">
                         {denseDate(currentDate)}
@@ -160,15 +168,21 @@ export default function Page() {
                             {currentBook.name}
                         </button>
                     )}
-                    <button
-                        type="button"
-                        className="absolute bottom-2 rounded-full bg-background/20 inline-flex justify-center items-center px-2 right-4 text-xs opacity-70 cursor-pointer transition hover:opacity-100"
-                        onClick={() => {
-                            showZenDialog().catch(() => {});
-                        }}
-                    >
-                        {t("zen-button-label")}
-                    </button>
+                    {zenOverview.enabled && (
+                        <button
+                            type="button"
+                            className={cn(
+                                "absolute bottom-2 rounded-full bg-background/20 inline-flex justify-center items-center px-2 right-4 text-xs opacity-70 cursor-pointer transition hover:opacity-100",
+                                showZenOverview &&
+                                    "zen-overview-entry opacity-100",
+                            )}
+                            onClick={zenOverview.open}
+                        >
+                            {showZenOverview
+                                ? t("zen-overview-ready")
+                                : t("zen-button-label")}
+                        </button>
+                    )}
                 </div>
                 <Promotion />
                 {homeWidgets.length > 0 && (

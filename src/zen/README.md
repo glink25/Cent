@@ -1077,4 +1077,4 @@ Cent项目本地已经存在完整的ai-assistant reAct交互模式(src/assistan
 
 - Zen Session History：这是单次禅模式的所有聊天记录内容，用于支撑完成一次Zen流程，是绝对完整的聊天记录，用于Zen流程中下一次页面生成，是整个Zen流程的核心记录
 
-两种记录的数据存储方式截然不同，ZenPost需要存储在账本meta personal中，参与云同步，而Zen Session History只保留在本地indexedDB中，在app意外关闭或者不小心刷新的情况下恢复Zen流程
+两种记录的数据生命周期不同：ZenPost 通过独立的 Zen 数据仓库参与云同步；Zen Session History 只存在于当前弹窗内存中，关闭弹窗或刷新页面后从头开始，不做本地持久化。

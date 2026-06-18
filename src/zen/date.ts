@@ -11,6 +11,27 @@ export function getZenDayId(now = dayjs()): ZenDayId {
     return now.format("YYYY-MM-DD");
 }
 
+export function isZenEntranceOpen(
+    scheduledTime = "21:00",
+    now = dayjs(),
+): boolean {
+    const match = /^(\d{1,2}):(\d{2})$/.exec(scheduledTime);
+    const hour = Number(match?.[1]);
+    const minute = Number(match?.[2]);
+    const valid =
+        match &&
+        Number.isInteger(hour) &&
+        Number.isInteger(minute) &&
+        hour >= 0 &&
+        hour <= 23 &&
+        minute >= 0 &&
+        minute <= 59;
+    const open = valid
+        ? now.startOf("day").hour(hour).minute(minute).second(0).millisecond(0)
+        : now.startOf("day").hour(21).minute(0).second(0).millisecond(0);
+    return now.valueOf() >= open.valueOf();
+}
+
 /**
  * 可用的 Zen 预设风格名（语义化），与 zen.css / themes/*.css 中的
  * .zen-style-{name} 选择器一一对应；数组顺序即每日轮换顺序。
@@ -130,16 +151,4 @@ export function getSuggestedZenPeriods({
         },
     );
     return periods;
-}
-
-export function getZenSessionKey({
-    bookId,
-    userId,
-    zenDayId,
-}: {
-    bookId: string;
-    userId: string | number;
-    zenDayId: ZenDayId;
-}) {
-    return `${bookId}:${userId}:${zenDayId}`;
 }

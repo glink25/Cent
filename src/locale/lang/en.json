@@ -813,5 +813,19 @@
   "zen-fallback-intention-suggestion-1": "Notice one trigger that lets money quietly flow away.",
   "zen-fallback-intention-suggestion-2": "Give one frequent expense a calmer alternative.",
   "zen-fallback-intention-suggestion-3": "Keep the spending that truly feels caring.",
-  "zen-loading-period-desc-1": "Relax. Patience is the key."
+  "zen-loading-period-desc-1": "Relax. Patience is the key.",
+  "zen-settings-title": "Zen Settings",
+  "zen-ai-model": "Zen AI Model",
+  "zen-follow-default": "Follow default",
+  "zen-scheduled-time": "Available from",
+  "zen-enable": "Enable Zen",
+  "zen-enable-requires-ai": "Configure AI first to enable Zen",
+  "zen-enable-desc": "Make space for a gentle financial reflection each day.",
+  "zen-enable-tip": "Zen will become available at the time you choose.",
+  "zen-locked-title": "Today's Zen is not open yet",
+  "zen-locked-desc": "Today's Zen will be available after {time}.",
+  "zen-view-history": "View past Zen",
+  "zen-posts-title": "Past Zen",
+  "zen-posts-empty": "No past Zen yet",
+  "zen-overview-ready": "Enter Zen"
 }
