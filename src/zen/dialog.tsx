@@ -1480,7 +1480,7 @@ function ZenDialogForm({
         >
             <div className="zen-overlay pointer-events-none absolute inset-0" />
             <ZenBackdropFx styleName={styleName} />
-            <div className="relative mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col gap-5 px-4 py-5 sm:px-6 sm:py-7">
+            <div className="relative mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col gap-5 px-4 pt-[max(var(--safe-area-inset-top),20px)] pb-[max(var(--safe-area-inset-bottom),20px)] sm:px-6 sm:py-7">
                 <div className="zen-header-bar flex shrink-0 items-center justify-between gap-3 rounded-full px-3 py-2">
                     <div>
                         <div className="text-xs uppercase tracking-[0.2em] zen-text-muted">
