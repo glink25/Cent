@@ -1,6 +1,7 @@
 /** biome-ignore-all lint/a11y/noSvgWithoutTitle: <explanation> */
 import { createPortal } from "react-dom";
 import { useShallow } from "zustand/shallow";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { useIntl } from "@/locale";
 import { useIsLogin, useUserStore } from "@/store/user";
 
@@ -32,9 +33,9 @@ export default function Login() {
         <div className="fixed z-[1] top-0 right-0 w-screen h-screen overflow-hidden">
             <div className="absolute w-full h-full bg-[rgba(0,0,0,0.5)] z-[-1]"></div>
             <div className="w-full h-full flex justify-center items-center">
-                <div className="bg-background w-[350px] h-[480px] flex flex-col gap-4 justify-center items-center rounded-lg overflow-hidden">
+                <div className="bg-background w-[350px] h-[520px] max-h-[calc(100%-40px)] flex flex-col gap-4 justify-center items-center rounded-lg overflow-y-auto">
                     <Guide />
-                    <div className="min-h-20 h-fit pb-4 flex flex-col gap-4">
+                    <div className="min-h-20 h-fit flex flex-col gap-4">
                         {loading ? (
                             <div>
                                 <i className="icon-[mdi--loading] animate-spin"></i>
@@ -142,7 +143,7 @@ export default function Login() {
                                     </button>
                                 </div>
                                 {/* Offline */}
-                                <div>
+                                <div className="pb-4">
                                     <button
                                         type="button"
                                         className={`${secondaryButtonStyle} !w-full`}
@@ -170,15 +171,38 @@ export default function Login() {
 
 function Guide({ className }: { className?: string }) {
     const t = useIntl();
+    const isStandaloneDisplay = useMediaQuery("(display-mode: standalone)");
+    const isIOSStandalone =
+        typeof navigator !== "undefined" &&
+        (navigator as Navigator & { standalone?: boolean }).standalone === true;
+    const showIOSDownload = !isStandaloneDisplay && !isIOSStandalone;
+
     return (
         <div
             className={
-                "w-full p-4 flex-1 border-b bg-stone-800 text-white flex flex-col items-center justify-center gap-4 relative"
+                "w-full p-4 flex-1 border-b bg-stone-800 text-white flex flex-col items-center justify-center gap-3 relative"
             }
         >
             <h1 className="text-3xl font-bold">{t("APP_NAME")}</h1>
             <p className="text-sm text-center">{t("app-introduce")}</p>
             <div className="text-xs opacity-60">{t("pwa-install-tip")}</div>
+            <div className="absolute bottom-4 left-4 flex justify-center">
+                {showIOSDownload && (
+                    <a
+                        className="inline-flex size-8 items-center justify-center rounded-full bg-white/5 text-white/80 transition-colors hover:border-white/50 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/60"
+                        target="_blank"
+                        href="https://apps.apple.com/us/app/cent-%E9%87%8D%E6%96%B0%E5%AE%9A%E4%B9%89%E8%AE%B0%E8%B4%A6/id6764264950"
+                        rel="noopener noreferrer"
+                        aria-label={t("download-ios-app")}
+                    >
+                        <i
+                            className="icon-[mdi--apple] size-4"
+                            aria-hidden="true"
+                        ></i>
+                        <span className="sr-only">{t("download-ios-app")}</span>
+                    </a>
+                )}
+            </div>
             <a
                 className="absolute bottom-4 right-4 text-xs opacity-60 underline"
                 target="_blank"
