@@ -42,19 +42,21 @@ function Form({ onCancel }: { onCancel?: () => void }) {
             const personal = state.infos?.meta.personal?.[userId];
             const assistant = personal?.assistant;
             return {
-                configs: assistant?.configs ?? [],
+                configs: assistant?.configs,
                 defaultConfigId: assistant?.defaultConfigId,
                 zen: personal?.zen,
             };
         }),
     );
 
-    const defaultConfigName = configs.find(
+    const configList = configs ?? [];
+
+    const defaultConfigName = configList.find(
         (config) => config.id === defaultConfigId,
     )?.name;
     const selectedConfigExists =
         zen?.aiConfigId &&
-        configs.some((config) => config.id === zen.aiConfigId);
+        configList.some((config) => config.id === zen.aiConfigId);
     const aiConfigValue = selectedConfigExists
         ? (zen?.aiConfigId as string)
         : FOLLOW_DEFAULT;
@@ -71,10 +73,6 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                 <div className="w-full min-h-10 pb-4 flex-shrink-0 flex justify-between items-center px-4 gap-2">
                     <div className="text-sm min-w-0 flex-1">
                         <div>Zen AI 模型</div>
-                        <div className="text-xs opacity-60">
-                            选择 Zen Mode
-                            单独使用的模型；跟随默认时使用助手默认模型。
-                        </div>
                     </div>
                     <Select
                         value={aiConfigValue}
@@ -97,7 +95,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                                     ? ` (${defaultConfigName})`
                                     : ""}
                             </SelectItem>
-                            {configs.map((config) => (
+                            {configList.map((config) => (
                                 <SelectItem key={config.id} value={config.id}>
                                     {config.name}
                                 </SelectItem>
