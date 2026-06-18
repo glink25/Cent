@@ -7,6 +7,9 @@ import {
 import { amountToNumber } from "@/ledger/bill";
 import { BillCategories } from "@/ledger/category";
 import type { Bill, GlobalMeta } from "@/ledger/type";
+import { intlCategory } from "@/ledger/utils";
+import { t } from "@/locale";
+import { useLedgerStore } from "@/store/ledger";
 import {
     getCalendarPosition,
     getDefaultZenPeriod,
@@ -32,15 +35,21 @@ type ZenPeriodAnalysis = Omit<
     | "lastZenPost"
 >;
 
-function categoryNameById(meta: GlobalMeta | undefined) {
-    const categories = getAllCategories(meta);
+function categoryNameById() {
+    const categories = getAllCategories();
     const map = new Map(categories.map((category) => [category.id, category]));
     return (id: string) => map.get(id)?.name ?? id;
 }
 
-function getAllCategories(meta: GlobalMeta | undefined) {
-    return [...BillCategories, ...(meta?.categories ?? [])];
-}
+const getAllCategories = () => {
+    const savedCategories = useLedgerStore.getState().infos?.meta.categories;
+
+    const categories = (savedCategories ?? BillCategories).map((v) => {
+        const cate = intlCategory(v, t);
+        return cate;
+    });
+    return categories;
+};
 
 function trimComment(comment: string | undefined) {
     if (!comment) return undefined;
@@ -116,8 +125,8 @@ export function analyzeZenPeriod({
     meta?: GlobalMeta;
     period: ZenPeriod;
 }): ZenPeriodAnalysis {
-    const getCategoryName = categoryNameById(meta);
-    const allCategories = getAllCategories(meta);
+    const getCategoryName = categoryNameById();
+    const allCategories = getAllCategories();
     const periodBills = bills.filter(
         (bill) => bill.time >= period.start && bill.time <= period.end,
     );

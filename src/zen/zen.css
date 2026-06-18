@@ -336,38 +336,158 @@
 }
 
 /* ============================================================
- * 预设 3：森林 Forest（绿 / 鼠尾草）
+ * 预设 3：红日 redmoon (优化版)
  * ============================================================ */
+
+/* 呼吸动画：使用 transform 替代 background-size */
+@keyframes moon-breath {
+	0%,
+	100% {
+		/* 原始大小和位置 */
+
+		background-size: 100% 100%;
+
+		background-position: 0% 0%;
+	}
+
+	50% {
+		/* 放大背景，同时必须肉眼可见地微调 position 来补偿它产生的位移 */
+
+		/* 下面的具体百分比需要根据容器看板肉眼反复微调，极难对齐 */
+
+		background-size: 104% 104%;
+
+		background-position: 0% -2%;
+	}
+}
+
 .zen-root.zen-style-3 {
-	--zen-bg:
-		radial-gradient(
-			circle at 18% 22%,
-			rgba(193, 225, 193, 0.46),
-			transparent 31%
-		),
-		radial-gradient(
-			circle at 82% 14%,
-			rgba(214, 236, 221, 0.42),
-			transparent 30%
-		),
-		radial-gradient(
-			circle at 52% 84%,
-			rgba(206, 228, 210, 0.34),
-			transparent 36%
-		), linear-gradient(135deg, #f2f8f1 0%, #eef4ec 43%, #eaf3ee 100%);
-	--zen-accent: #5aa06f;
-	--zen-accent-light: #b7e0c4;
-	--zen-accent-strong: rgba(74, 222, 128, 0.8);
-	--zen-accent-soft: rgba(187, 247, 208, 0.5);
-	--zen-accent-ring: rgba(134, 239, 172, 0.7);
-	--zen-accent-text: #0c2a18;
-	--zen-accent-shadow: 0 18px 45px rgba(67, 150, 100, 0.18);
-	--zen-quote-bg: rgba(220, 252, 231, 0.55);
-	--zen-badge-bg: rgba(187, 247, 208, 0.6);
-	--zen-badge-text: #14532d;
-	--zen-ring-focus: rgba(134, 239, 172, 0.8);
-	--zen-thumb-shadow:
-		0 10px 26px rgba(38, 110, 70, 0.28), 0 0 0 7px rgba(187, 247, 208, 0.4);
+	position: relative; /* 必须：为伪元素提供定位基准 */
+	background: #000000; /* 保持父级纯黑底色 */
+	overflow: hidden; /* 开启裁剪，防止红日放大时溢出画布 */
+
+	--moon-size: 55%;
+	--zen-bg: radial-gradient(
+		circle at -10% -40%,
+		#ff0000 0%,
+		#ae3737 var(--moon-size),
+		transparent calc(var(--moon-size) + 0.1%)
+	);
+
+	/* 使用 ::before 伪元素独立绘制红日 */
+	&::before {
+		content: "";
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 120%;
+		height: 120%;
+		background: var(--zen-bg) no-repeat;
+		background-size: 100% 100%;
+		z-index: 0; /* 确保在父级背景之上，但在内容文本之下 */
+		pointer-events: none;
+
+		/* * 【核心魔法】将缩放中心设置为与径向渐变的圆心完全一致（-10% -40%）。
+         * 这样无论怎么放大缩小，红日都会死死锚定在原位，绝不发生一丝一毫的肉眼可见位移！
+         */
+		transform-origin: -10% -40%;
+
+		/* 默认开启呼吸动画 */
+		animation: moon-breath 10s infinite ease-in-out;
+	}
+	&::before {
+		transition: transform 1s ease-in-out 0.5s;
+	}
+	/* 当状态为 loading 时，切换为缩小动画 */
+	&[data-status="loading"]::before {
+		transform: scale(0.6);
+		animation-duration: 4s;
+	}
+	@media (max-width: 640px) {
+		&[data-status="loading"]::before {
+			transform: scale(0.9) translateY(-30%);
+		}
+	}
+	.zen-option-bar {
+		border-radius: 0;
+	}
+	.zen-option {
+		border-radius: 0;
+	}
+	.zen-card--solid {
+		background: none;
+	}
+	--zen-overlay: none;
+	--zen-card-hairline: none;
+	--zen-card-bg: none;
+	--zen-card-shadow: none;
+	--zen-header-bg: none;
+	--zen-header-ring: none;
+	--zen-header-shadow: none;
+	--zen-text: white;
+	--zen-text-muted: white;
+	--zen-text-subtle: white;
+	--zen-close-text: white;
+	--zen-close-bg: none;
+	--zen-close-ring: none;
+	--zen-close-shadow: none;
+	--zen-heading: white;
+	--zen-option-bg: none;
+	--zen-option-ring: none;
+	--zen-option-shadow: none;
+	--zen-option-text: white;
+	--zen-option-bg-hover: none;
+	--zen-option-text-hover: white;
+	--zen-option-active-bg: none;
+	--zen-option-active-text: white;
+	--zen-footer-bg: none;
+	--zen-footer-shadow: none;
+	--zen-ghost-bg: none;
+	--zen-ghost-ring: none;
+	--zen-ghost-shadow: none;
+	--zen-ghost-text: white;
+	--zen-surface-bg: none;
+	--zen-surface-ring: none;
+	--zen-surface-shadow: none;
+	--zen-accent: black;
+	--zen-accent-light: black;
+	--zen-slider-progress: black;
+	--zen-slider-rest: white;
+	.zen-range::-webkit-slider-thumb {
+		width: 8px;
+		height: 8px;
+		margin-top: -2px;
+		background: white;
+		box-shadow:
+			0 10px 26px rgba(38, 110, 70, 0.28),
+			0 0 0 7px rgba(187, 247, 208, 0.4);
+	}
+	.zen-range::-moz-range-progress {
+		background: white;
+	}
+	.zen-range::-webkit-slider-runnable-track {
+		box-shadow: none;
+		height: 4px;
+	}
+	--zen-accent-strong: white;
+	--zen-accent-soft: none;
+	--zen-accent-ring: none;
+	--zen-accent-text: white;
+	--zen-accent-shadow: none;
+	--zen-badge-bg: white;
+	--zen-badge-text: black;
+	.zen-quote {
+		border-radius: 0;
+		border-left: 2px solid white;
+	}
+	--zen-quote-bg: none;
+	--zen-quote-ring: none;
+	--zen-quote-shadow: none;
+	--zen-input-text: white;
+	--zen-input-placeholder: white;
+	--zen-input-ring: none;
+	--zen-input-shadow: none;
+	--zen-ring-focus: rgba(221, 221, 221, 0.8);
 }
 
 .dark .zen-root.zen-style-3 {

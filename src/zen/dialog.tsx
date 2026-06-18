@@ -138,7 +138,7 @@ function CardShell({
     return (
         <div
             className={cn(
-                "zen-card zen-card-enter relative flex min-h-0 flex-1 overflow-hidden rounded-[2rem] backdrop-blur-3xl",
+                "zen-card zen-card-enter relative flex min-h-0 flex-1 overflow-hidden rounded-[2rem]",
                 className,
             )}
         >
@@ -173,7 +173,7 @@ function ZenCardLayout({
                 {children}
             </div>
             {footer && (
-                <div className="zen-footer shrink-0 px-5 pb-5 pt-3 backdrop-blur-xl sm:px-7 sm:pb-7">
+                <div className="zen-footer shrink-0 px-5 pb-5 pt-3 sm:px-7 sm:pb-7">
                     {footer}
                 </div>
             )}
@@ -189,12 +189,7 @@ function ZenSurface({
     className?: string;
 }) {
     return (
-        <div
-            className={cn(
-                "zen-surface rounded-[1.35rem] p-4 backdrop-blur-2xl",
-                className,
-            )}
-        >
+        <div className={cn("zen-surface rounded-[1.35rem] p-4", className)}>
             {children}
         </div>
     );
@@ -232,7 +227,7 @@ function ZenButton({
             type="button"
             className={cn(
                 "zen-btn inline-flex min-h-12 items-center justify-center rounded-full px-6 text-sm font-medium transition duration-300 disabled:pointer-events-none disabled:opacity-45",
-                variant === "ghost" && "zen-btn--ghost backdrop-blur-xl",
+                variant === "ghost" && "zen-btn--ghost",
                 className,
             )}
             {...props}
@@ -254,7 +249,7 @@ function ZenOptionButton({
         <button
             type="button"
             className={cn(
-                "zen-option group relative min-h-16 overflow-hidden rounded-[1.35rem] p-4 text-left backdrop-blur-2xl transition duration-300 hover:-translate-y-0.5 disabled:pointer-events-none disabled:opacity-55",
+                "zen-option group relative min-h-16 overflow-hidden rounded-[1.35rem] p-4 text-left transition duration-300 hover:-translate-y-0.5 disabled:pointer-events-none disabled:opacity-55",
                 active && "zen-option--active",
                 className,
             )}
@@ -558,7 +553,7 @@ function InsightCard({
                 }
             >
                 <div>
-                    <p className="zen-surface zen-text-muted mt-4 rounded-[1.5rem] p-5 text-sm leading-8 backdrop-blur-xl">
+                    <p className="zen-surface zen-text-muted mt-4 rounded-[1.5rem] p-5 text-sm leading-8">
                         {card.body}
                     </p>
                 </div>
@@ -706,7 +701,7 @@ function SliderCardView({
                     )}
                 </div>
                 <div className="space-y-4">
-                    <div className="zen-surface rounded-[1.5rem] px-4 py-5 backdrop-blur-xl">
+                    <div className="zen-surface rounded-[1.5rem] px-4 py-5">
                         <input
                             type="range"
                             min={card.minValue}
@@ -1342,6 +1337,7 @@ function ZenDialogForm({
 
     return (
         <div
+            data-status={pending ? "loading" : "ready"}
             className={cn(
                 "zen-root zen-text zen-gradient-drift relative h-full overflow-hidden",
                 `zen-style-${styleIndex}`,
@@ -1350,7 +1346,7 @@ function ZenDialogForm({
         >
             <div className="zen-overlay pointer-events-none absolute inset-0" />
             <div className="relative mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col gap-5 px-4 py-5 sm:px-6 sm:py-7">
-                <div className="zen-header-bar flex shrink-0 items-center justify-between gap-3 rounded-full px-3 py-2 backdrop-blur-2xl">
+                <div className="zen-header-bar flex shrink-0 items-center justify-between gap-3 rounded-full px-3 py-2">
                     <div>
                         <div className="text-xs uppercase tracking-[0.2em] zen-text-muted">
                             {t("zen-header-label")}
@@ -1361,7 +1357,7 @@ function ZenDialogForm({
                     </div>
                     <button
                         type="button"
-                        className="zen-close-btn grid size-11 place-items-center rounded-full backdrop-blur-xl transition"
+                        className="zen-close-btn grid size-11 place-items-center rounded-full transition"
                         onClick={onCancel}
                     >
                         <i className="icon-[mdi--close] size-5"></i>
@@ -1414,10 +1410,9 @@ function ZenDialogForm({
                 {state.type === "active" && !activeStep && (
                     <CardShell>
                         <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center zen-text-muted">
-                            <div className="zen-surface rounded-full p-4 backdrop-blur-xl">
-                                <Loading className="[&_i]:size-6" />
+                            <div className="text-2xl font-medium">
+                                {t("zen-loading-period")}
                             </div>
-                            <div>{t("zen-loading-period")}</div>
                             <div className="text-sm">
                                 {t("zen-loading-period-desc-1")}
                             </div>

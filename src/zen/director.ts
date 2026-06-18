@@ -14,11 +14,7 @@ import {
 import { createCentAIProvider } from "@/components/assistant/tools/provider";
 import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
-import {
-    createFallbackEpilogueStep,
-    createFallbackReflectionStep,
-    createFallbackThemeStep,
-} from "./fallback";
+import { createFallbackZenStep } from "./fallback";
 import { getPersonalZenPosts } from "./posts";
 import {
     ZenFocusDecisionSchema,
@@ -98,13 +94,7 @@ function getLatestZenStep(history: History): ZenUIStep | undefined {
 }
 
 function getFallbackStep(session: ZenSessionState, context: ZenContext) {
-    if (!session.selectedTheme) {
-        return createFallbackThemeStep({ session, context });
-    }
-    if (session.steps.length >= 4) {
-        return createFallbackEpilogueStep(session);
-    }
-    return createFallbackReflectionStep({ session, context });
+    return createFallbackZenStep({ session, context });
 }
 
 export async function requestNextZenStep({
@@ -183,7 +173,7 @@ export async function requestNextZenStep({
         };
     } catch (error) {
         console.warn("[zen] fallback step used", error);
-        const fallback = getFallbackStep(session, context);
+        const fallback = await getFallbackStep(session, context);
         return {
             step: fallback,
             history: stripSystemMessages(session.history ?? []),
