@@ -344,37 +344,9 @@ type ToolMessage = {
 
 允许的核心标签：
 
-- `<thought>...</thought>`
-- `<answer>...</answer>`
 - `<overview>...</overview>`
-- `<tool>...</tool>`
 
-### 基本约束
-
-- assistant 输出必须遵守 XML 标签协议
-- `core` 负责通过 `systemPrompt` 将这一协议注入给模型
-- `tool` 标签中的内容必须是可解析的 JSON 对象
-- 单次 provider 响应只允许一个终态动作
-
-终态动作含义：
-
-- 要么以 `<answer>` 结束，代表本轮直接回答完成
-- 要么以 `<tool>` 结束，代表需要执行一次工具调用
-
-### 示例：直接回答
-
-```xml
-<thought>我已经理解用户的问题</thought>
-<answer>这是最终回答内容</answer>
-<overview>一句简要总结</overview>
-```
-
-### 示例：工具调用
-
-```xml
-<thought>需要查询账单数据后再回答</thought>
-<tool>{"name":"queryLedger","params":{"time":"2026-04-07","query":"午饭"}}</tool>
-```
+用于在话题开始或者改变时动态更新本轮对话主题
 
 ### 协议限制
 

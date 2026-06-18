@@ -4,7 +4,10 @@ import { BillIndexedDBStorage } from "@/database/storage";
 import type { Bill } from "@/ledger/type";
 import { createTidal } from "@/tidal";
 import { checkWebDAVConfig, createWebDAVSyncer } from "@/tidal/web-dav";
+import type { ZenPost } from "@/zen/types";
 import type { SyncEndpointFactory } from "../type";
+
+const ZEN_ENTRY_NAME = "zen";
 
 const config = {
     repoPrefix: "cent-journal",
@@ -61,16 +64,30 @@ export const WebDAVEndpoint: SyncEndpointFactory = {
             throw new Error("web dav auth not found");
         }
         const remote = auth.remote.replace(/\/$/, "");
+        const webDAVSyncerConfig = {
+            username: auth.username,
+            password: auth.password,
+            remoteUrl: remote,
+            proxy: auth.proxy,
+        };
         const repo = createTidal<Bill>({
             storageFactory: (name) => new BillIndexedDBStorage(`book-${name}`),
             entryName: config.entryName,
             syncerFactory: () =>
                 createWebDAVSyncer({
                     ...config,
-                    username: auth.username,
-                    password: auth.password,
-                    remoteUrl: remote,
-                    proxy: auth.proxy,
+                    ...webDAVSyncerConfig,
+                }),
+        });
+        const zenRepo = createTidal<ZenPost>({
+            storageFactory: (name) =>
+                new BillIndexedDBStorage(`book-${name}--${ZEN_ENTRY_NAME}`),
+            entryName: ZEN_ENTRY_NAME,
+            syncerFactory: () =>
+                createWebDAVSyncer({
+                    ...config,
+                    ...webDAVSyncerConfig,
+                    entryName: ZEN_ENTRY_NAME,
                 }),
         });
         const toBookName = (bookId: string) => {
@@ -86,15 +103,20 @@ export const WebDAVEndpoint: SyncEndpointFactory = {
             return meta._webDAVUserAliases;
         };
 
+        // ledger 与 zen 顺序同步，保持单一上传通道
         const scheduler = new Scheduler(async (signal) => {
-            const [finished, cancel] = repo.sync();
-            signal.onabort = cancel;
-            await finished;
+            const [ledgerFinished, cancelLedger] = repo.sync();
+            signal.onabort = cancelLedger;
+            await ledgerFinished;
+            const [zenFinished, cancelZen] = zenRepo.sync();
+            signal.onabort = cancelZen;
+            await zenFinished;
         });
 
         return {
             logout: async () => {
                 await repo.detach();
+                await zenRepo.detach();
             },
             getUserInfo: async () => {
                 const Me = {
@@ -130,7 +152,7 @@ export const WebDAVEndpoint: SyncEndpointFactory = {
             },
             createBook: repo.create,
             initBook: async (name) => {
-                await repo.init(name);
+                await Promise.all([repo.init(name), zenRepo.init(name)]);
                 repo.getMeta(name).then((meta?: WebDAVPrivateMeta) => {
                     const customUserName = auth.customUserName;
                     if (!customUserName) {
@@ -166,7 +188,15 @@ export const WebDAVEndpoint: SyncEndpointFactory = {
             getAllItems: repo.getAllItems,
             onChange: repo.onChange,
 
-            getIsNeedSync: repo.hasStashes,
+            batchZen: async (...args) => {
+                await zenRepo.batch(...args);
+                scheduler.schedule();
+            },
+            getAllZenItems: zenRepo.getAllItems,
+            onZenChange: zenRepo.onChange,
+
+            getIsNeedSync: async () =>
+                (await repo.hasStashes()) || (await zenRepo.hasStashes()),
             onSync: scheduler.onProcess.bind(scheduler),
             toSync: scheduler.schedule.bind(scheduler),
 

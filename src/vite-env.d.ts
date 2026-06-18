@@ -2,6 +2,10 @@
 /// <reference types="unplugin-info/client" />
 /// <reference types="vite-plugin-svgr/client" />
 
+interface Window {
+    __CENT_ZEN_FALLBACK__?: boolean;
+}
+
 // node-forge 子模块类型声明（用于按需导入）
 declare module "node-forge/lib/forge" {
     const forge: unknown;

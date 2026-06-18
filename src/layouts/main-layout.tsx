@@ -34,6 +34,7 @@ import { ThemeProvider } from "@/hooks/use-theme";
 import { useUrlHandler } from "@/hooks/use-url-handler";
 import { usePreferenceStore } from "@/store/preference";
 import { startBackgroundPredict } from "@/utils/predict";
+import { ZenDialogProvider, ZenPostsProvider } from "@/zen";
 
 export default function MainLayout() {
     useQuickGoAdd();
@@ -83,6 +84,8 @@ export default function MainLayout() {
                 <ScheduledEditProvider />
                 <TagListProvider />
                 <CategoryListProvider />
+                <ZenDialogProvider />
+                <ZenPostsProvider />
                 <ModalProvider />
                 <Toaster />
             </TooltipProvider>

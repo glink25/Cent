@@ -1,0 +1,244 @@
+/* ============================================================
+ * 预设 5：星夜 Star Night（深蓝夜空玻璃 / 星空旋转 + 月亮呼吸）
+ * 自包含深底主题：深蓝夜空暗底，整体覆盖语义 token 让浅色文字可读；
+ * .dark 版本只写「same with light」忽略系统明暗。
+ * ::before 为固定月亮（不参与旋转，只做光晕呼吸 moonBreath），
+ * ::after 为整片星空平面（围绕屏幕下方同一点缓慢旋转 skyRotate，
+ * 叠加 starBreath 让星光明暗呼吸，更像地球自转下缓缓移动的星空）。
+ * 迁移自 star-night.html：严格保留核心星空/月亮动画与玻璃表单质感。
+ * ============================================================ */
+
+.zen-root.zen-style-star-night {
+	position: relative; /* 为月亮 / 星空伪元素提供定位基准 */
+	overflow: hidden;
+
+	/* 深蓝夜空暗底（迁移自 star-night.html body 背景，四层供 gradient-drift 复用） */
+	--zen-bg:
+		radial-gradient(
+			circle at 50% 120%,
+			rgba(58, 75, 150, 0.42),
+			transparent 42%
+		),
+		radial-gradient(
+			circle at 20% 22%,
+			rgba(105, 130, 255, 0.22),
+			transparent 28%
+		),
+		radial-gradient(
+			circle at 80% 32%,
+			rgba(150, 118, 255, 0.18),
+			transparent 32%
+		), linear-gradient(180deg, #030513 0%, #101936 56%, #050713 100%);
+	--zen-overlay: none;
+
+	/* 卡片（迁移自 star-night.html main 的玻璃质感 rgba(12,17,38,.52) + 高光） */
+	--zen-card-bg: linear-gradient(
+		145deg,
+		rgba(255, 255, 255, 0.12),
+		rgba(12, 17, 38, 0.52) 38%
+	);
+	--zen-card-ring: rgba(255, 255, 255, 0.16);
+	--zen-card-shadow: 0 30px 90px rgba(0, 0, 0, 0.42);
+	--zen-card-hairline: linear-gradient(
+		to right,
+		transparent,
+		rgba(226, 232, 255, 0.42),
+		transparent
+	);
+
+	--zen-surface-bg: rgba(255, 255, 255, 0.08);
+	--zen-surface-ring: rgba(255, 255, 255, 0.14);
+	--zen-surface-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+
+	/* 文字（迁移自 star-night.html --text / --muted） */
+	--zen-heading: #f6f8ff;
+	--zen-text: rgba(246, 248, 255, 0.92);
+	--zen-text-muted: rgba(226, 232, 255, 0.62);
+	--zen-text-subtle: rgba(226, 232, 255, 0.46);
+
+	/* 主按钮（迁移自 star-night.html button 的蓝紫渐变） */
+	--zen-btn-bg: linear-gradient(
+		135deg,
+		rgba(100, 132, 245, 0.84),
+		rgba(158, 126, 245, 0.76)
+	);
+	--zen-btn-bg-hover: linear-gradient(
+		135deg,
+		rgba(116, 148, 255, 0.92),
+		rgba(172, 142, 255, 0.84)
+	);
+	--zen-btn-text: #f8faff;
+	--zen-btn-shadow: 0 14px 34px rgba(91, 116, 255, 0.28);
+	--zen-btn-shadow-hover: 0 18px 42px rgba(91, 116, 255, 0.36);
+
+	--zen-ghost-bg: rgba(255, 255, 255, 0.07);
+	--zen-ghost-bg-hover: rgba(255, 255, 255, 0.14);
+	--zen-ghost-ring: rgba(255, 255, 255, 0.16);
+	--zen-ghost-text: rgba(238, 243, 255, 0.92);
+	--zen-ghost-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+
+	--zen-option-bg: rgba(255, 255, 255, 0.07);
+	--zen-option-bg-hover: rgba(255, 255, 255, 0.14);
+	--zen-option-ring: rgba(255, 255, 255, 0.16);
+	--zen-option-text: rgba(238, 243, 255, 0.92);
+	--zen-option-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+
+	/* 输入（迁移自 star-night.html input 玻璃质感与冷白文字 / 占位符） */
+	--zen-input-bg: rgba(255, 255, 255, 0.07);
+	--zen-input-ring: rgba(255, 255, 255, 0.14);
+	--zen-input-text: rgba(246, 248, 255, 0.92);
+	--zen-input-placeholder: rgba(230, 235, 255, 0.36);
+
+	--zen-chip-bg: rgba(255, 255, 255, 0.1);
+	--zen-chip-text: rgba(238, 243, 255, 0.92);
+	--zen-header-bg: rgba(255, 255, 255, 0.06);
+	--zen-header-ring: rgba(255, 255, 255, 0.14);
+	--zen-header-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+	--zen-close-bg: rgba(255, 255, 255, 0.08);
+	--zen-close-bg-hover: rgba(255, 255, 255, 0.16);
+	--zen-close-ring: rgba(255, 255, 255, 0.16);
+	--zen-close-text: rgba(226, 232, 255, 0.62);
+	--zen-close-text-hover: #f6f8ff;
+	--zen-footer-bg: none;
+	--zen-footer-shadow: none;
+	--zen-slider-rest: rgba(255, 255, 255, 0.12);
+
+	/* 强调色族（蓝紫星光） */
+	--zen-accent: #6484f5;
+	--zen-accent-light: #9e7ef5;
+	--zen-accent-strong: rgba(186, 205, 255, 0.85);
+	--zen-accent-soft: rgba(135, 166, 255, 0.16);
+	--zen-accent-ring: rgba(186, 205, 255, 0.42);
+	--zen-accent-text: #f6f8ff;
+	--zen-accent-shadow: 0 18px 45px rgba(91, 116, 255, 0.32);
+	--zen-quote-bg: rgba(135, 166, 255, 0.1);
+	--zen-quote-ring: rgba(255, 255, 255, 0.16);
+	--zen-badge-bg: rgba(186, 205, 255, 0.85);
+	--zen-badge-text: #0b1026;
+	--zen-ring-focus: rgba(186, 205, 255, 0.7);
+	--zen-thumb-shadow:
+		0 10px 26px rgba(0, 0, 0, 0.4), 0 0 0 7px rgba(135, 166, 255, 0.28);
+}
+
+/* 固定月亮层（迁移自 star-night.html body::before）
+ * 月亮不参与旋转，只做极轻微的光晕呼吸 moonBreath。 */
+.zen-root.zen-style-star-night::before {
+	content: "";
+	position: absolute;
+	top: 12%;
+	right: 17%;
+	width: 78px;
+	height: 78px;
+	border-radius: 50%;
+	z-index: 0;
+	pointer-events: none;
+
+	background: radial-gradient(
+		circle at 38% 34%,
+		#fffbe0 0 24px,
+		#f3edc8 25px 38px,
+		rgba(243, 237, 200, 0.24) 39px 58px,
+		transparent 60px
+	);
+	box-shadow:
+		0 0 36px rgba(255, 248, 205, 0.34),
+		0 0 92px rgba(153, 179, 255, 0.2);
+	animation: zen-star-moon-breath 12s ease-in-out infinite;
+}
+
+/* 星空层（迁移自 star-night.html body::after）
+ * 整片星空作为一个巨大平面，围绕屏幕下方同一点（transform-origin 50% 82%）
+ * 缓慢旋转 skyRotate，叠加 starBreath 让星光明暗呼吸。 */
+.zen-root.zen-style-star-night::after {
+	content: "";
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	width: 180vmax;
+	height: 180vmax;
+	z-index: 0;
+	pointer-events: none;
+
+	transform: translate(-50%, -50%) rotate(0deg);
+	transform-origin: 50% 82%;
+	opacity: 0.72;
+
+	background:
+		radial-gradient(circle, rgba(255, 255, 255, 0.92) 0 1px, transparent 1.5px)
+		24px 36px / 148px 148px,
+		radial-gradient(
+			circle,
+			rgba(202, 218, 255, 0.72) 0 0.9px,
+			transparent 1.4px
+		)
+		80px 112px / 210px 210px,
+		radial-gradient(
+			circle,
+			rgba(255, 255, 255, 0.54) 0 0.7px,
+			transparent 1.2px
+		)
+		130px 70px / 96px 96px,
+		radial-gradient(
+			circle,
+			rgba(164, 190, 255, 0.36) 0 0.8px,
+			transparent 1.3px
+		)
+		40px 170px / 280px 280px,
+		radial-gradient(
+			circle at 44% 42%,
+			rgba(120, 150, 255, 0.11),
+			transparent 18%
+		),
+		radial-gradient(
+			circle at 62% 50%,
+			rgba(178, 132, 255, 0.08),
+			transparent 22%
+		);
+	animation:
+		zen-star-sky-rotate 600s linear infinite,
+		zen-star-breath 8s ease-in-out infinite;
+}
+
+.dark .zen-root.zen-style-star-night {
+	/* same with light */
+}
+
+/* 星空旋转：整片平面围绕下方锚点缓慢自转（迁移自 skyRotate） */
+@keyframes zen-star-sky-rotate {
+	from {
+		transform: translate(-50%, -50%) rotate(0deg);
+	}
+	to {
+		transform: translate(-50%, -50%) rotate(360deg);
+	}
+}
+
+/* 星光呼吸：整层星点明暗起伏（迁移自 starBreath） */
+@keyframes zen-star-breath {
+	0%,
+	100% {
+		opacity: 0.52;
+		filter: brightness(0.9);
+	}
+	50% {
+		opacity: 0.82;
+		filter: brightness(1.18);
+	}
+}
+
+/* 月亮呼吸：光晕极轻微地明暗胀缩（迁移自 moonBreath） */
+@keyframes zen-star-moon-breath {
+	0%,
+	100% {
+		opacity: 0.9;
+		box-shadow:
+			0 0 36px rgba(255, 248, 205, 0.3),
+			0 0 92px rgba(153, 179, 255, 0.16);
+	}
+	50% {
+		opacity: 1;
+		box-shadow:
+			0 0 46px rgba(255, 248, 205, 0.42),
+			0 0 116px rgba(153, 179, 255, 0.24);
+	}
+}

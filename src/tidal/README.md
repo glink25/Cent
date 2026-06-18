@@ -1391,6 +1391,48 @@ export const checkWebDAVConfig = async (config: WebDAVConfig) => {
 };
 ```
 
+## 多 entry 数据共存（Endpoint 层多实例编排）
+
+单个 Tidal 实例只管理一种数组数据，其文件切片命名为 `${entryName}-${index}.json`
+（账单默认 `ledger-*.json`）。当需要在**同一个 store**（同一仓库/桶/目录）中让另一种独立数据结构
+（如禅模式 zen，切片为 `zen-*.json`）与账单共存时，**不修改 Tidal 引擎本身**，而是在更上层的
+Endpoint 层创建**两个 Tidal 实例**并按 entry 路由：
+
+```typescript
+const repo = createTidal<Bill>({
+    storageFactory: (name) => new BillIndexedDBStorage(`book-${name}`),  // 现有库，向后兼容
+    entryName: "ledger",
+    syncerFactory: () => createGithubSyncer({ auth, entryName: "ledger", repoPrefix }),
+});
+const zenRepo = createTidal<ZenPost>({
+    storageFactory: (name) => new BillIndexedDBStorage(`book-${name}--zen`),  // 独立本地库
+    entryName: "zen",
+    syncerFactory: () => createGithubSyncer({ auth, entryName: "zen", repoPrefix }),
+});
+```
+
+之所以天然隔离：每个实例的 syncer 按各自的 `entryName` 解析远端结构
+（`treeDateToStructure` / `s3ObjectsToStructure` / `fileStatsToStructure` 只匹配
+`${entryName}-*.json`），因此 ledger 实例忽略 `zen-*.json`，反之亦然——**Tidal 与 syncer 代码均无需改动**。
+
+### 编排层必须保证的三条约束
+
+1. **meta.json 单一归属**：`meta.json` 属于整个 store，只让 ledger 实例读写。zen 实例从不收到
+   `type:"meta"` 的 action，其同步流程的 `runMetaStashesHandler` 返回空，**不会上传 meta.json**，
+   因此不会与 ledger 争抢同一份 meta。
+2. **同步串行**：github/gitee 通过 commit → PATCH ref 上传，两个实例并发同步会撞同一个 ref
+   （non-fast-forward）。Endpoint 的 scheduler 任务必须**顺序**执行：先 `await repo.sync()`，
+   再 `await zenRepo.sync()`，各自产生一次提交。
+3. **存储隔离**：ledger 实例沿用现有 IndexedDB 库 `book-${name}`（不触发 schema 升级，完全向后兼容）；
+   zen 实例使用独立库 `book-${name}--zen`（首次访问时全新创建）。
+
+> 当某种新数据需要与账单字段一致地复用本地存储（如同样按 `time` 索引排序、按 `creatorId` 过滤），
+> 只需让其 item 类型带上对应字段即可直接复用 `BillIndexedDBStorage`，无需扩展存储层。
+> zen 即采用此方式：`ZenPost` 带 `time`（归属日子）与 `userId`，id 规则为 `zen-${date}-${userId}`。
+
+`SyncEndpoint` 对外以独立方法暴露 zen 通道（`getAllZenItems` / `batchZen` / `onZenChange`），
+保持 `getAllItems` / `batch` / `onChange` 的账单语义不变。
+
 ## 总结
 
 Tidal 通过以下设计实现了高效的增量同步：

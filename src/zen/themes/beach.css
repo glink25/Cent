@@ -1,0 +1,264 @@
+/* ============================================================
+ * 预设 2：沙滩 Beach（明亮海岸玻璃 / 海浪冲刷退去）
+ * 自包含明亮浅底主题：沙滩暖底 + 蓝绿海浪，整体覆盖语义 token
+ * 让深色文字在亮底上可读；.dark 版本只写「same as light」忽略系统明暗。
+ * ::before / ::after 为海浪冲刷层（waveWash 错峰）——白色浪花自屏幕
+ * 上方涌下、漫过画面后安静淡去退回，二者相差半个周期交替起落。
+ * 迁移自 beach.html：严格保留核心海浪动画与玻璃表单质感。
+ * ============================================================ */
+.zen-root.zen-style-beach {
+	position: relative; /* 为海浪伪元素提供定位基准 */
+	overflow: hidden;
+
+	/* beach.html 的浪花局部变量，供 ::before / ::after 复用 */
+	--beach-foam: rgba(255, 255, 255, 0.82);
+
+	/* 沙滩暖底（迁移自 beach.html body 背景） */
+	--zen-bg:
+		radial-gradient(
+			circle at 22% 78%,
+			rgba(255, 255, 255, 0.2),
+			transparent 24%
+		),
+		radial-gradient(
+			circle at 78% 88%,
+			rgba(255, 255, 255, 0.16),
+			transparent 28%
+		), linear-gradient(180deg, #ffe9bc 0%, #f1cf94 58%, #d9a95f 100%);
+	--zen-overlay:
+		radial-gradient(
+			circle at 22% 18%,
+			rgba(255, 255, 255, 0.5),
+			transparent 30%
+		),
+		radial-gradient(
+			circle at 82% 14%,
+			rgba(255, 255, 255, 0.38),
+			transparent 30%
+		);
+
+	/* 卡片（迁移自 beach.html main 的玻璃质感） */
+	--zen-card-bg:
+		linear-gradient(145deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.2)),
+		radial-gradient(
+			circle at top left,
+			rgba(255, 255, 255, 0.42),
+			transparent 46%
+		);
+	--zen-card-ring: rgba(255, 255, 255, 0.5);
+	--zen-card-shadow: 0 28px 80px rgba(55, 89, 100, 0.18);
+	--zen-card-hairline: linear-gradient(
+		to right,
+		transparent,
+		rgba(255, 255, 255, 0.8),
+		transparent
+	);
+
+	--zen-surface-bg: rgba(255, 255, 255, 0.34);
+	--zen-surface-ring: rgba(255, 255, 255, 0.46);
+	--zen-surface-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+
+	/* 文字（ink / muted，迁移自 beach.html） */
+	--zen-heading: #244251;
+	--zen-text: #244251;
+	--zen-text-muted: rgba(36, 66, 81, 0.62);
+	--zen-text-subtle: rgba(36, 66, 81, 0.45);
+
+	/* 主按钮（迁移自 beach.html button 的蓝青渐变） */
+	--zen-btn-bg: linear-gradient(
+		135deg,
+		rgba(18, 126, 184, 0.92),
+		rgba(77, 190, 205, 0.86)
+	);
+	--zen-btn-bg-hover: linear-gradient(
+		135deg,
+		rgba(14, 110, 166, 0.96),
+		rgba(64, 178, 196, 0.92)
+	);
+	--zen-btn-text: #ffffff;
+	--zen-btn-shadow: 0 14px 30px rgba(18, 126, 184, 0.22);
+	--zen-btn-shadow-hover: 0 18px 38px rgba(18, 126, 184, 0.3);
+
+	--zen-ghost-bg: rgba(255, 255, 255, 0.34);
+	--zen-ghost-bg-hover: rgba(255, 255, 255, 0.5);
+	--zen-ghost-ring: rgba(255, 255, 255, 0.5);
+	--zen-ghost-text: #244251;
+	--zen-ghost-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42);
+
+	--zen-option-bg: rgba(255, 255, 255, 0.32);
+	--zen-option-bg-hover: rgba(255, 255, 255, 0.48);
+	--zen-option-ring: rgba(255, 255, 255, 0.46);
+	--zen-option-text: #244251;
+	--zen-option-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42);
+
+	/* 输入（迁移自 beach.html input/textarea） */
+	--zen-input-bg: rgba(255, 255, 255, 0.34);
+	--zen-input-ring: rgba(255, 255, 255, 0.5);
+	--zen-input-text: #244251;
+	--zen-input-placeholder: rgba(36, 66, 81, 0.4);
+
+	--zen-chip-bg: rgba(255, 255, 255, 0.42);
+	--zen-chip-text: #244251;
+	--zen-header-bg: rgba(255, 255, 255, 0.28);
+	--zen-header-ring: rgba(255, 255, 255, 0.4);
+	--zen-header-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42);
+	--zen-close-bg: rgba(255, 255, 255, 0.32);
+	--zen-close-bg-hover: rgba(255, 255, 255, 0.5);
+	--zen-close-ring: rgba(255, 255, 255, 0.42);
+	--zen-close-text: rgba(36, 66, 81, 0.62);
+	--zen-close-text-hover: #244251;
+	--zen-footer-bg: rgba(255, 255, 255, 0.12);
+	--zen-footer-shadow: 0 -18px 36px rgba(255, 255, 255, 0.16);
+	--zen-slider-rest: rgba(255, 255, 255, 0.5);
+
+	/* 强调色族（海水蓝青） */
+	--zen-accent: #0e83bd;
+	--zen-accent-light: #62d4ee;
+	--zen-accent-strong: rgba(26, 161, 212, 0.75);
+	--zen-accent-soft: rgba(98, 212, 238, 0.22);
+	--zen-accent-ring: rgba(98, 212, 238, 0.6);
+	--zen-accent-text: #134b66;
+	--zen-accent-shadow: 0 18px 45px rgba(18, 126, 184, 0.2);
+	--zen-quote-bg: rgba(216, 248, 255, 0.5);
+	--zen-quote-ring: rgba(255, 255, 255, 0.5);
+	--zen-badge-bg: rgba(98, 212, 238, 0.45);
+	--zen-badge-text: #0a3a55;
+	--zen-ring-focus: rgba(26, 161, 212, 0.8);
+	--zen-thumb-shadow:
+		0 10px 26px rgba(18, 126, 184, 0.28), 0 0 0 7px rgba(216, 248, 255, 0.5);
+}
+
+/* 海浪冲刷层（迁移自 beach.html body::before / body::after，waveWash） */
+.zen-root.zen-style-beach::before,
+.zen-root.zen-style-beach::after {
+	content: "";
+	position: absolute;
+	z-index: 0;
+	left: -14vw;
+	top: -54vh;
+	width: 128vw;
+	height: 118vh;
+	pointer-events: none;
+	will-change: transform, opacity, filter;
+
+	background:
+		radial-gradient(
+			ellipse 15vw 5.4vh at 4% 78%,
+			var(--beach-foam) 0 36%,
+			transparent 74%
+		),
+		radial-gradient(
+			ellipse 18vw 6.2vh at 17% 81%,
+			rgba(255, 255, 255, 0.72) 0 34%,
+			transparent 74%
+		),
+		radial-gradient(
+			ellipse 14vw 5.2vh at 31% 77%,
+			var(--beach-foam) 0 36%,
+			transparent 72%
+		),
+		radial-gradient(
+			ellipse 20vw 6.8vh at 45% 82%,
+			rgba(255, 255, 255, 0.76) 0 34%,
+			transparent 76%
+		),
+		radial-gradient(
+			ellipse 15vw 5.5vh at 59% 78%,
+			var(--beach-foam) 0 37%,
+			transparent 74%
+		),
+		radial-gradient(
+			ellipse 21vw 7vh at 73% 82%,
+			rgba(255, 255, 255, 0.7) 0 33%,
+			transparent 76%
+		),
+		radial-gradient(
+			ellipse 16vw 5.8vh at 88% 77%,
+			var(--beach-foam) 0 36%,
+			transparent 74%
+		),
+		radial-gradient(
+			ellipse 18vw 6.2vh at 101% 81%,
+			rgba(255, 255, 255, 0.7) 0 34%,
+			transparent 76%
+		),
+		radial-gradient(
+			ellipse at 18% 34%,
+			rgba(255, 255, 255, 0.42),
+			transparent 24%
+		),
+		radial-gradient(
+			ellipse at 56% 30%,
+			rgba(255, 255, 255, 0.34),
+			transparent 27%
+		),
+		radial-gradient(
+			ellipse at 84% 44%,
+			rgba(255, 255, 255, 0.26),
+			transparent 25%
+		),
+		linear-gradient(
+			180deg,
+			rgba(216, 248, 255, 0.98) 0%,
+			rgba(98, 212, 238, 0.96) 26%,
+			rgba(26, 161, 212, 0.88) 52%,
+			rgba(8, 123, 184, 0.58) 68%,
+			rgba(255, 255, 255, 0.32) 78%,
+			rgba(255, 255, 255, 0.14) 88%,
+			transparent 100%
+		);
+
+	filter: blur(9px) saturate(1.08);
+	opacity: 0;
+	transform: translate3d(0, -20vh, 0) scale(1.03);
+	animation: zen-wave-wash 18s ease-in-out infinite;
+}
+/* 第二道浪错峰半个周期，与第一道交替起落 */
+.zen-root.zen-style-beach::after {
+	animation-delay: -9s;
+}
+.dark .zen-root.zen-style-beach {
+	/* same with light */
+}
+
+/* 海浪：冲下漫过画面（浪花越过屏幕一半）后向上回退淡去（迁移自 waveWash） */
+@keyframes zen-wave-wash {
+	0% {
+		transform: translate3d(0, -20vh, 0) scale(1.02);
+		opacity: 0;
+		filter: blur(12px) saturate(1.04);
+	}
+	10% {
+		opacity: 0.92;
+	}
+	44% {
+		transform: translate3d(-1.8vw, 26vh, 0) scale(1.045);
+		opacity: 0.98;
+		filter: blur(8px) saturate(1.1);
+	}
+	70% {
+		transform: translate3d(1vw, 12vh, 0) scale(1.035);
+		opacity: 0.36;
+		filter: blur(16px) saturate(1.03);
+	}
+	100% {
+		transform: translate3d(0, -8vh, 0) scale(1.02);
+		opacity: 0;
+		filter: blur(22px) saturate(1);
+	}
+}
+
+/* 降低动态偏好：停掉海浪动画，留一道静止的浪（迁移自 beach.html） */
+@media (prefers-reduced-motion: reduce) {
+	.zen-root.zen-style-beach::before,
+	.zen-root.zen-style-beach::after {
+		animation: none;
+	}
+	.zen-root.zen-style-beach::before {
+		opacity: 0.82;
+		transform: translate3d(0, 18vh, 0);
+	}
+	.zen-root.zen-style-beach::after {
+		opacity: 0;
+	}
+}

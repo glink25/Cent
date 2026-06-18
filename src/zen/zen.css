@@ -1,0 +1,538 @@
+@import "./themes/aurora.css";
+@import "./themes/beach.css";
+@import "./themes/red-moon.css";
+@import "./themes/rain.css";
+@import "./themes/star-night.css";
+
+/* Zen 模式弹窗样式
+ *
+ * 设计：语义化 CSS 变量 + 语义类。
+ * - `.zen-root` 定义所有主题 token 的「基线默认值」（亮色玻璃风），作为各风格未覆盖项的回退。
+ * - `.dark .zen-root` 定义基线暗色值。
+ * - `.zen-root.zen-style-{aurora,beach,red-moon,rain,star-night}` 为各自包含的动效主题，
+ *   在各自块内整体覆盖背景、强调色族及（深底主题）文字/卡片等 token；
+ *   `.dark` 版只写「same as light」，忽略系统明暗。`zen-style-default` 直接沿用本文件基线 token。
+ * - 语义类（.zen-card / .zen-surface / .zen-btn …）只引用 token，预设切换即整体重新着色。
+ *
+ * 风格名由 src/zen/date.ts 的 getZenStyleName() 按日期计算，每天稳定轮换。
+ */
+
+/* ============================================================
+ * 主题 token —— 默认（亮色 / 风格 0 暖沙）
+ * ============================================================ */
+.zen-root {
+	--zen-bg:
+		radial-gradient(
+			circle at 18% 22%,
+			rgba(255, 225, 184, 0.48),
+			transparent 31%
+		),
+		radial-gradient(
+			circle at 82% 14%,
+			rgba(214, 236, 221, 0.42),
+			transparent 30%
+		),
+		radial-gradient(
+			circle at 52% 84%,
+			rgba(206, 220, 255, 0.34),
+			transparent 36%
+		), linear-gradient(135deg, #fff8ed 0%, #f4efe4 43%, #edf5ef 100%);
+	--zen-overlay:
+		radial-gradient(
+			circle at 50% 12%,
+			rgba(255, 255, 255, 0.58),
+			transparent 34%
+		),
+		linear-gradient(
+			180deg,
+			rgba(255, 255, 255, 0.28),
+			rgba(255, 255, 255, 0.02)
+		);
+
+	/* 卡片 */
+	--zen-card-bg: rgba(255, 255, 255, 0.58);
+	--zen-card-ring: rgba(255, 255, 255, 0.45);
+	--zen-card-shadow: 0 28px 90px rgba(117, 86, 51, 0.18);
+	--zen-card-hairline: linear-gradient(
+		to right,
+		transparent,
+		rgba(255, 255, 255, 0.8),
+		transparent
+	);
+
+	/* 表面 */
+	--zen-surface-bg: rgba(255, 255, 255, 0.38);
+	--zen-surface-ring: rgba(255, 255, 255, 0.38);
+	--zen-surface-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+
+	/* 文字 */
+	--zen-heading: #0c0a09;
+	--zen-text: #292524;
+	--zen-text-muted: #57534e;
+	--zen-text-subtle: #78716c;
+
+	/* 主按钮 */
+	--zen-btn-bg: rgba(28, 25, 23, 0.88);
+	--zen-btn-bg-hover: #292524;
+	--zen-btn-text: #ffffff;
+	--zen-btn-shadow: 0 14px 34px rgba(74, 54, 33, 0.24);
+	--zen-btn-shadow-hover: 0 18px 42px rgba(74, 54, 33, 0.3);
+
+	/* 次按钮 (ghost) */
+	--zen-ghost-bg: rgba(255, 255, 255, 0.24);
+	--zen-ghost-bg-hover: rgba(255, 255, 255, 0.42);
+	--zen-ghost-ring: rgba(255, 255, 255, 0.3);
+	--zen-ghost-text: #44403c;
+	--zen-ghost-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+
+	/* 选项 */
+	--zen-option-bg: rgba(255, 255, 255, 0.28);
+	--zen-option-bg-hover: rgba(255, 255, 255, 0.44);
+	--zen-option-ring: rgba(255, 255, 255, 0.35);
+	--zen-option-text: #292524;
+	--zen-option-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+
+	/* 输入 */
+	--zen-input-bg: rgba(255, 255, 255, 0.34);
+	--zen-input-ring: rgba(255, 255, 255, 0.35);
+	--zen-input-text: #292524;
+	--zen-input-placeholder: #a8a29e;
+
+	/* 药丸 / 角标 / 顶栏 / 底栏 */
+	--zen-chip-bg: rgba(255, 255, 255, 0.36);
+	--zen-chip-text: #292524;
+	--zen-header-bg: rgba(255, 255, 255, 0.22);
+	--zen-header-ring: rgba(255, 255, 255, 0.26);
+	--zen-header-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.38);
+	--zen-close-bg: rgba(255, 255, 255, 0.28);
+	--zen-close-bg-hover: rgba(255, 255, 255, 0.46);
+	--zen-close-ring: rgba(255, 255, 255, 0.3);
+	--zen-close-text: #57534e;
+	--zen-close-text-hover: #1c1917;
+	--zen-footer-bg: rgba(255, 255, 255, 0.1);
+	--zen-footer-shadow: 0 -18px 36px rgba(255, 255, 255, 0.12);
+
+	/* 滑块轨道未填充部分 */
+	--zen-slider-rest: rgba(255, 255, 255, 0.4);
+
+	/* 强调色族 */
+	--zen-accent: #d99a4a;
+	--zen-accent-light: #f4cc8f;
+	--zen-accent-strong: rgba(252, 211, 77, 0.8);
+	--zen-accent-soft: rgba(254, 243, 199, 0.48);
+	--zen-accent-ring: rgba(253, 230, 138, 0.7);
+	--zen-accent-text: #0c0a09;
+	--zen-accent-shadow: 0 18px 45px rgba(180, 128, 67, 0.18);
+	--zen-quote-bg: rgba(255, 251, 235, 0.55);
+	--zen-quote-ring: rgba(255, 255, 255, 0.35);
+	--zen-badge-bg: rgba(253, 230, 138, 0.55);
+	--zen-badge-text: #451a03;
+	--zen-ring-focus: rgba(253, 230, 138, 0.8);
+	--zen-thumb-shadow:
+		0 10px 26px rgba(128, 84, 38, 0.28), 0 0 0 7px rgba(255, 231, 194, 0.36);
+}
+
+/* ============================================================
+ * 主题 token —— 默认（暗色 / 风格 0 暖沙）
+ * ============================================================ */
+.dark .zen-root {
+	--zen-bg:
+		radial-gradient(
+			circle at 18% 18%,
+			rgba(177, 123, 67, 0.28),
+			transparent 32%
+		),
+		radial-gradient(
+			circle at 84% 18%,
+			rgba(81, 126, 112, 0.24),
+			transparent 31%
+		),
+		radial-gradient(
+			circle at 46% 86%,
+			rgba(99, 110, 148, 0.22),
+			transparent 38%
+		), linear-gradient(135deg, #1d1b18 0%, #24211d 46%, #1b2420 100%);
+	--zen-overlay:
+		radial-gradient(
+			circle at 50% 8%,
+			rgba(255, 244, 214, 0.12),
+			transparent 35%
+		), linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.3));
+
+	--zen-card-bg: rgba(12, 10, 9, 0.46);
+	--zen-card-ring: rgba(255, 255, 255, 0.1);
+	--zen-card-shadow: 0 28px 90px rgba(0, 0, 0, 0.34);
+	--zen-card-hairline: linear-gradient(
+		to right,
+		transparent,
+		rgba(255, 255, 255, 0.2),
+		transparent
+	);
+
+	--zen-surface-bg: rgba(255, 255, 255, 0.08);
+	--zen-surface-ring: rgba(255, 255, 255, 0.1);
+
+	--zen-heading: #fafaf9;
+	--zen-text: #f5f5f4;
+	--zen-text-muted: #d6d3d1;
+	--zen-text-subtle: #a8a29e;
+
+	--zen-btn-bg: rgba(254, 243, 199, 0.9);
+	--zen-btn-bg-hover: #fffbeb;
+	--zen-btn-text: #0c0a09;
+
+	--zen-ghost-bg: rgba(255, 255, 255, 0.08);
+	--zen-ghost-bg-hover: rgba(255, 255, 255, 0.14);
+	--zen-ghost-ring: rgba(255, 255, 255, 0.1);
+	--zen-ghost-text: #e7e5e4;
+
+	--zen-option-bg: rgba(255, 255, 255, 0.07);
+	--zen-option-bg-hover: rgba(255, 255, 255, 0.12);
+	--zen-option-ring: rgba(255, 255, 255, 0.1);
+	--zen-option-text: #f5f5f4;
+
+	--zen-input-bg: rgba(255, 255, 255, 0.08);
+	--zen-input-ring: rgba(255, 255, 255, 0.1);
+	--zen-input-text: #f5f5f4;
+	--zen-input-placeholder: #78716c;
+
+	--zen-chip-bg: rgba(255, 255, 255, 0.08);
+	--zen-chip-text: #f5f5f4;
+	--zen-header-bg: rgba(255, 255, 255, 0.07);
+	--zen-header-ring: rgba(255, 255, 255, 0.1);
+	--zen-close-bg: rgba(255, 255, 255, 0.08);
+	--zen-close-bg-hover: rgba(255, 255, 255, 0.14);
+	--zen-close-ring: rgba(255, 255, 255, 0.1);
+	--zen-close-text: #d6d3d1;
+	--zen-close-text-hover: #fafaf9;
+	--zen-footer-bg: rgba(0, 0, 0, 0.05);
+	--zen-footer-shadow: 0 -18px 36px rgba(0, 0, 0, 0.12);
+
+	--zen-slider-rest: rgba(255, 255, 255, 0.1);
+
+	--zen-accent: #d6a15d;
+	--zen-accent-light: #edd3ab;
+	--zen-accent-strong: rgba(253, 224, 71, 0.6);
+	--zen-accent-soft: rgba(253, 224, 71, 0.16);
+	--zen-accent-ring: rgba(254, 243, 199, 0.24);
+	--zen-accent-text: #fffbeb;
+	--zen-accent-shadow: 0 18px 45px rgba(0, 0, 0, 0.3);
+	--zen-quote-bg: rgba(254, 243, 199, 0.1);
+	--zen-quote-ring: rgba(254, 243, 199, 0.1);
+	--zen-badge-bg: rgba(254, 243, 199, 0.18);
+	--zen-badge-text: #fef3c7;
+	--zen-thumb-shadow:
+		0 10px 28px rgba(0, 0, 0, 0.36), 0 0 0 7px rgba(245, 208, 151, 0.16);
+}
+
+@keyframes twinkle {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.3;
+	}
+}
+
+/* ============================================================
+ * 语义类
+ * ============================================================ */
+.zen-overlay {
+	background: var(--zen-overlay);
+}
+
+.zen-header-bar {
+	background: var(--zen-header-bg);
+	box-shadow:
+		var(--zen-header-shadow),
+		inset 0 0 0 1px var(--zen-header-ring);
+}
+
+.zen-close-btn {
+	color: var(--zen-close-text);
+	background: var(--zen-close-bg);
+	box-shadow:
+		inset 0 1px 0 rgba(255, 255, 255, 0.4),
+		inset 0 0 0 1px var(--zen-close-ring);
+}
+.zen-close-btn:hover {
+	color: var(--zen-close-text-hover);
+	background: var(--zen-close-bg-hover);
+}
+
+.zen-card {
+	color: var(--zen-text);
+	background: var(--zen-card-bg);
+	box-shadow:
+		var(--zen-card-shadow),
+		inset 0 0 0 1px var(--zen-card-ring);
+}
+.zen-card--solid {
+	background: rgba(255, 255, 255, 0.62);
+}
+.dark .zen-card--solid {
+	background: rgba(12, 10, 9, 0.52);
+}
+.zen-card::before {
+	content: "";
+	position: absolute;
+	left: 2rem;
+	right: 2rem;
+	top: 0;
+	height: 1px;
+	pointer-events: none;
+	background: var(--zen-card-hairline);
+}
+
+.zen-footer {
+	background: var(--zen-footer-bg);
+	box-shadow: var(--zen-footer-shadow);
+}
+
+.zen-surface {
+	color: var(--zen-text);
+	background: var(--zen-surface-bg);
+	box-shadow:
+		var(--zen-surface-shadow),
+		inset 0 0 0 1px var(--zen-surface-ring);
+}
+.zen-surface--accent {
+	background: var(--zen-accent-soft);
+}
+
+.zen-heading {
+	color: var(--zen-heading);
+}
+.zen-text {
+	color: var(--zen-text);
+}
+.zen-text-muted {
+	color: var(--zen-text-muted);
+}
+.zen-text-subtle {
+	color: var(--zen-text-subtle);
+}
+
+.zen-btn {
+	color: var(--zen-btn-text);
+	background: var(--zen-btn-bg);
+	box-shadow: var(--zen-btn-shadow);
+}
+.zen-btn:hover:not(:disabled) {
+	background: var(--zen-btn-bg-hover);
+	box-shadow: var(--zen-btn-shadow-hover);
+}
+.zen-btn--ghost {
+	color: var(--zen-ghost-text);
+	background: var(--zen-ghost-bg);
+	box-shadow:
+		var(--zen-ghost-shadow),
+		inset 0 0 0 1px var(--zen-ghost-ring);
+}
+.zen-btn--ghost:hover:not(:disabled) {
+	background: var(--zen-ghost-bg-hover);
+}
+.zen-btn:focus-visible {
+	outline: 2px solid var(--zen-ring-focus);
+	outline-offset: 2px;
+}
+
+.zen-option {
+	color: var(--zen-option-text);
+	background: var(--zen-option-bg);
+	box-shadow:
+		var(--zen-option-shadow),
+		inset 0 0 0 1px var(--zen-option-ring);
+}
+.zen-option:hover:not(:disabled) {
+	background: var(--zen-option-bg-hover);
+}
+.zen-option--active {
+	color: var(--zen-accent-text);
+	background: var(--zen-accent-soft);
+	box-shadow:
+		var(--zen-accent-shadow),
+		inset 0 1px 0 rgba(255, 255, 255, 0.55),
+		inset 0 0 0 1px var(--zen-accent-ring);
+}
+.zen-option-bar {
+	background: transparent;
+}
+.zen-option--active .zen-option-bar {
+	background: var(--zen-accent-strong);
+}
+
+.zen-input {
+	color: var(--zen-input-text);
+	background: var(--zen-input-bg);
+	box-shadow:
+		inset 0 1px 0 rgba(255, 255, 255, 0.45),
+		inset 0 0 0 1px var(--zen-input-ring);
+}
+.zen-input::placeholder {
+	color: var(--zen-input-placeholder);
+}
+.zen-input:focus-visible {
+	outline: 2px solid var(--zen-ring-focus);
+	outline-offset: 2px;
+}
+
+.zen-quote {
+	color: var(--zen-text);
+	background: var(--zen-quote-bg);
+	box-shadow:
+		inset 0 1px 0 rgba(255, 255, 255, 0.45),
+		inset 0 0 0 1px var(--zen-quote-ring);
+}
+
+.zen-badge {
+	color: var(--zen-badge-text);
+	background: var(--zen-badge-bg);
+}
+
+.zen-chip {
+	color: var(--zen-chip-text);
+	background: var(--zen-chip-bg);
+}
+
+/* ============================================================
+ * 背景渐变 / 动画 / 滑块（由 index.css 迁移而来）
+ * ============================================================ */
+.zen-gradient-drift {
+	background: var(--zen-bg);
+	background-size:
+		150% 150%,
+		145% 145%,
+		160% 160%,
+		120% 120%;
+	animation: zen-gradient-drift 28s ease-in-out infinite alternate;
+}
+
+.zen-gradient-focus {
+	animation-duration: 11s;
+	background-size:
+		105% 105%,
+		110% 110%,
+		112% 112%,
+		100% 100%;
+}
+
+.zen-card-enter {
+	animation: zen-card-enter 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.zen-range {
+	--zen-slider-progress: 50%;
+	height: 28px;
+	cursor: pointer;
+	appearance: none;
+	background: transparent;
+}
+
+.zen-range:disabled {
+	cursor: default;
+	opacity: 0.55;
+}
+
+.zen-range::-webkit-slider-runnable-track {
+	height: 14px;
+	border-radius: 999px;
+	background: linear-gradient(
+		90deg,
+		var(--zen-accent) 0%,
+		var(--zen-accent-light) var(--zen-slider-progress),
+		var(--zen-slider-rest) var(--zen-slider-progress),
+		var(--zen-slider-rest) 100%
+	);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.zen-range::-webkit-slider-thumb {
+	width: 30px;
+	height: 30px;
+	margin-top: -8px;
+	appearance: none;
+	border: 0;
+	border-radius: 999px;
+	background: radial-gradient(circle at 35% 30%, #fffaf0, var(--zen-accent) 68%);
+	box-shadow: var(--zen-thumb-shadow);
+}
+
+.zen-range::-moz-range-track {
+	height: 14px;
+	border: 0;
+	border-radius: 999px;
+	background: var(--zen-slider-rest);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.zen-range::-moz-range-progress {
+	height: 14px;
+	border-radius: 999px;
+	background: linear-gradient(90deg, var(--zen-accent), var(--zen-accent-light));
+}
+
+.zen-range::-moz-range-thumb {
+	width: 30px;
+	height: 30px;
+	border: 0;
+	border-radius: 999px;
+	background: radial-gradient(circle at 35% 30%, #fffaf0, var(--zen-accent) 68%);
+	box-shadow: var(--zen-thumb-shadow);
+}
+
+@keyframes zen-gradient-drift {
+	0% {
+		background-position:
+			0% 18%,
+			100% 8%,
+			50% 100%,
+			0% 0%;
+	}
+
+	50% {
+		background-position:
+			34% 8%,
+			62% 38%,
+			72% 70%,
+			50% 50%;
+	}
+
+	100% {
+		background-position:
+			58% 28%,
+			30% 12%,
+			20% 64%,
+			100% 100%;
+	}
+}
+
+@keyframes zen-card-enter {
+	from {
+		opacity: 0;
+		transform: translateY(12px) scale(0.985);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.zen-gradient-drift,
+	.zen-gradient-focus,
+	.zen-card-enter,
+	.zen-root.zen-style-aurora::before,
+	.zen-root.zen-style-aurora::after,
+	.zen-root.zen-style-beach::before,
+	.zen-root.zen-style-beach::after,
+	.zen-root.zen-style-red-moon::before,
+	.zen-root.zen-style-rain::before,
+	.zen-root.zen-style-rain::after,
+	.zen-root.zen-style-star-night::before,
+	.zen-root.zen-style-star-night::after {
+		animation: none;
+	}
+}

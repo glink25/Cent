@@ -24,6 +24,7 @@ import QuickEntrySettingsItem from "./quick-entry";
 import ThemeSettingsItem from "./theme";
 import UserSettingsItem from "./user";
 import VoiceSettingsItem from "./voice";
+import ZenSettingsItem from "./zen";
 
 function UserInfo() {
     const t = useIntl();
@@ -59,7 +60,9 @@ function UserInfo() {
                         </div>
                         <div
                             className="px-2 flex-shrink-0"
-                            title={`Signed with ${StorageAPI.name}`}
+                            title={t("signed-with", {
+                                provider: StorageAPI.name,
+                            })}
                         >
                             <div className="text-xs border rounded px-1">
                                 {StorageAPI.name}
@@ -127,6 +130,7 @@ export default function SettingsForm({
                         <div className="text-xs opacity-60 px-8">{t("ai")}</div>
                         <div className="flex flex-col divide-y">
                             <AssistantSettingsItem />
+                            <ZenSettingsItem />
                             <AgentApiSettingsItem />
                             {showRelyr && <QuickEntrySettingsItem />}
                             <VoiceSettingsItem />
