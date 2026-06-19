@@ -1,11 +1,13 @@
+import type { ChatMessage } from "@glink25/chaty/providers";
+import {
+    createStreamingRequest,
+    parseStream as parseProviderStream,
+} from "@glink25/chaty/providers";
 import type { AIConfig } from "@/ledger/extra-type";
 import { useLedgerStore } from "@/store/ledger";
 import { usePreferenceStore } from "@/store/preference";
 import { useUserStore } from "@/store/user";
 import { decodeApiKey } from "@/utils/api-key";
-import type { ProviderRequestChunk, Tool } from "../../assistant";
-import { getAdapter } from "./adapters";
-import type { ChatMessage } from "./adapters/types";
 
 /** 纯文本消息（语音解析 / 连通性测试等非 ReAct 路径使用）。 */
 export type TextMessage = {
@@ -51,41 +53,6 @@ function getAIConfig(configId?: string): AIConfig {
     throw new Error("未找到 AI 配置，请先在设置中配置 AI API");
 }
 
-/**
- * 发起一次流式请求。所有协议相关逻辑（URL/鉴权头/请求体/流解析）都由对应的
- * adapter 负责，这里只是「取 adapter → fetch」。
- */
-export async function createStreamingRequest(
-    config: AIConfig,
-    apiKey: string,
-    messages: ChatMessage[],
-    tools: Tool[],
-    abortSignal?: AbortSignal,
-): Promise<Response> {
-    const adapter = getAdapter(config.apiType);
-    const url = adapter.buildUrl(config);
-    const headers = adapter.buildHeaders(config, apiKey);
-    const body = adapter.buildBody(config, messages, tools, {
-        temperature: 0.7,
-        // 默认 8192：推理模型的思考过程也消耗 token，太小会在思考阶段就被截断。
-        maxTokens: config.maxTokens ?? 8192,
-    });
-
-    return fetch(url, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(body),
-        signal: abortSignal,
-    });
-}
-
-function parseStream(
-    config: AIConfig,
-    response: Response,
-): AsyncIterable<ProviderRequestChunk> {
-    return getAdapter(config.apiType).parseStream(response);
-}
-
 async function requestAIWithConfig(
     messages: TextMessage[],
     config: AIConfig,
@@ -105,7 +72,7 @@ async function requestAIWithConfig(
     }
 
     let fullAnswer = "";
-    for await (const chunk of parseStream(config, response)) {
+    for await (const chunk of parseProviderStream(config, response)) {
         if (chunk.answer?.trim() || chunk.thought?.trim()) {
             fullAnswer = chunk.answer || "";
         }
@@ -134,4 +101,10 @@ export async function requestAIForVoice(messages: TextMessage[]) {
     });
 }
 
-export { getAIConfig, getVoiceAIConfig, parseStream, requestAIWithConfig };
+export {
+    createStreamingRequest,
+    getAIConfig,
+    getVoiceAIConfig,
+    parseProviderStream as parseStream,
+    requestAIWithConfig,
+};

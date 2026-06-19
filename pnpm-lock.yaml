@@ -26,6 +26,9 @@ importers:
       '@dnd-kit/utilities':
         specifier: ^3.2.2
         version: 3.2.2(react@19.1.1)
+      '@glink25/chaty':
+        specifier: ^0.1.0
+        version: 0.1.0(jsonrepair@3.13.3)(zod@4.1.11)
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.63.0(react@19.1.1))
@@ -1426,6 +1429,12 @@ packages:
     peerDependenciesMeta:
       typescript:
         optional: true
+
+  '@glink25/chaty@0.1.0':
+    resolution: {integrity: sha512-4FI9T6mtupK+7/1JrFthvi0JZsi1f7PxFnx5K94bOWVmUciXQw506XheLfrsswQeWxQldLiG33J7gMM1zAvnXA==}
+    peerDependencies:
+      jsonrepair: ^3.13.3
+      zod: ^4.1.11
 
   '@hookform/resolvers@5.2.2':
     resolution: {integrity: sha512-A/IxlMLShx3KjV/HeTcTfaMxdwy690+L/ZADoeaTltLx+CVuzkeVIPuybK3jrRfw7YZnmdKsVVHAlEPIAEUNlA==}
@@ -7255,6 +7264,11 @@ snapshots:
       tslib: 2.8.1
     optionalDependencies:
       typescript: 5.8.3
+
+  '@glink25/chaty@0.1.0(jsonrepair@3.13.3)(zod@4.1.11)':
+    dependencies:
+      jsonrepair: 3.13.3
+      zod: 4.1.11
 
   '@hookform/resolvers@5.2.2(react-hook-form@7.63.0(react@19.1.1))':
     dependencies:

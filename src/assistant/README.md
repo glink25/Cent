@@ -53,7 +53,7 @@ createSession({
 ```
 或者也可以直接使用预先提供的包装方法，直接使用 OpenAI - Compatible 的接口：
 ```javascript
-import { createOpenAIProvider } from "chaty"
+import { createOpenAIProvider } from "@glink25/chaty"
 createSession({
     provider: createOpenAIProvider({
         baseURL: 'https://your-api.com',
@@ -67,7 +67,7 @@ createSession({
 
 自定义工具给AI调用非常简单，基于zod完全简化工具流程：
 ```javascript
-import { createTool } from "chaty"
+import { createTool } from "@glink25/chaty"
 import z from "zod"
 
 const queryTool = createTool({

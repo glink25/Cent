@@ -20,6 +20,7 @@
 		"@dnd-kit/modifiers": "^9.0.0",
 		"@dnd-kit/sortable": "^10.0.0",
 		"@dnd-kit/utilities": "^3.2.2",
+		"@glink25/chaty": "^0.1.0",
 		"@hookform/resolvers": "^5.2.2",
 		"@iconify-json/line-md": "^1.2.11",
 		"@octokit/core": "^7.0.6",
