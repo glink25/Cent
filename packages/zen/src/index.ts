@@ -17,5 +17,10 @@ export type {
     ZenRuntimeHost,
     ZenThemeMode,
 } from "./runtime/types";
-export { getZenDayId, getZenStyleName, isZenEntranceOpen } from "./zen/date";
+export {
+    getZenDayId,
+    getZenPostDayId,
+    getZenStyleName,
+    isZenEntranceOpen,
+} from "./zen/date";
 export type * from "./zen/types";

@@ -199,7 +199,7 @@ function buildZenPost(session: ZenSessionState, ending: ZenUIStep): ZenPost {
     return {
         id: `zen-${session.id}-${session.userId}`,
         userId: session.userId,
-        time: session.period.start,
+        time: dayjs(session.id).startOf("day").valueOf(),
         bookId: session.bookId,
         period: session.period,
         title: completion.title,
@@ -224,7 +224,7 @@ function CardShell({
     return (
         <div
             className={cn(
-                "zen-card zen-card-enter relative flex min-h-0 flex-1 overflow-hidden rounded-[2rem]",
+                "zen-card zen-card-enter z-[3] relative flex min-h-0 flex-1 overflow-hidden rounded-[2rem]",
                 className,
             )}
         >

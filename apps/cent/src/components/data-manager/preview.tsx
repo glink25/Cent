@@ -1,3 +1,4 @@
+import { getZenPostDayId } from "@glink25/zen";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import dayjs from "dayjs";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -39,12 +40,12 @@ function normalizeZenPosts({
 }) {
     const byId = new Map<string, Full<ZenPost>>();
     for (const post of posts) {
-        const id = asMine
-            ? `zen-${dayjs(post.time).format("YYYY-MM-DD")}-${userId}`
-            : post.id;
+        const zenDayId = getZenPostDayId(post);
+        const id = asMine ? `zen-${zenDayId}-${userId}` : post.id;
         const normalized = {
             ...post,
             id,
+            time: dayjs(zenDayId).startOf("day").valueOf(),
             bookId,
             userId: asMine ? userId : post.userId,
         };

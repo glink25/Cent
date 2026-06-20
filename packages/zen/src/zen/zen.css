@@ -243,6 +243,7 @@
 }
 
 .zen-header-bar {
+	z-index: 3;
 	background: var(--zen-header-bg);
 	box-shadow:
 		var(--zen-header-shadow),

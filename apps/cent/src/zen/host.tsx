@@ -1,5 +1,6 @@
 import type { Tool } from "@glink25/chaty";
 import {
+    getZenPostDayId,
     Zen,
     type ZenAIToolDefinition,
     type ZenRuntimeHost,
@@ -66,7 +67,11 @@ async function listPosts(limit?: number) {
     const posts = await StorageAPI.getAllZenItems(bookId);
     const ownPosts = posts
         .filter((post) => String(post.userId) === userId)
-        .sort((a, b) => b.time - a.time);
+        .sort(
+            (a, b) =>
+                getZenPostDayId(b).localeCompare(getZenPostDayId(a)) ||
+                b.completedAt - a.completedAt,
+        );
     return limit ? ownPosts.slice(0, limit) : ownPosts;
 }
 

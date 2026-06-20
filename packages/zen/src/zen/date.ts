@@ -11,6 +11,17 @@ export function getZenDayId(now = dayjs()): ZenDayId {
     return now.format("YYYY-MM-DD");
 }
 
+/**
+ * ZenPost 的归属日由规范 ID 决定。旧版本曾误把 period.start 写入 time，
+ * 因此读取时优先从 ID 恢复日期，并为非规范旧数据保留 time 回退。
+ */
+export function getZenPostDayId(post: Pick<ZenPost, "id" | "time">): ZenDayId {
+    return (
+        /^zen-(\d{4}-\d{2}-\d{2})-/.exec(post.id)?.[1] ??
+        dayjs(post.time).format("YYYY-MM-DD")
+    );
+}
+
 export function isZenEntranceOpen(
     scheduledTime = "21:00",
     now = dayjs(),

@@ -16,6 +16,7 @@ export type {
 } from "@glink25/zen";
 export {
     getZenDayId,
+    getZenPostDayId,
     getZenStyleName,
     isZenEntranceOpen,
 } from "@glink25/zen";

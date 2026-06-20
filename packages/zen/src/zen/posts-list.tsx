@@ -1,9 +1,8 @@
 import "./zen.css";
-import dayjs from "dayjs";
 import { useMemo, useState } from "react";
 import { useIntl } from "../i18n";
 import { cn } from "../utils";
-import { getZenStyleName } from "./date";
+import { getZenPostDayId, getZenStyleName } from "./date";
 import type { ZenPost } from "./types";
 
 function PostDetail({
@@ -47,7 +46,7 @@ function PostDetail({
                 </button>
                 <div>
                     <div className="text-xs zen-text-subtle">
-                        {dayjs(post.time).format("YYYY-MM-DD")}
+                        {getZenPostDayId(post)}
                     </div>
                     <h2 className="text-xl font-semibold zen-heading">
                         {post.title ??
@@ -131,7 +130,12 @@ export function ZenPostsView({
     const [selected, setSelected] = useState<ZenPost>();
     const styleName = useMemo(() => getZenStyleName(), []);
     const sortedPosts = useMemo(
-        () => [...posts].sort((a, b) => b.time - a.time),
+        () =>
+            [...posts].sort(
+                (a, b) =>
+                    getZenPostDayId(b).localeCompare(getZenPostDayId(a)) ||
+                    b.completedAt - a.completedAt,
+            ),
         [posts],
     );
 
@@ -181,9 +185,7 @@ export function ZenPostsView({
                                         onClick={() => setSelected(post)}
                                     >
                                         <span className="block text-xs zen-text-subtle">
-                                            {dayjs(post.time).format(
-                                                "YYYY-MM-DD",
-                                            )}
+                                            {getZenPostDayId(post)}
                                         </span>
                                         <span className="mt-1 block font-medium zen-heading">
                                             {post.title ??
