@@ -1,0 +1,289 @@
+/** biome-ignore-all lint/suspicious/noUnknownAtRules: Tailwind CSS directives are handled by the Vite plugin. */
+@import "tailwindcss";
+@import "tw-animate-css";
+@config "../tailwind.config.mjs";
+
+@custom-variant dark (&:is(.dark *));
+
+@plugin "@iconify/tailwind4";
+
+@plugin "tailwindcss-animate";
+
+:root {
+	--titlebar-height: 0px;
+	/* Safe-area inset 兜底策略：top/bottom 最小 16px，避免在无原生安全区时贴边
+	   全局通过 var(--safe-area-inset-*) 引用，禁止直接使用 env() */
+	--safe-area-inset-top: max(env(safe-area-inset-top), 0px);
+	--safe-area-inset-right: env(safe-area-inset-right);
+	--safe-area-inset-bottom: max(env(safe-area-inset-bottom), 0px);
+	--safe-area-inset-left: env(safe-area-inset-left);
+	--safe-area-top: calc(var(--safe-area-inset-top) + var(--titlebar-height));
+}
+
+.is-macos-app {
+	--titlebar-height: 28px;
+}
+
+body {
+	width: 100vw;
+	height: 100vh;
+	min-width: 200px;
+	min-height: 200px;
+	touch-action: none;
+}
+
+#root {
+	width: 100%;
+	height: 100%;
+	padding: var(--safe-area-top) var(--safe-area-inset-right)
+		var(--safe-area-inset-bottom) var(--safe-area-inset-left);
+	overflow: hidden;
+}
+
+/*除了.select-all,.select-auto,.select-none,.select-text，其他都禁用选择*/
+*:not(.select-all):not(.select-auto):not(.select-none):not(.select-text) {
+	-webkit-touch-callout: none; /* iOS Safari */
+	-webkit-user-select: none; /* Chrome, Safari, Opera */
+	-moz-user-select: none; /* Firefox */
+	-ms-user-select: none; /* Internet Explorer/Edge */
+	user-select: none; /* Non-prefixed version, currently supported by all modern browsers */
+}
+
+input,
+textarea,
+input * {
+	-webkit-touch-callout: default;
+	-webkit-user-select: text;
+	-moz-user-select: text;
+	-ms-user-select: text;
+	user-select: text;
+}
+
+button {
+	touch-action: manipulation;
+}
+
+::-webkit-scrollbar {
+	width: 4px;
+	height: 4px;
+}
+::-webkit-scrollbar-thumb {
+	background-color: #0003;
+	border-radius: 4px;
+	transition: all 0.2s ease-in-out;
+}
+::-webkit-scrollbar-track {
+	border-radius: 4px;
+}
+
+@theme inline {
+	--radius-sm: calc(var(--radius) - 4px);
+	--radius-md: calc(var(--radius) - 2px);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) + 4px);
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--color-card: var(--card);
+	--color-card-foreground: var(--card-foreground);
+	--color-popover: var(--popover);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-primary: var(--primary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-secondary: var(--secondary);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-muted: var(--muted);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-destructive: var(--destructive);
+	--color-destructive-foreground: var(--destructive-foreground);
+	--color-border: var(--border);
+	--color-input: var(--input);
+	--color-ring: var(--ring);
+	--color-chart-1: var(--chart-1);
+	--color-chart-2: var(--chart-2);
+	--color-chart-3: var(--chart-3);
+	--color-chart-4: var(--chart-4);
+	--color-chart-5: var(--chart-5);
+	--color-sidebar: var(--sidebar);
+	--color-sidebar-foreground: var(--sidebar-foreground);
+	--color-sidebar-primary: var(--sidebar-primary);
+	--color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+	--color-sidebar-accent: var(--sidebar-accent);
+	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+	--color-sidebar-border: var(--sidebar-border);
+	--color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+	--radius: 0.625rem;
+	--background: oklch(1 0 0);
+	--foreground: oklch(0.129 0.042 264.695);
+	--card: oklch(1 0 0);
+	--card-foreground: oklch(0.129 0.042 264.695);
+	--popover: oklch(1 0 0);
+	--popover-foreground: oklch(0.129 0.042 264.695);
+	--primary: oklch(0.208 0.042 265.755);
+	--primary-foreground: oklch(0.984 0.003 247.858);
+	--secondary: oklch(0.968 0.007 247.896);
+	--secondary-foreground: oklch(0.208 0.042 265.755);
+	--muted: oklch(0.968 0.007 247.896);
+	--muted-foreground: oklch(0.554 0.046 257.417);
+	--accent: oklch(0.968 0.007 247.896);
+	--accent-foreground: oklch(0.208 0.042 265.755);
+	--destructive: oklch(0.577 0.245 27.325);
+	--destructive-foreground: oklch(0.984 0.003 247.858);
+	--border: oklch(0.929 0.013 255.508);
+	--input: oklch(0.929 0.013 255.508);
+	--ring: oklch(0.704 0.04 256.788);
+	--chart-1: oklch(0.646 0.222 41.116);
+	--chart-2: oklch(0.6 0.118 184.704);
+	--chart-3: oklch(0.398 0.07 227.392);
+	--chart-4: oklch(0.828 0.189 84.429);
+	--chart-5: oklch(0.769 0.188 70.08);
+	--sidebar: oklch(0.984 0.003 247.858);
+	--sidebar-foreground: oklch(0.129 0.042 264.695);
+	--sidebar-primary: oklch(0.208 0.042 265.755);
+	--sidebar-primary-foreground: oklch(0.984 0.003 247.858);
+	--sidebar-accent: oklch(0.968 0.007 247.896);
+	--sidebar-accent-foreground: oklch(0.208 0.042 265.755);
+	--sidebar-border: oklch(0.929 0.013 255.508);
+	--sidebar-ring: oklch(0.704 0.04 256.788);
+}
+
+.dark {
+	--background: oklch(30.495% 0.00388 264.575);
+	--foreground: oklch(0.984 0.003 247.858);
+	--card: oklch(0.208 0.042 265.755);
+	--card-foreground: oklch(0.984 0.003 247.858);
+	--popover: oklch(0.208 0.042 265.755);
+	--popover-foreground: oklch(0.984 0.003 247.858);
+	--primary: oklch(0.929 0.013 255.508);
+	--primary-foreground: oklch(0.208 0.042 265.755);
+	--secondary: oklch(0.279 0.041 260.031);
+	--secondary-foreground: oklch(0.984 0.003 247.858);
+	--muted: oklch(0.279 0.041 260.031);
+	--muted-foreground: oklch(0.704 0.04 256.788);
+	--accent: oklch(0.279 0.041 260.031);
+	--accent-foreground: oklch(0.984 0.003 247.858);
+	--destructive: oklch(0.704 0.191 22.216);
+	--border: oklch(1 0 0 / 10%);
+	--input: oklch(1 0 0 / 15%);
+	--ring: oklch(0.551 0.027 264.364);
+	--chart-1: oklch(0.488 0.243 264.376);
+	--chart-2: oklch(0.696 0.17 162.48);
+	--chart-3: oklch(0.769 0.188 70.08);
+	--chart-4: oklch(0.627 0.265 303.9);
+	--chart-5: oklch(0.645 0.246 16.439);
+	--sidebar: oklch(0.208 0.042 265.755);
+	--sidebar-foreground: oklch(0.984 0.003 247.858);
+	--sidebar-primary: oklch(0.488 0.243 264.376);
+	--sidebar-primary-foreground: oklch(0.984 0.003 247.858);
+	--sidebar-accent: oklch(0.279 0.041 260.031);
+	--sidebar-accent-foreground: oklch(0.984 0.003 247.858);
+	--sidebar-border: oklch(1 0 0 / 10%);
+	--sidebar-ring: oklch(0.551 0.027 264.364);
+}
+
+@layer base {
+	* {
+		@apply border-border outline-ring/50;
+	}
+	body {
+		@apply bg-background text-foreground;
+	}
+}
+
+.page-show {
+	animation: page-show 0.25s ease forwards;
+}
+
+@keyframes page-show {
+	from {
+		opacity: 0;
+		scale: 0.99;
+	}
+
+	to {
+		opacity: 1;
+		scale: 1;
+	}
+}
+
+/* Tag基础变量定义 (Light Mode) */
+:root {
+	--tag-red: #ff5f57;
+	--tag-orange: #ffbd2e;
+	--tag-yellow: #b28200;
+	--tag-green: #28c941;
+	--tag-blue: #007aff;
+	--tag-purple: #a550a7;
+	--tag-gray: #8e8e93;
+}
+
+/* Tag深色模式变量覆盖 (Dark Mode) */
+@media (prefers-color-scheme: dark) {
+	:root {
+		--tag-red: #ff6961;
+		--tag-orange: #ffb340;
+		--tag-yellow: #ffd426;
+		--tag-green: #32d74b;
+		--tag-blue: #0a84ff;
+		--tag-purple: #bf5af2;
+		--tag-gray: #98989d;
+	}
+}
+
+/* Tag功能类实现：通过组合类名自动映射变量 */
+.with-tag-color.tag-red {
+	--current-tag-color: var(--tag-red);
+}
+.with-tag-color.tag-orange {
+	--current-tag-color: var(--tag-orange);
+}
+.with-tag-color.tag-yellow {
+	--current-tag-color: var(--tag-yellow);
+}
+.with-tag-color.tag-green {
+	--current-tag-color: var(--tag-green);
+}
+.with-tag-color.tag-blue {
+	--current-tag-color: var(--tag-blue);
+}
+.with-tag-color.tag-purple {
+	--current-tag-color: var(--tag-purple);
+}
+.with-tag-color.tag-gray {
+	--current-tag-color: var(--tag-gray);
+}
+
+/* 图表分类 / 协作者系列色（ECharts 风格调色板，供 `src/utils/color.ts` 读取） */
+:root {
+	--category-color-1: #5470c6;
+	--category-color-2: #91cc75;
+	--category-color-3: #fac858;
+	--category-color-4: #ee6666;
+	--category-color-5: #73c0de;
+	--category-color-6: #3ba272;
+	--category-color-7: #fc8452;
+	--category-color-8: #9a60b4;
+	--category-color-9: #ea7ccc;
+	--collaborator-color-1: var(--category-color-1);
+	--collaborator-color-2: var(--category-color-2);
+	--collaborator-color-3: var(--category-color-3);
+	--collaborator-color-4: var(--category-color-4);
+	--collaborator-color-5: var(--category-color-5);
+	--collaborator-color-6: var(--category-color-6);
+	--collaborator-color-7: var(--category-color-7);
+	--collaborator-color-8: var(--category-color-8);
+	--collaborator-color-9: var(--category-color-9);
+}
+
+.scrollbar-hidden {
+	-ms-overflow-style: none;
+	scrollbar-width: none;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+	display: none;
+}

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fff" />
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#fff" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="AI Chat" />
+  <meta name="viewport"
+    content="width=device-width,initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <link rel="icon" href="/favicon.ico" />
+  <title>AI Chat</title>
+  <script>
+    (() => {
+      const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      document.documentElement.classList.toggle("dark", prefersDark);
+      document.documentElement.style.colorScheme = prefersDark ? "dark" : "light";
+
+      // Unregister any previously installed service worker and clear its caches.
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          for (const registration of registrations) registration.unregister();
+        });
+      }
+      if (window.caches && caches.keys) {
+        caches.keys().then((keys) => {
+          for (const key of keys) caches.delete(key);
+        });
+      }
+    })();
+  </script>
+</head>
+
+<body class="custom-css-body">
+  <div id="root"></div>
+  <script type="module" src="/src/chaty/main.tsx"></script>
+</body>
+
+</html>

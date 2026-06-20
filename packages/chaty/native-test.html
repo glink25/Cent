@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fff" />
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#fff" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="viewport"
+    content="width=device-width,initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <link rel="icon" href="/favicon.ico" />
+  <title>AI Chat Native Bridge Test Host</title>
+  <script>
+    (() => {
+      const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
+      document.documentElement.classList.toggle("dark", prefersDark);
+      document.documentElement.style.colorScheme = prefersDark ? "dark" : "light";
+    })();
+  </script>
+  <!--
+    模拟 Android WebView 的 native 注入：
+    - 在 app 脚本之前同步定义 window.CentAiChatNative（addJavascriptInterface 形态）。
+    - native 侧用 window.__AIChatNativeCallbacks[id].xxx(...) 回调，这里用
+      setTimeout + 直接调用模拟 evaluateJavascript 的异步回调。
+    把 ?bridge=ios 加到 URL 上可改为模拟 iOS WKWebView messageHandlers 形态。
+  -->
+  <script>
+    (() => {
+      const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      const getLastUserText = (history) => {
+        const user = [...history].reverse().find((m) => m.role === "user");
+        return user?.raw ?? "";
+      };
+
+      // 调试辅助：把 `<tool>{...}</tool>` 文本翻译成原生 tool_calls。
+      const extractToolCalls = (text) => {
+        const calls = [];
+        const regex = /<tool>([\s\S]*?)<\/tool>/g;
+        let index = 0;
+        let match = regex.exec(text);
+        while (match !== null) {
+          try {
+            const parsed = JSON.parse(match[1].trim());
+            calls.push({ id: `call_${index}`, name: parsed.name ?? "unknown_tool", params: parsed.params ?? {} });
+          } catch { }
+          index += 1;
+          match = regex.exec(text);
+        }
+        return calls;
+      };
+
+      // 每个 requestAI 的取消标记，按 requestId 记录。
+      const cancelled = new Set();
+
+      const callback = (id) => window.__AIChatNativeCallbacks?.[id];
+
+      async function handleMessage(message) {
+        const { id, type, payload } = message;
+
+        if (type === "getInit") {
+          callback(id)?.resolve({
+            configs: [
+              { id: "native-provider", name: "Native Provider" },
+              { id: "native-fast-provider", name: "Native Fast Provider" }
+            ],
+            defaultConfigId: "native-provider",
+            systemPrompt: "You are running inside the chaty NATIVE bridge test host.",
+            presetPrompts: [
+              { id: "hello", label: "打个招呼", prompt: "你好，请介绍一下当前 native 测试环境。" },
+              { id: "sum", label: "求和", prompt: "<tool>{\"name\":\"sumNumbers\",\"params\":{\"values\":[1,2,3]}}</tool>" }
+            ],
+            tools: [
+              {
+                name: "echo",
+                describe: "Echo the provided payload for bridge debugging.",
+                argJsonSchema: { type: "object", properties: { text: { type: "string" } } },
+                returnJsonSchema: { type: "object" }
+              },
+              {
+                name: "sumNumbers",
+                describe: "Sum a list of numbers.",
+                argJsonSchema: {
+                  type: "object",
+                  properties: { values: { type: "array", items: { type: "number" } } },
+                  required: ["values"]
+                },
+                returnJsonSchema: { type: "object" }
+              }
+            ],
+            skills: [
+              {
+                id: "native-skill",
+                name: "Native Skill",
+                description: "A small skill injected by the native bridge mock.",
+                content: "This skill is injected through the native bridge. Use echo and sumNumbers to verify native tool calls."
+              }
+            ],
+            locale: "zh",
+            theme: "system"
+          });
+          return;
+        }
+
+        if (type === "requestAI") {
+          const { requestId, configId, history, tools } = payload;
+          const text = getLastUserText(history);
+          const toolCalls = extractToolCalls(text);
+
+          // 模拟模型「决定调用工具」：通过原生协议回传 tool_calls。
+          if (toolCalls.length > 0) {
+            if (!cancelled.has(requestId)) {
+              callback(id)?.onChunk({ answer: "", toolCalls, finishReason: "tool_calls" });
+              callback(id)?.onDone();
+            }
+            cancelled.delete(requestId);
+            return;
+          }
+
+          const output = `这是 native 测试输出（${configId}，可用工具 ${tools?.length ?? 0} 个）：${text}`;
+          let answer = "";
+          for (const char of output) {
+            if (cancelled.has(requestId)) {
+              cancelled.delete(requestId);
+              return;
+            }
+            answer += char;
+            callback(id)?.onChunk({ answer });
+            await sleep(18);
+          }
+          if (!cancelled.has(requestId)) {
+            callback(id)?.onDone();
+          }
+          cancelled.delete(requestId);
+          return;
+        }
+
+        if (type === "cancelRequest") {
+          cancelled.add(payload.requestId);
+          return;
+        }
+
+        if (type === "callTool") {
+          const { name, params, history } = payload;
+          try {
+            if (name === "echo") {
+              callback(id)?.resolve({ params, lastUserText: getLastUserText(history) });
+            } else if (name === "sumNumbers") {
+              const values = Array.isArray(params?.values) ? params.values : [];
+              callback(id)?.resolve({
+                values,
+                sum: values.reduce((total, value) => total + Number(value || 0), 0)
+              });
+            } else {
+              callback(id)?.reject({ message: `Unknown native tool: ${name}` });
+            }
+          } catch (error) {
+            callback(id)?.reject({ message: String(error) });
+          }
+          return;
+        }
+      }
+
+      // native 的 evaluateJavascript 总是异步回调，这里用微任务/宏任务模拟。
+      const dispatch = (message) => {
+        setTimeout(() => {
+          handleMessage(message).catch((error) => {
+            callback(message.id)?.onError?.({ message: String(error) });
+            callback(message.id)?.reject?.({ message: String(error) });
+          });
+        }, 0);
+      };
+
+      const useIos = new URLSearchParams(location.search).get("bridge") === "ios";
+      if (useIos) {
+        window.webkit = {
+          messageHandlers: {
+            CentAiChatNative: {
+              // iOS 形态：postMessage 接收对象。
+              postMessage: (message) => dispatch(message)
+            }
+          }
+        };
+      } else {
+        window.CentAiChatNative = {
+          // Android 形态：postMessage 接收 JSON 字符串。
+          postMessage: (messageJson) => dispatch(JSON.parse(messageJson))
+        };
+      }
+    })();
+  </script>
+</head>
+
+<body class="custom-css-body">
+  <div id="root"></div>
+  <script type="module" src="/src/chaty/main.tsx"></script>
+</body>
+
+</html>

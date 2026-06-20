@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Chat Test Host</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family:
+        Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
+      background: #0f172a;
+      color: #e5e7eb;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: minmax(280px, 360px) 1fr;
+      background: #111827;
+    }
+
+    aside {
+      padding: 20px;
+      border-right: 1px solid rgb(255 255 255 / 12%);
+      background: #0f172a;
+      overflow: auto;
+    }
+
+    main {
+      min-width: 0;
+      padding: 16px;
+      display: flex;
+    }
+
+    iframe {
+      width: 100%;
+      height: calc(100vh - 32px);
+      border: 1px solid rgb(255 255 255 / 16%);
+      border-radius: 10px;
+      background: white;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 18px;
+    }
+
+    h2 {
+      margin: 22px 0 8px;
+      font-size: 13px;
+      color: #93c5fd;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    p,
+    li {
+      line-height: 1.55;
+      font-size: 13px;
+      color: #cbd5e1;
+    }
+
+    code,
+    pre {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    pre {
+      max-width: 100%;
+      overflow: auto;
+      margin: 8px 0;
+      padding: 10px;
+      border-radius: 8px;
+      background: rgb(15 23 42 / 80%);
+      border: 1px solid rgb(255 255 255 / 12%);
+      color: #dbeafe;
+      font-size: 12px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      border-radius: 999px;
+      background: rgb(34 197 94 / 14%);
+      color: #86efac;
+      font-size: 12px;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: #22c55e;
+    }
+
+    @media (max-width: 860px) {
+      body {
+        grid-template-columns: 1fr;
+      }
+
+      aside {
+        border-right: 0;
+        border-bottom: 1px solid rgb(255 255 255 / 12%);
+      }
+
+      iframe {
+        height: 70vh;
+      }
+    }
+  </style>
+  <script>
+    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    const getLastUserText = (history) => {
+      const user = [...history].reverse().find((message) => message.role === "user");
+      return user?.raw ?? "";
+    };
+
+    // 调试辅助：把 `<tool>{"name":...,"params":{}}</tool>` 文本翻译成原生 tool_calls，
+    // 模拟真实模型 API 通过原生协议返回工具调用。
+    const extractToolCalls = (text) => {
+      const calls = [];
+      const regex = /<tool>([\s\S]*?)<\/tool>/g;
+      let index = 0;
+      let match = regex.exec(text);
+      while (match !== null) {
+        try {
+          const parsed = JSON.parse(match[1].trim());
+          calls.push({ id: `call_${index}`, name: parsed.name ?? "unknown_tool", params: parsed.params ?? {} });
+        } catch { }
+        index += 1;
+        match = regex.exec(text);
+      }
+      return calls;
+    };
+
+    window.AIChatHost = {
+      async getInit() {
+        return {
+          configs: [
+            { id: "test-provider", name: "Test Provider" },
+            { id: "fast-test-provider", name: "Fast Test Provider" }
+          ],
+          defaultConfigId: "test-provider",
+          systemPrompt: "You are running inside the chaty test host.",
+          presetPrompts: [
+            {
+              id: "hello",
+              label: "打个招呼",
+              prompt: "你好，请简单介绍一下当前测试环境。"
+            },
+            {
+              id: "sum-numbers",
+              label: "求和工具",
+              prompt: "<tool>{\"name\":\"sumNumbers\",\"params\":{\"values\":[1,2,3]}}</tool>"
+            }
+          ],
+          tools: [
+            {
+              name: "echo",
+              describe: "Echo the provided payload for bridge debugging.",
+              argJsonSchema: {
+                type: "object",
+                properties: {
+                  text: { type: "string" }
+                }
+              },
+              returnJsonSchema: { type: "object" }
+            },
+            {
+              name: "sumNumbers",
+              describe: "Sum a list of numbers.",
+              argJsonSchema: {
+                type: "object",
+                properties: {
+                  values: {
+                    type: "array",
+                    items: { type: "number" }
+                  }
+                },
+                required: ["values"]
+              },
+              returnJsonSchema: { type: "object" }
+            },
+            {
+              name: "getDebugContext",
+              describe: "Return basic information from the test host.",
+              argJsonSchema: { type: "object" },
+              returnJsonSchema: { type: "object" }
+            }
+          ],
+          skills: [
+            {
+              id: "test-skill",
+              name: "Test Skill",
+              description: "A small skill injected by test.html.",
+              content: "This skill is injected by test.html. Use echo, sumNumbers, and getDebugContext to verify host tool calls."
+            },
+            {
+              id: "lazy-test-skill",
+              name: "Lazy Test Skill",
+              description: "Loaded lazily through host.loadSkill."
+            }
+          ],
+          locale: "zh",
+          theme: "system"
+        };
+      },
+
+      // 注意：`tools` 是 app 传入的全部工具（含 app 内置 + host 注入）的 JSON Schema。
+      // 真实 host 会把它放进底层模型 API 的原生 tools 字段；这里的 mock 仅用它来演示。
+      requestAI({ configId, history, tools, onChunk, onDone, onError }) {
+        let cancelled = false;
+        const text = getLastUserText(history);
+        const toolCalls = extractToolCalls(text);
+
+        (async () => {
+          try {
+            // 模拟模型「决定调用工具」：直接通过原生协议回传 tool_calls。
+            if (toolCalls.length > 0) {
+              if (!cancelled) onChunk({ answer: "", toolCalls, finishReason: "tool_calls" });
+              if (!cancelled) onDone();
+              return;
+            }
+
+            const output = `这是测试输出（${configId}，可用工具 ${tools.length} 个）：${text}`;
+            let answer = "";
+            for (const char of output) {
+              if (cancelled) return;
+              answer += char;
+              onChunk({ answer });
+              await sleep(18);
+            }
+            if (!cancelled) onDone();
+          } catch (error) {
+            onError(error);
+          }
+        })();
+
+        return {
+          cancel() {
+            cancelled = true;
+          }
+        };
+      },
+
+      async callTool({ name, params, history }) {
+        if (name === "echo") {
+          return {
+            params,
+            lastUserText: getLastUserText(history)
+          };
+        }
+        if (name === "sumNumbers") {
+          const values = Array.isArray(params?.values) ? params.values : [];
+          return {
+            values,
+            sum: values.reduce((total, value) => total + Number(value || 0), 0)
+          };
+        }
+        if (name === "getDebugContext") {
+          return {
+            href: location.href,
+            userAgent: navigator.userAgent,
+            messageCount: history.length,
+            now: new Date().toISOString()
+          };
+        }
+        throw new Error(`Unknown test tool: ${name}`);
+      },
+
+      async loadSkill({ id }) {
+        if (id === "lazy-test-skill") {
+          return {
+            id,
+            name: "Lazy Test Skill",
+            description: "Loaded lazily through host.loadSkill.",
+            content: "This content was loaded lazily from test.html via host.loadSkill."
+          };
+        }
+        throw new Error(`Unknown test skill: ${id}`);
+      }
+    };
+  </script>
+</head>
+
+<body>
+  <aside>
+    <h1>AI Chat Test Host</h1>
+    <div class="status"><span class="dot"></span> Virtual host injected</div>
+    <p>
+      This page embeds the same-origin app root in an iframe and injects a virtual provider,
+      test tools, and test skills through <code>window.AIChatHost</code>.
+    </p>
+
+    <h2>Provider</h2>
+    <p>Every message streams back:</p>
+    <pre>这是测试输出：{用户输入}</pre>
+
+    <h2>Tool Debug</h2>
+    <p>
+      Send protocol text in the iframe. This host translates it into a native
+      <code>tool_calls</code> chunk (simulating a real model API):
+    </p>
+    <pre>&lt;tool&gt;{"name":"sumNumbers","params":{"values":[1,2,3]}}&lt;/tool&gt;</pre>
+    <pre>&lt;tool&gt;{"name":"playground","params":{"code":"export default async function () { return await tools.echo({ text: 'from playground' }); }"}}&lt;/tool&gt;</pre>
+
+    <h2>Skill Debug</h2>
+    <pre>&lt;tool&gt;{"name":"listSkills","params":{}}&lt;/tool&gt;</pre>
+    <pre>&lt;tool&gt;{"name":"loadSkill","params":{"id":"lazy-test-skill"}}&lt;/tool&gt;</pre>
+  </aside>
+
+  <main>
+    <iframe title="AI Chat" src="/"></iframe>
+  </main>
+</body>
+
+</html>

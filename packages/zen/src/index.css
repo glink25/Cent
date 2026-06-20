@@ -1,0 +1,30 @@
+/** biome-ignore-all lint/suspicious/noUnknownAtRules: Tailwind CSS directives are handled by the Vite plugin. */
+/* standalone 应用专用 Tailwind root：preflight + theme + utilities 一次性引入。
+   仅由独立运行的 dev/build 入口（src/app/main.tsx、src/app/test-host.tsx）消费。
+   monorepo 内 cent 不引入此文件（其工具类由 cent 自身的单份 Tailwind 统一生成）。
+   zen 的主题 token / 组件样式见 src/zen/zen.css（由 src/index.ts 引入，cent 也能获得）。 */
+@import "tailwindcss";
+@import "tw-animate-css";
+@config "../tailwind.config.mjs";
+
+@custom-variant dark (&:is(.dark *));
+
+@plugin "@iconify/tailwind4";
+
+:root {
+	--safe-area-inset-top: max(env(safe-area-inset-top), 0px);
+	--safe-area-inset-bottom: max(env(safe-area-inset-bottom), 0px);
+}
+
+html,
+body,
+#root {
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	overflow: hidden;
+}
+
+button {
+	touch-action: manipulation;
+}
