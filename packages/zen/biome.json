@@ -10,14 +10,16 @@
 		"includes": [
 			"**",
 			"!**/dist",
+			"!**/app-dist",
 			"!**/node_modules",
 			"!**/src-tauri",
 			"!**/cli",
 			"!**/public",
+			"!**/*.css",
 			"!.*",
-			"!**/src/locale/lang/**/*.json",
+			"!src/locale/lang/**/*.json",
 			"!**/*.config.js",
-			"!**/scripts"
+			"!scripts"
 		]
 	},
 	"formatter": {

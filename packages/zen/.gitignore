@@ -1,0 +1,6 @@
+node_modules
+dist
+app-dist
+*.tsbuildinfo
+.DS_Store
+todo.md

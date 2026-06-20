@@ -1,0 +1,13 @@
+{
+	"name": "@glink25/tailwind-config",
+	"version": "0.0.0",
+	"private": true,
+	"type": "commonjs",
+	"main": "index.cjs",
+	"exports": {
+		".": "./index.cjs"
+	},
+	"peerDependencies": {
+		"tailwindcss": ">=4"
+	}
+}

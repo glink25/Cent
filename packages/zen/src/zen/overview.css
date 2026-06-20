@@ -1,0 +1,370 @@
+/* 首页 Zen 提示卡的独立横向主题。它们不复用全屏 Zen Mode 的背景与动效。 */
+.zen-overview {
+	--zen-overview-text: #292524;
+	--zen-overview-muted: rgba(41, 37, 36, 0.66);
+	--zen-overview-button-bg: rgba(28, 25, 23, 0.86);
+	--zen-overview-button-hover: #1c1917;
+	--zen-overview-button-text: #fff;
+	--zen-overview-button-shadow: 0 5px 15px rgba(69, 48, 28, 0.2);
+
+	isolation: isolate;
+	color: var(--zen-overview-text);
+	box-shadow:
+		0 12px 32px rgba(47, 38, 29, 0.14),
+		inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+
+.zen-overview::before,
+.zen-overview::after {
+	content: "";
+	position: absolute;
+	z-index: 0;
+	pointer-events: none;
+}
+
+.zen-overview > * {
+	z-index: 1;
+}
+
+.zen-overview button:not(.zen-overview-entry) {
+	color: var(--zen-overview-muted);
+}
+
+.zen-overview-entry {
+	color: var(--zen-overview-button-text);
+	background: var(--zen-overview-button-bg);
+	box-shadow: var(--zen-overview-button-shadow);
+	backdrop-filter: blur(10px);
+}
+
+.zen-overview-entry:hover {
+	background: var(--zen-overview-button-hover);
+}
+
+/* 暖沙晨光：沙色基底，鼠尾草与淡蓝光从横向两端轻轻汇入。 */
+.zen-overview-style-default {
+	background:
+		radial-gradient(
+			ellipse at 12% 30%,
+			rgba(255, 220, 164, 0.78),
+			transparent 42%
+		),
+		radial-gradient(
+			ellipse at 76% 115%,
+			rgba(169, 204, 188, 0.62),
+			transparent 47%
+		), linear-gradient(105deg, #fff7e9 0%, #f3eadb 48%, #e7f1ed 100%);
+}
+
+.zen-overview-style-default::before {
+	inset: -80% -15%;
+	background: linear-gradient(
+		100deg,
+		transparent 34%,
+		rgba(255, 255, 255, 0.48) 48%,
+		transparent 62%
+	);
+	transform: translateX(-18%);
+	animation: zen-overview-morning-light 12s ease-in-out infinite alternate;
+}
+
+.zen-overview-style-default::after {
+	right: 22%;
+	top: -24px;
+	width: 92px;
+	height: 92px;
+	border-radius: 999px;
+	background: rgba(255, 238, 194, 0.3);
+	filter: blur(3px);
+}
+
+/* 极光：将全屏颜料流压缩成几条横向柔光丝带。 */
+.zen-overview-style-aurora {
+	--zen-overview-text: #391636;
+	--zen-overview-muted: rgba(57, 22, 54, 0.62);
+	--zen-overview-button-bg: linear-gradient(135deg, #f460a0, #7555ed);
+	--zen-overview-button-hover: linear-gradient(135deg, #ff765f, #6546df);
+	--zen-overview-button-shadow: 0 6px 18px rgba(109, 71, 220, 0.28);
+	background: linear-gradient(105deg, #fff0e8 0%, #f8ddeb 48%, #c9f2f2 100%);
+}
+
+.zen-overview-style-aurora::before {
+	inset: -70% -12%;
+	background:
+		radial-gradient(
+			ellipse at 28% 46%,
+			rgba(255, 82, 154, 0.72),
+			transparent 25%
+		),
+		radial-gradient(
+			ellipse at 52% 56%,
+			rgba(119, 79, 246, 0.64),
+			transparent 28%
+		),
+		radial-gradient(
+			ellipse at 76% 40%,
+			rgba(53, 213, 225, 0.68),
+			transparent 27%
+		);
+	filter: blur(18px) saturate(1.18);
+	transform: rotate(-4deg) translateX(-3%);
+	animation: zen-overview-aurora-flow 14s ease-in-out infinite alternate;
+}
+
+.zen-overview-style-aurora::after {
+	inset: 0;
+	background: linear-gradient(
+		110deg,
+		transparent 16%,
+		rgba(255, 255, 255, 0.32) 36%,
+		transparent 52%
+	);
+	opacity: 0.7;
+}
+
+/* 海岸：上方浅海、下方暖沙，浪线沿长边横贯卡片。 */
+.zen-overview-style-beach {
+	--zen-overview-text: #244251;
+	--zen-overview-muted: rgba(36, 66, 81, 0.65);
+	--zen-overview-button-bg: linear-gradient(135deg, #147eb8, #4bbac8);
+	--zen-overview-button-hover: linear-gradient(135deg, #0e6fa6, #3eacbc);
+	--zen-overview-button-shadow: 0 6px 16px rgba(18, 126, 184, 0.24);
+	background: linear-gradient(
+		180deg,
+		#8bd5dc 0%,
+		#bde8e2 42%,
+		#f6ddb0 48%,
+		#e7bd78 100%
+	);
+}
+
+.zen-overview-style-beach::before {
+	left: -8%;
+	top: 31px;
+	width: 116%;
+	height: 18px;
+	border-top: 5px solid rgba(255, 255, 255, 0.82);
+	border-radius: 50%;
+	filter: drop-shadow(0 3px 2px rgba(255, 255, 255, 0.3));
+	transform: rotate(-1deg);
+	animation: zen-overview-wave 9s ease-in-out infinite alternate;
+}
+
+.zen-overview-style-beach::after {
+	inset: 0;
+	background:
+		radial-gradient(
+			circle at 18% 18%,
+			rgba(255, 255, 255, 0.48) 0 2px,
+			transparent 3px
+		),
+		radial-gradient(
+			circle at 64% 16%,
+			rgba(255, 255, 255, 0.38) 0 1px,
+			transparent 2px
+		), linear-gradient(100deg, rgba(255, 255, 255, 0.18), transparent 32%);
+}
+
+/* 红月：纯黑横幅与左侧裁切红月，保留极低幅度的呼吸。 */
+.zen-overview-style-red-moon {
+	--zen-overview-text: #fff;
+	--zen-overview-muted: rgba(255, 255, 255, 0.68);
+	--zen-overview-button-bg: rgba(255, 255, 255, 0.14);
+	--zen-overview-button-hover: rgba(255, 255, 255, 0.22);
+	--zen-overview-button-text: #fff;
+	--zen-overview-button-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+	background: #030303;
+	box-shadow:
+		0 12px 32px rgba(0, 0, 0, 0.34),
+		inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.zen-overview-style-red-moon::before {
+	left: -56px;
+	top: -88px;
+	width: 190px;
+	height: 190px;
+	border-radius: 50%;
+	background: radial-gradient(
+		circle at 62% 62%,
+		#ff3030,
+		#b90812 62%,
+		#650007 100%
+	);
+	box-shadow: 0 0 34px rgba(255, 0, 20, 0.36);
+	transform-origin: center;
+	animation: zen-overview-red-moon 11s ease-in-out infinite alternate;
+}
+
+.zen-overview-style-red-moon::after {
+	inset: 0;
+	background: linear-gradient(
+		90deg,
+		transparent 12%,
+		rgba(0, 0, 0, 0.1) 42%,
+		#030303 100%
+	);
+}
+
+/* 雨夜：深青底、短程斜雨与压扁在卡片底部的涟漪。 */
+.zen-overview-style-rain {
+	--zen-overview-text: #edf9f7;
+	--zen-overview-muted: rgba(218, 240, 238, 0.66);
+	--zen-overview-button-bg: rgba(189, 231, 226, 0.16);
+	--zen-overview-button-hover: rgba(189, 231, 226, 0.24);
+	--zen-overview-button-text: #effbf9;
+	--zen-overview-button-shadow: inset 0 0 0 1px rgba(221, 247, 244, 0.2);
+	background:
+		radial-gradient(
+			ellipse at 70% 0%,
+			rgba(162, 208, 207, 0.18),
+			transparent 42%
+		), linear-gradient(105deg, #172d33 0%, #102329 48%, #09191e 100%);
+}
+
+.zen-overview-style-rain::before {
+	inset: -30px -40px;
+	background: repeating-linear-gradient(
+		106deg,
+		transparent 0 15px,
+		rgba(210, 240, 238, 0.18) 16px,
+		transparent 17px 27px
+	);
+	background-size: 42px 42px;
+	transform: translate3d(-8px, -8px, 0);
+	animation: zen-overview-rain 2.8s linear infinite;
+}
+
+.zen-overview-style-rain::after {
+	left: 18%;
+	right: 12%;
+	bottom: -15px;
+	height: 31px;
+	background:
+		radial-gradient(
+			ellipse,
+			transparent 45%,
+			rgba(198, 232, 230, 0.2) 47% 50%,
+			transparent 52%
+		)
+		0 0 / 88px 26px,
+		radial-gradient(
+			ellipse,
+			transparent 45%,
+			rgba(198, 232, 230, 0.14) 47% 50%,
+			transparent 52%
+		)
+		44px 7px / 110px 30px;
+	opacity: 0.8;
+	animation: zen-overview-ripple 6s ease-in-out infinite alternate;
+}
+
+/* 星夜：深蓝横向夜空、稀疏星点与从下缘升起的一弯月光。 */
+.zen-overview-style-star-night {
+	--zen-overview-text: #f7f8ff;
+	--zen-overview-muted: rgba(226, 232, 255, 0.66);
+	--zen-overview-button-bg: linear-gradient(
+		135deg,
+		rgba(99, 130, 239, 0.86),
+		rgba(148, 111, 232, 0.82)
+	);
+	--zen-overview-button-hover: linear-gradient(135deg, #748fff, #a184f4);
+	--zen-overview-button-text: #fff;
+	--zen-overview-button-shadow: 0 6px 18px rgba(84, 101, 222, 0.3);
+	background:
+		radial-gradient(
+			ellipse at 72% 120%,
+			rgba(91, 105, 189, 0.38),
+			transparent 45%
+		), linear-gradient(105deg, #050817 0%, #101a3c 55%, #080b1e 100%);
+}
+
+.zen-overview-style-star-night::before {
+	inset: 0;
+	background:
+		radial-gradient(circle at 8% 22%, #fff 0 1px, transparent 1.7px),
+		radial-gradient(
+			circle at 22% 68%,
+			rgba(255, 255, 255, 0.8) 0 1px,
+			transparent 1.8px
+		), radial-gradient(circle at 42% 24%, #fff 0 1.2px, transparent 2px),
+		radial-gradient(
+			circle at 58% 70%,
+			rgba(220, 228, 255, 0.78) 0 1px,
+			transparent 1.8px
+		), radial-gradient(circle at 76% 18%, #fff 0 1px, transparent 1.8px),
+		radial-gradient(
+			circle at 91% 58%,
+			rgba(220, 228, 255, 0.76) 0 1.2px,
+			transparent 2px
+		);
+	animation: zen-overview-stars 7s ease-in-out infinite alternate;
+}
+
+.zen-overview-style-star-night::after {
+	left: 24%;
+	bottom: -64px;
+	width: 104px;
+	height: 104px;
+	border-radius: 50%;
+	background: radial-gradient(
+		circle at 50% 22%,
+		#fffce7 0%,
+		#cbd5ff 42%,
+		#7584cf 74%
+	);
+	box-shadow: 0 0 28px rgba(189, 203, 255, 0.3);
+	opacity: 0.72;
+}
+
+@keyframes zen-overview-morning-light {
+	to {
+		transform: translateX(18%);
+	}
+}
+
+@keyframes zen-overview-aurora-flow {
+	to {
+		transform: rotate(3deg) translateX(4%);
+	}
+}
+
+@keyframes zen-overview-wave {
+	to {
+		transform: rotate(1deg) translateX(2%);
+	}
+}
+
+@keyframes zen-overview-red-moon {
+	to {
+		transform: scale(1.035);
+		filter: saturate(1.08);
+	}
+}
+
+@keyframes zen-overview-rain {
+	to {
+		transform: translate3d(10px, 16px, 0);
+	}
+}
+
+@keyframes zen-overview-ripple {
+	to {
+		transform: scaleX(1.08);
+		opacity: 0.5;
+	}
+}
+
+@keyframes zen-overview-stars {
+	to {
+		opacity: 0.62;
+		transform: translateX(3px);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.zen-overview::before,
+	.zen-overview::after {
+		animation: none;
+	}
+}

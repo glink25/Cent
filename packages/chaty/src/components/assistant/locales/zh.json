@@ -1,0 +1,16 @@
+{
+	"appTitle": "AI 助手",
+	"switchModel": "切换模型",
+	"noChats": "暂无对话",
+	"newChat": "新对话",
+	"emptyState": "开始与 AI 对话吧",
+	"deleteChat": "删除对话",
+	"uploadLimit": "最多上传 3 个附件",
+	"sendMessage": "发送消息",
+	"stopResponse": "停止回复",
+	"thought": "思考",
+	"params": "参数",
+	"returns": "返回值",
+	"error": "错误",
+	"rerunToolCall": "重新运行工具"
+}
