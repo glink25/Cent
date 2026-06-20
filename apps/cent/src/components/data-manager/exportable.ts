@@ -235,9 +235,10 @@ export const prepareExportFile = async (
     signal?: AbortSignal,
 ) => {
     throwIfAborted(signal);
-    const [items, meta] = await Promise.all([
+    const [items, meta, zenPosts] = await Promise.all([
         StorageAPI.getAllItems(bookId),
         StorageAPI.getMeta(bookId),
+        StorageAPI.getAllZenItems(bookId),
     ]);
     throwIfAborted(signal);
     const { items: exportedItems, files } = await mapExportImages(
@@ -248,6 +249,7 @@ export const prepareExportFile = async (
     const json = JSON.stringify({
         items: exportedItems,
         meta,
+        zenPosts,
     } as ExportedJSON);
 
     const zipped = await zipAsync(

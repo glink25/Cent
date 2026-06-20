@@ -6,8 +6,35 @@ import { cn } from "../utils";
 import { getZenStyleName } from "./date";
 import type { ZenPost } from "./types";
 
-function PostDetail({ post, onBack }: { post: ZenPost; onBack: () => void }) {
+function PostDetail({
+    post,
+    onBack,
+    onForget,
+}: {
+    post: ZenPost;
+    onBack: () => void;
+    onForget: (post: ZenPost) => Promise<void>;
+}) {
     const t = useIntl();
+    const [confirming, setConfirming] = useState(false);
+    const [pending, setPending] = useState(false);
+    const [error, setError] = useState<string>();
+
+    const forget = async () => {
+        setPending(true);
+        setError(undefined);
+        try {
+            await onForget(post);
+        } catch (cause) {
+            setError(
+                cause instanceof Error && cause.message
+                    ? cause.message
+                    : t("zen-post-forget-error"),
+            );
+        } finally {
+            setPending(false);
+        }
+    };
     return (
         <div className="zen-card zen-card--solid flex min-h-0 flex-1 flex-col overflow-hidden rounded-[2rem] p-6 sm:p-8">
             <div className="flex items-center gap-3">
@@ -42,6 +69,51 @@ function PostDetail({ post, onBack }: { post: ZenPost; onBack: () => void }) {
                     </div>
                 )}
             </div>
+            <div className="mt-5 border-t border-red-500/15 pt-4">
+                {confirming ? (
+                    <div className="space-y-3">
+                        <p className="text-sm leading-6 text-red-700 dark:text-red-300">
+                            {t("zen-post-forget-confirm")}
+                        </p>
+                        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                            <button
+                                type="button"
+                                className="zen-btn zen-btn--ghost min-h-11 rounded-full px-5 text-sm disabled:opacity-45"
+                                disabled={pending}
+                                onClick={() => setConfirming(false)}
+                            >
+                                {t("zen-post-forget-cancel")}
+                            </button>
+                            <button
+                                type="button"
+                                className="min-h-11 rounded-full bg-red-600 px-5 text-sm font-medium text-white transition hover:bg-red-700 disabled:pointer-events-none disabled:opacity-45"
+                                disabled={pending}
+                                onClick={() => void forget()}
+                            >
+                                {pending
+                                    ? t("zen-post-forgetting")
+                                    : t("zen-post-forget")}
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <button
+                        type="button"
+                        className="min-h-10 rounded-full px-4 text-sm text-red-700 transition hover:bg-red-500/10 dark:text-red-300"
+                        onClick={() => {
+                            setError(undefined);
+                            setConfirming(true);
+                        }}
+                    >
+                        {t("zen-post-forget")}
+                    </button>
+                )}
+                {error && (
+                    <p className="mt-2 text-sm text-red-700 dark:text-red-300">
+                        {error}
+                    </p>
+                )}
+            </div>
         </div>
     );
 }
@@ -49,9 +121,11 @@ function PostDetail({ post, onBack }: { post: ZenPost; onBack: () => void }) {
 export function ZenPostsView({
     posts,
     onCancel,
+    onForget,
 }: {
     posts: ZenPost[];
     onCancel?: () => void;
+    onForget: (post: ZenPost) => Promise<void>;
 }) {
     const t = useIntl();
     const [selected, setSelected] = useState<ZenPost>();
@@ -86,6 +160,10 @@ export function ZenPostsView({
                     <PostDetail
                         post={selected}
                         onBack={() => setSelected(undefined)}
+                        onForget={async (post) => {
+                            await onForget(post);
+                            setSelected(undefined);
+                        }}
                     />
                 ) : (
                     <div className="zen-card flex min-h-0 flex-1 flex-col overflow-y-auto rounded-[2rem] p-5 sm:p-7">

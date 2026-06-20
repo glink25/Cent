@@ -1,12 +1,17 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
+import dayjs from "dayjs";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { StorageAPI } from "@/api/storage";
 import type { Full } from "@/database/stash";
 import { useCreators } from "@/hooks/use-creator";
 import PopupLayout from "@/layouts/popup-layout";
 import type { Bill, GlobalMeta } from "@/ledger/type";
 import { useIntl } from "@/locale";
+import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
+import { useUserStore } from "@/store/user";
 import { base64ToFile } from "@/utils/file";
+import type { ZenPost } from "@/zen/types";
 import { Button } from "../ui/button";
 import { Label } from "../ui/label";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
@@ -15,10 +20,41 @@ import { buildMergedResolvers, PreviewBillItem } from "./preview-bill-item";
 
 export type PreviewState = {
     bills: Full<Bill>[];
+    zenPosts?: Full<ZenPost>[];
     meta?: GlobalMeta;
     strategy?: "append" | "overlap";
     asMine?: boolean;
 };
+
+function normalizeZenPosts({
+    posts,
+    bookId,
+    userId,
+    asMine,
+}: {
+    posts: Full<ZenPost>[];
+    bookId: string;
+    userId: string;
+    asMine: boolean;
+}) {
+    const byId = new Map<string, Full<ZenPost>>();
+    for (const post of posts) {
+        const id = asMine
+            ? `zen-${dayjs(post.time).format("YYYY-MM-DD")}-${userId}`
+            : post.id;
+        const normalized = {
+            ...post,
+            id,
+            bookId,
+            userId: asMine ? userId : post.userId,
+        };
+        const previous = byId.get(id);
+        if (!previous || normalized.completedAt > previous.completedAt) {
+            byId.set(id, normalized);
+        }
+    }
+    return [...byId.values()];
+}
 
 export const PreviewForm = ({
     edit,
@@ -74,6 +110,13 @@ export const PreviewForm = ({
     const [availableAppend, setAvailableAppend] = useState<
         PreviewState["bills"]
     >([]);
+    const [normalizedZenPosts, setNormalizedZenPosts] = useState<
+        Full<ZenPost>[] | undefined
+    >(edit?.zenPosts === undefined ? undefined : []);
+    const [availableAppendZenPosts, setAvailableAppendZenPosts] = useState<
+        Full<ZenPost>[]
+    >([]);
+    const [zenLoading, setZenLoading] = useState(edit?.zenPosts !== undefined);
 
     useEffect(() => {
         const getAvailableAppend = async () => {
@@ -89,6 +132,44 @@ export const PreviewForm = ({
                 setAvailableAppend(v);
             });
     }, [transformed, importStrategy]);
+
+    useEffect(() => {
+        let cancelled = false;
+        const prepareZenPosts = async () => {
+            setZenLoading(edit?.zenPosts !== undefined);
+            if (edit?.zenPosts === undefined) {
+                setNormalizedZenPosts(undefined);
+                setAvailableAppendZenPosts([]);
+                return;
+            }
+            const bookId = useBookStore.getState().currentBookId;
+            if (!bookId) return;
+            const normalized = normalizeZenPosts({
+                posts: edit.zenPosts,
+                bookId,
+                userId: String(useUserStore.getState().id),
+                asMine,
+            });
+            if (cancelled) return;
+            setNormalizedZenPosts(normalized);
+            if (importStrategy === "append") {
+                const existing = await StorageAPI.getAllZenItems(bookId);
+                if (cancelled) return;
+                const existingIds = new Set(existing.map((post) => post.id));
+                setAvailableAppendZenPosts(
+                    normalized.filter((post) => !existingIds.has(post.id)),
+                );
+            } else {
+                setAvailableAppendZenPosts(normalized);
+            }
+        };
+        void prepareZenPosts().finally(() => {
+            if (!cancelled) setZenLoading(false);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [asMine, edit?.zenPosts, importStrategy]);
 
     const availableCount =
         importStrategy === "append"
@@ -130,11 +211,15 @@ export const PreviewForm = ({
             className="h-full overflow-hidden rounded-md"
             right={
                 <Button
-                    disabled={loading}
+                    disabled={loading || zenLoading}
                     onClick={() => {
                         if (importStrategy === "append") {
                             onConfirm?.({
                                 bills: availableAppend,
+                                zenPosts:
+                                    normalizedZenPosts === undefined
+                                        ? undefined
+                                        : availableAppendZenPosts,
                                 meta: edit?.meta,
                                 strategy: "append",
                                 asMine,
@@ -142,6 +227,7 @@ export const PreviewForm = ({
                         } else {
                             onConfirm?.({
                                 bills: edit?.bills ?? [],
+                                zenPosts: normalizedZenPosts,
                                 meta: edit?.meta,
                                 strategy: "overlap",
                                 asMine,
@@ -193,6 +279,17 @@ export const PreviewForm = ({
                 </div>
                 <div className="flex-1 flex flex-col px-4 gap-3 overflow-hidden">
                     <p className="opacity-60 text-sm">{t("preview")}:</p>
+
+                    {normalizedZenPosts !== undefined && (
+                        <p className="text-sm opacity-70">
+                            {t("zen-import-preview", {
+                                n:
+                                    importStrategy === "append"
+                                        ? availableAppendZenPosts.length
+                                        : normalizedZenPosts.length,
+                            })}
+                        </p>
+                    )}
 
                     {importStrategy === "append" ? (
                         <div>

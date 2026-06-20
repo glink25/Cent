@@ -40,6 +40,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
         const res = await showImportPreview({
             bills: data.items,
             meta: data.meta,
+            zenPosts: data.zenPosts,
         });
         if (!res) {
             return;

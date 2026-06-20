@@ -12,6 +12,7 @@ export type {
     ZenAIToolDefinition,
     ZenInitPayload,
     ZenLocale,
+    ZenPostMutation,
     ZenRequestHandle,
     ZenRuntimeHost,
     ZenThemeMode,

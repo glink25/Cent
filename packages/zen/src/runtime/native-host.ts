@@ -50,7 +50,7 @@ function createNativeHost(send: Sender): ZenRuntimeHost {
         getInit: () => request(send, "getInit"),
         getZenContext: (payload) => request(send, "getZenContext", payload),
         listZenPosts: (payload = {}) => request(send, "listZenPosts", payload),
-        saveZenPost: (payload) => request(send, "saveZenPost", payload),
+        mutateZenPosts: (payload) => request(send, "mutateZenPosts", payload),
         callAITool: (payload) => request(send, "callAITool", payload),
         requestAI: (payload) => {
             const messageId = id();

@@ -24,6 +24,7 @@ const debugPost: ZenPost = {
     createdAt: now,
     completedAt: now,
 };
+let debugPosts = historyMode ? [debugPost] : [];
 const host: ZenRuntimeHost = {
     getInit: () => ({
         userId: "debug-user",
@@ -44,7 +45,7 @@ const host: ZenRuntimeHost = {
             end: now,
         },
         focusDecision,
-        recentZenPosts: historyMode ? [debugPost] : [],
+        recentZenPosts: debugPosts,
         calendarPosition: "month_middle",
         suggestedPeriods: [],
         summary: {
@@ -63,8 +64,23 @@ const host: ZenRuntimeHost = {
         candidateBills: [],
         habitPatterns: [],
     }),
-    listZenPosts: async () => (historyMode ? [debugPost] : []),
-    saveZenPost: async () => {},
+    listZenPosts: async () => debugPosts,
+    mutateZenPosts: async ({ mutations }) => {
+        for (const mutation of mutations) {
+            if (mutation.type === "delete") {
+                debugPosts = debugPosts.filter(
+                    (post) => post.id !== mutation.id,
+                );
+            } else {
+                debugPosts = [
+                    ...debugPosts.filter(
+                        (post) => post.id !== mutation.post.id,
+                    ),
+                    mutation.post,
+                ];
+            }
+        }
+    },
     requestAI: () => ({ cancel() {} }),
     callAITool: async () => {
         throw new Error("No debug AI tools");

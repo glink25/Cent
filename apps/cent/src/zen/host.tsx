@@ -110,11 +110,18 @@ export const centZenHost: ZenRuntimeHost = {
         });
     },
     listZenPosts: ({ limit } = {}) => listPosts(limit),
-    async saveZenPost({ post }) {
+    async mutateZenPosts({ mutations }) {
         const bookId = useBookStore.getState().currentBookId;
         if (!bookId) throw new Error("No active ledger book");
         const { StorageAPI } = await loadStorageAPI();
-        await StorageAPI.batchZen(bookId, [{ type: "update", value: post }]);
+        await StorageAPI.batchZen(
+            bookId,
+            mutations.map((mutation) =>
+                mutation.type === "delete"
+                    ? { type: "delete" as const, value: mutation.id }
+                    : { type: "update" as const, value: mutation.post },
+            ),
+        );
     },
     requestAI({
         requestId: _requestId,

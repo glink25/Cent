@@ -998,29 +998,29 @@ export function ZenExperience({
     const todayLabel = useMemo(() => dayjs().format("YYYY-MM-DD"), []);
     const styleName = useMemo(() => getZenStyleName(), []);
 
-    useEffect(() => {
-        let cancelled = false;
-        async function init() {
+    const initialize = useCallback(
+        async (isCancelled: () => boolean = () => false) => {
             try {
                 const { bookId, userId } = runtimeInit;
                 if (!bookId) throw new Error(t("zen-select-book-first"));
                 const zenDayId = getZenDayId();
                 const recentZenPosts = await host.listZenPosts();
+                if (isCancelled()) return;
                 setPosts(recentZenPosts);
                 const completed = recentZenPosts.find(
                     (post) => post.id === `zen-${zenDayId}-${userId}`,
                 );
                 if (completed) {
-                    if (!cancelled)
-                        setState({ type: "completed", post: completed });
+                    setState({ type: "completed", post: completed });
                     return;
                 }
                 const scheduledTime = runtimeInit.scheduledTime ?? "21:00";
                 if (!isZenEntranceOpen(scheduledTime)) {
-                    if (!cancelled) setState({ type: "locked", scheduledTime });
+                    setState({ type: "locked", scheduledTime });
                     return;
                 }
                 const context = await host.getZenContext({ zenDayId });
+                if (isCancelled()) return;
                 const now = Date.now();
                 const session: ZenSessionState = {
                     id: zenDayId,
@@ -1035,9 +1035,9 @@ export function ZenExperience({
                     createdAt: now,
                     updatedAt: now,
                 };
-                if (!cancelled) setState({ type: "active", session, context });
+                setState({ type: "active", session, context });
             } catch (error) {
-                if (!cancelled)
+                if (!isCancelled())
                     setState({
                         type: "error",
                         message:
@@ -1046,12 +1046,17 @@ export function ZenExperience({
                                 : String(error),
                     });
             }
-        }
-        void init();
+        },
+        [host, runtimeInit, t],
+    );
+
+    useEffect(() => {
+        let cancelled = false;
+        void initialize(() => cancelled);
         return () => {
             cancelled = true;
         };
-    }, [host, runtimeInit, t]);
+    }, [initialize]);
 
     const updateActive = useCallback(
         (
@@ -1201,13 +1206,32 @@ export function ZenExperience({
         setPending(true);
         try {
             const post = buildZenPost(state.session, state.session.currentStep);
-            await host.saveZenPost({ post });
+            await host.mutateZenPosts({
+                mutations: [{ type: "upsert", post }],
+            });
             setPosts(await host.listZenPosts());
             setState({ type: "completed", post });
         } finally {
             setPending(false);
         }
     }, [host, state]);
+
+    const forgetZenPost = useCallback(
+        async (post: ZenPost) => {
+            await host.mutateZenPosts({
+                mutations: [{ type: "delete", id: post.id }],
+            });
+            const nextPosts = await host.listZenPosts();
+            setPosts(nextPosts);
+            const todayId = `zen-${getZenDayId()}-${runtimeInit.userId}`;
+            if (post.id === todayId) {
+                setView("today");
+                setState({ type: "loading" });
+                await initialize();
+            }
+        },
+        [host, initialize, runtimeInit.userId],
+    );
 
     const continueDeeper = useCallback(async () => {
         if (state.type !== "active" || state.session.journeyPlan.extensionUsed)
@@ -1233,7 +1257,13 @@ export function ZenExperience({
         state.type === "loading" ||
         (state.type === "active" && !activeStep);
     if (view === "history")
-        return <ZenPostsView posts={posts} onCancel={() => setView("today")} />;
+        return (
+            <ZenPostsView
+                posts={posts}
+                onCancel={() => setView("today")}
+                onForget={forgetZenPost}
+            />
+        );
 
     return (
         <div

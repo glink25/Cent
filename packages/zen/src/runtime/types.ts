@@ -24,6 +24,10 @@ export type ZenInitPayload = {
 
 export type ZenRequestHandle = { cancel(): void };
 
+export type ZenPostMutation =
+    | { type: "upsert"; post: ZenPost }
+    | { type: "delete"; id: string };
+
 /** Component-only capabilities. None of these methods are exposed to the model. */
 export type ZenRuntimeHost = {
     getInit(): ZenInitPayload | Promise<ZenInitPayload>;
@@ -32,7 +36,7 @@ export type ZenRuntimeHost = {
         focusDecision?: ZenFocusDecision;
     }): Promise<ZenContext>;
     listZenPosts(args?: { limit?: number }): Promise<ZenPost[]>;
-    saveZenPost(args: { post: ZenPost }): Promise<void>;
+    mutateZenPosts(args: { mutations: ZenPostMutation[] }): Promise<void>;
     requestAI(args: {
         requestId: string;
         configId?: string;
@@ -59,7 +63,11 @@ export type NativeBridgeMessage =
           payload: { zenDayId: string; focusDecision?: ZenFocusDecision };
       }
     | { id: string; type: "listZenPosts"; payload: { limit?: number } }
-    | { id: string; type: "saveZenPost"; payload: { post: ZenPost } }
+    | {
+          id: string;
+          type: "mutateZenPosts";
+          payload: { mutations: ZenPostMutation[] };
+      }
     | {
           id: string;
           type: "requestAI";

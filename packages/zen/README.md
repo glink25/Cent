@@ -41,13 +41,13 @@ type ZenRuntimeHost = {
     focusDecision?: ZenFocusDecision;
   }): Promise<ZenContext>;
   listZenPosts(args?: { limit?: number }): Promise<ZenPost[]>;
-  saveZenPost(args: { post: ZenPost }): Promise<void>;
+  mutateZenPosts(args: { mutations: ZenPostMutation[] }): Promise<void>;
   requestAI(args: ZenAIRequest): ZenRequestHandle | Promise<ZenRequestHandle>;
   callAITool(args: ZenAIToolCall): Promise<unknown>;
 };
 ```
 
-`saveZenPost` is invoked only after the user clicks the save button. The model
+`mutateZenPosts` is invoked when the user saves or forgets a Zen post. The model
 cannot discover or invoke it.
 
 ### AI tools
@@ -76,7 +76,7 @@ The standalone page discovers the first available host:
 
 Component messages and AI messages have distinct native message types:
 
-- Component: `getInit`, `getZenContext`, `listZenPosts`, `saveZenPost`
+- Component: `getInit`, `getZenContext`, `listZenPosts`, `mutateZenPosts`
 - AI: `requestAI`, `cancelAIRequest`, `callAITool`
 
 Native code responds through `window.__ZenNativeCallbacks[id]`. One-shot

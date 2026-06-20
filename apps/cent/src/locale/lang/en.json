@@ -557,6 +557,7 @@
   "split-action-tip": "The current amount will be deducted from the original bill",
   "other-currencies": "Other currencies",
   "put-ledgers-on-me": "Put ledgers on Me",
+  "zen-import-preview": "Also import {n} Zen entries",
   "unkown-users-may-show-up-when-analyze": "May have unknown user shows up",
   "ai-assistant": "AI Assistant",
   "assistant-description": "Configure AI assistant settings",

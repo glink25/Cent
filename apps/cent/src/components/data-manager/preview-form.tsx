@@ -1,7 +1,7 @@
 import { cloneDeep, isEqual, merge } from "lodash-es";
 import { useEffect, useRef, useState } from "react";
 import { StorageAPI } from "@/api/storage";
-import type { Full, MetaUpdate, Update } from "@/database/stash";
+import type { Action, Full, MetaUpdate, Update } from "@/database/stash";
 import PopupLayout from "@/layouts/popup-layout";
 import { BillCategories } from "@/ledger/category";
 import type { Bill, GlobalMeta } from "@/ledger/type";
@@ -10,6 +10,7 @@ import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
+import type { ZenPost } from "@/zen/types";
 import createConfirmProvider from "../confirm";
 import { PreviewForm, type PreviewState } from "./preview";
 
@@ -24,7 +25,7 @@ export const [ImportPreviewProvider, showImportPreview] = createConfirmProvider(
 );
 
 export const importFromPreviewResult = async (res: PreviewState) => {
-    const { strategy, asMine, ...rest } = res;
+    const { strategy, asMine, zenPosts, ...rest } = res;
     const currentMeta = cloneDeep(
         useLedgerStore.getState().infos?.meta ?? ({} as GlobalMeta),
     );
@@ -76,4 +77,22 @@ export const importFromPreviewResult = async (res: PreviewState) => {
         ],
         strategy === "overlap",
     );
+    if (zenPosts !== undefined) {
+        let actions: Action<ZenPost>[] = zenPosts.map((post) => ({
+            type: "update" as const,
+            value: post,
+            timestamp: post.__update_at,
+        }));
+        if (strategy === "overlap" && actions.length === 0) {
+            const existing = await StorageAPI.getAllZenItems(bookId);
+            actions = existing.map((post) => ({
+                type: "delete" as const,
+                value: post.id,
+                timestamp: Date.now(),
+            }));
+        }
+        if (actions.length > 0) {
+            await StorageAPI.batchZen(bookId, actions, strategy === "overlap");
+        }
+    }
 };

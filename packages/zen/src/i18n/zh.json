@@ -840,6 +840,11 @@
 	"zen-view-history": "查看往期 Zen",
 	"zen-posts-title": "往期 Zen",
 	"zen-posts-empty": "暂无往期 Zen",
+	"zen-post-forget": "遗忘这次 Zen",
+	"zen-post-forget-confirm": "确定遗忘这次 Zen 吗？遗忘后无法恢复。",
+	"zen-post-forget-cancel": "保留",
+	"zen-post-forgetting": "正在遗忘…",
+	"zen-post-forget-error": "暂时无法遗忘，请稍后再试。",
 	"zen-overview-ready": "进入 Zen",
 	"zen-settings-desc": "回顾，放松，让AI协助你了解自身收支情况"
 }

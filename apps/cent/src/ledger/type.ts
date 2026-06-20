@@ -1,6 +1,7 @@
 // @annotation: Full 在这里并无实际作用，只是用于拓展一些额外内容，无需考虑，Full<T> 可视为等价于 T
 import type { Widget } from "@/components/widget/type";
 import type { Full } from "@/database/stash";
+import type { ZenPost } from "@/zen/types";
 // @annotation: 其他工具type，无需考虑
 import type {
     BillFilter,
@@ -137,4 +138,6 @@ export type ExportedJSON = {
     items: Full<Bill>[];
     // 额外的配置数据
     meta: GlobalMeta;
+    // Zen 数据在新版本完整备份中独立保存；可选以兼容旧备份。
+    zenPosts?: Full<ZenPost>[];
 };
