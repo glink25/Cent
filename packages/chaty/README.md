@@ -79,6 +79,9 @@ The app reads a same-origin host bridge from `window.AIChatHost`, or from
 
 ```ts
 type AIChatInitPayload = {
+  // Opaque persistence scope. Exact matches share history.
+  // Omit it to use chaty's separate default scope.
+  scope?: string;
   configs: Array<{ id: string; name: string }>;
   // Defaults to the first config when omitted.
   defaultConfigId?: string;

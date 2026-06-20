@@ -6,6 +6,7 @@ import type { AbortablePromise, History, TurnResult } from "../../assistant";
 
 export type Chat = {
     id: string;
+    scope: string | null;
     history: History;
     // 运行时字段（不持久化，见下方 partialize）：用于支持多会话并发发送与中断。
     pending?: boolean;
@@ -18,7 +19,7 @@ export type AssistantChatState = {
 };
 
 type PersistedAssistantChatState = {
-    chats: Pick<Chat, "id" | "history">[];
+    chats: Pick<Chat, "id" | "scope" | "history">[];
 };
 
 type Persist<S, U = S> = (
@@ -39,11 +40,15 @@ export const useAssistantChatStore = create<AssistantChatState>()(
                 })),
         }),
         {
-            name: "assistant-v2-chat-store",
+            name: "assistant-v3-chat-store",
             version: 1,
-            storage: createIndexedDBStorage("assistant-v2", "chat-store"),
+            storage: createIndexedDBStorage("assistant-v3", "chat-store"),
             partialize: (state): PersistedAssistantChatState => ({
-                chats: state.chats.map(({ id, history }) => ({ id, history })),
+                chats: state.chats.map(({ id, scope, history }) => ({
+                    id,
+                    scope,
+                    history,
+                })),
             }),
         },
     ),

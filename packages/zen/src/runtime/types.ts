@@ -81,6 +81,7 @@ export type NativeBridgeMessage =
           };
       }
     | { id: string; type: "cancelAIRequest"; payload: { requestId: string } }
+    | { id: string; type: "close" }
     | {
           id: string;
           type: "callAITool";

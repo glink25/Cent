@@ -21,6 +21,8 @@ export type AIChatTheme = "light" | "dark" | "system";
  * 与任何宿主领域逻辑解耦：宿主只需构造一个 RuntimeConfig 注入即可。
  */
 export type RuntimeConfig = {
+    /** 聊天记录隔离域。未传时使用独立的默认域。 */
+    scope?: string;
     provider: Provider;
     tools: Tool[];
     skills: SkillInput[];

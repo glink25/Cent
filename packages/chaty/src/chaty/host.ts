@@ -209,6 +209,7 @@ export async function loadHostRuntimeConfig(
         : init.configs[0]?.id;
 
     return {
+        scope: init.scope,
         provider: createHostProvider(host),
         tools: [
             ...fallback.tools,
