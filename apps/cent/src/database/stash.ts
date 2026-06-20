@@ -1,3 +1,4 @@
+import { sortBy } from "lodash-es";
 import { v4 } from "uuid";
 import { diff, merge } from "./patch";
 
@@ -196,20 +197,25 @@ export class StashBucket<T extends BaseItem, Meta = any, Config = any> {
     }
 
     private async applyStash(stashed: FullAction<T>[]) {
-        const { updates, deletes } = stashed.reduce(
-            (p, c) => {
-                if (c.type === "update") {
-                    p.updates.push(c);
-                } else if (c.type === "delete") {
-                    p.deletes.push(c);
-                }
-                return p;
-            },
-            {
-                updates: [] as Update<T>[],
-                deletes: [] as Delete<T>[],
-            },
-        );
+        // Replay in timestamp order so the last action per item id wins
+        // (last-write-wins). Otherwise a `delete` could remove an item that a
+        // chronologically-later `update` re-created (data loss). Collapsing per
+        // id also removes the put/delete race inside the Promise.all below.
+        const lastById = new Map<string, Update<T> | Delete<T>>();
+        for (const ac of sortBy(stashed, (a) => a.timestamp)) {
+            if (ac.type === "meta") continue;
+            const itemId = ac.type === "delete" ? ac.value : ac.value.id;
+            lastById.set(itemId, ac);
+        }
+        const updates: Update<T>[] = [];
+        const deletes: Delete<T>[] = [];
+        for (const ac of lastById.values()) {
+            if (ac.type === "update") {
+                updates.push(ac);
+            } else {
+                deletes.push(ac);
+            }
+        }
         await Promise.all([
             this.itemStorage.put(
                 ...updates.map((ac) => ({
