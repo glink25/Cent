@@ -1,0 +1,16 @@
+{
+	"appTitle": "AI Assistant",
+	"switchModel": "Switch model",
+	"noChats": "No chats",
+	"newChat": "New Chat",
+	"emptyState": "Start talking to AI",
+	"deleteChat": "Delete chat",
+	"uploadLimit": "Upload up to 3 files",
+	"sendMessage": "Send message",
+	"stopResponse": "Stop response",
+	"thought": "Thought",
+	"params": "Params",
+	"returns": "Returns",
+	"error": "Error",
+	"rerunToolCall": "Re-run tool call"
+}

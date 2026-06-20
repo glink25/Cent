@@ -1,0 +1,8 @@
+dist
+dist-ssr
+node_modules
+*.local
+.DS_Store
+*.tsbuildinfo
+
+app-dist

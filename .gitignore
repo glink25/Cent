@@ -10,6 +10,8 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+app-dist
+*.tsbuildinfo
 *.local
 
 # secrets / local env
