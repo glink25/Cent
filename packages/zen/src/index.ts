@@ -6,10 +6,12 @@ import "./zen/zen.css";
 export type { ZenProps } from "./main";
 export { Zen } from "./main";
 export { getHostBridge } from "./runtime/host";
+export { resolveZenDirectorConfig } from "./runtime/model";
 export type {
     NativeBridgeMessage,
     NativeCallback,
     ZenAIToolDefinition,
+    ZenDirectorMode,
     ZenInitPayload,
     ZenLocale,
     ZenPostMutation,
@@ -18,5 +20,4 @@ export type {
     ZenThemeMode,
 } from "./runtime/types";
 export * from "./zen/date";
-export { isZenFallbackDevMode } from "./zen/dev";
 export type * from "./zen/types";

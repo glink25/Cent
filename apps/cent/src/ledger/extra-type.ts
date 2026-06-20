@@ -117,7 +117,8 @@ export type PersonalMeta = {
     zenPosts?: ZenPost[];
     zen?: {
         enabled?: boolean;
-        aiConfigId?: string;
+        /** undefined 跟随默认，null 不使用模型，string 使用指定配置。 */
+        aiConfigId?: string | null;
         scheduledTime?: string;
     };
     customCSS?: string;

@@ -1,6 +1,7 @@
 import type { Tool } from "@glink25/chaty";
 import {
     getZenPostDayId,
+    resolveZenDirectorConfig,
     Zen,
     type ZenAIToolDefinition,
     type ZenRuntimeHost,
@@ -83,11 +84,12 @@ export const centZenHost: ZenRuntimeHost = {
             useLedgerStore.getState().infos?.meta.personal?.[userId];
         const configs = personal?.assistant?.configs ?? [];
         const configuredZenId = personal?.zen?.aiConfigId;
-        const defaultConfigId = configs.some(
-            (item) => item.id === configuredZenId,
-        )
-            ? configuredZenId
-            : personal?.assistant?.defaultConfigId;
+        const { configId: defaultConfigId, directorMode } =
+            resolveZenDirectorConfig({
+                configs,
+                aiConfigId: configuredZenId,
+                defaultConfigId: personal?.assistant?.defaultConfigId,
+            });
         const storedTheme = localStorage.getItem("theme");
         return {
             userId: String(userId),
@@ -95,6 +97,7 @@ export const centZenHost: ZenRuntimeHost = {
             scheduledTime: personal?.zen?.scheduledTime ?? "21:00",
             configs: configs.map(({ id, name }) => ({ id, name })),
             defaultConfigId,
+            directorMode,
             aiTools: hostAITools.map(serializeTool),
             locale: usePreferenceStore.getState().locale,
             theme:

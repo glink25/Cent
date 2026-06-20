@@ -4,8 +4,6 @@ import { createRoot } from "react-dom/client";
 import type { ZenRuntimeHost } from "../runtime/types";
 import type { ZenPost } from "../zen/types";
 
-window.__ZEN_FALLBACK__ = true;
-
 const now = Date.now();
 const historyMode = new URLSearchParams(location.search).has("history");
 const dayId = new Date(now).toLocaleDateString("en-CA");
@@ -32,6 +30,7 @@ const host: ZenRuntimeHost = {
         scheduledTime: "00:00",
         configs: [{ id: "debug", name: "Debug" }],
         defaultConfigId: "debug",
+        directorMode: "local",
         aiTools: [],
         locale: "zh",
         theme: "system",

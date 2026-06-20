@@ -8,7 +8,8 @@
 	"scripts": {
 		"dev": "vite --host",
 		"build": "pnpm run lint && vite build",
-		"lint": "tsc -b && biome check --diagnostic-level error"
+		"lint": "tsc -b && biome check --diagnostic-level error",
+		"test": "vitest run"
 	},
 	"peerDependencies": {
 		"@glink25/chaty": "^0.2.0",
@@ -39,6 +40,7 @@
 		"tw-animate-css": "^1.3.8",
 		"typescript": "~5.8.3",
 		"vite": "^8.0.8",
+		"vitest": "^4.1.9",
 		"zod": "^4.1.11"
 	}
 }

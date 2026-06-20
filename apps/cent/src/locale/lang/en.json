@@ -820,9 +820,10 @@
   "zen-settings-title": "Zen Settings",
   "zen-ai-model": "Zen AI Model",
   "zen-follow-default": "Follow default",
+  "zen-no-model": "Do not use a model",
   "zen-scheduled-time": "Available from",
   "zen-enable": "Enable Zen",
-  "zen-enable-requires-ai": "Configure AI first to enable Zen",
+  "zen-enable-requires-ai": "Local mode works without an AI configuration",
   "zen-enable-desc": "Make space for a gentle financial reflection each day.",
   "zen-enable-tip": "Zen will become available at the time you choose.",
   "zen-locked-title": "Today's Zen is not open yet",
@@ -831,5 +832,5 @@
   "zen-posts-title": "Past Zen",
   "zen-posts-empty": "No past Zen yet",
   "zen-overview-ready": "Enter Zen",
-  "zen-settings-desc": "Review, relax, and let AI help you understand your financial situation"
+  "zen-settings-desc": "Review, relax, and understand your finances in the way that suits you"
 }

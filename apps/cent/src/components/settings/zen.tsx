@@ -15,6 +15,7 @@ import {
 import { Switch } from "../ui/switch";
 
 const FOLLOW_DEFAULT = "__default__";
+const NO_MODEL = "__none__";
 
 function Form({ onCancel }: { onCancel?: () => void }) {
     const t = useIntl();
@@ -22,7 +23,6 @@ function Form({ onCancel }: { onCancel?: () => void }) {
         settings: zen,
         configs: configList,
         defaultConfigId,
-        hasAIConfig,
         updateSettings,
     } = useZen();
 
@@ -32,9 +32,12 @@ function Form({ onCancel }: { onCancel?: () => void }) {
     const selectedConfigExists =
         zen?.aiConfigId &&
         configList.some((config) => config.id === zen.aiConfigId);
-    const aiConfigValue = selectedConfigExists
-        ? (zen?.aiConfigId as string)
-        : FOLLOW_DEFAULT;
+    const aiConfigValue =
+        zen?.aiConfigId === null || configList.length === 0
+            ? NO_MODEL
+            : selectedConfigExists
+              ? (zen.aiConfigId as string)
+              : FOLLOW_DEFAULT;
     const scheduledTime = zen?.scheduledTime ?? "21:00";
 
     return (
@@ -54,20 +57,20 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                     <div className="text-sm min-w-0 flex-1">
                         <div>{t("zen-enable")}</div>
                         <div className="text-xs opacity-60">
-                            {!hasAIConfig
-                                ? t("zen-enable-requires-ai")
-                                : zen?.enabled
-                                  ? t("zen-enable-tip")
-                                  : t("zen-enable-desc")}
+                            {zen?.enabled
+                                ? t("zen-enable-tip")
+                                : t("zen-enable-desc")}
                         </div>
                     </div>
                     <Switch
-                        checked={Boolean(zen?.enabled && hasAIConfig)}
-                        disabled={!hasAIConfig}
+                        checked={Boolean(zen?.enabled)}
                         onCheckedChange={(enabled) => {
-                            if (hasAIConfig) {
-                                void updateSettings({ enabled });
-                            }
+                            void updateSettings({
+                                enabled,
+                                ...(configList.length === 0
+                                    ? { aiConfigId: null }
+                                    : {}),
+                            });
                         }}
                     />
                 </div>
@@ -82,7 +85,9 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                                 aiConfigId:
                                     value === FOLLOW_DEFAULT
                                         ? undefined
-                                        : value,
+                                        : value === NO_MODEL
+                                          ? null
+                                          : value,
                             });
                         }}
                     >
@@ -95,6 +100,9 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                                 {defaultConfigName
                                     ? ` (${defaultConfigName})`
                                     : ""}
+                            </SelectItem>
+                            <SelectItem value={NO_MODEL}>
+                                {t("zen-no-model")}
                             </SelectItem>
                             {configList.map((config) => (
                                 <SelectItem key={config.id} value={config.id}>

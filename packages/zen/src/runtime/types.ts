@@ -3,6 +3,7 @@ import type { ZenContext, ZenFocusDecision, ZenPost } from "../zen/types";
 
 export type ZenLocale = "zh" | "en";
 export type ZenThemeMode = "light" | "dark" | "system";
+export type ZenDirectorMode = "ai" | "local";
 
 export type ZenAIToolDefinition = {
     name: string;
@@ -17,6 +18,7 @@ export type ZenInitPayload = {
     scheduledTime?: string;
     configs: Array<{ id: string; name: string }>;
     defaultConfigId?: string;
+    directorMode: ZenDirectorMode;
     aiTools: ZenAIToolDefinition[];
     locale?: ZenLocale;
     theme?: ZenThemeMode;

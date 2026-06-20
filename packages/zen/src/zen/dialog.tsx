@@ -14,7 +14,11 @@ import { useZenRuntime } from "../runtime/context";
 import { cn } from "../utils";
 import { getZenDayId, getZenStyleName, isZenEntranceOpen } from "./date";
 import { requestNextZenStep } from "./director";
-import { createFallbackEpilogueStep } from "./fallback";
+import {
+    createFallbackEpilogueStep,
+    createLocalZenJourneyPlan,
+    createLocalZenSeed,
+} from "./fallback";
 import {
     createZenExplorationState,
     createZenJourneyPlan,
@@ -41,6 +45,23 @@ type ZenDialogState =
     | { type: "locked"; scheduledTime: string }
     | { type: "completed"; post: ZenPost }
     | { type: "active"; session: ZenSessionState; context: ZenContext };
+
+function createJourneyState(
+    local: boolean,
+    lastZenPost: ZenPost | undefined,
+    now: number,
+) {
+    if (!local)
+        return {
+            journeyPlan: createZenJourneyPlan(lastZenPost, now),
+            localSeed: undefined,
+        };
+    const localSeed = createLocalZenSeed();
+    return {
+        journeyPlan: createLocalZenJourneyPlan(localSeed),
+        localSeed,
+    };
+}
 
 function formatAmount(amount: number, currency: string) {
     return `${amount.toFixed(2)} ${currency}`;
@@ -1033,6 +1054,11 @@ export function ZenExperience({
                 const context = await host.getZenContext({ zenDayId });
                 if (isCancelled()) return;
                 const now = Date.now();
+                const journey = createJourneyState(
+                    runtimeInit.directorMode === "local",
+                    context.lastZenPost,
+                    now,
+                );
                 const session: ZenSessionState = {
                     id: zenDayId,
                     bookId,
@@ -1040,7 +1066,7 @@ export function ZenExperience({
                     period: context.period,
                     steps: [],
                     extractedInsights: [],
-                    journeyPlan: createZenJourneyPlan(context.lastZenPost, now),
+                    ...journey,
                     exploration: createZenExplorationState(),
                     status: "active",
                     createdAt: now,
@@ -1092,6 +1118,8 @@ export function ZenExperience({
                     provider,
                     hostTools: aiTools,
                     configId: runtimeInit.defaultConfigId,
+                    directorMode: runtimeInit.directorMode,
+                    locale: runtimeInit.locale,
                     lastUserInput,
                 });
                 const nextContext = result.focusDecision
@@ -1138,7 +1166,7 @@ export function ZenExperience({
                 setPending(false);
             }
         },
-        [aiTools, host, provider, runtimeInit.defaultConfigId, updateActive],
+        [aiTools, host, provider, runtimeInit, updateActive],
     );
 
     const restartZen = useCallback(async () => {
@@ -1149,6 +1177,11 @@ export function ZenExperience({
             const zenDayId = getZenDayId();
             const context = await host.getZenContext({ zenDayId });
             const now = Date.now();
+            const journey = createJourneyState(
+                runtimeInit.directorMode === "local",
+                context.lastZenPost,
+                now,
+            );
             setState({
                 type: "active",
                 context,
@@ -1159,7 +1192,7 @@ export function ZenExperience({
                     period: context.period,
                     steps: [],
                     extractedInsights: [],
-                    journeyPlan: createZenJourneyPlan(context.lastZenPost, now),
+                    ...journey,
                     exploration: createZenExplorationState(),
                     status: "active",
                     createdAt: now,
@@ -1382,6 +1415,7 @@ export function ZenExperience({
                         onRestart={restartZen}
                         onContinue={
                             state.type === "active" &&
+                            runtimeInit.directorMode === "ai" &&
                             !state.session.journeyPlan.extensionUsed
                                 ? continueDeeper
                                 : undefined

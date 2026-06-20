@@ -831,9 +831,10 @@
   "zen-settings-title": "Zen 设置",
   "zen-ai-model": "Zen AI 模型",
   "zen-follow-default": "跟随默认",
+  "zen-no-model": "不使用模型",
   "zen-scheduled-time": "出现时间",
   "zen-enable": "开启 Zen",
-  "zen-enable-requires-ai": "需先配置 AI 才能开启",
+  "zen-enable-requires-ai": "可使用本地模式，无需配置 AI",
   "zen-enable-desc": "每天留一点时间，温和地回看自己的财务生活。",
   "zen-enable-tip": "Zen 将在你设定的时间开放。",
   "zen-locked-title": "今日 Zen 尚未开启",
@@ -842,5 +843,5 @@
   "zen-posts-title": "往期 Zen",
   "zen-posts-empty": "暂无往期 Zen",
   "zen-overview-ready": "进入 Zen",
-  "zen-settings-desc": "回顾，放松，让AI协助你了解自身收支情况"
+  "zen-settings-desc": "回顾，放松，以适合自己的方式理解收支"
 }

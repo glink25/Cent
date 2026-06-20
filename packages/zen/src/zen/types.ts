@@ -280,6 +280,8 @@ export type ZenSessionState = {
     history?: History;
     /** 上一次已发给模型的周期类 zenContext 签名，用于只在 period 变化时重发。 */
     sentContextSignature?: string;
+    /** 本地 Director 的会话随机种子；重开时更新，同一轮内保持稳定。 */
+    localSeed?: string;
     createdAt: number;
     updatedAt: number;
 };

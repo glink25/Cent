@@ -1,4 +1,3 @@
-import { isZenFallbackDevMode } from "@glink25/zen";
 import dayjs from "dayjs";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { create } from "zustand";
@@ -96,9 +95,6 @@ export function useZen() {
         () => allPosts.filter((post) => post.userId === userId),
         [allPosts, userId],
     );
-    const hasAIConfig = Boolean(
-        (configs.length > 0 && defaultConfigId) || isZenFallbackDevMode(),
-    );
     const updateSettings = useCallback(
         (value: NonNullable<PersonalMeta["zen"]>) =>
             useLedgerStore.getState().updatePersonalMeta((prev) => ({
@@ -107,6 +103,11 @@ export function useZen() {
             })),
         [],
     );
+    useEffect(() => {
+        if (configs.length === 0 && zen?.aiConfigId !== null) {
+            void updateSettings({ aiConfigId: null });
+        }
+    }, [configs.length, updateSettings, zen?.aiConfigId]);
     const getPostByDayId = useCallback(
         (dayId: string) =>
             posts.find((post) => post.id === `zen-${dayId}-${userId}`),
@@ -117,7 +118,7 @@ export function useZen() {
         settings: zen,
         configs,
         defaultConfigId,
-        hasAIConfig,
+        hasAIConfig: configs.length > 0,
         posts,
         todayPost: getPostByDayId(getZenDayId()),
         getPostByDayId,

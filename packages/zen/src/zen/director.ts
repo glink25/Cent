@@ -6,7 +6,7 @@ import {
     type Tool,
     type ToolMessage,
 } from "@glink25/chaty";
-import { isZenFallbackDevMode } from "./dev";
+import type { ZenDirectorMode, ZenLocale } from "../runtime/types";
 import {
     createFallbackEpilogueStep,
     createFallbackReflectionStep,
@@ -87,8 +87,12 @@ function getLatestZenStepError(history: History) {
         : JSON.stringify(latest.formatted.errors);
 }
 
-function getFallbackStep(session: ZenSessionState, context: ZenContext) {
-    return createFallbackZenStep({ session, context });
+function getFallbackStep(
+    session: ZenSessionState,
+    context: ZenContext,
+    locale: ZenLocale,
+) {
+    return createFallbackZenStep({ session, context, locale });
 }
 
 /**
@@ -162,14 +166,15 @@ function normalizeStepProgress(
 async function createFallbackResult(
     session: ZenSessionState,
     context: ZenContext,
+    locale: ZenLocale,
 ) {
     const current = session.steps.length + 1;
     const fallback =
         current >= session.journeyPlan.hardMaxSteps
-            ? createFallbackEpilogueStep(session)
-            : await getFallbackStep(session, context);
+            ? createFallbackEpilogueStep(session, context, locale)
+            : await getFallbackStep(session, context, locale);
     const guardedFallback = invalidStepReason(fallback, session, context)
-        ? createFallbackReflectionStep({ session, context })
+        ? createFallbackReflectionStep({ session, context, locale })
         : fallback;
     return {
         step: normalizeStepProgress(guardedFallback, session),
@@ -206,6 +211,8 @@ export async function requestNextZenStep({
     provider,
     hostTools,
     configId,
+    directorMode,
+    locale = "zh",
     lastUserInput,
 }: {
     session: ZenSessionState;
@@ -213,6 +220,8 @@ export async function requestNextZenStep({
     provider: Provider;
     hostTools: Tool[];
     configId?: string;
+    directorMode: ZenDirectorMode;
+    locale?: ZenLocale;
     lastUserInput?: unknown;
 }): Promise<{
     step: ZenUIStep;
@@ -221,8 +230,8 @@ export async function requestNextZenStep({
     focusDecision?: ZenFocusDecision;
     sentContextSignature?: string;
 }> {
-    if (isZenFallbackDevMode()) {
-        return createFallbackResult(session, context);
+    if (directorMode === "local") {
+        return createFallbackResult(session, context, locale);
     }
     const previousFieldTypes =
         session.currentStep?.mode === "interaction"

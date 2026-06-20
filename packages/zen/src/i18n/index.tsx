@@ -6,7 +6,7 @@ import zh from "./zh.json";
 const messages = { zh, en } as const;
 const LocaleContext = createContext<ZenLocale>("zh");
 
-function format(
+export function translate(
     locale: ZenLocale,
     key: string,
     values?: Record<string, unknown>,
@@ -40,11 +40,11 @@ export function useIntl() {
     const locale = useContext(LocaleContext);
     return useCallback(
         (key: string, values?: Record<string, unknown>) =>
-            format(locale, key, values),
+            translate(locale, key, values),
         [locale],
     );
 }
 
 export function t(key: string, values?: Record<string, unknown>) {
-    return format("zh", key, values);
+    return translate("zh", key, values);
 }
