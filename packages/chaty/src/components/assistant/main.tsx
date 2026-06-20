@@ -31,6 +31,7 @@ type AssistantContext = {
     input: Input;
     setInput: Dispatch<SetStateAction<Input>>;
     chats: Chat[];
+    setChats: (updater: SetStateAction<Chat[]>) => void;
     currentChatId: Chat["id"] | undefined;
     setCurrentChatId: Dispatch<SetStateAction<Chat["id"] | undefined>>;
     runtime: RuntimeConfig;
@@ -89,6 +90,7 @@ function Root({
 }) {
     const [input, setInput] = useState<Input>(EMPTY_INPUT);
     const [currentChatId, setCurrentChatId] = useState<Chat["id"]>();
+    const activeRequestsRef = useRef(new Set<{ abort: () => void }>());
     const initialConfigId = useMemo(() => {
         const fallbackConfigId = runtime.configs[0]?.id;
         return runtime.configs.some(
@@ -112,11 +114,42 @@ function Root({
         [isConfigControlled, onConfigChange],
     );
     const chats = useAssistantChatStore((s) => s.chats);
-    const setChats = useAssistantChatStore((s) => s.setChats);
+    const setAllChats = useAssistantChatStore((s) => s.setChats);
+    const scope = runtime.scope ?? null;
+    const scopedChats = useMemo(
+        () => chats.filter((chat) => chat.scope === scope),
+        [chats, scope],
+    );
+    const setChats = useCallback(
+        (updater: SetStateAction<Chat[]>) => {
+            setAllChats((allChats) => {
+                const current = allChats.filter((chat) => chat.scope === scope);
+                const next =
+                    typeof updater === "function"
+                        ? (updater as (prev: Chat[]) => Chat[])(current)
+                        : updater;
+                return [
+                    ...allChats.filter((chat) => chat.scope !== scope),
+                    ...next.map((chat) => ({ ...chat, scope })),
+                ];
+            });
+        },
+        [scope, setAllChats],
+    );
 
     useEffect(() => applyThemePreference(runtime.theme), [runtime.theme]);
 
-    const currentChat = chats.find((chat) => chat.id === currentChatId);
+    useEffect(() => {
+        setInput(EMPTY_INPUT);
+        setCurrentChatId(undefined);
+        return () => {
+            for (const request of activeRequestsRef.current) {
+                request.abort();
+            }
+        };
+    }, []);
+
+    const currentChat = scopedChats.find((chat) => chat.id === currentChatId);
     const canSend =
         !currentChat?.pending &&
         (input.assets.length > 0 || input.text.trim().length > 0);
@@ -129,7 +162,7 @@ function Root({
                 if (index === -1) {
                     return [
                         ...prev,
-                        updater({ id: chatId, history: [] }, false),
+                        updater({ id: chatId, scope, history: [] }, false),
                     ];
                 }
                 const nextChats = [...prev];
@@ -137,7 +170,7 @@ function Root({
                 return nextChats;
             });
         },
-        [setChats],
+        [scope, setChats],
     );
 
     const send = useCallback(
@@ -150,6 +183,7 @@ function Root({
 
             const prevChat: Chat = currentChat ?? {
                 id: createChatId(),
+                scope,
                 history: [],
             };
             const session = createSession({
@@ -166,11 +200,12 @@ function Root({
                     abortController: undefined,
                 }));
 
+            const request = session({
+                message: text,
+                assets: payload.assets,
+            });
+            activeRequestsRef.current.add(request);
             try {
-                const request = session({
-                    message: text,
-                    assets: payload.assets,
-                });
                 updateChat(prevChat.id, (prev, exist) => {
                     if (!exist) {
                         Promise.resolve().then(() =>
@@ -196,27 +231,29 @@ function Root({
                 const message =
                     error instanceof Error ? error.message : String(error);
                 toast.error(message);
+            } finally {
+                activeRequestsRef.current.delete(request);
             }
         },
-        [input, currentChat, runtime, selectedConfigId, updateChat],
+        [input, currentChat, runtime, scope, selectedConfigId, updateChat],
     );
 
     const abortCurrentChat = useCallback(() => {
         if (!currentChatId) {
             return;
         }
-        const chat = chats.find((item) => item.id === currentChatId);
+        const chat = scopedChats.find((item) => item.id === currentChatId);
         chat?.abortController?.abort();
         updateChat(currentChatId, (prev) => ({
             ...prev,
             pending: false,
             abortController: undefined,
         }));
-    }, [currentChatId, chats, updateChat]);
+    }, [currentChatId, scopedChats, updateChat]);
 
     const rerunToolCall = useCallback(
         async (messageIndex: number) => {
-            const chat = chats.find((item) => item.id === currentChatId);
+            const chat = scopedChats.find((item) => item.id === currentChatId);
             if (!chat) {
                 return;
             }
@@ -233,14 +270,15 @@ function Root({
                 );
             }
         },
-        [chats, currentChatId, runtime, selectedConfigId],
+        [scopedChats, currentChatId, runtime, selectedConfigId],
     );
 
     const ctx = useMemo(
         () => ({
             input,
             setInput,
-            chats,
+            chats: scopedChats,
+            setChats,
             currentChatId,
             setCurrentChatId,
             runtime,
@@ -253,7 +291,8 @@ function Root({
         }),
         [
             input,
-            chats,
+            scopedChats,
+            setChats,
             currentChatId,
             runtime,
             selectedConfigId,
@@ -335,9 +374,9 @@ function ModelSwitcher() {
 }
 
 function Actions() {
-    const { chats, currentChatId, setCurrentChatId } = useAssistantContext();
+    const { chats, setChats, currentChatId, setCurrentChatId } =
+        useAssistantContext();
     const { t } = useI18n();
-    const setChats = useAssistantChatStore((s) => s.setChats);
     const [isChatMenuOpen, setIsChatMenuOpen] = useState(false);
 
     return (
@@ -386,7 +425,7 @@ function Actions() {
                                             setCurrentChatId(chat.id);
                                             setIsChatMenuOpen(false);
                                         }}
-                                        className="min-w-0 flex-1 flex items-center gap-2 text-left"
+                                        className="min-w-0 flex-1 flex items-center gap-2 text-left !outline-none"
                                     >
                                         <span className="truncate">
                                             {title}

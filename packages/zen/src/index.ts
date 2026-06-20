@@ -7,6 +7,7 @@ export type { ZenProps } from "./main";
 export { Zen } from "./main";
 export { getHostBridge } from "./runtime/host";
 export { resolveZenDirectorConfig } from "./runtime/model";
+export { requestHostClose } from "./runtime/native-host";
 export type {
     NativeBridgeMessage,
     NativeCallback,

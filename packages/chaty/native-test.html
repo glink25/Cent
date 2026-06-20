@@ -60,6 +60,7 @@
 
         if (type === "getInit") {
           callback(id)?.resolve({
+            scope: "native:debug-ledger",
             configs: [
               { id: "native-provider", name: "Native Provider" },
               { id: "native-fast-provider", name: "Native Fast Provider" }

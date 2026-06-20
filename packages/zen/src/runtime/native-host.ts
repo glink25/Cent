@@ -90,6 +90,21 @@ function createNativeHost(send: Sender): ZenRuntimeHost {
     };
 }
 
+/**
+ * Ask the native shell to dismiss the zen surface. The standalone app has no
+ * window chrome of its own, so its in-page close button routes here; the native
+ * bridge (Android `CentZenNative` / iOS `webkit`) tears down the webview.
+ */
+export function requestHostClose() {
+    const message: NativeBridgeMessage = { id: id(), type: "close" };
+    const android = window.CentZenNative;
+    if (android) {
+        android.postMessage(JSON.stringify(message));
+        return;
+    }
+    window.webkit?.messageHandlers?.CentZenNative?.postMessage(message);
+}
+
 export function getAndroidNativeHost() {
     const bridge = window.CentZenNative;
     return bridge

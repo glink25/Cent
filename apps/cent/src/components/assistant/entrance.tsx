@@ -13,9 +13,11 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { useShallow } from "zustand/shallow";
+import { StorageAPI } from "@/api/storage";
 import { useIsDesktop } from "@/hooks/use-media-query";
 import { useTheme } from "@/hooks/use-theme";
 import { useIntl, useLocale } from "@/locale";
+import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
 import createConfirmProvider from "../confirm";
@@ -47,6 +49,7 @@ export default function AssistantButton({
     const dismissMobileAssistantRef = useRef<() => void>(undefined);
 
     const userId = useUserStore((s) => s.id);
+    const currentBookId = useBookStore((s) => s.currentBookId);
     const { configs = [], defaultConfigId } = useLedgerStore(
         useShallow((state) => {
             const assistantData =
@@ -98,6 +101,9 @@ export default function AssistantButton({
     const runtime = useMemo<RuntimeConfig>(
         () => ({
             ...CentAIConfig,
+            scope: currentBookId
+                ? `${StorageAPI.type}:${currentBookId}`
+                : undefined,
             configs,
             defaultConfigId,
             presetPrompts,
@@ -106,7 +112,15 @@ export default function AssistantButton({
             title: t("ai-assistant"),
             emptyStateSlogan: t("start-talk-to-ai"),
         }),
-        [configs, defaultConfigId, presetPrompts, locale, theme, t],
+        [
+            currentBookId,
+            configs,
+            defaultConfigId,
+            presetPrompts,
+            locale,
+            theme,
+            t,
+        ],
     );
 
     const toShowMobileAssistant = useCallback(() => {

@@ -26,6 +26,8 @@ export type AIChatSkillDefinition = {
 };
 
 export type AIChatInitPayload = {
+    /** 聊天记录隔离域。宿主应为不同账号/账本提供不同值。 */
+    scope?: string;
     configs: AIChatConfig[];
     defaultConfigId?: string;
     systemPrompt: string;

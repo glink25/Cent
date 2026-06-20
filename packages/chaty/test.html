@@ -148,6 +148,7 @@
     window.AIChatHost = {
       async getInit() {
         return {
+          scope: "debug:test-ledger",
           configs: [
             { id: "test-provider", name: "Test Provider" },
             { id: "fast-test-provider", name: "Fast Test Provider" }
