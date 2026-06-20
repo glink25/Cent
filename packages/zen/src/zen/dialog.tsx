@@ -1,6 +1,7 @@
 import "./zen.css";
 import dayjs from "dayjs";
 import {
+    type CSSProperties,
     type ReactNode,
     useCallback,
     useEffect,
@@ -642,6 +643,16 @@ function FormFieldView({
     }
     if (field.type === "slider") {
         const numeric = Number(value);
+        const progress = Math.min(
+            100,
+            Math.max(
+                0,
+                ((numeric - field.min) / (field.max - field.min)) * 100,
+            ),
+        );
+        const sliderStyle = {
+            "--zen-slider-progress": `${progress}%`,
+        } as CSSProperties;
         return (
             <div className="space-y-3">
                 <FieldLabel field={field} />
@@ -654,6 +665,7 @@ function FormFieldView({
                         max={field.max}
                         step={field.step ?? 1}
                         value={numeric}
+                        style={sliderStyle}
                         disabled={disabled}
                         onChange={(event) =>
                             onChange(Number(event.target.value))
@@ -710,8 +722,7 @@ function FormFieldView({
                 disabled={disabled}
                 onClick={() => onChange(!value)}
                 className={cn(
-                    "relative h-8 w-14 shrink-0 rounded-full transition",
-                    value ? "bg-current" : "bg-black/15",
+                    "relative h-8 w-14 shrink-0 rounded-full transition bg-[var(--zen-btn-bg)]",
                 )}
             >
                 <span

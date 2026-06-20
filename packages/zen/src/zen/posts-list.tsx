@@ -35,7 +35,7 @@ function PostDetail({
         }
     };
     return (
-        <div className="zen-card zen-card--solid flex min-h-0 flex-1 flex-col overflow-hidden rounded-[2rem] p-6 sm:p-8">
+        <div className="zen-card zen-card--solid z-[3] flex min-h-0 flex-1 flex-col overflow-hidden rounded-[2rem] p-6 sm:p-8">
             <div className="flex items-center gap-3">
                 <button
                     type="button"
@@ -170,7 +170,7 @@ export function ZenPostsView({
                         }}
                     />
                 ) : (
-                    <div className="zen-card flex min-h-0 flex-1 flex-col overflow-y-auto rounded-[2rem] p-5 sm:p-7">
+                    <div className="zen-card z-[3] flex min-h-0 flex-1 flex-col overflow-y-auto rounded-[2rem] p-5 sm:p-7">
                         {sortedPosts.length === 0 ? (
                             <div className="grid flex-1 place-items-center text-sm zen-text-muted">
                                 {t("zen-posts-empty")}

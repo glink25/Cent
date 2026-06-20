@@ -68,7 +68,7 @@ export function getZenStyleIndex(
     count = ZEN_STYLE_NAMES.length,
 ): number {
     const dayOfYear = now.diff(now.startOf("year"), "day");
-    return ((dayOfYear % count) + count) % count;
+    return ((dayOfYear % count) + count + 1) % count;
 }
 
 /** 当天对应的语义化风格名，用于拼出 `zen-style-{name}` 类。 */

@@ -1,3 +1,4 @@
+import { isZenFallbackDevMode } from "@glink25/zen";
 import dayjs from "dayjs";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { create } from "zustand";
@@ -14,7 +15,6 @@ import {
     isZenEntranceOpen,
     showZenDialog,
 } from "@/zen";
-import { isZenFallbackDevMode } from "@/zen/dev";
 import type { ZenDayId, ZenPost } from "@/zen/types";
 
 type ZenPostsState = {
