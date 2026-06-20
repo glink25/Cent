@@ -44,6 +44,9 @@ importers:
       '@glink25/chaty':
         specifier: workspace:*
         version: link:../../packages/chaty
+      '@glink25/toast':
+        specifier: workspace:*
+        version: link:../../packages/toast
       '@glink25/zen':
         specifier: workspace:*
         version: link:../../packages/zen
@@ -318,6 +321,9 @@ importers:
       '@glink25/tailwind-config':
         specifier: workspace:*
         version: link:../tailwind-config
+      '@glink25/toast':
+        specifier: workspace:*
+        version: link:../toast
       '@iconify-json/mdi':
         specifier: ^1.2.3
         version: 1.2.3
@@ -363,6 +369,9 @@ importers:
       marked:
         specifier: ^18.0.4
         version: 18.0.4
+      next-themes:
+        specifier: ^0.4.6
+        version: 0.4.6(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       radix-ui:
         specifier: ^1.4.3
         version: 1.4.3(@types/react-dom@19.1.9(@types/react@19.1.12))(@types/react@19.1.12)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -417,6 +426,33 @@ importers:
       tailwindcss:
         specifier: '>=4'
         version: 4.1.12
+
+  packages/toast:
+    devDependencies:
+      '@biomejs/biome':
+        specifier: 2.2.2
+        version: 2.2.2
+      '@types/react':
+        specifier: ^19.1.10
+        version: 19.1.12
+      '@types/react-dom':
+        specifier: ^19.1.7
+        version: 19.1.9(@types/react@19.1.12)
+      next-themes:
+        specifier: ^0.4.6
+        version: 0.4.6(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      react:
+        specifier: ^19.1.1
+        version: 19.1.1
+      react-dom:
+        specifier: ^19.1.1
+        version: 19.1.1(react@19.1.1)
+      sonner:
+        specifier: ^2.0.7
+        version: 2.0.7(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      typescript:
+        specifier: ~5.8.3
+        version: 5.8.3
 
   packages/zen:
     devDependencies:
