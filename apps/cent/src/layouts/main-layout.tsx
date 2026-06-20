@@ -1,3 +1,4 @@
+import { Toaster } from "@glink25/toast";
 import { useEffect, useRef } from "react";
 import { Outlet } from "react-router";
 import { BillEditorProvider } from "@/components/bill-editor";
@@ -20,7 +21,6 @@ import { Settings } from "@/components/settings";
 import { SortableListProvider } from "@/components/sortable";
 import { SortableListWithEnableProvider } from "@/components/sortable/enable";
 import { SortableGroupProvider } from "@/components/sortable/group";
-import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { WidgetEditProvider } from "@/components/widget/edit-form";
 import { useInitPreset } from "@/hooks/use-preset";

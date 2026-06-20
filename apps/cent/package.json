@@ -19,6 +19,7 @@
 		"@dnd-kit/sortable": "^10.0.0",
 		"@dnd-kit/utilities": "^3.2.2",
 		"@glink25/chaty": "workspace:*",
+		"@glink25/toast": "workspace:*",
 		"@glink25/zen": "workspace:*",
 		"@hookform/resolvers": "^5.2.2",
 		"@iconify-json/line-md": "^1.2.11",

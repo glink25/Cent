@@ -2,5 +2,9 @@ const preset = require("@glink25/tailwind-config");
 /** @type {import('tailwindcss').Config} */
 module.exports = {
     presets: [preset],
-    content: ["./src/**/*.{js,ts,jsx,tsx}", "!./docs/**/*"],
+    content: [
+        "./src/**/*.{js,ts,jsx,tsx}",
+        "../toast/src/**/*.{js,ts,jsx,tsx}",
+        "!./docs/**/*",
+    ],
 };

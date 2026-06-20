@@ -10,7 +10,7 @@ import {
     useRef,
     useState,
 } from "react";
-import { Toaster, toast } from "sonner";
+import { toast } from "sonner";
 import {
     type AssistantMessage,
     createSession,
@@ -272,7 +272,6 @@ function Root({
         <I18nProvider locale={runtime.locale}>
             <AssistantContext.Provider value={ctx}>
                 {children}
-                <Toaster richColors position="top-center" />
             </AssistantContext.Provider>
         </I18nProvider>
     );

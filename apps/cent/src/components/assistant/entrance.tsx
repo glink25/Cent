@@ -47,12 +47,12 @@ export default function AssistantButton({
     const dismissMobileAssistantRef = useRef<() => void>(undefined);
 
     const userId = useUserStore((s) => s.id);
-    const { configs, defaultConfigId } = useLedgerStore(
+    const { configs = [], defaultConfigId } = useLedgerStore(
         useShallow((state) => {
             const assistantData =
                 state.infos?.meta.personal?.[userId]?.assistant;
             return {
-                configs: assistantData?.configs ?? [],
+                configs: assistantData?.configs,
                 defaultConfigId: assistantData?.defaultConfigId,
             };
         }),
