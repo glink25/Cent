@@ -64,154 +64,101 @@ export type ZenExplorationState = {
     openQuestion?: string;
 };
 
-export type ThemeSelectorCard = {
-    type: "ThemeSelectorCard";
-    title: string;
-    subtitle?: string;
-    options: ZenTheme[];
-    recommendedOptionId?: string;
-    reason?: string;
-};
-
-export type InsightTextCard = {
-    type: "InsightTextCard";
-    title: string;
-    body: string;
-    tone?:
-        | "gentle"
-        | "reflective"
-        | "direct"
-        | "celebratory"
-        | "grounding"
-        | "playful";
-    relatedBillIds?: string[];
-    relatedCategoryIds?: string[];
-};
-
-export type SliderCard = {
-    type: "SliderCard";
-    title: string;
-    description?: string;
-    minLabel: string;
-    maxLabel: string;
-    minValue: number;
-    maxValue: number;
-    defaultValue: number;
-};
-
-export type FreeInputCard = {
-    type: "FreeInputCard";
-    title: string;
-    placeholder: string;
-    inputMode: "text" | "voice" | "both";
-    maxLength: number;
-    helperText?: string;
-};
-
-export type BillFocusCard = {
-    type: "BillFocusCard";
-    title: string;
-    description?: string;
-    billIds: string[];
-    displayMode: "single" | "group" | "timeline";
-    question?: string;
-};
-
-export type ChoiceCardOption = {
+export type ZenChoiceOption = {
     id: string;
     label: string;
     description?: string;
 };
 
-export type ChoiceCard = {
-    type: "ChoiceCard";
-    title: string;
-    description?: string;
-    options: ChoiceCardOption[];
-    allowMultiple: boolean;
-    allowSkip: boolean;
-};
+export type ZenContentBlock =
+    | {
+          type: "text";
+          body: string;
+          tone?: "default" | "muted";
+      }
+    | {
+          type: "callout";
+          title?: string;
+          body: string;
+          tone?: "gentle" | "insight" | "celebration";
+      }
+    | {
+          type: "entityList";
+          entityType: "bill" | "category" | "budget";
+          ids: string[];
+          title?: string;
+          display?: "list" | "grid" | "timeline";
+      };
 
-export type ShredderCardAction = "keep" | "pause" | "observe" | "reduce";
-
-export type ShredderCardItem = {
+type ZenFormFieldBase = {
     id: string;
     label: string;
     description?: string;
-    amount?: number;
-    categoryName?: string;
-    billIds?: string[];
+    required?: boolean;
 };
 
-export type ShredderCard = {
-    type: "ShredderCard";
-    title: string;
-    items: ShredderCardItem[];
-    actions: ShredderCardAction[];
-};
+export type ZenFormField =
+    | (ZenFormFieldBase & {
+          type: "shortText" | "longText";
+          placeholder?: string;
+          defaultValue?: string;
+          minLength?: number;
+          maxLength?: number;
+      })
+    | (ZenFormFieldBase & {
+          type: "singleChoice" | "multiChoice" | "select";
+          options: ZenChoiceOption[];
+          defaultValue?: string | string[];
+          minSelections?: number;
+          maxSelections?: number;
+      })
+    | (ZenFormFieldBase & {
+          type: "slider";
+          min: number;
+          max: number;
+          step?: number;
+          defaultValue: number;
+          minLabel?: string;
+          maxLabel?: string;
+      })
+    | (ZenFormFieldBase & {
+          type: "rating";
+          max: number;
+          defaultValue?: number;
+          lowLabel?: string;
+          highLabel?: string;
+      })
+    | (ZenFormFieldBase & {
+          type: "toggle";
+          defaultValue?: boolean;
+      });
 
-export type BudgetAdjustCard = {
-    type: "BudgetAdjustCard";
-    title: string;
-    categoryId?: string;
-    categoryName?: string;
-    currentBudget: number;
-    currentUsed?: number;
-    suggestedBudget: number;
-    reason: string;
-    confirmAction: string;
-};
-
-export type IntentionCard = {
-    type: "IntentionCard";
-    title: string;
-    suggestions: string[];
-    customInputEnabled: boolean;
-    duration: "day" | "week" | "month";
-    reminderEnabled: boolean;
-};
-
-export type ZenEpilogueCard = {
-    type: "ZenEpilogueCard";
+export type ZenCompletion = {
     title: string;
     quote: string;
     summary: string;
     intention?: string;
-    actions?: string[];
-    shareable?: boolean;
+    tags?: string[];
 };
 
-export type ZenComponent =
-    | ThemeSelectorCard
-    | InsightTextCard
-    | SliderCard
-    | FreeInputCard
-    | BillFocusCard
-    | ChoiceCard
-    | ShredderCard
-    | BudgetAdjustCard
-    | IntentionCard
-    | ZenEpilogueCard;
+export type ZenFormValue = string | string[] | number | boolean;
 
-export type ZenUIStep = {
+export type ZenFormSubmission = {
+    action: "submit" | "skip";
+    values: Record<string, ZenFormValue>;
+};
+
+type ZenUIStepBase = {
     stepId: string;
     sessionId: string;
-    component: ZenComponent;
     intent: ZenUIStepIntent;
+    title: string;
+    description?: string;
+    content: ZenContentBlock[];
     progress: {
         current: number;
         max: number;
         shouldEndSoon: boolean;
-    };
-    dataBindings?: {
-        billIds?: string[];
-        categoryIds?: string[];
-        budgetIds?: string[];
-        tagIds?: string[];
-    };
-    nextPolicy: {
-        waitForUserInput: boolean;
-        allowedUserActions: string[];
     };
     /** AI Director 的隐藏编排状态，不直接渲染。 */
     directorState?: Pick<
@@ -223,6 +170,19 @@ export type ZenUIStep = {
         | "openQuestion"
     >;
 };
+
+export type ZenUIStep =
+    | (ZenUIStepBase & {
+          mode: "interaction";
+          fields: ZenFormField[];
+          submitLabel: string;
+          allowSkip: boolean;
+          skipLabel?: string;
+      })
+    | (ZenUIStepBase & {
+          mode: "completion";
+          completion: ZenCompletion;
+      });
 
 export type ZenInsight = {
     id: string;
@@ -236,6 +196,7 @@ export type ZenIntention = {
 };
 
 export type ZenBillSnapshot = {
+    entityType: "bill";
     id: string;
     type: "income" | "expense";
     categoryName: string;
@@ -244,10 +205,36 @@ export type ZenBillSnapshot = {
     comment?: string;
 };
 
+export type ZenCategorySnapshot = {
+    entityType: "category";
+    id: string;
+    name: string;
+    amount: number;
+    count: number;
+    type: "income" | "expense";
+};
+
+export type ZenBudgetSnapshot = {
+    entityType: "budget";
+    id: string;
+    title: string;
+    periodStart: number;
+    periodEnd: number;
+    totalBudget: number;
+    totalUsed: number;
+    ratio: number;
+    status: "normal" | "near_limit" | "over_limit";
+};
+
+export type ZenEntitySnapshot =
+    | ZenBillSnapshot
+    | ZenCategorySnapshot
+    | ZenBudgetSnapshot;
+
 export type ZenPostStep = {
     stepId: string;
     intent?: ZenUIStepIntent;
-    component: ZenComponent;
+    component: unknown;
     userInput?: unknown;
     billSnapshots?: ZenBillSnapshot[];
     relatedBillIds?: string[];
@@ -255,16 +242,23 @@ export type ZenPostStep = {
     createdAt: number;
 };
 
+export type ZenPostStepRecord = {
+    stepId: string;
+    intent: ZenUIStepIntent;
+    step: Extract<ZenUIStep, { mode: "interaction" }>;
+    submission: ZenFormSubmission;
+    summary: string;
+    entitySnapshots: ZenEntitySnapshot[];
+    createdAt: number;
+};
+
 export type ZenSessionStep = {
     stepId: string;
-    componentType: ZenComponent["type"];
-    component: ZenComponent;
-    intent?: ZenUIStepIntent;
-    aiPromptSummary: string;
-    userInput?: unknown;
-    billSnapshots?: ZenBillSnapshot[];
-    relatedBillIds?: string[];
-    relatedCategoryIds?: string[];
+    intent: ZenUIStepIntent;
+    step: Extract<ZenUIStep, { mode: "interaction" }>;
+    submission: ZenFormSubmission;
+    summary: string;
+    entitySnapshots: ZenEntitySnapshot[];
     createdAt: number;
 };
 
@@ -298,13 +292,17 @@ export type ZenPost = {
     time: number;
     bookId: string;
     period: ZenPeriod;
+    title?: string;
     mood?: ZenMood;
     theme?: ZenTheme;
     summary: string;
     quote: string;
     intention?: string;
+    stepRecords?: ZenPostStepRecord[];
+    /** @deprecated Legacy card-based Zen data. */
     steps?: ZenPostStep[];
-    cardSummaries: string[];
+    /** @deprecated Legacy card summaries. */
+    cardSummaries?: string[];
     tags: string[];
     createdAt: number;
     completedAt: number;

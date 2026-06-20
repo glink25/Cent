@@ -23,7 +23,9 @@ function PostDetail({ post, onBack }: { post: ZenPost; onBack: () => void }) {
                         {dayjs(post.time).format("YYYY-MM-DD")}
                     </div>
                     <h2 className="text-xl font-semibold zen-heading">
-                        {post.theme?.title ?? t("zen-posts-title")}
+                        {post.title ??
+                            post.theme?.title ??
+                            t("zen-posts-title")}
                     </h2>
                 </div>
             </div>
@@ -106,7 +108,9 @@ export function ZenPostsView({
                                             )}
                                         </span>
                                         <span className="mt-1 block font-medium zen-heading">
-                                            {post.theme?.title ?? post.summary}
+                                            {post.title ??
+                                                post.theme?.title ??
+                                                post.summary}
                                         </span>
                                     </button>
                                 ))}

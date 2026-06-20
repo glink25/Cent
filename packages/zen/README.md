@@ -56,7 +56,9 @@ cannot discover or invoke it.
 `queryBills`, `analyzeBills` and `getAccountMeta`. Zen combines them with its
 own local tools:
 
-- `showZenStep`: submit exactly one renderable UI step.
+- `showZenStep`: submit one composable form or completion step. Interaction
+  steps combine safe content blocks with standard form fields and return a
+  structured `{ action, values }` response.
 - `decideZenFocus`: select a review period.
 
 Every AI request contains both sets of tools. Zen-local calls execute inside

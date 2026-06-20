@@ -1,11 +1,16 @@
 export type {
     ZenBillSnapshot,
-    ZenComponent,
+    ZenContentBlock,
     ZenDayId,
+    ZenEntitySnapshot,
     ZenFocusDecision,
+    ZenFormField,
+    ZenFormSubmission,
+    ZenFormValue,
     ZenPeriod,
     ZenPost,
     ZenPostStep,
+    ZenPostStepRecord,
     ZenSessionState,
     ZenUIStep,
 } from "@glink25/zen";

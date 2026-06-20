@@ -69,7 +69,10 @@ export function isSkippedZenInput(input: unknown) {
     if (input === undefined || input === null || input === "") return true;
     if (input === "skip") return true;
     if (Array.isArray(input)) return input.length === 0;
-    if (typeof input === "object") return Object.keys(input).length === 0;
+    if (typeof input === "object") {
+        if ("action" in input && input.action === "skip") return true;
+        return Object.keys(input).length === 0;
+    }
     return false;
 }
 

@@ -12,8 +12,12 @@ import {
     createFallbackReflectionStep,
     createFallbackZenStep,
 } from "./fallback";
-import { canShowEpilogue, canShowIntention } from "./journey";
-import { ZenFocusDecisionSchema, ZenUIStepSchema } from "./schema";
+import { canShowEpilogue } from "./journey";
+import {
+    ZenFocusDecisionSchema,
+    ZenUIStepSchema,
+    ZenUIStepToolSchema,
+} from "./schema";
 import type {
     ZenContext,
     ZenFocusDecision,
@@ -24,10 +28,10 @@ import type {
 const ShowZenStepTool = createTool({
     name: "showZenStep",
     describe:
-        "Render exactly one Zen Mode UI step. You must call this tool once and only once for each Zen turn.",
-    argSchema: ZenUIStepSchema,
+        "Render exactly one Zen step. interaction requires fields (at least one), submitLabel and allowSkip; completion requires intent=ending and completion. Always include content, using [] when empty.",
+    argSchema: ZenUIStepToolSchema,
     returnSchema: ZenUIStepSchema,
-    handler: (step) => step,
+    handler: (step) => ZenUIStepSchema.parse(step),
 });
 
 function createDecideZenFocusTool(
@@ -62,9 +66,25 @@ function getLatestZenStep(history: History): ZenUIStep | undefined {
             message.role === "tool" &&
             message.formatted.name === ShowZenStepTool.name,
     ) as ToolMessage[];
-    const latest = toolMessages.at(-1);
-    const parsed = ZenUIStepSchema.safeParse(latest?.formatted.returns);
-    return parsed.success ? parsed.data : undefined;
+    for (const message of [...toolMessages].reverse()) {
+        const parsed = ZenUIStepSchema.safeParse(message.formatted.returns);
+        if (parsed.success) return parsed.data;
+    }
+    return undefined;
+}
+
+function getLatestZenStepError(history: History) {
+    const latest = [...history]
+        .reverse()
+        .find(
+            (message) =>
+                message.role === "tool" &&
+                message.formatted.name === ShowZenStepTool.name,
+        ) as ToolMessage | undefined;
+    if (!latest?.formatted.errors) return undefined;
+    return latest.formatted.errors instanceof Error
+        ? latest.formatted.errors.message
+        : JSON.stringify(latest.formatted.errors);
 }
 
 function getFallbackStep(session: ZenSessionState, context: ZenContext) {
@@ -166,22 +186,16 @@ function invalidStepReason(
 ) {
     const current = session.steps.length + 1;
     if (
-        step.component.type === "ZenEpilogueCard" &&
+        step.mode === "completion" &&
         !canShowEpilogue(session, context, current)
     ) {
         return "结语出现得太早：继续承接用户回答，并探索尚未覆盖的维度。";
     }
     if (
-        step.component.type === "IntentionCard" &&
-        !canShowIntention(session, context)
-    ) {
-        return "意图卡出现得太早：先探索至少两个维度，并获得至少两次有效回应。";
-    }
-    if (
         current >= session.journeyPlan.hardMaxSteps &&
-        step.component.type !== "ZenEpilogueCard"
+        step.mode !== "completion"
     ) {
-        return "已经到达硬上限，本轮必须生成 ZenEpilogueCard。";
+        return "已经到达硬上限，本轮必须生成 completion step。";
     }
     return undefined;
 }
@@ -210,7 +224,10 @@ export async function requestNextZenStep({
     if (isZenFallbackDevMode()) {
         return createFallbackResult(session, context);
     }
-    const previousComponentType = session.currentStep?.component.type;
+    const previousFieldTypes =
+        session.currentStep?.mode === "interaction"
+            ? session.currentStep.fields.map((field) => field.type)
+            : [];
     let latestFocusDecision: ZenFocusDecision | undefined;
     const DecideZenFocusTool = createDecideZenFocusTool((decision) => {
         latestFocusDecision = decision;
@@ -237,10 +254,7 @@ export async function requestNextZenStep({
                 requiredMeaningfulResponses: 2,
             },
             extensionUsed: session.journeyPlan.extensionUsed,
-            avoidComponentTypes: previousComponentType
-                ? [previousComponentType]
-                : [],
-            recentUsedCardTags: session.selectedTheme?.tags ?? [],
+            avoidFieldTypes: previousFieldTypes,
         },
     };
 
@@ -257,7 +271,7 @@ export async function requestNextZenStep({
             skills: [],
             systemPrompt,
             configId,
-            maxToolRounds: 6,
+            maxToolRounds: 8,
         });
         const stream = await next({
             message: JSON.stringify({ ...payload, correction }),
@@ -266,7 +280,14 @@ export async function requestNextZenStep({
         let history: History = session.history ?? [];
         for await (const chunk of stream) history = chunk.history;
         const step = getLatestZenStep(history);
-        if (!step) throw new Error("AI did not submit a Zen UI step.");
+        if (!step) {
+            const toolError = getLatestZenStepError(history);
+            throw new Error(
+                toolError
+                    ? `showZenStep validation failed: ${toolError}`
+                    : "AI did not call showZenStep before ending the turn.",
+            );
+        }
         return { step, history };
     };
 
