@@ -103,11 +103,6 @@ export function useZen() {
             })),
         [],
     );
-    useEffect(() => {
-        if (configs.length === 0 && zen?.aiConfigId !== null) {
-            void updateSettings({ aiConfigId: null });
-        }
-    }, [configs.length, updateSettings, zen?.aiConfigId]);
     const getPostByDayId = useCallback(
         (dayId: string) =>
             posts.find((post) => post.id === `zen-${dayId}-${userId}`),
