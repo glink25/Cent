@@ -34,6 +34,7 @@ const host: ZenRuntimeHost = {
         aiTools: [],
         locale: "zh",
         theme: "system",
+        style: null,
     }),
     getZenContext: async ({ zenDayId, focusDecision }) => ({
         zenDayId,

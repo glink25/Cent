@@ -12,7 +12,7 @@ import Loading from "../components/loading";
 import { useIntl } from "../i18n";
 import { useZenRuntime } from "../runtime/context";
 import { cn } from "../utils";
-import { getZenDayId, getZenStyleName, isZenEntranceOpen } from "./date";
+import { getZenDayId, isZenEntranceOpen, resolveZenStyleName } from "./date";
 import { requestNextZenStep } from "./director";
 import {
     createFallbackEpilogueStep,
@@ -1028,7 +1028,10 @@ export function ZenExperience({
     const [posts, setPosts] = useState<ZenPost[]>([]);
     const [view, setView] = useState<"today" | "history">("today");
     const todayLabel = useMemo(() => dayjs().format("YYYY-MM-DD"), []);
-    const styleName = useMemo(() => getZenStyleName(), []);
+    const styleName = useMemo(
+        () => resolveZenStyleName(runtimeInit.style),
+        [runtimeInit.style],
+    );
 
     const initialize = useCallback(
         async (isCancelled: () => boolean = () => false) => {
@@ -1304,6 +1307,7 @@ export function ZenExperience({
         return (
             <ZenPostsView
                 posts={posts}
+                styleName={styleName}
                 onCancel={() => setView("today")}
                 onForget={forgetZenPost}
             />

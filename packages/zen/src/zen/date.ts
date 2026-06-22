@@ -76,6 +76,16 @@ export function getZenStyleName(now = dayjs()): ZenStyleName {
     return ZEN_STYLE_NAMES[getZenStyleIndex(now)];
 }
 
+/** Prefer a valid host override, otherwise keep the date-based rotation. */
+export function resolveZenStyleName(
+    style?: string | null,
+    now = dayjs(),
+): ZenStyleName {
+    return ZEN_STYLE_NAMES.includes(style as ZenStyleName)
+        ? (style as ZenStyleName)
+        : getZenStyleName(now);
+}
+
 export function getDailyZenPeriod(now = dayjs()): ZenPeriod {
     return {
         type: "daily",
