@@ -1,4 +1,5 @@
 import type { History, ProviderRequestChunk } from "@glink25/chaty";
+import type { ZenStyleName } from "../zen/date";
 import type { ZenContext, ZenFocusDecision, ZenPost } from "../zen/types";
 
 export type ZenLocale = "zh" | "en";
@@ -22,6 +23,7 @@ export type ZenInitPayload = {
     aiTools: ZenAIToolDefinition[];
     locale?: ZenLocale;
     theme?: ZenThemeMode;
+    style?: ZenStyleName | null;
 };
 
 export type ZenRequestHandle = { cancel(): void };

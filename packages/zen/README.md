@@ -18,6 +18,11 @@ import { Zen, type ZenRuntimeHost } from "@glink25/zen";
 <Zen host={host} onClose={() => setOpen(false)} />;
 ```
 
+`getInit().theme` controls the light/dark color mode. The optional
+`getInit().style` selects a Zen visual style (`default`, `aurora`, `beach`,
+`red-moon`, `rain`, or `star-night`). A missing, null, or invalid style keeps
+Zen's date-based daily rotation.
+
 For isolated development, the standalone HTML app still works:
 
 ```bash

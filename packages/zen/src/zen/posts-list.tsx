@@ -2,7 +2,7 @@ import "./zen.css";
 import { useMemo, useState } from "react";
 import { useIntl } from "../i18n";
 import { cn } from "../utils";
-import { getZenPostDayId, getZenStyleName } from "./date";
+import { getZenPostDayId, type ZenStyleName } from "./date";
 import type { ZenPost } from "./types";
 
 function PostDetail({
@@ -119,16 +119,17 @@ function PostDetail({
 
 export function ZenPostsView({
     posts,
+    styleName,
     onCancel,
     onForget,
 }: {
     posts: ZenPost[];
+    styleName: ZenStyleName;
     onCancel?: () => void;
     onForget: (post: ZenPost) => Promise<void>;
 }) {
     const t = useIntl();
     const [selected, setSelected] = useState<ZenPost>();
-    const styleName = useMemo(() => getZenStyleName(), []);
     const sortedPosts = useMemo(
         () =>
             [...posts].sort(
