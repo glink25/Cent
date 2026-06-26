@@ -1,12 +1,24 @@
 import type React from "react";
-import { useRef } from "react";
+import { forwardRef, useRef } from "react";
 
 // 定义组件的props类型
 interface IOSUnscrolledInputOneProps
     extends React.InputHTMLAttributes<HTMLInputElement> {}
 
-const IOSUnscrolledInput: React.FC<IOSUnscrolledInputOneProps> = (props) => {
+const IOSUnscrolledInput = forwardRef<
+    HTMLInputElement,
+    IOSUnscrolledInputOneProps
+>((props, forwardedRef) => {
     const inputRef = useRef<HTMLInputElement>(null);
+
+    const setRefs = (node: HTMLInputElement | null) => {
+        inputRef.current = node;
+        if (typeof forwardedRef === "function") {
+            forwardedRef(node);
+        } else if (forwardedRef) {
+            forwardedRef.current = node;
+        }
+    };
 
     const handleFocus = (event: React.FocusEvent<HTMLInputElement>) => {
         const inputElement = inputRef.current;
@@ -34,7 +46,9 @@ const IOSUnscrolledInput: React.FC<IOSUnscrolledInputOneProps> = (props) => {
         }
     };
 
-    return <input ref={inputRef} onFocus={handleFocus} {...props} />;
-};
+    return <input ref={setRefs} onFocus={handleFocus} {...props} />;
+});
+
+IOSUnscrolledInput.displayName = "IOSUnscrolledInput";
 
 export default IOSUnscrolledInput;
