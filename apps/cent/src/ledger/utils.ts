@@ -224,9 +224,7 @@ export const intlCategory = <
 };
 
 export const categoriesGridClassName = (cs: BillCategory[] | undefined) =>
-    cs?.some((v) => v.name.length > 2)
-        ? "grid-cols-[repeat(auto-fill,minmax(120px,1fr))]"
-        : "grid-cols-[repeat(auto-fill,minmax(80px,1fr))]";
+    "grid-cols-[repeat(auto-fill,minmax(100px,1fr))]";
 
 /**
  * 属性合并辅助函数：处理 A, B, Default 三者之间的冲突
