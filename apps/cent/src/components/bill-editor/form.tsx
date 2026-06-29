@@ -398,7 +398,7 @@ export default function EditorForm({
                 }
             >
                 {/* categories */}
-                <div className="flex-1 flex-shrink-0 overflow-y-auto min-h-[80px] scrollbar-hidden flex flex-col px-2 text-sm font-medium gap-2">
+                <div className="flex-1 flex-shrink-0 overflow-y-auto min-h-[80px] scrollbar-hidden flex flex-col px-2 text-sm font-medium gap-2 pb-1">
                     <div className="flex flex-col min-h-[80px] grow-[2] shrink overflow-y-auto scrollbar-hidden w-full">
                         <div
                             className={cn(
@@ -431,7 +431,7 @@ export default function EditorForm({
                         </div>
                     </div>
                     {(subCategories?.length ?? 0) > 0 && (
-                        <div className="flex flex-col min-h-[68px] grow-[1] shrink max-h-fit overflow-y-auto rounded-md border p-2 shadow scrollbar-hidden">
+                        <div className="flex flex-col min-h-[68px] grow-[1] shrink max-h-fit overflow-y-auto rounded-md p-0 shadow-[0_0_0_2px_rgb(255_255_255),0_0_0_3px_rgb(229_231_235)] scrollbar-hidden">
                             <div
                                 className={cn(
                                     "grid gap-1",
