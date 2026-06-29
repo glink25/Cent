@@ -5,7 +5,9 @@ import {
     useCallback,
     useContext,
     useEffect,
+    useLayoutEffect,
     useMemo,
+    useRef,
     useState,
 } from "react";
 import { useIntl } from "@/locale";
@@ -31,6 +33,8 @@ type Formula = [Num] | [Num, Operator] | [Num, Operator, Num];
 type CalculatorContextType = {
     handleButtonClick: (value: ButtonValue) => void;
     formula: Formula;
+    cursor: number;
+    setCursor: (idx: number) => void;
     Layout: {
         label: string;
         cols: number;
@@ -183,6 +187,72 @@ const numberToFormula = (v: number) => {
     return [`${v}`.split("")] as Formula;
 };
 
+const findOpIndex = (full: (Operator | "." | Char)[]) =>
+    full.findIndex((v, i) => i !== 0 && isOperator(v));
+
+// 在光标位置插入一个字符，严格遵循 createFormula 的合法性规则。
+// 非法输入返回 null（调用方应忽略该按键）。
+const insertChar = (
+    formula: Formula,
+    cursor: number,
+    ch: string,
+    precision: number,
+): { formula: Formula; cursor: number } | null => {
+    const full = formula.flat();
+    const opIndex = findOpIndex(full);
+    if (isOperator(ch)) {
+        // 只允许一个运算符，且不能位于最前
+        if (cursor === 0 || opIndex !== -1) {
+            return null;
+        }
+    } else if (ch === ".") {
+        // 找到光标所属的数字段，若该段已有小数点则忽略
+        const inLeft = opIndex === -1 || cursor <= opIndex;
+        const segStart = inLeft ? 0 : opIndex + 1;
+        const segEnd = inLeft
+            ? opIndex === -1
+                ? full.length
+                : opIndex
+            : full.length;
+        if (full.slice(segStart, segEnd).includes(".")) {
+            return null;
+        }
+    } else {
+        // 数字，长度上限与 createFormula 保持一致
+        if (full.length > 16) {
+            return null;
+        }
+    }
+    const candidate = [
+        ...full.slice(0, cursor),
+        ch as Operator | "." | Char,
+        ...full.slice(cursor),
+    ];
+    const newFormula = arrayToFormula(candidate, precision);
+    return {
+        formula: newFormula,
+        cursor: Math.min(cursor + 1, toText(newFormula).length),
+    };
+};
+
+// 删除光标前的一个字符（退格语义）
+const deleteChar = (
+    formula: Formula,
+    cursor: number,
+    precision: number,
+): { formula: Formula; cursor: number } => {
+    if (cursor === 0) {
+        return { formula, cursor };
+    }
+    const full = formula.flat();
+    const candidate = [...full.slice(0, cursor - 1), ...full.slice(cursor)];
+    const newFormula = arrayToFormula(candidate, precision);
+    return {
+        formula: newFormula,
+        cursor: Math.min(cursor - 1, toText(newFormula).length),
+    };
+};
+
 // --- Components ---
 export const CalculatorRoot = ({
     children,
@@ -199,27 +269,54 @@ export const CalculatorRoot = ({
     input?: boolean;
     multiplyKey?: "double-zero" | "triple-zero";
 }) => {
-    const [currentFormula, setCurrentFormula] = useState(() =>
-        numberToFormula(initialValue ?? 0),
-    );
+    const [state, setState] = useState(() => {
+        const formula = numberToFormula(initialValue ?? 0);
+        return { formula, cursor: toText(formula).length };
+    });
 
     const Layout = useMemo(() => getLayout(multiplyKey), [multiplyKey]);
+
+    const setCursor = useCallback((idx: number) => {
+        setState((prev) => ({
+            ...prev,
+            cursor: Math.max(0, Math.min(idx, toText(prev.formula).length)),
+        }));
+    }, []);
 
     const handleButtonClick = useCallback(
         (value: ButtonValue) => {
             if (value === "r") {
                 return;
             }
-            setCurrentFormula((currentFormula) => {
-                const finalValues = value.split("");
-                const newFormula = finalValues.reduce(
-                    (prev, v) => createFormula(v, precision, prev),
-                    currentFormula,
-                );
+            setState(({ formula, cursor }) => {
+                let f = formula;
+                let c = cursor;
+                for (const ch of value.split("")) {
+                    const len = toText(f).length;
+                    if (c >= len) {
+                        // 光标在末尾：沿用既有的追加逻辑（运算符二次计算、=、退格等）
+                        f = createFormula(ch, precision, f);
+                        c = toText(f).length;
+                    } else if (ch === "c") {
+                        const r = deleteChar(f, c, precision);
+                        f = r.formula;
+                        c = r.cursor;
+                    } else if (ch === "=") {
+                        f = createFormula("=", precision, f);
+                        c = toText(f).length;
+                    } else {
+                        const r = insertChar(f, c, ch, precision);
+                        if (r) {
+                            f = r.formula;
+                            c = r.cursor;
+                        }
+                        // 非法字符：忽略
+                    }
+                }
                 Promise.resolve().then(() => {
-                    onValueChange?.(formulaToNumber(newFormula, precision));
+                    onValueChange?.(formulaToNumber(f, precision));
                 });
-                return newFormula;
+                return { formula: f, cursor: c };
             });
         },
         [onValueChange, precision],
@@ -253,23 +350,135 @@ export const CalculatorRoot = ({
 
     return (
         <CalculatorContext.Provider
-            value={{ handleButtonClick, formula: currentFormula, Layout }}
+            value={{
+                handleButtonClick,
+                formula: state.formula,
+                cursor: state.cursor,
+                setCursor,
+                Layout,
+            }}
         >
             {children}
         </CalculatorContext.Provider>
     );
 };
 
-export const CalculatorValue = ({ className }: { className?: string }) => {
-    const { formula } = useContext(CalculatorContext)!;
+export const CalculatorValue = ({
+    className,
+    focused,
+    onActivate,
+}: {
+    className?: string;
+    focused?: boolean;
+    onActivate?: () => void;
+}) => {
+    const ctx = useContext(CalculatorContext);
+    if (!ctx) {
+        throw new Error("CalculatorValue must be used within Calculator.Root");
+    }
+    const { formula, cursor, setCursor } = ctx;
+    const text = toText(formula);
+    const len = text.length;
+
+    const containerRef = useRef<HTMLDivElement>(null);
+    const spansRef = useRef<(HTMLSpanElement | null)[]>([]);
+    const draggingRef = useRef(false);
+    const [caretLeft, setCaretLeft] = useState(0);
+
+    // 计算光标的水平位置（绝对定位，不影响文本布局）
+    useLayoutEffect(() => {
+        const container = containerRef.current;
+        if (!container) {
+            return;
+        }
+        const spans = spansRef.current;
+        const count = text.length;
+        let left: number;
+        if (count === 0) {
+            // 文本右对齐，空内容时光标在右侧
+            left = container.clientWidth;
+        } else if (cursor >= count) {
+            const last = spans[count - 1];
+            left = last ? last.offsetLeft + last.offsetWidth : 0;
+        } else {
+            const s = spans[cursor];
+            left = s ? s.offsetLeft : 0;
+        }
+        setCaretLeft(left);
+        // 长金额时保证光标可见
+        if (left < container.scrollLeft) {
+            container.scrollLeft = left;
+        } else if (left > container.scrollLeft + container.clientWidth) {
+            container.scrollLeft = left - container.clientWidth;
+        }
+    }, [text, cursor]);
+
+    // 将指针的 clientX 映射到最近的字符边界索引
+    const pointerToCursor = (clientX: number) => {
+        const spans = spansRef.current;
+        let best = len;
+        let bestDist = Number.POSITIVE_INFINITY;
+        for (let i = 0; i < len; i++) {
+            const span = spans[i];
+            if (!span) {
+                continue;
+            }
+            const rect = span.getBoundingClientRect();
+            for (const b of [
+                { idx: i, x: rect.left },
+                { idx: i + 1, x: rect.right },
+            ]) {
+                const d = Math.abs(clientX - b.x);
+                if (d < bestDist) {
+                    bestDist = d;
+                    best = b.idx;
+                }
+            }
+        }
+        return best;
+    };
+
     return (
-        <div data-calculator-value className={cn(className)}>
-            {toText(formula)
-                .split("")
-                .map((v, i) => (
-                    // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-                    <span key={i}>{v === "x" ? "×" : v}</span>
-                ))}
+        <div
+            ref={containerRef}
+            data-calculator-value
+            className={cn("relative touch-none", className)}
+            onPointerDown={(e) => {
+                onActivate?.();
+                setCursor(pointerToCursor(e.clientX));
+                e.currentTarget.setPointerCapture(e.pointerId);
+                draggingRef.current = true;
+            }}
+            onPointerMove={(e) => {
+                if (!draggingRef.current) {
+                    return;
+                }
+                setCursor(pointerToCursor(e.clientX));
+            }}
+            onPointerUp={(e) => {
+                draggingRef.current = false;
+                e.currentTarget.releasePointerCapture(e.pointerId);
+            }}
+        >
+            {text.split("").map((v, i) => (
+                <span
+                    // biome-ignore lint/suspicious/noArrayIndexKey: positional characters
+                    key={i}
+                    ref={(el) => {
+                        spansRef.current[i] = el;
+                    }}
+                >
+                    {v === "x" ? "×" : v}
+                </span>
+            ))}
+            <span
+                aria-hidden
+                className={cn(
+                    "absolute top-0 bottom-0 w-[2px] bg-current opacity-0 pointer-events-none",
+                    focused && "animate-caret-blink",
+                )}
+                style={{ left: caretLeft, transform: "translateX(-1px)" }}
+            />
         </div>
     );
 };
