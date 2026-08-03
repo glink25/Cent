@@ -22,6 +22,7 @@ export type WebDAVEdit = {
     password: string;
     proxy?: string;
     customUserName?: string;
+    userId?: string | number;
 };
 
 type LoadingState = Partial<WebDAVEdit> & {
@@ -35,6 +36,7 @@ export const createFormSchema = (t: any) =>
         password: z.string(),
         proxy: z.optional(z.string()),
         customUserName: z.optional(z.string()),
+        userId: z.optional(z.union([z.string(), z.number()])),
     });
 
 const LoadingForm = ({

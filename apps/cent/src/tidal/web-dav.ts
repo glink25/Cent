@@ -5,7 +5,7 @@ import { shortId } from "@/database/id";
 import { registerProxy } from "@/utils/fetch-proxy";
 import type { AssetKey, FileLike, StoreStructure, Syncer } from ".";
 
-type WebDAVConfig = {
+export type WebDAVConfig = {
     remoteUrl: string;
     username?: string;
     password?: string;
@@ -13,6 +13,8 @@ type WebDAVConfig = {
     repoPrefix?: string;
     entryName?: string;
     baseDir?: string;
+    userId?: string | number;
+    displayName?: string;
 };
 
 const createClient = async (
@@ -286,7 +288,11 @@ export const createWebDAVSyncer = (cfg: WebDAVConfig): Syncer => {
         await client.createDirectory(storePath, { recursive: true });
         await client.putFileContents(
             `${storePath}/meta.json`,
-            JSON.stringify({}),
+            JSON.stringify(
+                config.userId === undefined
+                    ? {}
+                    : { personal: { [config.userId]: {} } },
+            ),
         );
         await client.createDirectory(`${storePath}/assets`);
         // return id and name similar to github.createStore
@@ -297,8 +303,12 @@ export const createWebDAVSyncer = (cfg: WebDAVConfig): Syncer => {
         // WebDAV servers do not have standardized user API; return simple info based on username
         return {
             avatar_url: undefined,
-            name: config.username ?? "webdav-user",
-            id: config.username ?? "webdav-user",
+            name:
+                config.displayName ?? config.username ?? "webdav-user",
+            id:
+                (config.userId as unknown as string | undefined) ??
+                config.username ??
+                "webdav-user",
         } as unknown as UserInfo;
     };
 
@@ -338,6 +348,31 @@ export const createWebDAVSyncer = (cfg: WebDAVConfig): Syncer => {
         getCollaborators,
         assetEntryToPath,
     };
+};
+
+export const fetchWebDAVUserIds = async (
+    config: Pick<
+        WebDAVConfig,
+        "username" | "password" | "remoteUrl" | "proxy"
+    >,
+) => {
+    const syncer = createWebDAVSyncer(config);
+    const storeNames = await syncer.fetchAllStore();
+    const userIds = new Set<string>();
+
+    for (const storeName of storeNames) {
+        const structure = await syncer.fetchStructure(storeName);
+        if (!structure.meta.path) continue;
+
+        const [metaFile] = await syncer.fetchContent(storeName, [
+            structure.meta,
+        ]);
+        Object.keys(metaFile?.content?.personal ?? {}).forEach((userId) => {
+            userIds.add(userId);
+        });
+    }
+
+    return Array.from(userIds);
 };
 
 export const checkWebDAVConfig = async (
