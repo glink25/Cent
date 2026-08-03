@@ -3,10 +3,7 @@ import { LoadingProvider, loading } from "./loading";
 import { PromptProvider, prompt } from "./prompt";
 import { S3AuthProvider, showS3Auth } from "./s3";
 import { showWebDAVAuth, WebDAVAuthProvider } from "./web-dav";
-import {
-    showWebDAVUserSelect,
-    WebDAVUserSelectProvider,
-} from "./web-dav-user";
+import { showWebDAVUserSelect, WebDAVUserSelectProvider } from "./web-dav-user";
 
 export function ModalProvider() {
     return (

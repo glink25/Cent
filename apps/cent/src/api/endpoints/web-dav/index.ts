@@ -182,10 +182,7 @@ export const WebDAVEndpoint: SyncEndpointFactory = {
                     const newMeta = meta ?? ({} as WebDAVMeta);
                     let needsUpdate = false;
 
-                    if (
-                        userId !== undefined &&
-                        !newMeta.personal?.[userId]
-                    ) {
+                    if (userId !== undefined && !newMeta.personal?.[userId]) {
                         newMeta.personal = {
                             ...newMeta.personal,
                             [userId]: {},

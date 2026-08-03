@@ -303,8 +303,7 @@ export const createWebDAVSyncer = (cfg: WebDAVConfig): Syncer => {
         // WebDAV servers do not have standardized user API; return simple info based on username
         return {
             avatar_url: undefined,
-            name:
-                config.displayName ?? config.username ?? "webdav-user",
+            name: config.displayName ?? config.username ?? "webdav-user",
             id:
                 (config.userId as unknown as string | undefined) ??
                 config.username ??
@@ -351,10 +350,7 @@ export const createWebDAVSyncer = (cfg: WebDAVConfig): Syncer => {
 };
 
 export const fetchWebDAVUserIds = async (
-    config: Pick<
-        WebDAVConfig,
-        "username" | "password" | "remoteUrl" | "proxy"
-    >,
+    config: Pick<WebDAVConfig, "username" | "password" | "remoteUrl" | "proxy">,
 ) => {
     const syncer = createWebDAVSyncer(config);
     const storeNames = await syncer.fetchAllStore();
