@@ -5,6 +5,12 @@ import type {
 } from "../assistant";
 
 /**
+ * 可在所有客户端间同步的 JSON 对象。嵌套值由请求入口做递归运行时校验；这里保持
+ * 非递归，避免宿主将 AIConfig 放进 Immer 状态时产生无限深的 Draft 类型。
+ */
+export type JSONObject = Record<string, unknown>;
+
+/**
  * provider 层发起请求所需的最小配置。只包含协议相关字段；像 id/name 这类
  * 调用方（如 cent）的领域信息不属于这里。调用方的配置只要结构兼容即可直接传入。
  */
@@ -19,6 +25,8 @@ export type AIConfig = {
      * 未完成时就被 finish_reason="length" 截断。不填则使用默认值。
      */
     maxTokens?: number;
+    /** 浅合并到协议请求体顶层；会话、工具和流式协议核心字段由系统保留。 */
+    customParams?: JSONObject;
 };
 
 /**

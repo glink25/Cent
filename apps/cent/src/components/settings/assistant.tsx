@@ -2,7 +2,7 @@ import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/shallow";
 import PopupLayout from "@/layouts/popup-layout";
-import type { AIConfig } from "@/ledger/extra-type";
+import type { AIConfig, JSONObject } from "@/ledger/extra-type";
 import { useIntl } from "@/locale";
 import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
@@ -21,6 +21,21 @@ import {
     SelectValue,
 } from "../ui/select";
 
+function parseCustomParams(value: string): JSONObject | undefined {
+    const trimmed = value.trim();
+    if (!trimmed) return undefined;
+    const parsed: unknown = JSON.parse(trimmed);
+    if (
+        parsed === null ||
+        typeof parsed !== "object" ||
+        Array.isArray(parsed)
+    ) {
+        throw new Error("customParams must be an object");
+    }
+    if (Object.keys(parsed).length === 0) return undefined;
+    return parsed as JSONObject;
+}
+
 // 配置编辑弹框
 function ConfigForm({
     onCancel,
@@ -38,6 +53,9 @@ function ConfigForm({
     const [model, setModel] = useState(edit?.model ?? "");
     const [apiType, setApiType] = useState<AIConfig["apiType"]>(
         edit?.apiType ?? "open-ai-compatible",
+    );
+    const [customParamsText, setCustomParamsText] = useState(
+        edit?.customParams ? JSON.stringify(edit.customParams, null, 2) : "",
     );
     const [isTesting, setIsTesting] = useState(false);
     const [showApiKey, setShowApiKey] = useState(false);
@@ -61,7 +79,16 @@ function ConfigForm({
             return;
         }
 
+        let customParams: JSONObject | undefined;
+        try {
+            customParams = parseCustomParams(customParamsText);
+        } catch {
+            toast.error(t("custom-params-invalid"));
+            return;
+        }
+
         const config: AIConfig = {
+            ...edit,
             id: edit?.id ?? `config-${Date.now()}`,
             name: name.trim(),
             apiKey: encodeApiKey(apiKey.trim()),
@@ -69,9 +96,24 @@ function ConfigForm({
             model: model.trim(),
             apiType: apiType,
         };
+        if (customParams) {
+            config.customParams = customParams;
+        } else {
+            delete config.customParams;
+        }
 
         onConfirm?.(config);
-    }, [name, apiKey, apiUrl, model, apiType, edit, onConfirm, t]);
+    }, [
+        name,
+        apiKey,
+        apiUrl,
+        model,
+        apiType,
+        customParamsText,
+        edit,
+        onConfirm,
+        t,
+    ]);
 
     const handleTestConnection = useCallback(async () => {
         if (!apiKey.trim() || !apiUrl.trim() || !model.trim()) {
@@ -79,10 +121,19 @@ function ConfigForm({
             return;
         }
 
+        let customParams: JSONObject | undefined;
+        try {
+            customParams = parseCustomParams(customParamsText);
+        } catch {
+            toast.error(t("custom-params-invalid"));
+            return;
+        }
+
         setIsTesting(true);
         try {
             // 构建测试配置对象
             const testConfig: AIConfig = {
+                ...edit,
                 id: "test",
                 name: "test",
                 apiKey: apiKey.trim(),
@@ -90,6 +141,11 @@ function ConfigForm({
                 model: model.trim(),
                 apiType: apiType,
             };
+            if (customParams) {
+                testConfig.customParams = customParams;
+            } else {
+                delete testConfig.customParams;
+            }
 
             // 构建测试消息
             const testMessages: Array<{
@@ -112,7 +168,7 @@ function ConfigForm({
         } finally {
             setIsTesting(false);
         }
-    }, [apiKey, apiUrl, model, apiType, t]);
+    }, [apiKey, apiUrl, model, apiType, customParamsText, edit, t]);
 
     return (
         <PopupLayout
@@ -260,6 +316,26 @@ function ConfigForm({
                         />
                         <div className="text-xs opacity-60 mt-1">
                             {t("ai-config-model-description")}
+                        </div>
+                    </div>
+
+                    <div className="px-4">
+                        <div className="text-sm py-1">
+                            {t("ai-config-custom-params")}
+                        </div>
+                        <textarea
+                            name="ai-config-custom-params"
+                            placeholder='{"thinking":{"type":"enabled"}}'
+                            value={customParamsText}
+                            onChange={(e) =>
+                                setCustomParamsText(e.currentTarget.value)
+                            }
+                            rows={3}
+                            spellCheck={false}
+                            className="w-full resize-none rounded-md border border-input bg-transparent px-3 py-2 font-mono text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        />
+                        <div className="text-xs opacity-60 mt-1">
+                            {t("ai-config-custom-params-description")}
                         </div>
                     </div>
                 </div>

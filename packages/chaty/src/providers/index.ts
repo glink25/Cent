@@ -15,5 +15,6 @@ export type {
     AIConfig,
     BuildBodyOptions,
     ChatMessage,
+    JSONObject,
     ProviderAdapter,
 } from "./types";
