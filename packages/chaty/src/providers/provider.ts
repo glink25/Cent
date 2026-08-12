@@ -7,7 +7,25 @@ import type {
 } from "../assistant";
 import { withAbort } from "../assistant";
 import { getAdapter } from "./registry";
-import type { AIConfig, BuildBodyOptions, ChatMessage } from "./types";
+import type {
+    AIConfig,
+    BuildBodyOptions,
+    ChatMessage,
+    JSONObject,
+} from "./types";
+
+/**
+ * 这些字段承载会话上下文、工具协议和流式解析约定，必须使用 adapter 生成的值。
+ * 自定义参数仍可包含同名键，但合并时会被系统值静默覆盖。
+ */
+const PROTECTED_REQUEST_PARAMS = [
+    "model",
+    "messages",
+    "contents",
+    "systemInstruction",
+    "stream",
+    "tools",
+] as const;
 
 /**
  * 把单条工具结果消息渲染成回传给模型的纯文本。返回值过长时居中截断。
@@ -105,11 +123,12 @@ export async function createStreamingRequest(
     const adapter = getAdapter(config.apiType);
     const url = adapter.buildUrl(config);
     const headers = adapter.buildHeaders(config, apiKey);
-    const body = adapter.buildBody(config, messages, tools, {
+    const generatedBody = adapter.buildBody(config, messages, tools, {
         temperature: options?.temperature ?? 0.7,
         // 默认 8192：推理模型的思考过程也消耗 token，太小会在思考阶段就被截断。
         maxTokens: options?.maxTokens ?? config.maxTokens ?? 8192,
     });
+    const body = mergeCustomParams(generatedBody, config.customParams);
 
     return fetch(url, {
         method: "POST",
@@ -117,6 +136,54 @@ export async function createStreamingRequest(
         body: JSON.stringify(body),
         signal: abortSignal,
     });
+}
+
+/**
+ * 自定义参数只在请求体顶层做浅合并，普通同名字段以自定义值为准；会影响会话与
+ * 流式协议的核心字段则静默保留 adapter 生成值。运行时校验用于尽早发现损坏的同步数据。
+ */
+export function mergeCustomParams(
+    generatedBody: unknown,
+    customParams?: JSONObject,
+): JSONObject {
+    if (!isJSONObject(generatedBody)) {
+        throw new Error("AI provider request body must be a JSON object");
+    }
+    if (customParams === undefined) return generatedBody;
+    if (!isJSONCompatibleObject(customParams)) {
+        throw new Error("AI customParams must be a JSON object");
+    }
+    const merged = { ...generatedBody, ...customParams };
+    for (const key of PROTECTED_REQUEST_PARAMS) {
+        // 仅恢复当前协议实际生成的核心字段，避免凭空向其他协议写入无关字段。
+        if (Object.hasOwn(generatedBody, key)) {
+            merged[key] = generatedBody[key];
+        }
+    }
+    return merged;
+}
+
+function isJSONObject(value: unknown): value is JSONObject {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function isJSONCompatibleObject(value: unknown): value is JSONObject {
+    return (
+        isJSONObject(value) && Object.values(value).every(isJSONCompatibleValue)
+    );
+}
+
+function isJSONCompatibleValue(value: unknown): boolean {
+    if (
+        value === null ||
+        typeof value === "string" ||
+        typeof value === "boolean"
+    ) {
+        return true;
+    }
+    if (typeof value === "number") return Number.isFinite(value);
+    if (Array.isArray(value)) return value.every(isJSONCompatibleValue);
+    return isJSONCompatibleObject(value);
 }
 
 export function parseStream(

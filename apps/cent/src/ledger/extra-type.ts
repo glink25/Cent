@@ -93,6 +93,9 @@ export type Scheduled = {
     latest?: number;
 };
 
+/** 嵌套内容在保存与请求入口校验为标准 JSON；非递归类型避免 Immer Draft 无限展开。 */
+export type JSONObject = Record<string, unknown>;
+
 // AI配置类型
 export type AIConfig = {
     id: string;
@@ -106,6 +109,8 @@ export type AIConfig = {
      * 设置过小会在思考未完成时就被 finish_reason="length" 截断。不填则使用默认值。
      */
     maxTokens?: number;
+    /** 浅合并到 API 请求体顶层；会话、工具和流式协议核心字段由系统保留。 */
+    customParams?: JSONObject;
 };
 
 // 个人配置，不需要转换，可以略过

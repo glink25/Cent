@@ -13,6 +13,7 @@
 		"build": "pnpm run lint && vite build",
 		"analyze": "ANALYZE=true vite build",
 		"lint": "tsc -b && biome check --diagnostic-level error",
+		"test": "vitest run",
 		"preview": "vite preview --host --port 5173",
 		"check": "biome check --write"
 	},
@@ -63,6 +64,7 @@
 		"vite": "^8.0.8",
 		"vite-bundle-analyzer": "^1.2.3",
 		"vite-plugin-svgr": "^4.5.0",
+		"vitest": "^4.1.9",
 		"zod": "^4.1.11",
 		"zustand": "^5.0.8",
 		"zustand-indexeddb": "^0.1.1"
