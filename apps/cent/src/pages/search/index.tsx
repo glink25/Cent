@@ -21,6 +21,7 @@ import { useCurrency } from "@/hooks/use-currency";
 import { useCustomFilters } from "@/hooks/use-custom-filters";
 import type { Bill, BillFilter } from "@/ledger/type";
 import { useIntl } from "@/locale";
+import { measure } from "@/measurement";
 import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
 import { usePreferenceStore } from "@/store/preference";
@@ -56,6 +57,22 @@ const SORTS = [
         label: "lowest-amount",
     },
 ] as const;
+
+function getSearchMode(
+    form: BillFilter,
+): "empty" | "keyword" | "filter" | "mixed" {
+    const hasKeyword = Boolean(form.comment?.trim());
+    const hasFilter = Object.entries(form).some(([key, value]) => {
+        if (key === "comment" || value === undefined || value === null) {
+            return false;
+        }
+        return !Array.isArray(value) || value.length > 0;
+    });
+    if (hasKeyword && hasFilter) return "mixed";
+    if (hasKeyword) return "keyword";
+    if (hasFilter) return "filter";
+    return "empty";
+}
 
 export default function Page() {
     const t = useIntl();
@@ -102,6 +119,7 @@ export default function Page() {
         setSelectedIds([]);
         const result = await StorageDeferredAPI.filter(book, form);
         setList(result);
+        measure("search_submitted", { mode: getSearchMode(form) });
     }, [form]);
 
     const navigate = useNavigate();

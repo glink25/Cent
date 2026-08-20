@@ -7,11 +7,14 @@ import "./index.css";
 
 import Login from "./components/login";
 import { initIntl, LocaleProvider } from "./locale/index";
+import { measure } from "./measurement";
 import { usePreferenceStore } from "./store/preference";
 import { register as registerLaunchQueue } from "./utils/launch-queue";
 import { lazyWithReload } from "./utils/lazy";
 
 const Rooot = lazyWithReload(() => import("./route"));
+
+measure("app_open");
 
 const lang = usePreferenceStore.getState().locale;
 initIntl(lang).then(() => {

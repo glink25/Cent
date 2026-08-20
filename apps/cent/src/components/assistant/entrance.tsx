@@ -17,12 +17,18 @@ import { StorageAPI } from "@/api/storage";
 import { useIsDesktop } from "@/hooks/use-media-query";
 import { useTheme } from "@/hooks/use-theme";
 import { useIntl, useLocale } from "@/locale";
+import { measure } from "@/measurement";
+import {
+    createAssistantTokenUsageProvider,
+    toTokenUsageApiType,
+} from "@/measurement/token-usage";
 import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
 import createConfirmProvider from "../confirm";
 import { HintTooltip } from "../hint";
 import AssistantForm from "./form";
+import { getAIConfig } from "./request";
 import { CentAIConfig } from "./tools";
 
 const [AssistantFormProvider, , showAssistant] = createConfirmProvider(
@@ -101,6 +107,11 @@ export default function AssistantButton({
     const runtime = useMemo<RuntimeConfig>(
         () => ({
             ...CentAIConfig,
+            provider: createAssistantTokenUsageProvider(
+                CentAIConfig.provider,
+                (request) =>
+                    toTokenUsageApiType(getAIConfig(request.configId).apiType),
+            ),
             scope: currentBookId
                 ? `${StorageAPI.type}:${currentBookId}`
                 : undefined,
@@ -134,8 +145,12 @@ export default function AssistantButton({
 
     const toShowAssistant = () => {
         if (isDesktop) {
+            if (!isDesktopAssistantShows) {
+                measure("assistant_opened", { surface: "desktop" });
+            }
             setIsDesktopAssistantShows((v) => !v);
         } else {
+            measure("assistant_opened", { surface: "mobile" });
             toShowMobileAssistant();
         }
     };

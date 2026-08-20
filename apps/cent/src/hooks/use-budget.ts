@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { v4 } from "uuid";
 import { useShallow } from "zustand/shallow";
 import type { Budget } from "@/components/budget/type";
+import { measure } from "@/measurement";
 import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
 
@@ -21,6 +22,10 @@ export function useBudget() {
             }
             prev.budgets.push({ ...budget, id });
             return prev;
+        });
+        measure("feature_config_changed", {
+            feature: "budget",
+            action: "create",
         });
         return id;
     }, []);
@@ -45,6 +50,10 @@ export function useBudget() {
                 }
                 prev.budgets[index] = { id, ...value };
                 return prev;
+            });
+            measure("feature_config_changed", {
+                feature: "budget",
+                action: value === undefined ? "delete" : "update",
             });
         },
         [],

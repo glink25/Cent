@@ -6,6 +6,7 @@ import {
     showImportPreview,
 } from "@/components/data-manager/preview-form";
 import type { Bill, BillCategory, BillTag, GlobalMeta } from "@/ledger/type";
+import { measure } from "@/measurement";
 
 const billSchema = z
     .object({
@@ -191,6 +192,12 @@ export const ImportBillsTool = createTool({
             return { ok: false, reason: "user_cancelled" };
         }
         await importFromPreviewResult(res);
+        if (arg.items.length > 0) {
+            measure("bill_created", {
+                source: "assistant_import",
+                item_count: arg.items.length,
+            });
+        }
         return {
             ok: true,
             imported: arg.items.length,

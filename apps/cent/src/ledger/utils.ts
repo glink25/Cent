@@ -122,7 +122,7 @@ const isCurrenciesMatched = (
  * 返回的函数对每个 bill 仅做求值，无重复解析开销。
  *
  * 设计意图：保持纯函数式管道（context 显式传入），同时让热路径
- * （worker、analytics、UI 列表过滤）维持高性能。
+ * （worker、measurement、UI 列表过滤）维持高性能。
  */
 export const createBillMatcher = (
     filter: BillFilter,

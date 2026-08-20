@@ -7,6 +7,7 @@ import {
 } from "@/hooks/use-scheduled";
 import PopupLayout from "@/layouts/popup-layout";
 import { useIntl } from "@/locale";
+import { measure } from "@/measurement";
 import { useLedgerStore } from "@/store/ledger";
 import { isCancelError } from "../confirm/state";
 import modal from "../modal";
@@ -41,6 +42,10 @@ export default function ScheduledListForm({
                         delete newOne.needBills;
                         useLedgerStore.getState().updateBills(needBills);
                         await add(newOne);
+                        measure("feature_config_changed", {
+                            feature: "scheduled",
+                            action: "create",
+                        });
                     }}
                 >
                     <i className="icon-[mdi--add]" />
@@ -128,6 +133,12 @@ export default function ScheduledListForm({
                                                 enabled: !!v,
                                                 latest: Date.now() + 1,
                                             });
+                                            measure("feature_config_changed", {
+                                                feature: "scheduled",
+                                                action: v
+                                                    ? "enable"
+                                                    : "disable",
+                                            });
                                         }}
                                     />
                                 </div>
@@ -148,6 +159,10 @@ export default function ScheduledListForm({
                                             .getState()
                                             .updateBills(needBills);
                                         await update(id, newOne);
+                                        measure("feature_config_changed", {
+                                            feature: "scheduled",
+                                            action: "update",
+                                        });
                                     }}
                                 >
                                     <i className="icon-[mdi--edit-outline]" />
@@ -166,6 +181,10 @@ export default function ScheduledListForm({
                                             .catch(() => false);
                                         if (!ok) return;
                                         await update(s.id, undefined);
+                                        measure("feature_config_changed", {
+                                            feature: "scheduled",
+                                            action: "delete",
+                                        });
                                     }}
                                 >
                                     <i className="icon-[mdi--delete]" />

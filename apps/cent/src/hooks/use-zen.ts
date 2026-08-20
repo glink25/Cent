@@ -5,6 +5,7 @@ import { useShallow } from "zustand/shallow";
 import { loadStorageAPI } from "@/api/storage/dynamic";
 import type { Full } from "@/database/stash";
 import type { PersonalMeta } from "@/ledger/extra-type";
+import { measure } from "@/measurement";
 import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
@@ -25,6 +26,8 @@ type ZenPostsState = {
 const EMPTY_AI_CONFIGS: NonNullable<
     NonNullable<PersonalMeta["assistant"]>["configs"]
 > = [];
+
+const zenMeasurementState = { ready: false };
 
 const useZenPostsState = create<ZenPostsState>()((set, get) => {
     const refresh = async () => {
@@ -138,8 +141,12 @@ export function useZenOverview() {
         enabled &&
         isZenEntranceOpen(settings?.scheduledTime, now) &&
         !getPostByDayId(dayId);
+    zenMeasurementState.ready = ready;
     const styleName = getZenStyleName(now);
     const open = useCallback(() => {
+        measure("zen_opened", {
+            state: zenMeasurementState.ready ? "ready" : "manual",
+        });
         showZenDialog().catch(() => {});
     }, []);
 

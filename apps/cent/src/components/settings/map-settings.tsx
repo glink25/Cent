@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { useShallow } from "zustand/shallow";
 import PopupLayout from "@/layouts/popup-layout";
 import { useIntl } from "@/locale";
+import { measure } from "@/measurement";
 import { useLedgerStore } from "@/store/ledger";
 import { decodeApiKey, encodeApiKey } from "@/utils/api-key";
 import createConfirmProvider from "../confirm";
@@ -52,6 +53,7 @@ function MapConfigForm({ onCancel }: { onCancel?: () => void }) {
 
             return prev;
         });
+        measure("feature_config_changed", { feature: "map", action: "enable" });
 
         toast.success(t("map-config-saved"));
         onCancel?.();
@@ -66,6 +68,10 @@ function MapConfigForm({ onCancel }: { onCancel?: () => void }) {
                 delete prev.map.amapSecurityCode;
             }
             return prev;
+        });
+        measure("feature_config_changed", {
+            feature: "map",
+            action: "disable",
         });
 
         setAmapKey("");

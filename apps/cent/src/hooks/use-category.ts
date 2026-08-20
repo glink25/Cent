@@ -5,6 +5,7 @@ import { BillCategories } from "@/ledger/category";
 import type { BillCategory } from "@/ledger/type";
 import { intlCategory, treeCategories } from "@/ledger/utils";
 import { useIntl } from "@/locale";
+import { measure } from "@/measurement";
 import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
 
@@ -63,6 +64,10 @@ export default function useCategory() {
             resolve(id);
             return prev;
         });
+        measure("feature_config_changed", {
+            feature: "category",
+            action: "create",
+        });
         return promise;
     }, []);
 
@@ -113,6 +118,10 @@ export default function useCategory() {
                 };
                 return prev;
             });
+            measure("feature_config_changed", {
+                feature: "category",
+                action: value === undefined ? "delete" : "update",
+            });
         },
         [t],
     );
@@ -158,6 +167,10 @@ export default function useCategory() {
         await useLedgerStore.getState().updateGlobalMeta((prev) => {
             prev.categories = undefined;
             return prev;
+        });
+        measure("feature_config_changed", {
+            feature: "category",
+            action: "reset",
         });
     }, []);
 

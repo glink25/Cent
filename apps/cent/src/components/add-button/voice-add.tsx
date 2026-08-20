@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useLongPress } from "@/hooks/use-long-press";
 import { t } from "@/locale";
+import { measure } from "@/measurement";
 import { useLedgerStore } from "@/store/ledger";
 import { parseTextToBill } from "../assistant/text-to-bill";
 import createConfirmProvider from "../confirm";
@@ -58,6 +59,10 @@ export function VoiceAddButton({ onClick }: { onClick?: () => void }) {
                     return;
                 }
                 await useLedgerStore.getState().addBills(bills);
+                measure("bill_created", {
+                    source: "voice",
+                    item_count: bills.length,
+                });
                 toast.success(t("voice-add-success", { count: bills.length }));
             } catch (error) {
                 console.error(error);

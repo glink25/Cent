@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { v4 } from "uuid";
 import type { BillFilterView } from "@/ledger/extra-type";
+import { measure } from "@/measurement";
 import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
 
@@ -24,6 +25,10 @@ export function useCustomFilters() {
                     name,
                 });
                 return prev;
+            });
+            measure("feature_config_changed", {
+                feature: "stat_filter",
+                action: "create",
             });
             return id;
         },
@@ -68,6 +73,12 @@ export function useCustomFilters() {
                 }
                 return prev;
             });
+            if (id !== DefaultFilterViewId) {
+                measure("feature_config_changed", {
+                    feature: "stat_filter",
+                    action: value === undefined ? "delete" : "update",
+                });
+            }
         },
         [],
     );
