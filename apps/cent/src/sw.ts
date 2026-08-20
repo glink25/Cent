@@ -11,7 +11,13 @@ declare const self: ServiceWorkerGlobalScope & {
 };
 
 clientsClaim();
-self.skipWaiting();
+
+// 页面确认已准备好刷新后再激活新 SW，避免新旧版本资源在同一页面中混用。
+self.addEventListener("message", (event) => {
+    if (event.data?.type === "SKIP_WAITING") {
+        void self.skipWaiting();
+    }
+});
 
 // 预缓存由 VitePWA 注入的所有静态资源
 precacheAndRoute(self.__WB_MANIFEST);
@@ -33,12 +39,12 @@ const navigationHandler = async (params: any) => {
     });
 };
 
-// 不处理 .well-known、__headers 等站点元数据路径，直接走网络
+// 不处理 .well-known、_headers 等站点元数据路径，直接走网络
 registerRoute(
     new NavigationRoute(navigationHandler, {
         denylist: [
             /\/\.well-known(\/|$)/,
-            /\/__headers(\/|$)/,
+            /\/_headers(\/|$)/,
             /\/ai-chat(\.html)?(\/|$)/,
         ],
     }),

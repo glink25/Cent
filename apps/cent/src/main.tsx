@@ -11,6 +11,9 @@ import { measure } from "./measurement";
 import { usePreferenceStore } from "./store/preference";
 import { register as registerLaunchQueue } from "./utils/launch-queue";
 import { lazyWithReload } from "./utils/lazy";
+import { registerPWAUpdates } from "./utils/pwa";
+
+registerPWAUpdates();
 
 const Rooot = lazyWithReload(() => import("./route"));
 
