@@ -1,6 +1,7 @@
 import { v4 } from "uuid";
 import { useShallow } from "zustand/shallow";
 import type { Widget } from "@/components/widget/type";
+import { measure } from "@/measurement";
 import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
 
@@ -23,6 +24,10 @@ export function useWidget() {
             ...prev,
             widgets: [...(prev.widgets ?? []), newWidget],
         }));
+        measure("feature_config_changed", {
+            feature: "widget",
+            action: "create",
+        });
 
         return newWidget;
     };
@@ -37,6 +42,10 @@ export function useWidget() {
                 w.id === id ? { ...w, ...updates, updatedAt: Date.now() } : w,
             ),
         }));
+        measure("feature_config_changed", {
+            feature: "widget",
+            action: "update",
+        });
     };
 
     const remove = async (id: string) => {
@@ -44,6 +53,10 @@ export function useWidget() {
             ...prev,
             widgets: (prev.widgets ?? []).filter((w) => w.id !== id),
         }));
+        measure("feature_config_changed", {
+            feature: "widget",
+            action: "delete",
+        });
     };
 
     const reorder = async (orderedIds: string[]) => {
@@ -79,6 +92,7 @@ export function useWidget() {
     );
 
     const toggleHomeWidget = async (widgetId: string) => {
+        const wasEnabled = homeWidgets.some((widget) => widget.id === widgetId);
         await useLedgerStore.getState().updatePersonalMeta((prev) => {
             return {
                 ...prev,
@@ -86,6 +100,10 @@ export function useWidget() {
                     ? prev.homeWidgets.filter((id) => id !== widgetId)
                     : [...(prev.homeWidgets ?? []), widgetId],
             };
+        });
+        measure("feature_config_changed", {
+            feature: "home_widget",
+            action: wasEnabled ? "disable" : "enable",
         });
     };
 

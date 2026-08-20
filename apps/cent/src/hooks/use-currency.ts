@@ -7,6 +7,7 @@ import {
 } from "@/api/currency/currencies";
 import type { CustomCurrency } from "@/ledger/type";
 import { t, useIntl } from "@/locale";
+import { measure } from "@/measurement";
 import { useBookStore } from "@/store/book";
 import { type CConvert, useCurrencyStore } from "@/store/currency";
 import { useLedgerStore } from "@/store/ledger";
@@ -128,27 +129,52 @@ export const useCurrency = () => {
     const updateCustomCurrency = useCallback(
         (currency: Omit<CustomCurrency, "id"> & { id?: string }) => {
             const id = currency.id ?? v4();
-            return useLedgerStore.getState().updateGlobalMeta((meta) => {
-                const customCurrencies = meta.customCurrencies ?? [];
-                const index = customCurrencies.findIndex((c) => c.id === id);
-                if (index === -1) {
-                    customCurrencies.push({ ...currency, id });
-                } else {
-                    customCurrencies[index] = { ...currency, id };
-                }
-                return { ...meta, customCurrencies };
-            });
+            const exists = useLedgerStore
+                .getState()
+                .infos?.meta.customCurrencies?.some((item) => item.id === id);
+            const result = useLedgerStore
+                .getState()
+                .updateGlobalMeta((meta) => {
+                    const customCurrencies = meta.customCurrencies ?? [];
+                    const index = customCurrencies.findIndex(
+                        (c) => c.id === id,
+                    );
+                    if (index === -1) {
+                        customCurrencies.push({ ...currency, id });
+                    } else {
+                        customCurrencies[index] = { ...currency, id };
+                    }
+                    return { ...meta, customCurrencies };
+                });
+            void result.then(
+                () =>
+                    measure("feature_config_changed", {
+                        feature: "custom_currency",
+                        action: exists ? "update" : "create",
+                    }),
+                () => undefined,
+            );
+            return result;
         },
         [],
     );
 
     const deleteCustomCurrency = useCallback((id: string) => {
-        return useLedgerStore.getState().updateGlobalMeta((meta) => {
+        const result = useLedgerStore.getState().updateGlobalMeta((meta) => {
             const customCurrencies = meta.customCurrencies ?? [];
             const index = customCurrencies.findIndex((c) => c.id === id);
             customCurrencies.splice(index, 1);
             return { ...meta, customCurrencies };
         });
+        void result.then(
+            () =>
+                measure("feature_config_changed", {
+                    feature: "custom_currency",
+                    action: "delete",
+                }),
+            () => undefined,
+        );
+        return result;
     }, []);
 
     const quickCurrencies = useMemo(

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { Book } from "@/api/endpoints/type";
 import { loadStorageAPI } from "@/api/storage/dynamic";
 import { useIntl } from "@/locale";
+import { measure } from "@/measurement";
 import { useBookStore } from "@/store/book";
 import { useIsLogin } from "@/store/user";
 import Loading from "../loading";
@@ -41,12 +42,20 @@ export function BookForm() {
     const toInvite = async (book: Book) => {
         const { StorageAPI } = await loadStorageAPI();
         StorageAPI.inviteForBook?.(book.id);
+        measure("feature_config_changed", {
+            feature: "collaborator",
+            action: "invite",
+        });
     };
 
     const toDelete = async (book: Book) => {
         const { StorageAPI } = await loadStorageAPI();
         try {
             await StorageAPI.deleteBook(book.id);
+            measure("feature_config_changed", {
+                feature: "book",
+                action: "delete",
+            });
             useBookStore.getState().switchToBook(undefined);
         } catch (error) {
             console.log(error);
@@ -136,6 +145,10 @@ export function BookForm() {
                         const { StorageAPI } = await loadStorageAPI();
                         try {
                             const store = await StorageAPI.createBook(name);
+                            measure("feature_config_changed", {
+                                feature: "book",
+                                action: "create",
+                            });
                             await useBookStore.getState().updateBookList();
                         } finally {
                             setCreating(false);

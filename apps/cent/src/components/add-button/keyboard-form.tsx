@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useIntl } from "@/locale";
+import { measure } from "@/measurement";
 import { useLedgerStore } from "@/store/ledger";
 import { parseTextToBill } from "../assistant/text-to-bill";
 import { Button } from "../ui/button";
@@ -31,6 +32,10 @@ export default function KeyboardForm({
                 return;
             }
             await useLedgerStore.getState().addBills(bills);
+            measure("bill_created", {
+                source: "keyboard",
+                item_count: bills.length,
+            });
             toast.success(t("voice-add-success", { count: bills.length }));
         } catch (error) {
             console.error(error);

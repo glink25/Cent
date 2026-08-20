@@ -11,6 +11,7 @@ import {
 // 主题（zen.css）已随 `@glink25/zen` 源码入口自动引入。
 import { z } from "zod";
 import { loadStorageAPI } from "@/api/storage/dynamic";
+import { getAIConfig } from "@/components/assistant/request";
 import {
     AnalyzeBillsTool,
     GetAccountMetaTool,
@@ -18,6 +19,14 @@ import {
 } from "@/components/assistant/tools/ledger-tools";
 import { createCentAIProvider } from "@/components/assistant/tools/provider";
 import createConfirmProvider from "@/components/confirm";
+import { measure } from "@/measurement";
+import {
+    beginZenTokenUsage,
+    completeZenTokenUsage,
+    createZenTokenUsageProvider,
+    interruptZenTokenUsage,
+    toTokenUsageApiType,
+} from "@/measurement/token-usage";
 import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
 import { usePreferenceStore } from "@/store/preference";
@@ -90,6 +99,14 @@ export const centZenHost: ZenRuntimeHost = {
                 aiConfigId: configuredZenId,
                 defaultConfigId: personal?.assistant?.defaultConfigId,
             });
+        const selectedConfig = configs.find(
+            (config) => config.id === defaultConfigId,
+        );
+        beginZenTokenUsage(
+            directorMode === "local" || !selectedConfig
+                ? "local"
+                : toTokenUsageApiType(selectedConfig.apiType),
+        );
         const storedTheme = localStorage.getItem("theme");
         return {
             userId: String(userId),
@@ -130,6 +147,10 @@ export const centZenHost: ZenRuntimeHost = {
                     : { type: "update" as const, value: mutation.post },
             ),
         );
+        if (mutations.some((mutation) => mutation.type === "upsert")) {
+            measure("zen_completed");
+            completeZenTokenUsage();
+        }
     },
     requestAI({
         requestId: _requestId,
@@ -141,7 +162,10 @@ export const centZenHost: ZenRuntimeHost = {
         onError,
     }) {
         const provider = createCentAIProvider(() => configId);
-        const stream = provider.request({
+        const observedProvider = createZenTokenUsageProvider(provider, () =>
+            toTokenUsageApiType(getAIConfig(configId).apiType),
+        );
+        const stream = observedProvider.request({
             history,
             configId,
             tools: tools.map(deserializeTool),
@@ -162,7 +186,11 @@ export const centZenHost: ZenRuntimeHost = {
 };
 
 function ZenHostForm({ onCancel }: { onCancel?: () => void }) {
-    return <Zen host={centZenHost} onClose={onCancel} />;
+    const handleClose = () => {
+        interruptZenTokenUsage();
+        onCancel?.();
+    };
+    return <Zen host={centZenHost} onClose={handleClose} />;
 }
 
 export const [ZenDialogProvider, showZenDialog] = createConfirmProvider(

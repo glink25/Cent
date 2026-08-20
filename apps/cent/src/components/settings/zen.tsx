@@ -1,6 +1,7 @@
 import { useZen } from "@/hooks/use-zen";
 import PopupLayout from "@/layouts/popup-layout";
 import { useIntl } from "@/locale";
+import { measure } from "@/measurement";
 import { cn } from "@/utils";
 import createConfirmProvider from "../confirm";
 import { Button } from "../ui/button";
@@ -71,6 +72,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                                     ? { aiConfigId: null }
                                     : {}),
                             });
+                            measure("zen_setting_changed", { enabled });
                         }}
                     />
                 </div>

@@ -5,6 +5,7 @@ import PopupLayout from "@/layouts/popup-layout";
 import { BillCategories } from "@/ledger/category";
 import type { ExportedJSON } from "@/ledger/type";
 import { t, useIntl } from "@/locale";
+import { measure } from "@/measurement";
 import { readClipboard } from "@/utils/clipboard";
 import modal from "../modal";
 import { Button } from "../ui/button";
@@ -140,6 +141,12 @@ export function SmartImport({ onCancel }: { onCancel?: () => void }) {
             // 智能导入时，需要
         }
         await importFromPreviewResult(res);
+        if (res.bills.length > 0) {
+            measure("bill_created", {
+                source: "import",
+                item_count: res.bills.length,
+            });
+        }
         onCancel?.();
     };
     return (

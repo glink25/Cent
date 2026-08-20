@@ -9,6 +9,7 @@ import { useScheduled } from "@/hooks/use-scheduled";
 import { useTag } from "@/hooks/use-tag";
 import { amountToNumber } from "@/ledger/bill";
 import { useIntl } from "@/locale";
+import { measure } from "@/measurement";
 import { useGuideStore } from "@/store/guide";
 import { type EditBill, useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
@@ -74,6 +75,7 @@ export default function BillInfo({
             await useLedgerStore
                 .getState()
                 .addBill({ ...edit, time: Date.now() });
+            measure("bill_created", { source: "duplicate", item_count: 1 });
             onConfirm?.(true);
         }
     };
@@ -104,6 +106,7 @@ export default function BillInfo({
                               },
                 }),
             ]);
+            measure("bill_created", { source: "split", item_count: 1 });
             onConfirm?.(true);
         }
     };

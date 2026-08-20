@@ -6,6 +6,7 @@ import { showFilePicker } from "@/components/file-picker";
 import modal from "@/components/modal";
 import PopupLayout from "@/layouts/popup-layout";
 import { useIntl } from "@/locale";
+import { measure } from "@/measurement";
 import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
@@ -166,12 +167,23 @@ export default function PresetForm({ onCancel }: { onCancel?: () => void }) {
     }, []);
 
     const handleSave = useCallback(async () => {
+        const wasEnabled = Boolean(customCSS.trim());
+        const willBeEnabled = Boolean(cssValue.trim());
         await useLedgerStore.getState().updatePersonalMeta((prev) => {
             prev.customCSS = cssValue;
             return prev;
         });
+        measure("feature_config_changed", {
+            feature: "custom_theme",
+            action:
+                !wasEnabled && willBeEnabled
+                    ? "enable"
+                    : wasEnabled && !willBeEnabled
+                      ? "disable"
+                      : "update",
+        });
         toast.success(t("custom-css-saved"));
-    }, [cssValue, t]);
+    }, [cssValue, customCSS, t]);
 
     const handleClear = useCallback(() => {
         setCssValue("");
@@ -185,6 +197,10 @@ export default function PresetForm({ onCancel }: { onCancel?: () => void }) {
                 new Blob([json], { type: "application/json" }),
                 name,
             );
+            measure("feature_config_changed", {
+                feature: "preset",
+                action: "export",
+            });
             toast.success(t("preset-export-done"));
         },
         [bookId, t],
@@ -255,6 +271,10 @@ export default function PresetForm({ onCancel }: { onCancel?: () => void }) {
         }
         try {
             await applyPreset(incoming);
+            measure("feature_config_changed", {
+                feature: "preset",
+                action: "import",
+            });
             toast.success(t("preset-import-done"));
         } catch {
             toast.error(t("preset-import-failed"));

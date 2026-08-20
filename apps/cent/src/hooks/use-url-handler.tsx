@@ -5,6 +5,7 @@ import {
     xmlTextToBills,
 } from "@/components/assistant/text-to-bill";
 import { useIntl } from "@/locale";
+import { measure } from "@/measurement";
 import { useLedgerStore } from "@/store/ledger";
 
 /**
@@ -31,6 +32,10 @@ export function useUrlHandler() {
                         const bills = await xmlTextToBills(text);
                         if (bills.length > 0) {
                             await useLedgerStore.getState().addBills(bills);
+                            measure("bill_created", {
+                                source: "url",
+                                item_count: bills.length,
+                            });
                             toast.success(
                                 t("voice-add-success", { count: bills.length }),
                             );

@@ -32,15 +32,33 @@ import {
 import { useScheduled } from "@/hooks/use-scheduled";
 import { ThemeProvider } from "@/hooks/use-theme";
 import { useUrlHandler } from "@/hooks/use-url-handler";
+import { measure } from "@/measurement";
+import { useMeasurementUsageSnapshot } from "@/measurement/usage-snapshot";
+import { useLedgerStore } from "@/store/ledger";
 import { usePreferenceStore } from "@/store/preference";
+import { useUserStore } from "@/store/user";
 import { startBackgroundPredict } from "@/utils/predict";
 import { ZenDialogProvider } from "@/zen";
 
+let zenStatusMeasured = false;
+
 export default function MainLayout() {
+    useMeasurementUsageSnapshot();
     useQuickGoAdd();
     useQuickEntryByClipboard();
     useQuickEntryByRelayr();
     useUrlHandler(); // 处理标准 URL 链接唤起
+
+    const zenEnabled = useLedgerStore((state) => {
+        if (!state.infos) return undefined;
+        const userId = useUserStore.getState().id;
+        return Boolean(state.infos.meta.personal?.[userId]?.zen?.enabled);
+    });
+    useEffect(() => {
+        if (zenEnabled === undefined || zenStatusMeasured) return;
+        zenStatusMeasured = true;
+        measure("zen_status", { enabled: zenEnabled });
+    }, [zenEnabled]);
 
     useEffect(() => {
         // predict

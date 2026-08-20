@@ -1,6 +1,7 @@
 import { toast } from "sonner";
 import PopupLayout from "@/layouts/popup-layout";
 import { useIntl } from "@/locale";
+import { measure } from "@/measurement";
 import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
 import { cn } from "@/utils";
@@ -46,6 +47,12 @@ function Form({ onCancel }: { onCancel?: () => void }) {
             return;
         }
         await importFromPreviewResult(res);
+        if (res.bills.length > 0) {
+            measure("bill_created", {
+                source: "import",
+                item_count: res.bills.length,
+            });
+        }
     };
 
     const toExport = async () => {

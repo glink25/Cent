@@ -18,6 +18,7 @@ import { numberToAmount } from "@/ledger/bill";
 import { BillCategories } from "@/ledger/category";
 import type { Bill } from "@/ledger/type";
 import { useIntl } from "@/locale";
+import { measure } from "@/measurement";
 import { useLedgerStore } from "@/store/ledger";
 import createConfirmProvider from "../confirm";
 import Loading from "../loading";
@@ -139,6 +140,13 @@ function OncentImportForm({
                         [],
                     importStrategy === "overlap",
                 );
+            const itemCount = selected.data?.length ?? 0;
+            if (itemCount > 0) {
+                measure("bill_created", {
+                    source: "import",
+                    item_count: itemCount,
+                });
+            }
             toast.success(t("import-success"));
             onConfirm?.(true);
             setLoading(false);

@@ -7,6 +7,7 @@ import { afterAddBillPromotion } from "@/components/promotion";
 import { Button } from "@/components/ui/button";
 import { numberToAmount } from "@/ledger/bill";
 import { t, useIntl } from "@/locale";
+import { measure } from "@/measurement";
 import { useLedgerStore } from "@/store/ledger";
 import { usePreferenceStore } from "@/store/preference";
 import { asyncOnce } from "@/utils/async";
@@ -62,6 +63,10 @@ export function useQuickEntryByClipboard() {
                     comment: data.comment,
                     type: "expense",
                     time: Date.now(),
+                });
+                measure("bill_created", {
+                    source: "clipboard",
+                    item_count: 1,
                 });
                 toast.success(t("quick-entry-success"), { duration: 2000 });
             };
@@ -176,6 +181,10 @@ const _checkRelayrData = async () => {
                 return;
             }
             await useLedgerStore.getState().addBills(bills);
+            measure("bill_created", {
+                source: "relayr",
+                item_count: bills.length,
+            });
             toast.success(t("voice-add-success", { count: bills.length }));
             return;
         }

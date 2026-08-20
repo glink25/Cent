@@ -1,8 +1,10 @@
 /** biome-ignore-all lint/a11y/noSvgWithoutTitle: <explanation> */
+import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useShallow } from "zustand/shallow";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useIntl } from "@/locale";
+import { isMeasurementEnabled, measure } from "@/measurement";
 import { useIsLogin, useUserStore } from "@/store/user";
 
 const loaded = import("@/api/storage");
@@ -18,6 +20,14 @@ const secondaryButtonStyle = `inline-flex items-center justify-center gap-2 whit
 
 const betaClassName = `relative after:content-['beta'] after:rounded after:bg-yellow-400 after:px-[2px] after:text-[8px] after:block after:absolute after:top-0 after:right-0 after:translate-x-[calc(50%)]`;
 
+const LOGIN_METHODS = ["github", "gitee", "webdav", "s3", "offline"] as const;
+type LoginMethod = (typeof LOGIN_METHODS)[number];
+let loginMethodMeasured = false;
+
+function isLoginMethod(value: string): value is LoginMethod {
+    return (LOGIN_METHODS as readonly string[]).includes(value);
+}
+
 export default function Login() {
     const t = useIntl();
     const isLogin = useIsLogin();
@@ -26,6 +36,18 @@ export default function Login() {
             return [state.loading];
         }),
     );
+    useEffect(() => {
+        if (!isLogin || loginMethodMeasured) return;
+        loginMethodMeasured = true;
+        void loadStorageAPI()
+            .then((StorageAPI) => {
+                const method = StorageAPI.type;
+                if (isLoginMethod(method)) {
+                    measure("login_method_used", { method });
+                }
+            })
+            .catch(() => {});
+    }, [isLogin]);
     if (isLogin) {
         return null;
     }
@@ -33,7 +55,7 @@ export default function Login() {
         <div className="fixed z-[1] top-0 right-0 w-screen h-screen overflow-hidden">
             <div className="absolute w-full h-full bg-[rgba(0,0,0,0.5)] z-[-1]"></div>
             <div className="w-full h-full flex justify-center items-center">
-                <div className="bg-background w-[350px] h-[520px] max-h-[calc(100%-40px)] flex flex-col gap-4 justify-center items-center rounded-lg overflow-y-auto">
+                <div className="bg-background w-[350px] h-[560px] max-h-[calc(100%-40px)] flex flex-col gap-4 justify-center items-center rounded-lg overflow-y-auto">
                     <Guide />
                     <div className="min-h-20 h-fit flex flex-col gap-4">
                         {loading ? (
@@ -162,6 +184,29 @@ export default function Login() {
                             </>
                         )}
                     </div>
+                    {isMeasurementEnabled() && (
+                        <p className="px-6 pb-4 text-center text-[10px] leading-relaxed text-foreground/50">
+                            {t("login-agreement-prefix")}{" "}
+                            <a
+                                className="underline hover:text-foreground/80"
+                                href="https://linkai.work/cent/terms"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                {t("terms-of-use")}
+                            </a>{" "}
+                            {t("login-agreement-conjunction")}{" "}
+                            <a
+                                className="underline hover:text-foreground/80"
+                                href="https://linkai.work/cent/privacy"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                {t("privacy-policy")}
+                            </a>
+                            {t("login-agreement-suffix")}
+                        </p>
+                    )}
                 </div>
             </div>
         </div>,
