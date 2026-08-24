@@ -25,7 +25,7 @@ export function useTag() {
         ) => {
             const exists = useLedgerStore
                 .getState()
-                .infos?.meta.tags.some((tag) => tag.id === id);
+                .infos?.meta.tags?.some((tag) => tag.id === id);
             const result = useLedgerStore
                 .getState()
                 .updateGlobalMeta((prev) => {
