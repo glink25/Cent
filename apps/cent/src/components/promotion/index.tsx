@@ -17,6 +17,16 @@ export type PromotionItem = {
 // 只有第一条会展示
 const WhatsNew: (PromotionItem & { action?: () => void })[] = [
     {
+        id: "cent-app-published",
+        label: "cent-app-published",
+        action: () => {
+            window.open(
+                "https://glink25.github.io/post/Cent-%E5%8E%9F%E7%94%9FApp%E6%AD%A3%E5%BC%8F%E4%B8%8A%E7%BA%BF/",
+                "_blank",
+            );
+        },
+    },
+    {
         id: "zen-mode-released",
         label: "zen-mode-released",
         action: () => {

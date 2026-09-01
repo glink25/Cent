@@ -2,7 +2,10 @@
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useShallow } from "zustand/shallow";
-import { useMediaQuery } from "@/hooks/use-media-query";
+import {
+    AppDownloadIcons,
+    useLoginAppDownloadPlatforms,
+} from "@/components/app-download";
 import { useIntl } from "@/locale";
 import { isMeasurementEnabled, measure } from "@/measurement";
 import { useIsLogin, useUserStore } from "@/store/user";
@@ -216,11 +219,7 @@ export default function Login() {
 
 function Guide({ className }: { className?: string }) {
     const t = useIntl();
-    const isStandaloneDisplay = useMediaQuery("(display-mode: standalone)");
-    const isIOSStandalone =
-        typeof navigator !== "undefined" &&
-        (navigator as Navigator & { standalone?: boolean }).standalone === true;
-    const showIOSDownload = !isStandaloneDisplay && !isIOSStandalone;
+    const platforms = useLoginAppDownloadPlatforms();
 
     return (
         <div
@@ -232,21 +231,7 @@ function Guide({ className }: { className?: string }) {
             <p className="text-sm text-center">{t("app-introduce")}</p>
             <div className="text-xs opacity-60">{t("pwa-install-tip")}</div>
             <div className="absolute bottom-4 left-4 flex justify-center">
-                {showIOSDownload && (
-                    <a
-                        className="inline-flex size-8 items-center justify-center rounded-full bg-white/5 text-white/80 transition-colors hover:border-white/50 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/60"
-                        target="_blank"
-                        href="https://apps.apple.com/us/app/cent-%E9%87%8D%E6%96%B0%E5%AE%9A%E4%B9%89%E8%AE%B0%E8%B4%A6/id6764264950"
-                        rel="noopener noreferrer"
-                        aria-label={t("download-ios-app")}
-                    >
-                        <i
-                            className="icon-[mdi--apple] size-4"
-                            aria-hidden="true"
-                        ></i>
-                        <span className="sr-only">{t("download-ios-app")}</span>
-                    </a>
-                )}
+                <AppDownloadIcons variant="login" platforms={platforms} />
             </div>
             <a
                 className="absolute bottom-4 right-4 text-xs opacity-60 underline"

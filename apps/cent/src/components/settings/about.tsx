@@ -1,3 +1,4 @@
+import { AppDownloadIcons } from "@/components/app-download";
 import PopupLayout from "@/layouts/popup-layout";
 import { useIntl } from "@/locale";
 import { isMeasurementEnabled } from "@/measurement";
@@ -64,6 +65,12 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                     <i className="icon-[mdi--arrow-top-right]"></i>
                 </a>
                 <SponsorAboutItem />
+                <div className="w-full flex flex-col items-center gap-3 px-4 pb-4">
+                    <div className="text-sm text-foreground/80">
+                        {t("download-app")}
+                    </div>
+                    <AppDownloadIcons variant="about" iconClassName="size-5" />
+                </div>
                 {isMeasurementEnabled() && (
                     <div className="flex items-center justify-center gap-3 px-4 pt-2 text-xs text-foreground/50">
                         <a
