@@ -11,4 +11,22 @@ declare global {
             securityJsCode: string;
         };
     }
+    namespace AMap {
+        /** 定位插件结果（官方类型未覆盖，最小声明） */
+        interface GeolocationResult {
+            position?: { lng: number; lat: number };
+            accuracy?: number;
+            message?: string;
+        }
+        class Geolocation {
+            constructor(options?: {
+                enableHighAccuracy?: boolean;
+                timeout?: number;
+                maximumAge?: number;
+            });
+            getCurrentPosition(
+                callback: (status: string, result: GeolocationResult) => void,
+            ): void;
+        }
+    }
 }
