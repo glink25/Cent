@@ -561,6 +561,8 @@ export default function EditorForm({
                                     <CurrentLocation
                                         ref={locationRef}
                                         className="px-1 flex items-center justify-center"
+                                        amapKey={amapKey}
+                                        amapSecurityCode={amapSecurityCode}
                                         onValueChange={(v) => {
                                             setBillState((prev) => {
                                                 return { ...prev, location: v };

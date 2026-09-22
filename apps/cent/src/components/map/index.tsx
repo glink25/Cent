@@ -2,6 +2,7 @@ import AMapLoader from "@amap/amap-jsapi-loader";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Bill } from "@/ledger/type";
 import { useIntl } from "@/locale";
+import { wgs84ToGcj02 } from "@/utils/geo";
 import "./amap-types";
 
 interface AMapContainerProps {
@@ -108,28 +109,28 @@ export default function AMapContainer({
             return;
         }
 
-        // 计算地图中心点
-        const avgLng =
+        // 计算地图中心点（单点时使用，需为 GCJ-02）
+        const [avgLng, avgLat] = wgs84ToGcj02(
             billsWithLocation.reduce(
                 (sum, bill) => sum + (bill.location?.longitude || 0),
                 0,
-            ) / billsWithLocation.length;
-        const avgLat =
+            ) / billsWithLocation.length,
             billsWithLocation.reduce(
                 (sum, bill) => sum + (bill.location?.latitude || 0),
                 0,
-            ) / billsWithLocation.length;
+            ) / billsWithLocation.length,
+        );
 
-        // 创建标记点
+        // 创建标记点（存储为 WGS-84，渲染高德地图前转换为 GCJ-02）
         const markers: AMap.Marker[] = billsWithLocation
             .map((bill) => {
                 const { location, amount } = bill;
                 if (!location) return null;
 
-                const position: [number, number] = [
+                const position: [number, number] = wgs84ToGcj02(
                     location.longitude,
                     location.latitude,
-                ];
+                );
                 const marker = new AMap.Marker({
                     position,
                     title: `${t("map-marker-amount")}: ${(amount / 10000).toFixed(2)}`,

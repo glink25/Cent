@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import PopupLayout from "@/layouts/popup-layout";
 import type { GeoLocation } from "@/ledger/type";
 import { useIntl } from "@/locale";
+import { gcj02ToWgs84, wgs84ToGcj02 } from "@/utils/geo";
 import createConfirmProvider from "../confirm";
 import Loading from "../loading";
 import { Button } from "../ui/button";
@@ -16,11 +17,11 @@ type LocationPickerValue = {
 
 const MAP_RENDER_DELAY = 410;
 
-const toLocation = (center: AMap.LngLat): GeoLocation => ({
-    latitude: center.lat,
-    longitude: center.lng,
-    accuracy: 0,
-});
+/** 地图选点结果是 GCJ-02，换算为 WGS-84 存储（通用坐标） */
+const toLocation = (center: AMap.LngLat): GeoLocation => {
+    const [lng, lat] = gcj02ToWgs84(center.lng, center.lat);
+    return { latitude: lat, longitude: lng, accuracy: 0 };
+};
 
 function LocationPickerForm({
     edit,
@@ -82,10 +83,12 @@ function LocationPickerForm({
             .then((AMap: typeof window.AMap) => {
                 if (cancelled || !mapRef.current) return;
 
-                const center: [number, number] = [
+                // 存储的是 WGS-84，渲染高德地图前转换为 GCJ-02
+                const [centerLng, centerLat] = wgs84ToGcj02(
                     edit.location.longitude,
                     edit.location.latitude,
-                ];
+                );
+                const center: [number, number] = [centerLng, centerLat];
                 const map = new AMap.Map(mapRef.current, {
                     zoom: 16,
                     center,
