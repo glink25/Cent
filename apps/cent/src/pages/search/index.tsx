@@ -239,6 +239,12 @@ export default function Page() {
         await useLedgerStore.getState().updateBills(updatedEntries);
         await toSearch();
     };
+    const triggerSearch = () => {
+        toSearch();
+        setTimeout(() => {
+            setSearched(true);
+        }, 1000);
+    };
     return (
         <div className="w-full h-full p-2 flex justify-center overflow-hidden page-show">
             <div className="h-full w-full px-2 max-w-[600px] flex flex-col">
@@ -265,18 +271,18 @@ export default function Page() {
                                             comment: e.target.value,
                                         }));
                                     }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") {
+                                            triggerSearch();
+                                        }
+                                    }}
                                 />
                             </Clearable>
                         </div>
                         <Button
                             variant="ghost"
                             className="p-3 rounded-md"
-                            onClick={() => {
-                                toSearch();
-                                setTimeout(() => {
-                                    setSearched(true);
-                                }, 1000);
-                            }}
+                            onClick={triggerSearch}
                         >
                             <i className="icon-[mdi--search]"></i>
                         </Button>
