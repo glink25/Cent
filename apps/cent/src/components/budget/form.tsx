@@ -392,6 +392,9 @@ export default function BudgetEditForm({
                                             }}
                                         />
                                     </FormControl>
+                                    <FormDescription>
+                                        {t("total-budget-hint")}
+                                    </FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}
