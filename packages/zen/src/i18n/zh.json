@@ -209,6 +209,7 @@
 	"participants": "参与者",
 	"select-all-participants": "选择所有参与者",
 	"total-budget": "总预算",
+	"total-budget-hint": "总预算与分类预算是两种等价的口径，分类预算不会从总预算中扣除，两者也不会相加；按分类分别设置时，总预算通常填与分类预算之和相同的金额。",
 	"please-enter-total-budget": "请输入总预算",
 	"tags-only": "仅限标签",
 	"tags-only-description": "只有包含下列标签的账单才会被记入预算",
