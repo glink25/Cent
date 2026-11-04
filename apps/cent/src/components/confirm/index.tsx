@@ -1,5 +1,5 @@
 import { VisuallyHidden } from "radix-ui";
-import { type ReactNode, useEffect, useMemo } from "react";
+import { type ReactNode, useEffect, useMemo, useRef } from "react";
 import { useShallow } from "zustand/shallow";
 import { cn } from "@/utils";
 import {
@@ -25,6 +25,7 @@ export default function createConfirmProvider<Value, Returned = Value>(
         contentClassName,
         fade,
         swipe,
+        initialFocus,
     }: {
         dialogTitle: string | ReactNode;
         dialogDescription?: string | ReactNode;
@@ -32,12 +33,14 @@ export default function createConfirmProvider<Value, Returned = Value>(
         contentClassName?: string;
         fade?: boolean;
         swipe?: boolean;
+        initialFocus?: string;
     },
 ) {
     // 1. 为每个 Provider 实例生成一个唯一的 ID (在闭包中唯一)
     const instanceId = `confirm_${Math.random().toString(36).slice(2, 9)}`;
 
     function Confirm() {
+        const returnFocusRef = useRef<HTMLElement | null>(null);
         // 2. 仅监听属于自己 ID 的那部分状态
         const state = useGlobalConfirmStore(
             useShallow((s) => s.instances[instanceId]),
@@ -88,6 +91,7 @@ export default function createConfirmProvider<Value, Returned = Value>(
                         style={layerStyle}
                     >
                         <DialogContent
+                            data-confirm-id={instanceId}
                             fade={fade}
                             swipe={swipe}
                             className={cn(
@@ -95,10 +99,52 @@ export default function createConfirmProvider<Value, Returned = Value>(
                                 contentClassName,
                             )}
                             onOpenAutoFocus={(e) => {
-                                (
-                                    document.activeElement as HTMLElement
-                                )?.blur?.();
+                                returnFocusRef.current =
+                                    document.activeElement instanceof
+                                    HTMLElement
+                                        ? document.activeElement
+                                        : null;
                                 e.preventDefault();
+                                const content = e.target as HTMLElement;
+                                const target = initialFocus
+                                    ? content.querySelector<HTMLElement>(
+                                          initialFocus,
+                                      )
+                                    : null;
+                                (target ?? content).focus({
+                                    preventScroll: true,
+                                });
+                            }}
+                            onCloseAutoFocus={(e) => {
+                                e.preventDefault();
+                                const target = returnFocusRef.current;
+                                if (
+                                    !target?.isConnected ||
+                                    target.closest(
+                                        '[inert], [hidden], [aria-hidden="true"]',
+                                    ) ||
+                                    target.matches(":disabled")
+                                )
+                                    return;
+                                const instances =
+                                    useGlobalConfirmStore.getState().instances;
+                                const ownerId = target
+                                    .closest("[data-confirm-id]")
+                                    ?.getAttribute("data-confirm-id");
+                                const owner = ownerId
+                                    ? instances[ownerId]
+                                    : undefined;
+                                if (ownerId && !owner?.visible) return;
+                                const covered = Object.entries(instances).some(
+                                    ([id, instance]) =>
+                                        id !== ownerId &&
+                                        instance.visible &&
+                                        (!owner ||
+                                            (instance.zIndex ?? 0) >=
+                                                (owner.zIndex ?? 0)),
+                                );
+                                if (!covered)
+                                    target.focus({ preventScroll: true });
                             }}
                             onInteractOutside={(e) => {
                                 if (!dialogModalClose) e.preventDefault();

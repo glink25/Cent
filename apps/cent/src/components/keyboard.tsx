@@ -4,7 +4,6 @@ import {
     createContext,
     useCallback,
     useContext,
-    useEffect,
     useLayoutEffect,
     useMemo,
     useRef,
@@ -35,6 +34,7 @@ type CalculatorContextType = {
     formula: Formula;
     cursor: number;
     setCursor: (idx: number) => void;
+    valueRef: React.RefObject<HTMLDivElement | null>;
     Layout: {
         label: string;
         cols: number;
@@ -259,20 +259,20 @@ export const CalculatorRoot = ({
     initialValue,
     onValueChange,
     precision = 3,
-    input,
     multiplyKey,
 }: {
     initialValue?: number;
     onValueChange?: (v: number) => void;
     children: React.ReactNode;
     precision?: number;
-    input?: boolean;
     multiplyKey?: "double-zero" | "triple-zero";
 }) => {
     const [state, setState] = useState(() => {
         const formula = numberToFormula(initialValue ?? 0);
         return { formula, cursor: toText(formula).length };
     });
+
+    const valueRef = useRef<HTMLDivElement>(null);
 
     const Layout = useMemo(() => getLayout(multiplyKey), [multiplyKey]);
 
@@ -322,36 +322,11 @@ export const CalculatorRoot = ({
         [onValueChange, precision],
     );
 
-    useEffect(() => {
-        if (input) {
-            const onPress = (event: KeyboardEvent) => {
-                const key = event.key;
-                if (Layout.every((k) => k.label !== key)) {
-                    return;
-                }
-                handleButtonClick(key);
-            };
-            const onKeydown = (event: KeyboardEvent) => {
-                const key = event.key;
-                if (key === "Backspace") {
-                    event.preventDefault();
-                    handleButtonClick("c");
-                }
-            };
-            document.addEventListener("keypress", onPress);
-            document.addEventListener("keydown", onKeydown);
-
-            return () => {
-                document.removeEventListener("keypress", onPress);
-                document.removeEventListener("keydown", onKeydown);
-            };
-        }
-    }, [input, Layout, handleButtonClick]);
-
     return (
         <CalculatorContext.Provider
             value={{
                 handleButtonClick,
+                valueRef,
                 formula: state.formula,
                 cursor: state.cursor,
                 setCursor,
@@ -365,18 +340,20 @@ export const CalculatorRoot = ({
 
 export const CalculatorValue = ({
     className,
-    focused,
-    onActivate,
+    label,
+    onConfirm,
 }: {
     className?: string;
-    focused?: boolean;
-    onActivate?: () => void;
+    label: string;
+    onConfirm?: () => void;
 }) => {
     const ctx = useContext(CalculatorContext);
     if (!ctx) {
         throw new Error("CalculatorValue must be used within Calculator.Root");
     }
-    const { formula, cursor, setCursor } = ctx;
+    const { formula, cursor, setCursor, handleButtonClick, Layout, valueRef } =
+        ctx;
+    const [focused, setFocused] = useState(false);
     const text = toText(formula);
     const len = text.length;
 
@@ -439,12 +416,47 @@ export const CalculatorValue = ({
     };
 
     return (
+        // biome-ignore lint/a11y/useSemanticElements: The calculator renders individual character spans for pointer caret placement.
         <div
-            ref={containerRef}
+            ref={(node) => {
+                containerRef.current = node;
+                valueRef.current = node;
+            }}
             data-calculator-value
-            className={cn("relative touch-none", className)}
+            role="textbox"
+            aria-label={label}
+            tabIndex={0}
+            className={cn(
+                "relative touch-none focus-visible:outline focus-visible:outline-2",
+                className,
+            )}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            onKeyDown={(event) => {
+                if (
+                    event.defaultPrevented ||
+                    event.nativeEvent.isComposing ||
+                    event.keyCode === 229 ||
+                    event.ctrlKey ||
+                    event.metaKey ||
+                    event.altKey
+                ) {
+                    return;
+                }
+                if (event.key === "Enter") {
+                    event.preventDefault();
+                    onConfirm?.();
+                    return;
+                }
+                const key = event.key === "Backspace" ? "c" : event.key;
+                if (key === "r" || !Layout.some((item) => item.label === key)) {
+                    return;
+                }
+                event.preventDefault();
+                handleButtonClick(key);
+            }}
             onPointerDown={(e) => {
-                onActivate?.();
+                e.currentTarget.focus({ preventScroll: true });
                 setCursor(pointerToCursor(e.clientX));
                 e.currentTarget.setPointerCapture(e.pointerId);
                 draggingRef.current = true;
@@ -491,7 +503,8 @@ export const CalculatorKeyboard = ({
     onKey?: (v: string) => void;
 }) => {
     const t = useIntl();
-    const { handleButtonClick, Layout } = useContext(CalculatorContext)!;
+    const { handleButtonClick, Layout, valueRef } =
+        useContext(CalculatorContext)!;
     return (
         <div className={cn("grid grid-cols-8 gap-2", className)}>
             {Layout.map((row) => (
@@ -499,8 +512,23 @@ export const CalculatorKeyboard = ({
                     variant="ghost"
                     key={row.label}
                     data-label={row.label}
-                    onPointerDown={() => {
+                    type="button"
+                    onPointerDown={(event) => {
+                        if (event.button !== 0) return;
+                        event.preventDefault();
                         handleButtonClick(row.label);
+                        if (row.label !== "r") {
+                            valueRef.current?.focus({ preventScroll: true });
+                        }
+                        onKey?.(row.label);
+                    }}
+                    onClick={(event) => {
+                        // Keyboard and assistive-technology activation has no pointer event.
+                        if (event.detail !== 0) return;
+                        handleButtonClick(row.label);
+                        if (row.label !== "r") {
+                            valueRef.current?.focus({ preventScroll: true });
+                        }
                         onKey?.(row.label);
                     }}
                     className={cn(

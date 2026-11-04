@@ -210,29 +210,6 @@ export default function EditorForm({
         locationRef.current?.click?.();
     }, []);
 
-    // 金额输入与备注输入焦点互斥；备注失焦时金额默认“聚焦”（仅视觉光标闪动）
-    const remarkRef = useRef<HTMLInputElement>(null);
-    const [amountFocused, setAmountFocused] = useState(true);
-    const activateAmount = useCallback(() => {
-        setAmountFocused(true);
-        remarkRef.current?.blur();
-    }, []);
-
-    useEffect(() => {
-        if (amountFocused) {
-            const onPress = (event: KeyboardEvent) => {
-                const key = event.key;
-                if (key === "Enter") {
-                    toConfirm();
-                }
-            };
-            document.addEventListener("keypress", onPress);
-            return () => {
-                document.removeEventListener("keypress", onPress);
-            };
-        }
-    }, [amountFocused, toConfirm]);
-
     const targetCurrency =
         allCurrencies.find(
             (c) => c.id === (billState.currency?.target ?? baseCurrency.id),
@@ -310,7 +287,6 @@ export default function EditorForm({
                     };
                 });
             }}
-            input={amountFocused}
         >
             <PopupLayout
                 className="h-full gap-2 pb-0 scrollbar-hidden"
@@ -381,8 +357,8 @@ export default function EditorForm({
                                     </div>
                                 )}
                                 <Calculator.Value
-                                    focused={amountFocused}
-                                    onActivate={activateAmount}
+                                    label={t("amount")}
+                                    onConfirm={toConfirm}
                                     className={cn(
                                         "text-white text-3xl font-semibold text-right bg-transparent max-w-full overflow-x-auto scrollbar-hidden",
                                     )}
@@ -621,7 +597,6 @@ export default function EditorForm({
                         >
                             <div className="flex h-full flex-1">
                                 <IOSUnscrolledInput
-                                    ref={remarkRef}
                                     value={billState.comment}
                                     onChange={(e) => {
                                         setBillState((v) => ({
@@ -629,8 +604,6 @@ export default function EditorForm({
                                             comment: e.target.value,
                                         }));
                                     }}
-                                    onFocus={() => setAmountFocused(false)}
-                                    onBlur={() => setAmountFocused(true)}
                                     type="text"
                                     className="w-full bg-transparent text-white text-right placeholder-opacity-50 outline-none"
                                     placeholder={t("comment")}
