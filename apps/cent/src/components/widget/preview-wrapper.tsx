@@ -2,26 +2,16 @@ import { useEffect, useState } from "react";
 import { useTheme } from "@/hooks/use-theme";
 import type { Bill } from "@/ledger/type";
 import { useLedgerStore } from "@/store/ledger";
-import { Skeleton } from "../ui/skeleton";
 import compileWidget from "./core/compile";
 import runWidget from "./core/runner";
+import WidgetPreviewSkeleton from "./skeleton";
 import type { DSLNode } from "./type";
 import WidgetRenderer from "./widget";
-
-export function WidgetPreviewSkeleton({ className }: { className?: string }) {
-    return (
-        <div className={`p-4 ${className ?? ""}`}>
-            <div className="space-y-3">
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
-            </div>
-        </div>
-    );
-}
 
 type WidgetPreviewWrapperProps = {
     code: string;
     settings?: Record<string, any>;
+    grants?: string[];
     className?: string;
     bills?: Bill[];
 };
@@ -29,6 +19,7 @@ type WidgetPreviewWrapperProps = {
 export default function WidgetPreviewWrapper({
     code,
     settings = {},
+    grants,
     className,
     bills: externalBills,
 }: WidgetPreviewWrapperProps) {
@@ -59,7 +50,7 @@ export default function WidgetPreviewWrapper({
             setError(null);
 
             try {
-                const compiled = compileWidget(code);
+                const _compiled = compileWidget(code);
 
                 const isDark =
                     theme === "dark" ||
@@ -69,6 +60,7 @@ export default function WidgetPreviewWrapper({
 
                 const result = await runWidget(code, {
                     settings,
+                    grants,
                     getData: async () => ({
                         bills,
                         budgets,
@@ -117,6 +109,7 @@ export default function WidgetPreviewWrapper({
     }, [
         code,
         settings,
+        grants,
         bills,
         budgets,
         creators,
@@ -128,16 +121,7 @@ export default function WidgetPreviewWrapper({
         theme,
     ]);
 
-    if (loading) {
-        return (
-            <div className={`p-4 ${className ?? ""}`}>
-                <div className="space-y-3">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-4 w-1/2" />
-                </div>
-            </div>
-        );
-    }
+    if (loading) return <WidgetPreviewSkeleton className={className} />;
 
     if (error) {
         return (

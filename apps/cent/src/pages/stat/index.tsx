@@ -9,7 +9,6 @@ import {
     useState,
 } from "react";
 import { useNavigate, useParams } from "react-router";
-import { useShallow } from "zustand/shallow";
 import { StorageDeferredAPI } from "@/api/storage";
 import type { AnalysisResult } from "@/api/storage/analysis";
 import AssistantButton from "@/components/assistant";
@@ -33,6 +32,7 @@ import {
 } from "@/components/stat/focus-type";
 import { TagItem } from "@/components/stat/static-item";
 import { Button } from "@/components/ui/button";
+import { isComputedEntry } from "@/components/widget/core/computed";
 import WidgetPreview from "@/components/widget/preview";
 import { useCurrency } from "@/hooks/use-currency";
 import {
@@ -41,6 +41,7 @@ import {
 } from "@/hooks/use-custom-filters";
 import { useTag } from "@/hooks/use-tag";
 import { useWidget } from "@/hooks/use-widget";
+import { useWidgetMeta } from "@/hooks/use-widget-meta";
 import type {
     BillFilter,
     BillFilterView,
@@ -69,9 +70,7 @@ export default function Page() {
     const endTime = useMemo(() => Date.now(), []); //bills[0]?.time ?? dayjs();
     const startTime = bills[bills.length - 1]?.time ?? dayjs();
 
-    const customFilters = useLedgerStore(
-        useShallow((state) => state.infos?.meta.customFilters),
-    );
+    const { customFilters } = useWidgetMeta();
 
     const allFilterViews = useMemo(() => {
         if (customFilters?.some((f) => f.id === DefaultFilterViewId)) {
@@ -245,7 +244,7 @@ export default function Page() {
 
     const { updateFilter, addFilter } = useCustomFilters();
     const toChangeFilter = async () => {
-        if (!selectedFilterView) {
+        if (!selectedFilterView || isComputedEntry(selectedFilterView)) {
             return;
         }
         const id = selectedFilterView.id;
@@ -267,7 +266,9 @@ export default function Page() {
         if ((customFilters?.length ?? 0) === 0) {
             return;
         }
-        const ordered = await showSortableList(customFilters);
+        const ordered = await showSortableList(
+            customFilters.filter((item) => !isComputedEntry(item)),
+        );
         useLedgerStore.getState().updateGlobalMeta((prev) => {
             prev.customFilters = ordered
                 .map((v) => prev.customFilters?.find((c) => c.id === v.id))
@@ -425,6 +426,18 @@ export default function Page() {
                     </div>
                 );
             }
+            if (module.startsWith("widget-view:")) {
+                const [, widgetId, view] = module.split(":");
+                const widget = widgets.find((w) => w.id === widgetId);
+                return widget ? (
+                    <WidgetPreview
+                        key={module}
+                        widget={widget}
+                        initialView={view}
+                        bills={getBillsByFocusType(focusType)}
+                    />
+                ) : null;
+            }
             if (module.startsWith("widget-")) {
                 const widgetId = module.slice(7);
                 const widget = widgets.find((w) => w.id === widgetId);
@@ -517,7 +530,11 @@ export default function Page() {
                     </div>
                     <DateSliced
                         {...dateSlicedProps}
-                        onClickSettings={toChangeFilter}
+                        onClickSettings={
+                            isComputedEntry(selectedFilterView)
+                                ? undefined
+                                : toChangeFilter
+                        }
                     >
                         <div className="flex items-center pr-2 relative">
                             <Switch.Root

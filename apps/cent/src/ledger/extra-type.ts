@@ -67,6 +67,7 @@ export type BillFilterViewModule =
     | "analysis" // AnalysisDetail 简易分析模块
     | "top-expense" // 最高支出模块
     | "top-income" // 最高收入模块
+    | `widget-view:${string}`
     | `widget-${string}`; // Widget 组件
 
 export type BillFilterView = {

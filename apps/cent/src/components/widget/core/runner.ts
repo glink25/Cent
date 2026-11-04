@@ -4,6 +4,8 @@ import type { Bill, BillCategory, BillTag } from "@/ledger/type";
 import createSandBox from "../../../utils/sandbox";
 import compileWidget, { Permission } from "./compile";
 import InjectCode from "./global-inject.js?raw";
+import RuntimeCode from "./runtime.js?raw";
+import { validateRuntimeResult } from "./validation";
 
 type WidgetData = {
     billing?: Bill[];
@@ -38,6 +40,20 @@ type WidgetContext = {
 type RunWidgetOptions = {
     settings?: Record<string, any>;
     env?: Partial<WidgetEnv>;
+    grants?: string[];
+    runtime?: {
+        widgetId: string;
+        viewer: { id: string | number };
+        storage?: Record<string, unknown>;
+        view?: string;
+        params?: Record<string, unknown>;
+        state?: Record<string, unknown>;
+        mode?: "computed";
+        event?: { id: string; value?: unknown };
+        allowedEvents?: string[];
+    };
+    onHostCall?: (name: string, params: unknown) => Promise<unknown>;
+
     getData: () => Promise<{
         bills: Bill[];
         budgets?: Budget[];
@@ -62,33 +78,36 @@ export default async function runWidget(
 ) {
     const widget = compileWidget(widgetCode);
 
+    const permissions = widget.permissions.filter((p) =>
+        (options.grants ?? widget.permissions).includes(p),
+    );
     const realData = await options.getData();
 
     const data: WidgetData = {};
 
-    if (widget.permissions.includes(Permission.Billing)) {
+    if (permissions.includes(Permission.Billing)) {
         data.billing = realData.bills;
     }
-    if (widget.permissions.includes(Permission.Filter)) {
+    if (permissions.includes(Permission.Filter)) {
         data.filter = realData.filter ?? {};
     }
-    if (widget.permissions.includes(Permission.Budget)) {
+    if (permissions.includes(Permission.Budget)) {
         data.budget = realData.budgets;
     }
-    if (widget.permissions.includes(Permission.Collaborators)) {
+    if (permissions.includes(Permission.Collaborators)) {
         data.collaborators = realData.creators;
     }
-    if (widget.permissions.includes(Permission.Category)) {
+    if (permissions.includes(Permission.Category)) {
         data.categories = realData.categories;
     }
-    if (widget.permissions.includes(Permission.Currency)) {
+    if (permissions.includes(Permission.Currency)) {
         data.currencies = {
             base: realData.baseCurrency ?? "CNY",
             custom: realData.customCurrencies,
             quick: realData.quickCurrencies,
         };
     }
-    if (widget.permissions.includes(Permission.Tag)) {
+    if (permissions.includes(Permission.Tag)) {
         data.tags = realData.tags;
     }
 
@@ -118,17 +137,42 @@ export default async function runWidget(
         env,
     };
 
-    const sandbox = createSandBox([]);
+    const isV2 = widget.apiVersion.split(".")[0] === "2";
+    const sandbox = createSandBox(
+        [],
+        undefined,
+        undefined,
+        options.runtime?.event ? options.onHostCall : undefined,
+    );
+    let moduleUrl: string | undefined;
 
     try {
-        const rendered = await sandbox.runDefaultExport(
-            `${InjectCode}\n${widget.code}`,
-            [ctx],
-            5000,
-        );
+        let code = `${InjectCode}\n${widget.code}`;
+        let args: unknown[] = [ctx];
+        if (isV2) {
+            moduleUrl = URL.createObjectURL(
+                new Blob([code], { type: "application/javascript" }),
+            );
+            code = `${RuntimeCode}\nimport * as widget from ${JSON.stringify(moduleUrl)};\nexport default input => executeWidget(widget, input);`;
+            args = [
+                {
+                    ...options.runtime,
+                    widgetId: options.runtime?.widgetId ?? "preview",
+                    now: Date.now(),
+                    context: {
+                        ...ctx,
+                        viewer: options.runtime?.viewer ?? { id: "preview" },
+                    },
+                },
+            ];
+        }
+        const rendered = await sandbox.runDefaultExport(code, args, 5000);
         return {
             success: true,
-            result: rendered,
+            result:
+                isV2 && options.runtime?.mode !== "computed"
+                    ? validateRuntimeResult(rendered)
+                    : rendered,
             widget,
         };
     } catch (error) {
@@ -139,6 +183,7 @@ export default async function runWidget(
         };
     } finally {
         sandbox.destroy();
+        if (moduleUrl) URL.revokeObjectURL(moduleUrl);
     }
 }
 

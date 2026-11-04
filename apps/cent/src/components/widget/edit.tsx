@@ -9,7 +9,8 @@ import { Button } from "../ui/button";
 import ConfigForm from "./config-form";
 import compileWidget, { Permission } from "./core/compile";
 import runWidget from "./core/runner";
-import { WidgetPreviewSkeleton } from "./preview-wrapper";
+import InteractiveWidget from "./interactive";
+import WidgetPreviewSkeleton from "./skeleton";
 import type { DSLNode, Widget, WidgetPermissions } from "./type";
 import WidgetRenderer from "./widget";
 
@@ -55,6 +56,8 @@ export default function WidgetEdit({
     const [previewError, setPreviewError] = useState<string | null>(null);
     const [previewLoading, setPreviewLoading] = useState(true);
     const [permissions, setPermissions] = useState<WidgetPermissions>({
+        edit: false,
+        storage: false,
         billing: false,
         filter: false,
         budget: false,
@@ -65,13 +68,17 @@ export default function WidgetEdit({
     });
     const [allowedPermissions, setAllowedPermissions] =
         useState<WidgetPermissions>({
-            billing: true,
-            filter: true,
-            budget: true,
-            collaborators: true,
-            category: true,
-            currency: true,
-            tag: true,
+            edit: edit?.permissions.includes("edit") ?? false,
+            storage: edit?.permissions.includes("storage") ?? false,
+            billing: edit ? edit.permissions.includes("billing") : true,
+            filter: edit ? edit.permissions.includes("filter") : true,
+            budget: edit ? edit.permissions.includes("budget") : true,
+            collaborators: edit
+                ? edit.permissions.includes("collaborators")
+                : true,
+            category: edit ? edit.permissions.includes("category") : true,
+            currency: edit ? edit.permissions.includes("currency") : true,
+            tag: edit ? edit.permissions.includes("tag") : true,
         });
 
     const bills = useLedgerStore((s) => s.bills);
@@ -99,6 +106,8 @@ export default function WidgetEdit({
     useEffect(() => {
         if (compiled) {
             const newPermissions: WidgetPermissions = {
+                edit: compiled.permissions.includes(Permission.Edit),
+                storage: compiled.permissions.includes(Permission.Storage),
                 billing: compiled.permissions.includes(Permission.Billing),
                 filter: compiled.permissions.includes(Permission.Filter),
                 budget: compiled.permissions.includes(Permission.Budget),
@@ -159,6 +168,11 @@ export default function WidgetEdit({
             return;
         }
 
+        if (compiled.apiVersion.startsWith("2.")) {
+            setPreviewLoading(false);
+            setPreviewError(null);
+            return;
+        }
         setPreviewLoading(true);
 
         try {
@@ -169,6 +183,7 @@ export default function WidgetEdit({
 
             const result = await runWidget(code, {
                 settings: formSettings,
+                grants: activePermissions,
                 getData,
                 env: {
                     theme: isDark ? "dark" : "light",
@@ -215,7 +230,9 @@ export default function WidgetEdit({
         const widgetData = {
             name: compiled.name || "Untitled Widget",
             code,
-            permissions: compiled.permissions,
+            permissions: compiled.permissions.filter(
+                (p) => allowedPermissions[p],
+            ),
             settings: formSettings,
         };
 
@@ -266,7 +283,11 @@ export default function WidgetEdit({
                                                 }
                                                 className="size-3"
                                             />
-                                            {t(`permission-${key}`)}
+                                            {key === "edit"
+                                                ? "写入账单（仅可修改自身创建的数据）"
+                                                : key === "storage"
+                                                  ? "读写组件共享存储"
+                                                  : t(`permission-${key}`)}
                                         </label>
                                     ),
                             )}
@@ -286,7 +307,29 @@ export default function WidgetEdit({
                                     {t("widget-preview")}
                                 </div>
                                 <div className="p-4 flex justify-center items-start">
-                                    {previewLoading ? (
+                                    {compiled?.apiVersion.startsWith("2.") ? (
+                                        <InteractiveWidget
+                                            key={`${code}:${JSON.stringify(allowedPermissions)}`}
+                                            preview
+                                            widget={{
+                                                id: edit?.id ?? "preview",
+                                                name: compiled.name,
+                                                code,
+                                                permissions:
+                                                    compiled.permissions.filter(
+                                                        (p) =>
+                                                            allowedPermissions[
+                                                                p
+                                                            ],
+                                                    ),
+                                                settings: formSettings,
+                                                storage: edit?.storage,
+                                                createdAt: 0,
+                                                updatedAt: 0,
+                                            }}
+                                            className="w-full"
+                                        />
+                                    ) : previewLoading ? (
                                         <div className="max-w-[320px] w-full h-[120px] bg-card rounded-lg shadow-lg">
                                             <WidgetPreviewSkeleton />
                                         </div>

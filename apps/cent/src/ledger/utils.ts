@@ -16,7 +16,14 @@ import {
     matchFilterQuery,
     parseFilterQuery,
 } from "./filter-query";
-import type { Bill, BillCategory, BillFilter, BillType } from "./type";
+import type {
+    Bill,
+    BillCategory,
+    BillFilter,
+    BillTag,
+    BillTagGroup,
+    BillType,
+} from "./type";
 
 const isTypeMatched = (bill: Bill, type?: BillType) => {
     if (type === undefined) return true;
@@ -162,18 +169,15 @@ export const isBillMatched = (
     ctx?: FilterQueryContext,
 ) => createBillMatcher(filter, ctx)(bill);
 
-export const treeCategories = (categories: BillCategory[]) => {
+export const treeCategories = <T extends BillCategory>(categories: T[]) => {
     // 1. 创建一个 Map 存储所有节点，并预设 children 属性
-    const itemMap = new Map<
-        string,
-        BillCategory & { children: BillCategory[] }
-    >();
+    const itemMap = new Map<string, T & { children: T[] }>();
 
     for (const cat of categories) {
         itemMap.set(cat.id, { ...cat, children: [] });
     }
 
-    const result: (BillCategory & { children: BillCategory[] })[] = [];
+    const result: (T & { children: T[] })[] = [];
 
     // 2. 建立层级关系
     for (const cat of categories) {
@@ -196,6 +200,36 @@ export const treeCategories = (categories: BillCategory[]) => {
 
     return result;
 };
+
+/** Preserve caller metadata extensions while deriving display-only tag groups. */
+export function groupTags<T extends BillTag, G extends BillTagGroup>(
+    tags: T[],
+    groups: G[],
+    ungroupedName: string,
+): ((G | BillTagGroup) & { tags: T[] })[] {
+    return [
+        ...groups.map((group) => ({
+            ...group,
+            tags: (group.tagIds ?? []).flatMap((id) => {
+                const tag = tags.find((item) => item.id === id);
+                return tag ? [tag] : [];
+            }),
+        })),
+        {
+            name: ungroupedName,
+            id: "un-group",
+            color: "gray",
+            tags: tags.filter((tag) =>
+                groups.every((group) => !group.tagIds?.includes(tag.id)),
+            ),
+            tagIds: tags
+                .filter((tag) =>
+                    groups.every((group) => !group.tagIds?.includes(tag.id)),
+                )
+                .map((tag) => tag.id),
+        },
+    ];
+}
 
 /** 检查target 分类是否与source分类相同，或者是source的子类 */
 export const isSameOrChildCategory = (

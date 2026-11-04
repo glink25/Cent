@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { v4 } from "uuid";
-import { useShallow } from "zustand/shallow";
+import { assertEditable } from "@/components/widget/core/computed";
 import { BillCategories } from "@/ledger/category";
 import type { BillCategory } from "@/ledger/type";
 import { intlCategory, treeCategories } from "@/ledger/utils";
@@ -8,6 +8,7 @@ import { useIntl } from "@/locale";
 import { measure } from "@/measurement";
 import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
+import { useWidgetMeta } from "./use-widget-meta";
 
 /** 确保收入和支持的分类至少有一个 */
 const validateCategories = (categories: BillCategory[]) => {
@@ -30,9 +31,7 @@ const validateCategories = (categories: BillCategory[]) => {
 
 export default function useCategory() {
     const t = useIntl();
-    const savedCategories = useLedgerStore(
-        useShallow((state) => state.infos?.meta.categories),
-    );
+    const { categories: savedCategories } = useWidgetMeta();
 
     const categories = useMemo(
         () =>
@@ -73,6 +72,7 @@ export default function useCategory() {
 
     const update = useCallback(
         async (id: string, value?: Partial<Omit<BillCategory, "id">>) => {
+            assertEditable(id);
             const book = useBookStore.getState().currentBookId;
             if (!book) {
                 return;
@@ -126,35 +126,40 @@ export default function useCategory() {
         [t],
     );
 
-    const reorder = useCallback(async (ordered: Pick<BillCategory, "id">[]) => {
-        await useLedgerStore.getState().updateGlobalMeta((prev) => {
-            if (prev.categories === undefined) {
-                prev.categories = BillCategories;
-            }
-            const newCategories = ordered.map((t) =>
-                prev.categories?.find((v) => v.id === t.id),
+    const reorder = useCallback(
+        async (ordered: readonly Pick<BillCategory, "id">[]) => {
+            const savedOrder = ordered.filter(
+                (item) => !item.id.startsWith("wc-"),
             );
-            if (newCategories.some((v) => v === undefined)) {
-                console.error("category order mismatch", newCategories);
-                return prev;
-            }
-            prev.categories = prev.categories.filter((v) =>
-                ordered.every((o) => o.id !== v.id),
-            );
-            const index = newCategories[0]?.parent
-                ? prev.categories.findIndex(
-                      (c) => c.id === newCategories[0]?.parent,
-                  )
-                : 0;
-
-            prev.categories.splice(
-                index + 1,
-                0,
-                ...newCategories.filter((v) => v !== undefined),
-            );
-            return prev;
-        });
-    }, []);
+            if (!savedOrder.length) return;
+            await useLedgerStore.getState().updateGlobalMeta((prev) => {
+                const categories = prev.categories ?? BillCategories;
+                const newCategories = savedOrder.map((item) =>
+                    categories.find((category) => category.id === item.id),
+                );
+                if (!newCategories.every((item) => item !== undefined)) {
+                    console.error("category order mismatch", newCategories);
+                    return prev;
+                }
+                const remaining = categories.filter((category) =>
+                    savedOrder.every((item) => item.id !== category.id),
+                );
+                const parent = newCategories[0]?.parent;
+                const index = parent
+                    ? remaining.findIndex((category) => category.id === parent)
+                    : 0;
+                return {
+                    ...prev,
+                    categories: [
+                        ...remaining.slice(0, index + 1),
+                        ...newCategories,
+                        ...remaining.slice(index + 1),
+                    ],
+                };
+            });
+        },
+        [],
+    );
 
     const reset = useCallback(async () => {
         const allBills = await useLedgerStore.getState().refreshBillList();
