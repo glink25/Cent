@@ -17,6 +17,8 @@
 	"flowCopy": "Copy message",
 	"flowCopyFailed": "Copy failed",
 	"flowLatest": "Back to latest",
+	"userMessageExpand": "Expand",
+	"userMessageCollapse": "Collapse",
 
 	"changeObjects": "objects",
 	"changeUndone": "Undone",

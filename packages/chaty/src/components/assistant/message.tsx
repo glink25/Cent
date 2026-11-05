@@ -2,11 +2,73 @@
 import DOMPurify from "dompurify";
 import { marked } from "marked";
 import { Collapsible } from "radix-ui";
+import { useId, useLayoutEffect, useRef, useState } from "react";
 import "./prose.css";
 import { toast } from "sonner";
 import type { Message, Tool } from "../../assistant/type";
 import { useI18n } from "./i18n";
 import { actionSummary } from "./turn-model";
+
+const USER_MESSAGE_MAX_HEIGHT = 240;
+
+function UserMessageBody({ text }: { text: string }) {
+    const { t } = useI18n();
+    const bodyId = useId();
+    const bodyRef = useRef<HTMLDivElement>(null);
+    const [expanded, setExpanded] = useState(false);
+    const [overflowing, setOverflowing] = useState(false);
+
+    useLayoutEffect(() => {
+        const body = bodyRef.current;
+        if (!body) return;
+
+        const measure = () => {
+            // Observe the natural body, never the clipped viewport.
+            const overflows =
+                body.getBoundingClientRect().height > USER_MESSAGE_MAX_HEIGHT;
+            setOverflowing(overflows);
+            if (!overflows) setExpanded(false);
+        };
+        measure();
+        const observer = new ResizeObserver(measure);
+        observer.observe(body);
+        return () => observer.disconnect();
+    }, []);
+
+    return (
+        <>
+            <div
+                id={bodyId}
+                style={{
+                    maxHeight: expanded ? undefined : USER_MESSAGE_MAX_HEIGHT,
+                    overflow: expanded ? undefined : "hidden",
+                }}
+            >
+                <div
+                    ref={bodyRef}
+                    className="whitespace-pre-wrap [overflow-wrap:anywhere] select-all"
+                >
+                    {text}
+                </div>
+            </div>
+            {overflowing && (
+                <button
+                    type="button"
+                    aria-expanded={expanded}
+                    aria-controls={bodyId}
+                    className="mt-2 inline-flex items-center gap-1 rounded px-1 text-sm text-inherit focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current cursor-pointer"
+                    onClick={() => setExpanded((value) => !value)}
+                >
+                    {t(expanded ? "userMessageCollapse" : "userMessageExpand")}
+                    <i
+                        aria-hidden="true"
+                        className={`size-4 ${expanded ? "icon-[mdi--chevron-up]" : "icon-[mdi--chevron-down]"}`}
+                    />
+                </button>
+            )}
+        </>
+    );
+}
 
 export function MessageBubble({
     message,
@@ -26,9 +88,7 @@ export function MessageBubble({
             return (
                 <div className="flex flex-col items-end gap-2">
                     <div className="min-w-0 bg-blue-50 text-slate-900 dark:bg-slate-800 dark:text-slate-100 rounded-3xl px-4 py-3 max-w-[85%]">
-                        <div className="whitespace-pre-wrap break-words select-all">
-                            {message.raw}
-                        </div>
+                        <UserMessageBody key={message.raw} text={message.raw} />
                         {!!message.references?.length && (
                             <div className="flex flex-wrap gap-1 mt-2">
                                 {message.references.map((ref) => (

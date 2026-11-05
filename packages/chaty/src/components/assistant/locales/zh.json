@@ -17,6 +17,8 @@
 	"flowCopy": "复制消息",
 	"flowCopyFailed": "复制失败",
 	"flowLatest": "回到最新",
+	"userMessageExpand": "展开",
+	"userMessageCollapse": "收起",
 
 	"changeObjects": "个对象",
 	"changeUndone": "已撤回",
