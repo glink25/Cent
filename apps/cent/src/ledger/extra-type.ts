@@ -130,7 +130,7 @@ export type PersonalMeta = {
         aiConfigId?: string | null;
         scheduledTime?: string;
     };
-    customCSS?: string;
+    reverseIncomeExpenseColors?: boolean;
     homeWidgets?: string[]; // 首页展示的widget列表，元素为widget id
     assistant?: {
         bigmodel?: {

@@ -1,7 +1,6 @@
 import { resolve } from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
-import { buildSync } from "esbuild";
 import Info from "unplugin-info/vite";
 import { defineConfig, loadEnv, type PluginOption } from "vite";
 import { analyzer } from "vite-bundle-analyzer";
@@ -25,13 +24,6 @@ export default defineConfig(({ mode }) => {
                     injectOptions: {
                         data: {
                             VITE_GTAG_SCRIPT: env.VITE_GTAG_SCRIPT || "",
-                            injectPresetScript: buildSync({
-                                entryPoints: ["src/inline/load-preset.ts"],
-                                bundle: true,
-                                minify: true,
-                                write: false,
-                                format: "iife",
-                            }).outputFiles[0].text,
                         },
                     },
                 },

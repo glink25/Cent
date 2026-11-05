@@ -26,7 +26,7 @@ import { SortableGroupProvider } from "@/components/sortable/group";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import WebMcpApproval from "@/components/webmcp-approval";
 import { WidgetEditProvider } from "@/components/widget/edit-form";
-import { useInitPreset } from "@/hooks/use-preset";
+import { useApplyIncomeExpenseColors } from "@/hooks/use-income-expense-colors";
 import {
     useQuickEntryByClipboard,
     useQuickEntryByRelayr,
@@ -79,7 +79,7 @@ export default function MainLayout() {
         applyScheduledRef.current();
     }, []);
 
-    useInitPreset();
+    useApplyIncomeExpenseColors();
 
     return (
         <ThemeProvider>

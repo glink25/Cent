@@ -136,10 +136,6 @@ export function buildUsageSnapshotMetrics({
         result.push(metric("book_count", bookCount, bucketSmall));
     }
     result.push(
-        booleanMetric(
-            "custom_theme_enabled",
-            Boolean(personal.customCSS?.trim()),
-        ),
         metric("widget_count", meta.widgets?.length ?? 0, bucketSmall),
         metric(
             "home_widget_count",
