@@ -7,6 +7,7 @@ import {
 } from "@/components/data-manager/preview-form";
 import type { Bill, BillCategory, BillTag, GlobalMeta } from "@/ledger/type";
 import { measure } from "@/measurement";
+import { useBookStore } from "@/store/book";
 
 const billSchema = z
     .object({
@@ -21,7 +22,7 @@ const billSchema = z
         categoryId: z
             .string()
             .describe(
-                "账单分类的 id。必须引用一个已存在的分类（先调用 getAccountMeta 获取可用分类），" +
+                "账单分类的 id。必须引用一个已存在的分类（先调用 metadata 获取可用分类），" +
                     "或者在 meta.categories 中新增自定义分类后再使用其 id。",
             ),
         creatorId: z
@@ -35,7 +36,7 @@ const billSchema = z
             .number()
             .int()
             .describe(
-                "整数金额，单位为分的一万分之一（实际金额 × 10000）。" +
+                "整数金额，单位为本位币主单位的万分之一（实际金额 × 10000）。" +
                     "例如 ¥12.34 应写作 123400；¥0.01 应写作 100。" +
                     "切勿直接传入人民币元值。",
             ),
@@ -64,7 +65,7 @@ const billSchema = z
             .array(z.string())
             .optional()
             .describe(
-                "标签 id 数组。必须引用已存在的标签 id（通过 getAccountMeta 获取），" +
+                "标签 id 数组。必须引用已存在的标签 id（通过 metadata 获取），" +
                     "或在 meta.tags 中新增标签后再使用其 id。",
             ),
         currency: z
@@ -96,7 +97,7 @@ const categorySchema = z
             .describe("父类 id，留空表示该项本身就是父类。"),
     })
     .describe(
-        "新增的自定义分类。仅在已有分类中没有合适项时新增，否则应复用 getAccountMeta 返回的已有分类。",
+        "新增的自定义分类。仅在已有分类中没有合适项时新增，否则应复用 metadata 返回的已有分类。",
     );
 
 const tagSchema = z
@@ -132,7 +133,7 @@ const argSchema = z
         meta: metaSchema,
     })
     .describe(
-        "符合 Cent ExportedJSON 结构的导入数据。生成前请先调用 getAccountMeta 获取" +
+        "符合 Cent ExportedJSON 结构的导入数据。生成前请先调用 metadata 获取" +
             "现有分类与标签，复用已有的 id；只有在没有合适项时才在 meta 中新增。",
     );
 
@@ -175,14 +176,17 @@ void _assertArgItems;
 
 export const ImportBillsTool = createTool({
     name: "importBills",
+    effect: "write",
     describe:
-        "导入一批 AI 生成的账单到 Cent。调用前应先通过 getAccountMeta 获取已有的分类和标签，" +
+        "导入一批 AI 生成的账单到 Cent。调用前应先通过 metadata 获取已有的分类和标签，" +
         "以便为每条账单选择合理的 categoryId / tagIds。金额字段 amount 必须为整数 ×10000；" +
         "时间字段 time 为毫秒 epoch；图片可用 data: URI 内联。" +
         "调用后会弹出导入预览对话框，由用户最终确认是否写入账本。",
     argSchema,
     returnSchema,
-    handler: async (arg) => {
+    handler: async (arg, ctx) => {
+        ctx.signal?.throwIfAborted();
+        const bookId = useBookStore.getState().currentBookId;
         const previewInput: PreviewState = {
             bills: arg.items as unknown as PreviewState["bills"],
             meta: arg.meta as unknown as PreviewState["meta"],
@@ -191,6 +195,9 @@ export const ImportBillsTool = createTool({
         if (!res) {
             return { ok: false, reason: "user_cancelled" };
         }
+        ctx.signal?.throwIfAborted();
+        if (useBookStore.getState().currentBookId !== bookId)
+            throw new Error("Ledger changed");
         await importFromPreviewResult(res);
         if (arg.items.length > 0) {
             measure("bill_created", {

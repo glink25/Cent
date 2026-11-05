@@ -1,4 +1,8 @@
-import type { History, ProviderRequestChunk } from "@glink25/chaty";
+import type {
+    ContextPolicy,
+    History,
+    ProviderRequestChunk,
+} from "@glink25/chaty";
 import type { ZenStyleName } from "../zen/date";
 import type { ZenContext, ZenFocusDecision, ZenPost } from "../zen/types";
 
@@ -7,6 +11,9 @@ export type ZenThemeMode = "light" | "dark" | "system";
 export type ZenDirectorMode = "ai" | "local";
 
 export type ZenAIToolDefinition = {
+    exposure?: { native: boolean; code: boolean };
+    effect?: "read" | "write" | "ui";
+    endsTurn?: boolean;
     name: string;
     describe: string;
     argJsonSchema?: Record<string, unknown>;
@@ -41,9 +48,14 @@ export type ZenRuntimeHost = {
     }): Promise<ZenContext>;
     listZenPosts(args?: { limit?: number }): Promise<ZenPost[]>;
     mutateZenPosts(args: { mutations: ZenPostMutation[] }): Promise<void>;
+    getContextPolicy?: (
+        configId?: string,
+    ) => ContextPolicy | Promise<ContextPolicy>;
     requestAI(args: {
         requestId: string;
         configId?: string;
+        purpose?: "response" | "summary";
+        maxTokens?: number;
         history: History;
         tools: ZenAIToolDefinition[];
         onChunk(chunk: ProviderRequestChunk): void;
@@ -78,6 +90,8 @@ export type NativeBridgeMessage =
           payload: {
               requestId: string;
               configId?: string;
+              purpose?: "response" | "summary";
+              maxTokens?: number;
               history: History;
               tools: ZenAIToolDefinition[];
           };

@@ -1,5 +1,6 @@
 import type { ProviderRequestChunk, ProviderToolCall } from "../assistant";
 import { toGeminiSchema } from "./schema";
+import { ProviderStreamError } from "./stream-error";
 import type {
     AIConfig,
     BuildBodyOptions,
@@ -12,6 +13,7 @@ type FunctionResponsePart = {
 };
 type GooglePart =
     | { text: string }
+    | { inlineData: { mimeType: string; data: string } }
     | {
           functionCall: { name: string; args: unknown };
           thoughtSignature?: string;
@@ -47,7 +49,13 @@ function toGoogleContents(messages: ChatMessage[]): {
                 ? `${systemInstruction}\n\n${msg.content}`
                 : msg.content;
         } else if (msg.role === "user") {
-            contents.push({ role: "user", parts: [{ text: msg.content }] });
+            contents.push({
+                role: "user",
+                parts: [
+                    { text: msg.content },
+                    ...(msg.images ?? []).map((inlineData) => ({ inlineData })),
+                ],
+            });
         } else if (msg.role === "assistant") {
             const parts: GooglePart[] = [];
             if (msg.content) parts.push({ text: msg.content });
@@ -85,13 +93,14 @@ async function* parseStream(
     let fullAnswer = "";
     const toolCalls: ProviderToolCall[] = [];
     let finishReason: string | undefined;
+    let usage: ProviderRequestChunk["usage"];
 
     try {
         while (true) {
             const { done, value } = await reader.read();
-            if (done) break;
-
-            buffer += decoder.decode(value, { stream: true });
+            buffer += done
+                ? decoder.decode() + "\n"
+                : decoder.decode(value, { stream: true });
             const lines = buffer.split("\n");
             buffer = lines.pop() || "";
 
@@ -102,6 +111,14 @@ async function* parseStream(
                 const jsonStr = trimmedLine.slice(6);
                 try {
                     const data = JSON.parse(jsonStr);
+                    if (data?.error) throw new ProviderStreamError(data.error);
+                    if (data.usageMetadata)
+                        usage = {
+                            inputTokens: data.usageMetadata.promptTokenCount,
+                            outputTokens:
+                                (data.usageMetadata.candidatesTokenCount ?? 0) +
+                                (data.usageMetadata.thoughtsTokenCount ?? 0),
+                        };
                     const candidate = data.candidates?.[0];
                     const parts = candidate?.content?.parts || [];
 
@@ -133,13 +150,33 @@ async function* parseStream(
                         }
                     }
 
-                    if (hasText) {
-                        yield { thought: fullThought, answer: fullAnswer };
+                    if (
+                        hasText ||
+                        parts.some(
+                            (part: { functionCall?: unknown }) =>
+                                part.functionCall,
+                        )
+                    ) {
+                        const current = toolCalls.at(-1);
+                        yield {
+                            thought: fullThought,
+                            answer: fullAnswer,
+                            ...(current
+                                ? {
+                                      toolProgress: {
+                                          id: current.id,
+                                          name: current.name,
+                                      },
+                                  }
+                                : {}),
+                        };
                     }
                 } catch (error) {
+                    if (error instanceof ProviderStreamError) throw error;
                     console.warn("Failed to parse Google SSE line:", error);
                 }
             }
+            if (done) break;
         }
     } finally {
         reader.releaseLock();
@@ -151,9 +188,10 @@ async function* parseStream(
             answer: fullAnswer,
             toolCalls,
             finishReason: finishReason ?? "tool_calls",
+            usage,
         };
     } else if (finishReason) {
-        yield { thought: fullThought, answer: fullAnswer, finishReason };
+        yield { thought: fullThought, answer: fullAnswer, finishReason, usage };
     }
 }
 

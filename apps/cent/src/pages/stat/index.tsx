@@ -1,18 +1,11 @@
 import dayjs from "dayjs";
 import { Switch } from "radix-ui";
-import {
-    Fragment,
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { StorageDeferredAPI } from "@/api/storage";
 import type { AnalysisResult } from "@/api/storage/analysis";
-import AssistantButton from "@/components/assistant";
-import { setEnv } from "@/components/assistant/tools/env";
+import { useAssistantLauncher } from "@/components/assistant/launcher";
+import { usePageEnv } from "@/components/assistant/tools/env";
 import {
     BillFilterViewProvider,
     showBillFilterView,
@@ -305,7 +298,7 @@ export default function Page() {
         [selectedFilterView, focusType, viewType, realRange],
     );
 
-    setEnv(envArg);
+    usePageEnv({ type: "stat", ...envArg });
 
     const getBillsByFocusType = useCallback(
         (type: FocusType) => {
@@ -469,8 +462,6 @@ export default function Page() {
         ],
     );
 
-    const sidePanelRef = useRef<HTMLDivElement>(null);
-
     return (
         <div className="w-full h-full overflow-hidden flex page-show">
             <div className="flex-1 h-full p-2 flex flex-col items-center justify-center gap-4 overflow-hidden transition-width">
@@ -524,7 +515,19 @@ export default function Page() {
                                 >
                                     <i className="icon-[mdi--menu] size-4"></i>
                                 </Button>
-                                <AssistantButton sidePanelRef={sidePanelRef} />
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="sm:hidden"
+                                    aria-label={t("ai-assistant")}
+                                    onClick={() =>
+                                        useAssistantLauncher.setState({
+                                            open: true,
+                                        })
+                                    }
+                                >
+                                    <i className="icon-[mdi--shimmer-outline] size-5 text-blue-500" />
+                                </Button>
                             </div>
                         </div>
                     </div>
@@ -582,10 +585,6 @@ export default function Page() {
                 </div>
                 <BillFilterViewProvider />
             </div>
-            <div
-                ref={sidePanelRef}
-                className="side-panel hidden md:flex w-[400px] empty:w-0 transition-all border-l"
-            ></div>
         </div>
     );
 }

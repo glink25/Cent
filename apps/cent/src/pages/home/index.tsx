@@ -1,4 +1,5 @@
 import dayjs from "dayjs";
+import { usePageEnv } from "@/components/assistant/tools/env";
 import "@/zen/overview.css";
 import {
     useCallback,
@@ -60,6 +61,14 @@ export default function Page() {
                 : "icon-[mdi--cloud-remove-outline] text-red-600";
 
     const [currentDate, setCurrentDate] = useState(dayjs());
+    usePageEnv({
+        type: "home",
+        date: currentDate.format("YYYY-MM-DD"),
+        range: [
+            currentDate.startOf("day").valueOf(),
+            currentDate.add(1, "day").startOf("day").valueOf(),
+        ],
+    });
     const zenOverview = useZenOverview();
     const showZenOverview = zenOverview.ready;
     const ledgerRef = useRef<any>(null);

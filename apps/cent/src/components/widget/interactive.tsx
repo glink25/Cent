@@ -570,11 +570,11 @@ export default function InteractiveWidget({
                     <h2
                         data-widget-modal-title
                         tabIndex={-1}
-                        className="font-semibold mb-4 outline-none"
+                        className="shrink-0 px-4 py-4 sm:px-5 sm:py-5 font-semibold outline-none"
                     >
                         {entry.title ?? widget.name}
                     </h2>
-                    <div className="min-h-0 overflow-y-auto p-1">
+                    <div className="min-h-0 overflow-y-auto">
                         {renderView(entry)}
                         {eventError(entry.id)}
                     </div>
@@ -584,7 +584,7 @@ export default function InteractiveWidget({
                             modalControllers.current.get(entry.id)?.()
                         }
                         disabled={busy === entry.id}
-                        className="mt-4 self-end border rounded px-3 py-1"
+                        className="shrink-0 my-4 mx-4 sm:my-5 sm:mx-5 self-end border rounded px-3 py-1"
                     >
                         关闭
                     </button>

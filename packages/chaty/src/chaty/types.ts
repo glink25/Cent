@@ -1,4 +1,8 @@
-import type { History, ProviderRequestChunk } from "../assistant";
+import type {
+    ContextPolicy,
+    History,
+    ProviderRequestChunk,
+} from "../assistant";
 import type {
     AIChatConfig,
     AIChatLocale,
@@ -12,6 +16,9 @@ export type {
 } from "../components/assistant/runtime";
 
 export type AIChatToolDefinition = {
+    exposure?: { native: boolean; code: boolean };
+    effect?: "read" | "write" | "ui";
+    endsTurn?: boolean;
     name: string;
     describe: string;
     argJsonSchema?: Record<string, unknown>;
@@ -48,9 +55,14 @@ export type HostRequestHandle = {
 
 export type HostBridge = {
     getInit?: () => AIChatInitPayload | Promise<AIChatInitPayload>;
+    getContextPolicy?: (
+        configId?: string,
+    ) => ContextPolicy | Promise<ContextPolicy>;
     requestAI: (args: {
         requestId: string;
         configId?: string;
+        purpose?: "response" | "summary";
+        maxTokens?: number;
         history: History;
         /**
          * 本轮可用的全部工具（app 内置 + host 注入），已序列化为 JSON Schema。
@@ -86,6 +98,8 @@ export type NativeBridgeMessage =
           payload: {
               requestId: string;
               configId?: string;
+              purpose?: "response" | "summary";
+              maxTokens?: number;
               history: History;
               tools: AIChatToolDefinition[];
           };

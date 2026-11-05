@@ -32,7 +32,7 @@ export default function WidgetModal({
         createConfirmProvider(ModalContent, {
             dialogTitle: title,
             contentClassName:
-                "flex flex-col overflow-hidden max-h-[90dvh] w-[95vw] max-w-[640px] p-4 sm:p-5",
+                "flex flex-col overflow-hidden max-h-[90dvh] w-[95vw] max-w-[640px] p-0",
             initialFocus: "[data-widget-modal-title]",
             onExitComplete: () => onExited(id),
         }),

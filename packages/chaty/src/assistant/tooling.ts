@@ -92,6 +92,7 @@ export function createListSkillsTool(
 ): Tool<undefined, SkillMeta[]> {
     return createTool({
         name: "listSkills",
+        exposure: { native: true, code: true },
         describe:
             "List available skills (metadata only). Use loadSkill to read full content.",
         argSchema: undefined,
@@ -114,6 +115,7 @@ export function createLoadSkillTool(
 > {
     return createTool({
         name: "loadSkill",
+        exposure: { native: true, code: true },
         describe: "Load a skill full markdown content by id.",
         argSchema: loadSkillArgsSchema,
         returnSchema: loadSkillReturnsSchema,
@@ -150,19 +152,30 @@ export async function executeToolCall(
         });
     }
 
+    if (!tool.exposure?.[ctx.surface ?? "native"]) {
+        return formatToolError(tool.name, toolCall.params, {
+            message: "Tool is not exposed on this surface",
+        });
+    }
+    ctx.signal?.throwIfAborted();
     let params: unknown;
     try {
         params = parseWithSchema(tool.argSchema, toolCall.params);
     } catch (error) {
-        return formatToolError(tool.name, toolCall.params, error);
+        return formatToolError(tool.name, toolCall.params, {
+            message: error instanceof Error ? error.message : String(error),
+        });
     }
 
     try {
         const returns = await tool.handler(params as never, ctx);
+        if (tool.effect !== "write") ctx.signal?.throwIfAborted();
         const normalizedReturns = parseWithSchema(tool.returnSchema, returns);
         return formatToolSuccess(tool.name, params, normalizedReturns);
     } catch (error) {
-        return formatToolError(tool.name, params, error);
+        return formatToolError(tool.name, params, {
+            message: error instanceof Error ? error.message : String(error),
+        });
     }
 }
 
@@ -177,6 +190,10 @@ export function createTool<
         throw new Error("createTool requires zod schemas for returnSchema.");
     }
     return {
+        exposure: input.exposure ?? { code: false, native: false },
+        effect: input.effect ?? "read",
+        display: input.display,
+        endsTurn: input.endsTurn,
         name,
         describe,
         argSchema,

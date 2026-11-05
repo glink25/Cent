@@ -16,6 +16,9 @@ function serializeTool(tool: Tool): ZenAIToolDefinition {
     const original = hostToolDefinitions.get(tool);
     if (original) return original;
     return {
+        exposure: tool.exposure,
+        effect: tool.effect,
+        endsTurn: tool.endsTurn,
         name: tool.name,
         describe: tool.describe,
         argJsonSchema: tool.argSchema
@@ -48,7 +51,8 @@ export function getHostBridge(): ZenRuntimeHost | undefined {
 
 export function createHostProvider(host: ZenRuntimeHost): Provider {
     return {
-        request: ({ history, configId, tools }) => {
+        getContextPolicy: host.getContextPolicy?.bind(host),
+        request: ({ history, configId, tools, purpose, maxTokens }) => {
             let handle: { cancel(): void } | undefined;
             let cancelled = false;
             let done = false;
@@ -65,6 +69,8 @@ export function createHostProvider(host: ZenRuntimeHost): Provider {
                     host.requestAI({
                         requestId,
                         configId,
+                        purpose,
+                        maxTokens,
                         history,
                         tools: tools.map(serializeTool),
                         onChunk: (chunk) => {
@@ -118,6 +124,9 @@ export function createHostAITool(
     definition: ZenAIToolDefinition,
 ): Tool {
     const tool: Tool = {
+        exposure: definition.exposure ?? { native: true, code: false },
+        effect: definition.effect ?? "read",
+        endsTurn: definition.endsTurn,
         name: definition.name,
         describe: definition.describe,
         argSchema: z

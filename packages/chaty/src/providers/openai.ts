@@ -1,6 +1,6 @@
-import { jsonrepair } from "jsonrepair";
 import type { ProviderRequestChunk } from "../assistant";
 import { toJsonSchema } from "./schema";
+import { ProviderStreamError } from "./stream-error";
 import type {
     AIConfig,
     BuildBodyOptions,
@@ -10,6 +10,13 @@ import type {
 
 type OpenAIMessage =
     | { role: "system" | "user"; content: string }
+    | {
+          role: "user";
+          content: Array<
+              | { type: "text"; text: string }
+              | { type: "image_url"; image_url: { url: string } }
+          >;
+      }
     | {
           role: "assistant";
           content: string;
@@ -23,6 +30,23 @@ type OpenAIMessage =
 
 function toOpenAIMessages(messages: ChatMessage[]): OpenAIMessage[] {
     return messages.map((msg): OpenAIMessage => {
+        if (msg.role === "user" && msg.images?.length) {
+            return {
+                role: "user",
+                content: [
+                    {
+                        type: "text",
+                        text: msg.content || "Inspect the attached images.",
+                    },
+                    ...msg.images.map((image) => ({
+                        type: "image_url" as const,
+                        image_url: {
+                            url: `data:${image.mimeType};base64,${image.data}`,
+                        },
+                    })),
+                ],
+            };
+        }
         if (msg.role === "assistant") {
             if (msg.toolCalls && msg.toolCalls.length > 0) {
                 return {
@@ -65,6 +89,7 @@ async function* parseStream(
     // 按 tool_calls[].index 累积；OpenAI 把 arguments 拆成增量字符串跨 chunk 下发。
     const toolCallAccs = new Map<number, ToolCallAcc>();
     let finishReason: string | undefined;
+    let usage: ProviderRequestChunk["usage"];
 
     const buildToolCalls = () => {
         const indices = [...toolCallAccs.keys()].sort((a, b) => a - b);
@@ -74,9 +99,11 @@ async function* parseStream(
             const trimmed = acc.argsStr.trim();
             if (trimmed) {
                 try {
-                    params = JSON.parse(jsonrepair(trimmed));
+                    params = JSON.parse(trimmed);
                 } catch (e) {
-                    console.error("Tool arguments parse failed:", e, trimmed);
+                    throw new Error(
+                        `Invalid tool arguments for ${acc.name}: ${String(e)}`,
+                    );
                 }
             }
             return {
@@ -90,9 +117,9 @@ async function* parseStream(
     try {
         while (true) {
             const { done, value } = await reader.read();
-            if (done) break;
-
-            buffer += decoder.decode(value, { stream: true });
+            buffer += done
+                ? decoder.decode() + "\n"
+                : decoder.decode(value, { stream: true });
             const lines = buffer.split("\n");
             buffer = lines.pop() || "";
 
@@ -105,6 +132,12 @@ async function* parseStream(
 
                 try {
                     const data = JSON.parse(jsonStr);
+                    if (data?.error) throw new ProviderStreamError(data.error);
+                    if (data.usage)
+                        usage = {
+                            inputTokens: data.usage.prompt_tokens,
+                            outputTokens: data.usage.completion_tokens,
+                        };
                     const choice = data.choices?.[0];
                     const delta = choice?.delta;
 
@@ -134,13 +167,27 @@ async function* parseStream(
                         }
                     }
 
-                    if (t || a) {
-                        yield { thought: fullThought, answer: fullAnswer };
+                    if (t || a || delta?.tool_calls?.length) {
+                        const current = [...toolCallAccs.values()].at(-1);
+                        yield {
+                            thought: fullThought,
+                            answer: fullAnswer,
+                            ...(current?.name
+                                ? {
+                                      toolProgress: {
+                                          id: current.id,
+                                          name: current.name,
+                                      },
+                                  }
+                                : {}),
+                        };
                     }
                 } catch (error) {
+                    if (error instanceof ProviderStreamError) throw error;
                     console.warn("Failed to parse OpenAI SSE line:", error);
                 }
             }
+            if (done) break;
         }
     } finally {
         reader.releaseLock();
@@ -148,14 +195,42 @@ async function* parseStream(
 
     // 流结束：若有工具调用，连同 finishReason 一并产出最终 chunk。
     if (toolCallAccs.size > 0) {
-        yield {
-            thought: fullThought,
-            answer: fullAnswer,
-            toolCalls: buildToolCalls(),
-            finishReason: finishReason ?? "tool_calls",
-        };
+        if (finishReason !== "tool_calls" && finishReason !== "stop") {
+            yield {
+                answer: fullAnswer,
+                thought: fullThought,
+                finishReason,
+                usage,
+                protocolError: {
+                    code: "INCOMPLETE_TOOL_CALL",
+                    message: `Tool output did not finish safely (finish_reason=${finishReason ?? "missing"}). No calls in this batch were executed. Retry with a smaller single call; split long code into smaller tasks.`,
+                },
+            };
+            return;
+        }
+        try {
+            yield {
+                thought: fullThought,
+                answer: fullAnswer,
+                toolCalls: buildToolCalls(),
+                finishReason,
+                usage,
+            };
+        } catch {
+            yield {
+                answer: fullAnswer,
+                thought: fullThought,
+                finishReason,
+                usage,
+                protocolError: {
+                    code: "INVALID_TOOL_ARGUMENTS",
+                    message:
+                        "Tool arguments are not valid JSON. No calls in this batch were executed. Correct the arguments and retry a smaller single call.",
+                },
+            };
+        }
     } else if (finishReason) {
-        yield { thought: fullThought, answer: fullAnswer, finishReason };
+        yield { thought: fullThought, answer: fullAnswer, finishReason, usage };
     }
 }
 

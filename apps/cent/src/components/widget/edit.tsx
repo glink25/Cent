@@ -4,6 +4,7 @@ import { useTheme } from "@/hooks/use-theme";
 import { useWidget } from "@/hooks/use-widget";
 import PopupLayout from "@/layouts/popup-layout";
 import { useIntl } from "@/locale";
+import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
 import { Button } from "../ui/button";
 import ConfigForm from "./config-form";
@@ -42,11 +43,14 @@ export default async ({ data, settings }) => {
 export default function WidgetEdit({
     edit,
     onCancel,
+    onConfirm,
 }: {
     edit?: Widget;
+    onConfirm?: (widget: Widget) => void;
     onCancel?: () => void;
 }) {
     const t = useIntl();
+    const [bookId] = useState(() => useBookStore.getState().currentBookId);
     const { add, update } = useWidget();
     const [code, setCode] = useState(edit?.code ?? defaultCode);
     const [formSettings, setFormSettings] = useState<Record<string, any>>(
@@ -236,13 +240,19 @@ export default function WidgetEdit({
             settings: formSettings,
         };
 
+        if (useBookStore.getState().currentBookId !== bookId) {
+            toast.error("Ledger changed. Reopen the widget editor.");
+            return;
+        }
+        let saved: Widget;
         if (edit?.id) {
             await update(edit.id, widgetData);
+            saved = { ...edit, ...widgetData, updatedAt: Date.now() };
         } else {
-            await add(widgetData);
+            saved = await add(widgetData);
         }
-
-        onCancel?.();
+        if (onConfirm) onConfirm(saved);
+        else onCancel?.();
     };
 
     return (

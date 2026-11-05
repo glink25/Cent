@@ -1,4 +1,11 @@
-import type { Provider, SkillInput, Tool } from "../../assistant";
+import type {
+    ChangeReceipt,
+    ContextPolicy,
+    Provider,
+    ReferenceResolver,
+    SkillInput,
+    Tool,
+} from "../../assistant";
 
 /** UI 可选择的模型 / 配置项（仅展示用，真正的请求参数由 provider 解析）。 */
 export type AIChatConfig = {
@@ -24,6 +31,9 @@ export type RuntimeConfig = {
     /** 聊天记录隔离域。未传时使用独立的默认域。 */
     scope?: string;
     provider: Provider;
+    resolveReferences?: ReferenceResolver;
+    undoChange?: (id: string) => Promise<ChangeReceipt>;
+    contextPolicy?: ContextPolicy;
     tools: Tool[];
     skills: SkillInput[];
     systemPrompt?: string;

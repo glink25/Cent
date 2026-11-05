@@ -3,9 +3,10 @@ import type {
     Provider,
     ProviderRequestChunk,
     Tool,
-    ToolMessage,
 } from "../assistant";
 import { withAbort } from "../assistant";
+import { serializeToolResult } from "../assistant/context";
+import { encodeImages, isImage, supportsImages } from "./images";
 import { getAdapter } from "./registry";
 import type {
     AIConfig,
@@ -27,35 +28,6 @@ const PROTECTED_REQUEST_PARAMS = [
     "tools",
 ] as const;
 
-/**
- * 把单条工具结果消息渲染成回传给模型的纯文本。返回值过长时居中截断。
- */
-function truncateLongText(text: string, maxLength = 10000): string {
-    if (text.length <= maxLength) return text;
-    const head = text.slice(0, maxLength / 2);
-    const tail = text.slice(-maxLength / 2);
-    console.warn(`Text truncated: ${text.length} -> ${maxLength}`);
-    return `${head}...（返回值过长，已截断）...${tail}`;
-}
-
-function formatValue(value: unknown): string {
-    return truncateLongText(JSON.stringify(value));
-}
-
-function toolMessageToContent(toolMsg: ToolMessage): string {
-    let content = `[工具调用: ${toolMsg.formatted.name}]\n`;
-    content += `参数: ${JSON.stringify(toolMsg.formatted.params, null, 2)}\n`;
-
-    if (toolMsg.formatted.returns !== undefined) {
-        content += `返回结果: ${formatValue(toolMsg.formatted.returns)}`;
-    }
-    if (toolMsg.formatted.errors !== undefined) {
-        content += `错误: ${formatValue(toolMsg.formatted.errors)}`;
-    }
-
-    return content;
-}
-
 export type HistoryToMessagesOptions = {
     /**
      * 自定义「用户上传的附件」如何渲染进 user 消息。返回的文本会拼接到用户原文之前。
@@ -70,18 +42,24 @@ export function historyToMessages(
 ): ChatMessage[] {
     const messages: ChatMessage[] = [];
 
-    const assetIndex = 1;
+    let assetIndex = 1;
     for (const msg of history) {
         if (msg.role === "user") {
-            const userContent = msg.raw;
+            const userContent = msg.references?.length
+                ? `${msg.raw}\nHost references (read with readReferences): ${JSON.stringify(msg.references.map(({ type, id, label }) => ({ type, id, label })))}`
+                : msg.raw;
             const assetPrompt =
                 msg.assets && msg.assets.length > 0
-                    ? options.formatUserAssets?.(msg.assets, assetIndex)
+                    ? options.formatUserAssets?.(
+                          msg.assets,
+                          msg.assetStartIndex ?? assetIndex,
+                      )
                     : undefined;
             messages.push({
                 role: "user",
                 content: `${assetPrompt ? `${assetPrompt}\n` : ""}${userContent}`,
             });
+            assetIndex += msg.assets?.length ?? 0;
         } else if (msg.role === "assistant") {
             const tools = msg.formatted.tools;
             messages.push({
@@ -95,7 +73,7 @@ export function historyToMessages(
                 role: "tool",
                 toolCallId: msg.formatted.id ?? "",
                 name: msg.formatted.name,
-                content: toolMessageToContent(msg),
+                content: msg.contextContent ?? serializeToolResult(msg),
             });
         } else if (msg.role === "system") {
             messages.push({
@@ -129,6 +107,27 @@ export async function createStreamingRequest(
         maxTokens: options?.maxTokens ?? config.maxTokens ?? 8192,
     });
     const body = mergeCustomParams(generatedBody, config.customParams);
+    // In particular, summary requests must stay tool-free despite custom params.
+    if (!tools.length) {
+        delete body.tools;
+        delete body.tool_choice;
+        delete body.toolConfig;
+        delete body.parallel_tool_calls;
+    }
+    delete body.functions;
+    delete body.function_call;
+    if (config.apiType === "google-ai-studio") {
+        body.generationConfig = {
+            ...(body.generationConfig as JSONObject),
+            maxOutputTokens: options?.maxTokens ?? effectiveMaxTokens(config),
+        };
+    } else {
+        body.max_tokens = options?.maxTokens ?? effectiveMaxTokens(config);
+        if (Object.hasOwn(body, "max_completion_tokens")) {
+            body.max_completion_tokens = body.max_tokens;
+            delete body.max_tokens;
+        }
+    }
 
     return fetch(url, {
         method: "POST",
@@ -197,7 +196,9 @@ export function parseStream(
  * 取一份「已可直接使用」的通用配置（apiKey 已解密）。选哪份配置、如何解密都由
  * 调用方决定 —— provider 层只拿到通用配置，不感知 configId 之类的领域概念。
  */
-export type AIConfigGetter = () => AIConfig | Promise<AIConfig>;
+export type AIConfigGetter = (
+    configId?: string,
+) => AIConfig | Promise<AIConfig>;
 
 export type CreateAIProviderOptions = HistoryToMessagesOptions;
 
@@ -210,13 +211,34 @@ export function createAIProvider(
     options: CreateAIProviderOptions = {},
 ): Provider {
     return {
-        request({ history, tools }) {
+        async getContextPolicy(configId) {
+            const config = await getConfig(configId);
+            return {
+                contextWindow: config.contextWindow ?? 131072,
+                maxOutputTokens: effectiveMaxTokens(config),
+            };
+        },
+        request({ history, tools, maxTokens, purpose, configId }) {
             let aborted = false;
             let abortController: AbortController | null = null;
 
             const promise = (async () => {
-                const config = await getConfig();
+                const config = await getConfig(configId);
                 const messages = historyToMessages(history, options);
+                if (purpose !== "summary") {
+                    const latest = history.findLastIndex(
+                        (message) => message.role === "user",
+                    );
+                    const user = history[latest];
+                    const message = messages[latest];
+                    if (user?.role === "user" && message?.role === "user") {
+                        const files = user.assets?.filter(isImage) ?? [];
+                        if (files.length && !supportsImages(config))
+                            throw new Error("当前 AI 模型配置未启用图片输入。");
+                        if (files.length)
+                            message.images = await encodeImages(files);
+                    }
+                }
 
                 abortController = new AbortController();
                 if (aborted) {
@@ -228,14 +250,20 @@ export function createAIProvider(
                     config.apiKey,
                     messages,
                     tools,
-                    undefined,
+                    {
+                        maxTokens: maxTokens ?? effectiveMaxTokens(config),
+                        ...(purpose === "summary" ? { temperature: 0.2 } : {}),
+                    },
                     abortController.signal,
                 );
 
                 if (!response.ok) {
                     const errorText = await response.text();
-                    throw new Error(
-                        `AI API 请求失败: ${response.status} ${response.statusText}. ${errorText}`,
+                    throw Object.assign(
+                        new Error(
+                            `AI API 请求失败: ${response.status} ${response.statusText}. ${errorText}`,
+                        ),
+                        { status: response.status },
                     );
                 }
 
@@ -248,4 +276,19 @@ export function createAIProvider(
             });
         },
     };
+}
+
+export function effectiveMaxTokens(config: AIConfig): number {
+    const generation = config.customParams?.generationConfig as
+        | JSONObject
+        | undefined;
+    const value =
+        config.apiType === "google-ai-studio"
+            ? generation?.maxOutputTokens
+            : (config.customParams?.max_completion_tokens ??
+              config.customParams?.max_tokens);
+    const result = value ?? config.maxTokens ?? 8192;
+    if (typeof result !== "number" || !Number.isInteger(result) || result < 1)
+        throw new Error("Invalid model output token limit");
+    return result;
 }

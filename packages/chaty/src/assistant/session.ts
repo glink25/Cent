@@ -1,16 +1,45 @@
+import { z } from "zod";
+import {
+    compressionBoundaries,
+    contextProjection,
+    ensureMessageIds,
+    estimateContextTokens,
+    inputBudget,
+    isContextLimitError,
+    ReadConversationTool,
+    validContextState,
+} from "./context";
+import { prepareContext } from "./context-manager";
 import { parseResult } from "./parser";
+import {
+    apiRetryDelay,
+    MAX_API_RETRIES,
+    rejectedOutputBudget,
+    reportedContextWindow,
+    retryableApiError,
+    waitForRetry,
+} from "./recovery";
+import { referenceTool } from "./references";
 import { cloneHistory, createUserMessage } from "./shared";
 import {
     createListSkillsTool,
     createLoadSkillTool,
+    createTool,
     executeToolCall,
     getInitialSystemPrompt,
 } from "./tooling";
 import type {
-    AbortablePromise,
+    ApproveChange,
+    ContextEvent,
+    ContextMetrics,
+    ContextPolicy,
+    ContextState,
     History,
-    Next,
+    NextInput,
     Provider,
+    ProviderRequestChunk,
+    ProviderToolCall,
+    ReferenceResolver,
     ResolvedSkill,
     Session,
     SkillInput,
@@ -21,8 +50,6 @@ import type {
     TurnResult,
 } from "./type";
 
-const DEFAULT_MAX_TOOL_ROUNDS = 20;
-
 export function createSession({
     history = [],
     provider,
@@ -30,7 +57,10 @@ export function createSession({
     skills,
     systemPrompt,
     configId,
-    maxToolRounds = DEFAULT_MAX_TOOL_ROUNDS,
+    contextPolicy = {},
+    contextState,
+    resolveReferences,
+    approveChange,
 }: {
     history?: History;
     provider: Provider;
@@ -38,9 +68,12 @@ export function createSession({
     skills: SkillInput[];
     systemPrompt?: string;
     configId?: string;
-    maxToolRounds?: number;
+    contextPolicy?: ContextPolicy;
+    contextState?: ContextState;
+    resolveReferences?: ReferenceResolver;
+    approveChange?: ApproveChange;
 }): Session {
-    const incomingHistory = cloneHistory(history);
+    const incomingHistory = ensureMessageIds(cloneHistory(history));
     const baseTools: Tool<any, any>[] = [...tools];
 
     const resolvedSkills: ResolvedSkill[] = (skills ?? []).map((s) => {
@@ -68,32 +101,81 @@ export function createSession({
     const listSkillsTool = createListSkillsTool(resolvedSkills);
     const loadSkillTool = createLoadSkillTool(skillMap);
 
+    const inspectImage = createTool({
+        name: "inspectImage",
+        describe:
+            "Read a previous image attachment by its original attachment number using the current vision model.",
+        exposure: { native: true, code: false },
+        argSchema: z.object({
+            index: z.number().int().positive(),
+            question: z.string().min(1).max(2000),
+        }),
+        returnSchema: z.string(),
+        async handler({ index, question }, { history, signal }) {
+            const asset = history.flatMap((entry) =>
+                entry.role === "user" ? (entry.assets ?? []) : [],
+            )[index - 1];
+            if (!asset?.type.startsWith("image/"))
+                throw new Error("Image attachment not found");
+            signal?.throwIfAborted();
+            const request = provider.request({
+                configId,
+                tools: [],
+                history: [
+                    {
+                        role: "user",
+                        raw: question,
+                        assets: [asset],
+                        assetStartIndex: index,
+                    },
+                ],
+            });
+            const abort = () => request.abort();
+            signal?.addEventListener("abort", abort, { once: true });
+            try {
+                let answer = "";
+                for await (const chunk of await request) {
+                    signal?.throwIfAborted();
+                    if (chunk.answer) answer = chunk.answer;
+                }
+                if (!answer)
+                    throw new Error("Image inspection returned no answer");
+                return answer;
+            } finally {
+                signal?.removeEventListener("abort", abort);
+            }
+        },
+    });
     const runtimeTools: Tool<any, any>[] = [
         ...baseTools,
         listSkillsTool,
         loadSkillTool,
+        ReadConversationTool,
+        inspectImage,
+        ...(resolveReferences ? [referenceTool(resolveReferences)] : []),
     ];
     const toolMap = new Map<string, Tool<any, any>>(
         runtimeTools.map((tool) => [tool.name, tool]),
     );
 
-    // 构造工具执行上下文：除历史记录外，把本会话注册的全部工具一并暴露，
-    // 这样像 playground 这样的工具可以在内部发现并调用其它工具，而无需硬编码。
-    const makeCtx = (history: History): ToolContext => ({
-        history,
-        tools: runtimeTools,
-    });
-
     const systemMessage = [
-        ...incomingHistory.filter((m) => m.role === "system"),
+        ...incomingHistory.filter(
+            (m) =>
+                m.role === "system" &&
+                m.id !== "chaty-system" &&
+                !m.raw.startsWith("Recoverable tool protocol error:") &&
+                !m.raw.startsWith(getInitialSystemPrompt().split("\n")[0]),
+        ),
         { role: "system", raw: systemPrompt ?? "" } as SystemMessage,
     ].reduce(
         (p, c) => ({
+            id: "chaty-system",
             role: "system",
             raw: `${p.raw}${c.raw.length ? `\n\nAdditional system prompt:\n${c.raw}` : ""}`,
         }),
         {
             role: "system",
+            id: "chaty-system",
             raw: getInitialSystemPrompt(),
         },
     );
@@ -103,149 +185,468 @@ export function createSession({
         ...incomingHistory.filter((m) => m.role !== "system"),
     ];
 
-    const start = (
-        history: History,
-        round: number = 0,
-    ): AbortablePromise<AsyncIterable<TurnResult>> => {
-        let currentRequested: ReturnType<typeof provider.request>;
-        let subAbort: (() => void) | null = null;
+    const nativeTools = runtimeTools.filter((tool) => tool.exposure?.native);
 
-        const execute = async (): Promise<AsyncIterable<TurnResult>> => {
-            // 1. 边界检查：防止无限递归
-            if (round >= maxToolRounds) {
-                return (async function* () {})();
-            }
-            currentRequested = provider.request({
-                history,
-                tools: runtimeTools,
-                configId,
-            });
-
-            async function* createStream(): AsyncGenerator<TurnResult> {
-                yield { history: [...history] };
-                const stream = await currentRequested;
-                for await (const chunk of stream) {
-                    const assistantMessage = parseResult(chunk);
-
-                    // 找出所有需要执行的工具消息
-                    const toolIndices = assistantMessage.formatted.tools ?? [];
-
-                    // 如果这一轮没有工具调用，直接产出结果并结束
-                    if (toolIndices.length === 0) {
-                        yield { history: [...history, assistantMessage] };
+    const next = (({ message, assets, references }: NextInput) => {
+        const controller = new AbortController();
+        let pending: ReturnType<Provider["request"]> | undefined;
+        const working: History = [
+            ...persistedHistory,
+            ...ensureMessageIds([
+                { ...createUserMessage(message, assets), references },
+            ]),
+        ];
+        let checkpoint = validContextState(working, contextState);
+        let metrics: ContextMetrics | undefined;
+        let contextStatus: TurnResult["contextStatus"];
+        let contextEvent: ContextEvent | undefined;
+        const ctx = (call: ProviderToolCall): ToolContext => ({
+            history: [...working],
+            approveChange:
+                approveChange &&
+                ((proposal, signal) => approveChange(proposal, signal, call)),
+            tools: runtimeTools,
+            signal: controller.signal,
+            surface: "native",
+        });
+        async function* run(): AsyncGenerator<TurnResult> {
+            let protocolBackoff = 0;
+            let apiRetries = 0;
+            let forceCompaction = false;
+            let recoveryHint: string | undefined;
+            let outputCeiling = 32768;
+            try {
+                const policy = {
+                    ...(await provider.getContextPolicy?.(configId)),
+                    ...contextPolicy,
+                };
+                const baseOutput = policy.maxOutputTokens ?? 8192;
+                outputCeiling = Math.max(outputCeiling, baseOutput);
+                while (true) {
+                    controller.signal.throwIfAborted();
+                    for (const message of working)
+                        message.id ??= crypto.randomUUID();
+                    const coveredIndex = checkpoint
+                        ? working.findIndex(
+                              (m) => m.id === checkpoint?.coveredThroughId,
+                          )
+                        : -1;
+                    const canCompact = compressionBoundaries(
+                        working,
+                        policy.keepTurns ?? 3,
+                    ).some((i) => i > coveredIndex);
+                    const requestHistory: History = recoveryHint
+                        ? [...working, { role: "system", raw: recoveryHint }]
+                        : working;
+                    const previousCheckpoint = checkpoint;
+                    const needsCompaction =
+                        canCompact &&
+                        (forceCompaction ||
+                            estimateContextTokens(
+                                contextProjection(
+                                    requestHistory,
+                                    checkpoint,
+                                    policy.toolResultChars ?? 12000,
+                                ),
+                                nativeTools,
+                            ) >
+                                inputBudget(policy) * 0.8);
+                    if (needsCompaction) {
+                        const anchor =
+                            working.at(-1)?.role === "user"
+                                ? working.at(-2)
+                                : working.at(-1);
+                        contextEvent = {
+                            id: crypto.randomUUID(),
+                            anchorId: anchor?.id ?? working.at(-1)?.id ?? "",
+                        };
+                        contextStatus = "compacting";
+                        yield { history: [...working], status: "running" };
+                    }
+                    const prepared = await prepareContext({
+                        history: requestHistory,
+                        tools: nativeTools,
+                        policy,
+                        state: checkpoint,
+                        request: (params) => {
+                            pending = provider.request(params);
+                            return pending;
+                        },
+                        configId,
+                        signal: controller.signal,
+                        force: forceCompaction && canCompact,
+                    });
+                    checkpoint = prepared.state;
+                    metrics = prepared.metrics;
+                    contextStatus = prepared.status;
+                    forceCompaction = false;
+                    if (contextEvent) {
+                        contextEvent =
+                            checkpoint && checkpoint !== previousCheckpoint
+                                ? {
+                                      ...contextEvent,
+                                      coveredThroughId:
+                                          checkpoint.coveredThroughId,
+                                      summary: checkpoint.summary,
+                                  }
+                                : undefined;
+                        yield { history: [...working], status: "running" };
+                        contextEvent = undefined;
+                    }
+                    let protocolError: ProviderRequestChunk["protocolError"];
+                    let usage: ProviderRequestChunk["usage"];
+                    let finalMessage:
+                        | ReturnType<typeof parseResult>
+                        | undefined;
+                    const responseId = crypto.randomUUID();
+                    const requestedOutput =
+                        policy.maxOutputTokens ?? baseOutput;
+                    try {
+                        controller.signal.throwIfAborted();
+                        pending = provider.request({
+                            history: prepared.history,
+                            tools: nativeTools,
+                            configId,
+                            maxTokens: requestedOutput,
+                        });
+                        for await (const chunk of await pending) {
+                            controller.signal.throwIfAborted();
+                            if (chunk.usage) usage = chunk.usage;
+                            if (chunk.protocolError)
+                                protocolError = chunk.protocolError;
+                            if (
+                                chunk.finishReason === "length" ||
+                                chunk.finishReason === "MAX_TOKENS"
+                            ) {
+                                protocolError = {
+                                    code: "OUTPUT_LENGTH",
+                                    message:
+                                        "Output ended before completion. Use a smaller single tool call, concise code and minimal reasoning. Split large changes into smaller steps. This incomplete batch did not execute.",
+                                };
+                            }
+                            finalMessage = {
+                                ...parseResult(chunk),
+                                id: responseId,
+                            };
+                            if (
+                                !protocolError &&
+                                (chunk.answer ||
+                                    chunk.thought ||
+                                    chunk.toolCalls?.length ||
+                                    chunk.toolProgress)
+                            ) {
+                                yield {
+                                    history: [...working, finalMessage],
+                                    status: "running",
+                                    activity: chunk.toolProgress
+                                        ? {
+                                              phase: "preparing",
+                                              messageId: responseId,
+                                              callId: chunk.toolProgress.id,
+                                              name: chunk.toolProgress.name,
+                                          }
+                                        : {
+                                              phase: chunk.answer
+                                                  ? "answering"
+                                                  : "thinking",
+                                              messageId: responseId,
+                                          },
+                                };
+                            }
+                        }
+                        if (!finalMessage)
+                            throw new Error("Provider returned no response");
+                    } catch (error) {
+                        controller.signal.throwIfAborted();
+                        const contextError = isContextLimitError(error);
+                        const outputRejected =
+                            requestedOutput > baseOutput &&
+                            rejectedOutputBudget(error);
+                        if (
+                            !(
+                                contextError ||
+                                outputRejected ||
+                                retryableApiError(error)
+                            ) ||
+                            apiRetries >= MAX_API_RETRIES
+                        )
+                            throw error;
+                        apiRetries++;
+                        if (outputRejected) {
+                            outputCeiling = baseOutput;
+                            policy.maxOutputTokens = baseOutput;
+                            forceCompaction = canCompact;
+                        } else if (contextError) {
+                            const currentWindow =
+                                policy.contextWindow ?? 131072;
+                            const safety = policy.safetyTokens ?? 2048;
+                            const reported = reportedContextWindow(error);
+                            const guessed =
+                                requestedOutput +
+                                safety +
+                                Math.max(
+                                    2048,
+                                    Math.floor(
+                                        prepared.metrics.estimatedInputTokens *
+                                            0.85,
+                                    ),
+                                );
+                            const smaller = Math.min(
+                                currentWindow,
+                                reported ?? guessed,
+                            );
+                            if (
+                                reported &&
+                                smaller - requestedOutput - safety < 2048
+                            ) {
+                                policy.maxOutputTokens = Math.max(
+                                    1024,
+                                    Math.floor((smaller - safety) / 2),
+                                );
+                            }
+                            if (
+                                smaller -
+                                    (policy.maxOutputTokens ?? baseOutput) -
+                                    safety <
+                                1024
+                            ) {
+                                throw new Error(
+                                    "模型可用上下文不足，请缩小当前请求或调整模型配置。",
+                                );
+                            }
+                            policy.contextWindow = smaller;
+                            forceCompaction = true;
+                            if (!canCompact && smaller === currentWindow)
+                                throw error;
+                        }
+                        yield {
+                            history: [...working],
+                            status: "running",
+                            activeTool: "retrying_model_request",
+                        };
+                        await waitForRetry(
+                            apiRetryDelay(apiRetries),
+                            controller.signal,
+                        );
                         continue;
                     }
-
-                    // 2. 并行执行当前批次的所有工具
-                    const toolExecutionPromises = toolIndices.map(
-                        async ({ id, name, params }) => {
-                            const startTime = Date.now();
-                            try {
-                                const result = await executeToolCall(
-                                    toolMap,
-                                    {
-                                        name,
-                                        params,
-                                    },
-                                    makeCtx([...history]),
+                    apiRetries = 0;
+                    if (protocolError) {
+                        recoveryHint = `Recovery: ${protocolError.message} Continue the current task. Preserve earlier confirmed writes and never replay them to recover output.`;
+                        if (protocolError.code === "OUTPUT_LENGTH") {
+                            const window = policy.contextWindow ?? 131072;
+                            const safety = policy.safetyTokens ?? 2048;
+                            const observedInput = Math.max(
+                                prepared.metrics.estimatedInputTokens,
+                                usage?.inputTokens ?? 0,
+                            );
+                            const observedOutput = usage?.outputTokens;
+                            // A provider may silently clamp an increased allowance. Compact rather than keep raising it.
+                            if (
+                                observedOutput !== undefined &&
+                                requestedOutput > baseOutput &&
+                                observedOutput >= baseOutput &&
+                                observedOutput < requestedOutput * 0.9
+                            ) {
+                                outputCeiling = Math.min(
+                                    outputCeiling,
+                                    observedOutput,
                                 );
-                                const runningTime = Date.now() - startTime;
-                                return {
-                                    ...result,
-                                    formatted: {
-                                        ...result.formatted,
-                                        // 回写原生 tool_call_id，供回传时与 assistant 调用匹配。
-                                        id,
-                                        runningTime,
-                                    },
-                                } as ToolMessage;
-                            } catch (error: any) {
-                                const runningTime = Date.now() - startTime;
-                                return {
-                                    role: "tool",
-                                    raw: `Error: ${error.message || String(error)}`,
-                                    formatted: {
-                                        id,
-                                        name: name,
-                                        params: params,
-                                        runningTime,
-                                        errors: error.message,
-                                    },
-                                } as ToolMessage;
+                                policy.maxOutputTokens = outputCeiling;
+                                forceCompaction = canCompact;
+                            } else if (
+                                observedOutput !== undefined &&
+                                observedOutput < requestedOutput * 0.9 &&
+                                observedInput + observedOutput >= window * 0.9
+                            ) {
+                                policy.contextWindow = Math.min(
+                                    window,
+                                    observedInput + observedOutput,
+                                );
+                                forceCompaction = canCompact;
+                            } else {
+                                const nextOutput = Math.min(
+                                    outputCeiling,
+                                    requestedOutput * 2,
+                                    Math.floor(window / 2),
+                                );
+                                if (
+                                    nextOutput > requestedOutput &&
+                                    (canCompact ||
+                                        observedInput +
+                                            nextOutput +
+                                            safety +
+                                            512 <
+                                            window)
+                                ) {
+                                    policy.maxOutputTokens = nextOutput;
+                                    forceCompaction =
+                                        canCompact &&
+                                        observedInput + nextOutput + safety >
+                                            window * 0.8;
+                                } else {
+                                    forceCompaction = canCompact;
+                                }
                             }
-                        },
-                    );
-
-                    // 等待所有工具执行完毕
-                    const executedToolMessages = await Promise.all(
-                        toolExecutionPromises,
-                    );
-
-                    const currentHistory = [
-                        ...history,
-                        assistantMessage,
-                        ...executedToolMessages,
-                    ];
-
-                    // 产出包含所有工具结果的中间状态
-                    yield { history: currentHistory };
-
-                    // 4. 关键：这一批次处理完后，仅发起一次递归请求 AI
-                    const nextAbortable = start(currentHistory, round + 1);
-                    subAbort = () => nextAbortable.abort();
-
-                    const toolStream = await nextAbortable;
-                    yield* toolStream;
-
-                    subAbort = null;
-                    // 原生协议下，工具调用只在流结束（finish_reason==="tool_calls"）的最终 chunk
-                    // 里完整出现。处理完本批次工具后即结束当前流，由上面的递归请求继续下一轮。
-                    return;
+                        } else {
+                            forceCompaction = canCompact && protocolBackoff > 0;
+                        }
+                        yield {
+                            history: [...working],
+                            status: "running",
+                            activeTool: "recovering_tool_call",
+                        };
+                        await waitForRetry(
+                            Math.min(
+                                4000,
+                                200 * 2 ** Math.min(protocolBackoff++, 5),
+                            ),
+                            controller.signal,
+                        );
+                        continue;
+                    }
+                    recoveryHint = undefined;
+                    protocolBackoff = 0;
+                    working.push(finalMessage);
+                    const calls = finalMessage.formatted.tools ?? [];
+                    if (!calls.length) {
+                        yield { history: [...working], status: "completed" };
+                        return;
+                    }
+                    let ended = false;
+                    // Ordered execution also prevents focus/UI and multiple writes racing.
+                    for (const call of calls) {
+                        controller.signal.throwIfAborted();
+                        yield {
+                            history: [...working],
+                            status: "running",
+                            activeTool: call.name,
+                            activity: {
+                                phase: "executing",
+                                callId: call.id,
+                                name: call.name,
+                                params: call.params,
+                                messageId: finalMessage.id,
+                            },
+                        };
+                        const started = Date.now();
+                        const result: ToolMessage = ended
+                            ? {
+                                  role: "tool",
+                                  raw: "Turn already ended",
+                                  formatted: {
+                                      name: call.name,
+                                      params: call.params,
+                                      errors: {
+                                          message:
+                                              "Turn already ended; call was not executed",
+                                      },
+                                  },
+                              }
+                            : await executeToolCall(toolMap, call, ctx(call));
+                        result.id = crypto.randomUUID();
+                        result.formatted.id = call.id;
+                        result.formatted.runningTime = Date.now() - started;
+                        working.push(result);
+                        if (
+                            controller.signal.aborted &&
+                            toolMap.get(call.name)?.effect === "write"
+                        ) {
+                            yield { history: [...working], status: "running" };
+                        }
+                        controller.signal.throwIfAborted();
+                        if (
+                            !result.formatted.errors &&
+                            toolMap.get(call.name)?.endsTurn
+                        )
+                            ended = true;
+                        yield { history: [...working], status: "running" };
+                    }
+                    if (ended) {
+                        yield { history: [...working], status: "completed" };
+                        return;
+                    }
                 }
+            } catch (error) {
+                const lastAssistantIndex = working.findLastIndex(
+                    (m) => m.role === "assistant",
+                );
+                const assistant = working[lastAssistantIndex];
+                if (
+                    assistant?.role === "assistant" &&
+                    lastAssistantIndex >
+                        working.findLastIndex((m) => m.role === "user")
+                ) {
+                    const completedIds = new Set(
+                        working
+                            .slice(lastAssistantIndex + 1)
+                            .flatMap((m) =>
+                                m.role === "tool" ? [m.formatted.id] : [],
+                            ),
+                    );
+                    for (const call of assistant.formatted.tools ?? []) {
+                        if (!completedIds.has(call.id))
+                            working.push({
+                                role: "tool",
+                                internal: true,
+                                raw: "Execution interrupted; inspect state before retrying writes",
+                                formatted: {
+                                    id: call.id,
+                                    name: call.name,
+                                    params: call.params,
+                                    errors: {
+                                        message:
+                                            "Execution interrupted; inspect state before retrying writes",
+                                    },
+                                },
+                            });
+                    }
+                }
+                yield {
+                    history: [...working],
+                    status: controller.signal.aborted ? "cancelled" : "failed",
+                };
+                throw error;
             }
-
-            return createStream();
-        };
-
-        const promise = execute() as AbortablePromise<
-            AsyncIterable<TurnResult>
-        >;
+        }
+        async function* stream(): AsyncGenerator<TurnResult> {
+            for await (const result of run()) {
+                for (const message of result.history)
+                    message.id ??= crypto.randomUUID();
+                yield {
+                    ...result,
+                    contextState: checkpoint,
+                    contextEvent,
+                    contextStatus,
+                    contextMetrics: metrics,
+                };
+            }
+        }
+        const promise = Object.assign(Promise.resolve(stream()), {
+            abort: () => {},
+        });
         promise.abort = () => {
-            currentRequested?.abort?.();
-            subAbort?.();
+            controller.abort();
+            pending?.abort();
         };
-
         return promise;
-    };
+    }) as unknown as Session;
 
-    const next = (({ message, assets }) => {
-        const history = [...persistedHistory];
-        const userMessage = createUserMessage(message, assets);
-        history.push(userMessage);
-        return start(history, 0); // 初始 round 为 0
-    }) as Session;
-
-    // 会话级能力：按消息下标在历史中定位某次工具调用并重新执行，复用统一的参数校验与分发。
-    // 下标对应创建会话时传入（即界面展示）的历史数组，对话只追加、下标稳定。
     next.rerunToolCall = async (messageIndex: number) => {
         const target = incomingHistory[messageIndex];
-        if (!target || target.role !== "tool") {
-            throw new Error(`No tool call at history index ${messageIndex}.`);
-        }
-        const result = await executeToolCall(
-            toolMap,
-            {
-                name: target.formatted.name,
-                params: target.formatted.params,
-            },
-            makeCtx([...persistedHistory]),
-        );
-        if (result.formatted.errors !== undefined) {
-            const err = result.formatted.errors;
-            throw err instanceof Error ? err : new Error(JSON.stringify(err));
-        }
+        if (!target || target.role !== "tool")
+            throw new Error("No tool call at this index");
+        const tool = toolMap.get(target.formatted.name);
+        if (!tool || tool.effect !== "read")
+            throw new Error("Only read-only tools can be replayed");
+        const result = await executeToolCall(toolMap, target.formatted, {
+            history: [...persistedHistory],
+            tools: runtimeTools,
+            surface: "native",
+        });
+        if (result.formatted.errors !== undefined)
+            throw new Error(JSON.stringify(result.formatted.errors));
         return result.formatted.returns;
     };
-
     return next;
 }

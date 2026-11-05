@@ -25,6 +25,9 @@ export type AIConfig = {
      * 未完成时就被 finish_reason="length" 截断。不填则使用默认值。
      */
     maxTokens?: number;
+    /** Total model context capacity; defaults conservatively to 131072. */
+    contextWindow?: number;
+    imageInput?: boolean;
     /** 浅合并到协议请求体顶层；会话、工具和流式协议核心字段由系统保留。 */
     customParams?: JSONObject;
 };
@@ -33,8 +36,11 @@ export type AIConfig = {
  * 协议无关的「规范消息」。historyToMessages 产出这种形态，由各 adapter 翻译成
  * 具体协议的 wire 格式。工具调用与工具结果都用结构化字段表达，不再塞进纯文本。
  */
+export type ImageInput = { mimeType: string; data: string };
+
 export type ChatMessage =
-    | { role: "system" | "user"; content: string }
+    | { role: "system"; content: string }
+    | { role: "user"; content: string; images?: ImageInput[] }
     | { role: "assistant"; content: string; toolCalls?: ProviderToolCall[] }
     | { role: "tool"; toolCallId: string; name: string; content: string };
 

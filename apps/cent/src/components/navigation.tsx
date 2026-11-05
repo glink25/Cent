@@ -1,12 +1,24 @@
 import { useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router";
+import { useIntl } from "@/locale";
 import ComplexAddButton from "./add-button";
+import { useAssistantLauncher } from "./assistant/launcher";
 import { goAddBill } from "./bill-editor";
 import { afterAddBillPromotion } from "./promotion";
 import { showSettings } from "./settings";
 
 export default function Navigation() {
+    const t = useIntl();
+    const open = useAssistantLauncher((s) => s.open);
+    const toggleAssistant = () => {
+        useAssistantLauncher.setState({ open: !open });
+    };
+    const settings = () => {
+        showSettings();
+    };
+    const actionClass =
+        "w-14 h-14 sm:w-10 sm:h-10 grid place-items-center cursor-pointer rounded-full shadow-md bg-background dark:bg-stone-500 hover:bg-accent";
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -70,16 +82,35 @@ export default function Navigation() {
                 </button>
             </div>
 
-            {/* settings */}
-            <button
-                type="button"
-                className="w-14 h-14 sm:w-10 sm:h-10 cursor-pointer flex items-center justify-center rounded-full shadow-md m-2 transition-all hover:bg-[#9a9ba2] active:bg-[#cdcdd0] bg-background dark:bg-stone-500 dark:hover:bg-[#aba8a5]"
-                onClick={() => {
-                    showSettings();
-                }}
-            >
-                <i className="icon-[mdi--more-horiz] size-5"></i>
-            </button>
+            <div className="relative m-2">
+                <button
+                    type="button"
+                    className={actionClass + " sm:hidden"}
+                    aria-label={t("settings")}
+                    onClick={settings}
+                >
+                    <i className="icon-[mdi--more-horiz] size-5" />
+                </button>
+                <div className="hidden sm:grid gap-4">
+                    <button
+                        type="button"
+                        className={actionClass}
+                        aria-label={t("ai-assistant")}
+                        aria-expanded={open}
+                        onClick={toggleAssistant}
+                    >
+                        <i className="icon-[mdi--shimmer-outline] size-5 text-blue-500" />
+                    </button>
+                    <button
+                        type="button"
+                        className={actionClass}
+                        aria-label={t("settings")}
+                        onClick={settings}
+                    >
+                        <i className="icon-[mdi--more-horiz] size-5" />
+                    </button>
+                </div>
+            </div>
         </div>,
         document.body,
     );

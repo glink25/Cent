@@ -177,9 +177,19 @@ export default function createSandBox(
             code: string,
             args: unknown[],
             timeout = 5000,
+            signal?: AbortSignal,
         ): Promise<unknown> => {
             return new Promise((resolve, reject) => {
+                signal?.throwIfAborted();
                 const w = initWorker();
+                let settled = false;
+                const onAbort = () => {
+                    settled = true;
+                    disarm();
+                    w.terminate();
+                    worker = null;
+                    reject(signal?.reason ?? new Error("Aborted"));
+                };
 
                 // 超时只统计沙盒自身的计算时间：当存在正在进行的宿主 RPC 调用时暂停计时，
                 // 全部完成后再重新计时，避免误判超时。
@@ -193,7 +203,9 @@ export default function createSandBox(
                 };
                 const arm = () => {
                     disarm();
+                    if (settled || signal?.aborted) return;
                     timeoutId = setTimeout(() => {
+                        cleanup();
                         reject(
                             new Error(
                                 `Timeout: code running time exceeded ${timeout}ms`,
@@ -204,8 +216,19 @@ export default function createSandBox(
                     }, timeout);
                 };
                 arm();
+                signal?.addEventListener("abort", onAbort, { once: true });
+                const cleanup = () => {
+                    settled = true;
+                    disarm();
+                    signal?.removeEventListener("abort", onAbort);
+                };
+                w.onerror = (event) => {
+                    cleanup();
+                    reject(new Error(event.message));
+                };
 
                 w.onmessage = async (e) => {
+                    if (settled || signal?.aborted) return;
                     const data = e.data;
                     if (data?.type === "rpc-call") {
                         inflightRpc++;
@@ -220,6 +243,7 @@ export default function createSandBox(
                                 data.name,
                                 data.params,
                             );
+                            if (settled || signal?.aborted) return;
                             w.postMessage({
                                 type: "rpc-result",
                                 id: data.id,
@@ -227,6 +251,7 @@ export default function createSandBox(
                                 result,
                             });
                         } catch (error) {
+                            if (settled || signal?.aborted) return;
                             w.postMessage({
                                 type: "rpc-result",
                                 id: data.id,
@@ -244,7 +269,7 @@ export default function createSandBox(
                     }
 
                     // 最终结果
-                    disarm();
+                    cleanup();
                     if (data.success) resolve(data.result);
                     else reject(new Error(data.error));
                 };

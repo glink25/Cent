@@ -10,13 +10,13 @@ import {
 // Tailwind）。zen 的工具类由 cent 自身 Tailwind 扫描 zen 源码统一生成；zen 的纯 CSS
 // 主题（zen.css）已随 `@glink25/zen` 源码入口自动引入。
 import { z } from "zod";
+import { guardOperation } from "@/agent/guard";
+import { createDataOperations } from "@/agent/operations";
+import { readAgentSnapshot } from "@/agent/web-host";
 import { loadStorageAPI } from "@/api/storage/dynamic";
+import { createTool, executeToolCall } from "@/assistant";
 import { getAIConfig } from "@/components/assistant/request";
-import {
-    AnalyzeBillsTool,
-    GetAccountMetaTool,
-    QueryBillsTool,
-} from "@/components/assistant/tools/ledger-tools";
+import { PlaygroundTool } from "@/components/assistant/tools/playground";
 import { createCentAIProvider } from "@/components/assistant/tools/provider";
 import createConfirmProvider from "@/components/confirm";
 import { measure } from "@/measurement";
@@ -33,14 +33,30 @@ import { usePreferenceStore } from "@/store/preference";
 import { useUserStore } from "@/store/user";
 import { buildZenContext } from "./analyzer";
 
-const hostAITools = [
-    AnalyzeBillsTool,
-    QueryBillsTool,
-    GetAccountMetaTool,
-] as unknown as Tool[];
+const zenOperations = createDataOperations({ snapshot: readAgentSnapshot }).map(
+    guardOperation,
+);
+const zenDiscover = createTool({
+    name: "discover",
+    exposure: { native: true, code: true },
+    describe:
+        "Discover read-only Cent operations available as tools.NAME(args) in playground. All bill amounts use integer units 10000:1.",
+    argSchema: z.object({}),
+    returnSchema: z.unknown(),
+    handler: () =>
+        zenOperations.map((t) => ({
+            name: t.name,
+            description: t.describe,
+            input: t.argSchema ? z.toJSONSchema(t.argSchema) : {},
+        })),
+});
+const hostAITools = [...zenOperations, zenDiscover, PlaygroundTool] as Tool[];
 
 function serializeTool(tool: Tool): ZenAIToolDefinition {
     return {
+        exposure: tool.exposure,
+        effect: tool.effect,
+        endsTurn: tool.endsTurn,
         name: tool.name,
         describe: tool.describe,
         argJsonSchema: tool.argSchema
@@ -115,7 +131,9 @@ export const centZenHost: ZenRuntimeHost = {
             configs: configs.map(({ id, name }) => ({ id, name })),
             defaultConfigId,
             directorMode,
-            aiTools: hostAITools.map(serializeTool),
+            aiTools: hostAITools
+                .filter((t) => t.exposure?.native)
+                .map(serializeTool),
             locale: usePreferenceStore.getState().locale,
             theme:
                 storedTheme === "dark" || storedTheme === "light"
@@ -152,9 +170,14 @@ export const centZenHost: ZenRuntimeHost = {
             completeZenTokenUsage();
         }
     },
+    getContextPolicy(configId) {
+        return createCentAIProvider().getContextPolicy?.(configId) ?? {};
+    },
     requestAI({
         requestId: _requestId,
         configId,
+        purpose,
+        maxTokens,
         history,
         tools,
         onChunk,
@@ -168,6 +191,8 @@ export const centZenHost: ZenRuntimeHost = {
         const stream = observedProvider.request({
             history,
             configId,
+            purpose,
+            maxTokens,
             tools: tools.map(deserializeTool),
         });
         void stream
@@ -181,7 +206,14 @@ export const centZenHost: ZenRuntimeHost = {
     async callAITool({ name, params, history }) {
         const tool = hostAITools.find((item) => item.name === name);
         if (!tool) throw new Error(`Unknown host AI tool: ${name}`);
-        return tool.handler(params, { history, tools: hostAITools });
+        const result = await executeToolCall(
+            new Map(hostAITools.map((t) => [t.name, t])),
+            { name, params },
+            { history, tools: hostAITools, surface: "native" },
+        );
+        if (result.formatted.errors !== undefined)
+            throw new Error(JSON.stringify(result.formatted.errors));
+        return result.formatted.returns;
     },
 };
 

@@ -1,4 +1,35 @@
 {
+	"changePermission": "允许更改数据？",
+	"changeCreate": "新增",
+	"changeUpdate": "修改",
+	"changeDelete": "删除",
+
+	"flowStopped": "已停止",
+	"flowInterrupted": "已中断",
+
+	"flowDone": "已完成",
+	"flowPreparing": "正在准备",
+	"flowExecuting": "正在执行",
+	"flowThinking": "正在思考",
+	"flowApproval": "等待确认",
+	"flowElapsed": "已处理",
+	"flowMinutes": "分",
+	"flowCopy": "复制消息",
+	"flowCopyFailed": "复制失败",
+	"flowLatest": "回到最新",
+
+	"changeObjects": "个对象",
+	"changeUndone": "已撤回",
+	"changeApplied": "已改动",
+	"changeResult": "变更结果",
+	"changePending": "待确认",
+	"changeDetails": "查看差异",
+	"changeRemember": "在当前账本对此类操作不再提示",
+	"changeReject": "拒绝",
+	"changeApprove": "确认",
+	"changeUndo": "撤回",
+
+	"sendingMessage": "发送中，正在等待模型响应…",
 	"appTitle": "AI 助手",
 	"switchModel": "切换模型",
 	"noChats": "暂无对话",
@@ -12,5 +43,16 @@
 	"params": "参数",
 	"returns": "返回值",
 	"error": "错误",
-	"rerunToolCall": "重新运行工具"
+	"rerunToolCall": "重新运行工具",
+	"agentWorking": "正在处理",
+	"agentActivity": "执行过程",
+	"agentDuration": "用时",
+	"agentSeconds": "秒",
+	"agentRan": "已运行",
+	"agentCalls": "个工具调用",
+	"agentRecovering": "正在恢复工具调用…",
+	"contextCompacting": "正在整理较早对话…",
+	"contextCompacted": "已整理较早对话",
+	"contextDeferred": "暂未能整理较早对话，继续使用原始上下文。",
+	"agentRetrying": "正在重试模型请求…"
 }

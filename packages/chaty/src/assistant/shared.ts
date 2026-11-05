@@ -44,6 +44,7 @@ export function createUserMessage(
 ): UserMessage {
     return {
         role: "user",
+        sentAt: Date.now(),
         raw: message,
         assets,
     };

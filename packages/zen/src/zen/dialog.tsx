@@ -6,6 +6,7 @@ import {
     useCallback,
     useEffect,
     useMemo,
+    useRef,
     useState,
 } from "react";
 import Loading from "../components/loading";
@@ -1027,6 +1028,8 @@ export function ZenExperience({
     const [pending, setPending] = useState(false);
     const [posts, setPosts] = useState<ZenPost[]>([]);
     const [view, setView] = useState<"today" | "history">("today");
+    const activeRun = useRef<AbortController | null>(null);
+    useEffect(() => () => activeRun.current?.abort(), []);
     const todayLabel = useMemo(() => dayjs().format("YYYY-MM-DD"), []);
     const styleName = useMemo(
         () => resolveZenStyleName(runtimeInit.style),
@@ -1113,6 +1116,9 @@ export function ZenExperience({
             session: ZenSessionState,
             lastUserInput?: unknown,
         ) => {
+            activeRun.current?.abort();
+            const controller = new AbortController();
+            activeRun.current = controller;
             setPending(true);
             try {
                 const result = await requestNextZenStep({
@@ -1124,6 +1130,7 @@ export function ZenExperience({
                     directorMode: runtimeInit.directorMode,
                     locale: runtimeInit.locale,
                     lastUserInput,
+                    signal: controller.signal,
                 });
                 const nextContext = result.focusDecision
                     ? await host.getZenContext({
@@ -1131,12 +1138,14 @@ export function ZenExperience({
                           focusDecision: result.focusDecision,
                       })
                     : current.context;
+                controller.signal.throwIfAborted();
                 const nextSession: ZenSessionState = {
                     ...session,
                     period: nextContext.period,
                     focusDecision: nextContext.focusDecision,
                     currentStep: result.step,
                     history: result.history,
+                    contextState: result.contextState,
                     sentContextSignature: result.sentContextSignature,
                     exploration: mergeDirectorState(
                         session.exploration,
@@ -1160,13 +1169,14 @@ export function ZenExperience({
                 };
                 updateActive(current, nextSession, nextContext);
             } catch (error) {
+                if (controller.signal.aborted) return;
                 setState({
                     type: "error",
                     message:
                         error instanceof Error ? error.message : String(error),
                 });
             } finally {
-                setPending(false);
+                if (activeRun.current === controller) setPending(false);
             }
         },
         [aiTools, host, provider, runtimeInit, updateActive],

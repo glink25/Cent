@@ -1,10 +1,23 @@
 {
+  "agent-change-approval": "审批 WebMCP 变更",
+  "agent-change-details": "查看差异",
+  "agent-change-remember": "在当前账本对此类 WebMCP 操作不再提示",
+
+  "ai-image-test-failed": "模型未能正确识别测试图片。",
+  "agent-grants": "部分权限免确认",
+  "agent-revoke-grant": "撤销授权",
+  "ai-image-input": "图片输入",
+  "ai-image-auto": "自动",
+  "ai-image-on": "启用",
+  "ai-image-off": "关闭",
+
   "APP_NAME": "日计",
   "APP_TITLE": "一日之计",
   "Today": "今天",
   "ended": "结束啦",
   "nothing-here-add-one-bill": "还没有记录，来记一笔吧",
   "back": "返回",
+  "add-to-assistant": "添加到 AI 助手",
   "settings": "设置",
   "share-and-sync": "分享与同步",
   "backup": "备份",
@@ -854,5 +867,8 @@
   "zen-posts-title": "往期 Zen",
   "zen-posts-empty": "暂无往期 Zen",
   "zen-overview-ready": "进入 Zen",
-  "zen-settings-desc": "回顾，放松，以适合自己的方式理解收支"
+  "zen-settings-desc": "回顾，放松，以适合自己的方式理解收支",
+  "ai-context-window": "模型上下文容量（tokens）",
+  "ai-context-window-description": "留空按 131072 估算；请填写服务商声明的总容量。系统会预留输出空间，并自动整理较早对话。",
+  "ai-context-window-invalid": "上下文容量必须是至少 4096 的整数"
 }

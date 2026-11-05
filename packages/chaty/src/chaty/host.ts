@@ -26,6 +26,9 @@ function serializeTool(tool: Tool): AIChatToolDefinition {
     const hostDef = hostToolDefinitions.get(tool);
     if (hostDef) return hostDef;
     return {
+        exposure: tool.exposure,
+        effect: tool.effect,
+        endsTurn: tool.endsTurn,
         name: tool.name,
         describe: tool.describe,
         argJsonSchema: tool.argSchema
@@ -66,7 +69,8 @@ export function getHostBridge(): HostBridge | undefined {
 
 function createHostProvider(host: HostBridge): Provider {
     return {
-        request: ({ history, configId, tools }) => {
+        getContextPolicy: host.getContextPolicy?.bind(host),
+        request: ({ history, configId, tools, purpose, maxTokens }) => {
             let handle: HostRequestHandle | undefined;
             let cancelled = false;
             let done = false;
@@ -85,6 +89,8 @@ function createHostProvider(host: HostBridge): Provider {
                     host.requestAI({
                         requestId,
                         configId,
+                        purpose,
+                        maxTokens,
                         history,
                         tools: tools.map(serializeTool),
                         onChunk: (chunk) => {
@@ -147,6 +153,9 @@ function createHostTool(
         ? JSON.stringify(tool.argJsonSchema)
         : "No parameters";
     const runtimeTool: Tool = {
+        exposure: tool.exposure ?? { native: true, code: false },
+        effect: tool.effect ?? "write",
+        endsTurn: tool.endsTurn,
         name: tool.name,
         describe: tool.describe,
         argSchema: z.unknown().describe(argDescription),

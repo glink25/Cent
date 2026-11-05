@@ -72,6 +72,8 @@ function createNativeHost(send: Sender): ZenRuntimeHost {
                 payload: {
                     requestId: payload.requestId,
                     configId: payload.configId,
+                    purpose: payload.purpose,
+                    maxTokens: payload.maxTokens,
                     history: payload.history,
                     tools: payload.tools,
                 },

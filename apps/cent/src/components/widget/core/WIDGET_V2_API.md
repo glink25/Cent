@@ -219,3 +219,5 @@ export function computed(ctx) {
 宿主注入来源信息后，将币种加入内存中的自定义币种列表，供币种设置、快捷币种选择、记账和统计换算使用。来源组件管理币种定义。用户可以将其加入账本 quickCurrencies。保存和导出仅包含原始币种配置，卸载组件后移除其 computed 币种，历史账单保留原币金额与本位币金额。
 
 普通视图的 ctx.data.currencies.custom 包含当前生效的自定义币种，computed 执行时读取原始配置。ctx.data.currencies.quick 对应账本 quickCurrencies，账户与转账示例以此生成币种选项，同时保留本位币和当前账户币种。
+
+宿主决定画布尺寸、外部间距、圆角裁剪，以及弹窗导航和安全区域。小组件画布内部默认零边距，首页、统计页、预览和弹窗内容区均由小组件根节点通过 padding / paddingX / paddingY 控制留白。宿主标题、关闭按钮、加载与错误提示，以及原生输入控件自身的内部留白不属于 DSL 画布。

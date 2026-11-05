@@ -1,10 +1,56 @@
+export type ChangeProposal = {
+    id: string;
+    title: string;
+    canRemember?: boolean;
+    diffs: { target: string; before?: unknown; after?: unknown }[];
+};
+
+export type ChangeReceipt = {
+    kind: "changeReceipt";
+    proposal: ChangeProposal;
+    status:
+        | "applied"
+        | "rejected"
+        | "expired"
+        | "conflict"
+        | "partial"
+        | "failed"
+        | "undone";
+    results: { target: string; status: "applied" | "unchanged" | "unknown" }[];
+    undo?: "direct" | "agent";
+};
+
+export type ApproveChange = (
+    proposal: ChangeProposal,
+    signal?: AbortSignal,
+    call?: { id: string; name: string },
+) => Promise<{ approved: boolean; remember?: boolean }>;
+
 import type { ZodType, z } from "zod";
 
+export type ConversationReference = {
+    type: string;
+    id: string;
+    label: string;
+    hostScope?: string;
+};
+
+export type ReferenceResolver = (
+    references: ConversationReference[],
+    signal?: AbortSignal,
+) => Promise<unknown[]>;
+
 export type UserMessage = {
+    /** Original attachment numbering, preserved in context projections. */
+    assetStartIndex?: number;
+    elapsedMs?: number;
+    sentAt?: number;
+    turnStatus?: "completed" | "failed" | "cancelled";
     id?: string;
     role: "user";
     raw: string;
     assets?: File[];
+    references?: ConversationReference[];
 };
 
 export type AssistantMessage = {
@@ -15,11 +61,15 @@ export type AssistantMessage = {
         thought?: string;
         answer?: string;
         overview?: string;
-        tools?: { id: string; name: string; params: unknown }[];
+        tools?: ProviderToolCall[];
     };
 };
 
 export type ToolMessage = {
+    /** Protocol-only placeholder for a call interrupted before completion. */
+    internal?: boolean;
+    /** Request-only serialized observation, never added to the original history. */
+    contextContent?: string;
     id?: string;
     role: "tool";
     raw: string;
@@ -56,7 +106,40 @@ export type AbortablePromise<T = unknown> = Promise<T> & {
     abort: () => void;
 };
 
+export type ContextPolicy = {
+    contextWindow?: number;
+    maxOutputTokens?: number;
+    safetyTokens?: number;
+    toolResultChars?: number;
+    keepTurns?: number;
+    summaryTimeoutMs?: number;
+};
+
+export type ContextState = {
+    version: 1;
+    summary: string;
+    coveredThroughId: string;
+    sourceDigest: string;
+    compactions: number;
+};
+
+export type ContextEvent = {
+    id: string;
+    anchorId: string;
+    coveredThroughId?: string;
+    summary?: string;
+};
+
+export type ContextMetrics = {
+    estimatedInputTokens: number;
+    inputBudget: number;
+    compactions: number;
+    summaryDurationMs?: number;
+};
+
 export type ProviderRequest = {
+    purpose?: "response" | "summary";
+    maxTokens?: number;
     history: History;
     configId?: string;
     /** 本会话注册的全部工具，Provider/Host 据此构造请求的原生 `tools` 字段。 */
@@ -75,7 +158,30 @@ export type ProviderToolCall = {
     thoughtSignature?: string;
 };
 
+export type ToolDisplay = {
+    label?: string;
+    icon?: string;
+    summarize?: (params: unknown) => string;
+};
+
+export type RunActivity = {
+    phase: "thinking" | "answering" | "preparing" | "executing";
+    messageId?: string;
+    callId?: string;
+    name?: string;
+    params?: unknown;
+};
+
 export type ProviderRequestChunk = {
+    toolProgress?: { id: string; name: string; argumentsPreview?: string };
+    usage?: { inputTokens?: number; outputTokens?: number };
+    protocolError?: {
+        code:
+            | "INCOMPLETE_TOOL_CALL"
+            | "INVALID_TOOL_ARGUMENTS"
+            | "OUTPUT_LENGTH";
+        message: string;
+    };
     thought?: string;
     answer: string;
     /** 仅在流结束、参数完整时填充。 */
@@ -84,12 +190,23 @@ export type ProviderRequestChunk = {
 };
 
 export type Provider = {
+    /** Resolve the selected model's effective window/output settings. */
+    getContextPolicy?: (
+        configId?: string,
+    ) => ContextPolicy | Promise<ContextPolicy>;
     request: (
         params: ProviderRequest,
     ) => AbortablePromise<AsyncIterable<ProviderRequestChunk>>;
 };
 
 export type TurnResult = {
+    activity?: RunActivity;
+    contextState?: ContextState;
+    contextEvent?: ContextEvent;
+    contextStatus?: "compacting" | "ready" | "deferred";
+    contextMetrics?: ContextMetrics;
+    status?: "running" | "completed" | "failed" | "cancelled";
+    activeTool?: string;
     history: History;
 };
 
@@ -113,7 +230,14 @@ export type ToolJsonSchema = Record<string, unknown>;
 
 export type ToolPromptDefinition = string;
 
+export type ToolExposure = { code: boolean; native: boolean };
+
 export type ToolContext = {
+    approveChange?: ApproveChange;
+    source?: "webmcp";
+    resources?: Map<string, unknown>;
+    signal?: AbortSignal;
+    surface?: "code" | "native";
     history: History;
     /**
      * 当前会话注册的全部工具（实际的 Tool 对象，含 handler）。
@@ -123,6 +247,10 @@ export type ToolContext = {
 };
 
 export type Tool<Args = unknown, Returns = unknown> = {
+    display?: ToolDisplay;
+    exposure?: ToolExposure;
+    effect?: "read" | "write" | "ui";
+    endsTurn?: boolean;
     name: string;
     describe: string;
     argSchema?: ToolSchema;
@@ -137,12 +265,17 @@ export type CreateToolInput<
     ArgsSchema extends ZodLikeSchema | undefined,
     ReturnSchema extends ZodLikeSchema,
 > = {
+    display?: ToolDisplay;
+    exposure?: ToolExposure;
+    effect?: "read" | "write" | "ui";
+    endsTurn?: boolean;
     name: string;
     describe: string;
     argSchema?: ArgsSchema;
     returnSchema: ReturnSchema;
     handler: (
         arg: ArgsSchema extends undefined ? undefined : z.infer<ArgsSchema>,
+        ctx: ToolContext,
     ) => z.infer<ReturnSchema> | Promise<z.infer<ReturnSchema>>;
 };
 
@@ -177,6 +310,7 @@ export type ResolvedSkill = SkillMeta & {
 export type NextInput = {
     message: string;
     assets?: File[];
+    references?: ConversationReference[];
 };
 
 export type Next = (

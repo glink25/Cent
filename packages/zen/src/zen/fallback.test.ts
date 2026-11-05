@@ -209,26 +209,36 @@ describe("local Zen director", () => {
         expect(requests).toBe(0);
     });
 
-    it("does not turn an AI provider failure into a local journey", async () => {
+    it("does not turn an exhausted AI retry into a local journey", async () => {
         vi.stubGlobal("window", globalThis);
-        const provider: Provider = {
-            request: () =>
-                withAbort(
-                    Promise.reject(new Error("AI unavailable")),
-                    () => {},
-                ),
-        };
-
-        await expect(
-            requestNextZenStep({
-                session: session("online"),
-                context: context(),
-                provider,
-                hostTools: [],
-                directorMode: "ai",
-            }),
-        ).rejects.toThrow("AI unavailable");
-        vi.unstubAllGlobals();
+        vi.useFakeTimers();
+        try {
+            let attempts = 0;
+            const provider: Provider = {
+                request: () => {
+                    attempts++;
+                    return withAbort(
+                        Promise.reject(new Error("AI unavailable")),
+                        () => {},
+                    );
+                },
+            };
+            const assertion = expect(
+                requestNextZenStep({
+                    session: session("online"),
+                    context: context(),
+                    provider,
+                    hostTools: [],
+                    directorMode: "ai",
+                }),
+            ).rejects.toThrow("AI unavailable");
+            await vi.runAllTimersAsync();
+            await assertion;
+            expect(attempts).toBe(6);
+        } finally {
+            vi.useRealTimers();
+            vi.unstubAllGlobals();
+        }
     });
 });
 

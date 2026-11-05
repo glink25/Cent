@@ -1,4 +1,5 @@
 import {
+    type ContextState,
     createSession,
     createTool,
     type History,
@@ -27,6 +28,9 @@ import type {
 
 const ShowZenStepTool = createTool({
     name: "showZenStep",
+    exposure: { native: true, code: false },
+    effect: "ui",
+    endsTurn: true,
     describe:
         "Render exactly one Zen step. interaction requires fields (at least one), submitLabel and allowSkip; completion requires intent=ending and completion. Always include content, using [] when empty.",
     argSchema: ZenUIStepToolSchema,
@@ -39,6 +43,8 @@ function createDecideZenFocusTool(
 ) {
     return createTool({
         name: "decideZenFocus",
+        exposure: { native: true, code: false },
+        effect: "ui",
         describe:
             "Choose the bill review period for this Zen session. Use this when you decide the session should focus on a non-default time range, or when you want to state the period explicitly before rendering UI.",
         argSchema: ZenFocusDecisionSchema,
@@ -214,6 +220,7 @@ export async function requestNextZenStep({
     directorMode,
     locale = "zh",
     lastUserInput,
+    signal,
 }: {
     session: ZenSessionState;
     context: ZenContext;
@@ -223,9 +230,11 @@ export async function requestNextZenStep({
     directorMode: ZenDirectorMode;
     locale?: ZenLocale;
     lastUserInput?: unknown;
+    signal?: AbortSignal;
 }): Promise<{
     step: ZenUIStep;
     history: History;
+    contextState?: ContextState;
     usedFallback: boolean;
     focusDecision?: ZenFocusDecision;
     sentContextSignature?: string;
@@ -271,6 +280,7 @@ export async function requestNextZenStep({
     const runDirector = async (correction?: string) => {
         const next = createSession({
             history: stripSystemMessages(session.history ?? []),
+            contextState: session.contextState,
             provider,
             tools: [
                 DecideZenFocusTool,
@@ -280,24 +290,39 @@ export async function requestNextZenStep({
             skills: [],
             systemPrompt,
             configId,
-            maxToolRounds: 8,
         });
-        const stream = await next({
+        signal?.throwIfAborted();
+        const pending = next({
             message: JSON.stringify({ ...payload, correction }),
             assets: [],
         });
+        const cancel = () => pending.abort();
+        signal?.addEventListener("abort", cancel, { once: true });
+        const stream = await pending;
         let history: History = session.history ?? [];
-        for await (const chunk of stream) history = chunk.history;
-        const step = getLatestZenStep(history);
+        let contextState = session.contextState;
+        try {
+            for await (const chunk of stream) {
+                history = chunk.history;
+                contextState = chunk.contextState;
+            }
+        } finally {
+            signal?.removeEventListener("abort", cancel);
+        }
+        signal?.throwIfAborted();
+        const currentHistory = history.slice(
+            stripSystemMessages(session.history ?? []).length + 1,
+        );
+        const step = getLatestZenStep(currentHistory);
         if (!step) {
-            const toolError = getLatestZenStepError(history);
+            const toolError = getLatestZenStepError(currentHistory);
             throw new Error(
                 toolError
                     ? `showZenStep validation failed: ${toolError}`
                     : "AI did not call showZenStep before ending the turn.",
             );
         }
-        return { step, history };
+        return { step, history, contextState };
     };
 
     let result = await runDirector();
@@ -310,6 +335,7 @@ export async function requestNextZenStep({
     return {
         step: normalizeStepProgress(result.step, session),
         history: stripSystemMessages(result.history),
+        contextState: result.contextState,
         usedFallback: false,
         focusDecision: latestFocusDecision,
         sentContextSignature: periodSig,

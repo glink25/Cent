@@ -83,6 +83,8 @@ function createNativeBridge(transport: NativeTransport): HostBridge {
         requestAI: ({
             requestId,
             configId,
+            purpose,
+            maxTokens,
             history,
             tools,
             onChunk,
@@ -111,7 +113,14 @@ function createNativeBridge(transport: NativeTransport): HostBridge {
                 transport({
                     id,
                     type: "requestAI",
-                    payload: { requestId, configId, history, tools },
+                    payload: {
+                        requestId,
+                        configId,
+                        history,
+                        tools,
+                        purpose,
+                        maxTokens,
+                    },
                 });
             } catch (error) {
                 cleanup();

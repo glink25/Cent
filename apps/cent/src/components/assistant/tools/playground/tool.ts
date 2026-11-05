@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { createChangeBatch } from "@/agent/changes";
 import { createTool, type History, type ToolContext } from "@/assistant";
 import { parseWithSchema } from "@/assistant/shared";
 import createSandBox from "@/utils/sandbox";
@@ -18,10 +19,12 @@ async function collectSessionFiles(
 
 export const PlaygroundTool = createTool({
     name: "playground",
+    exposure: { native: true, code: false },
+    effect: "write",
     describe:
         "Execute JavaScript module code in a sandboxed worker. Supports getFile(index) for uploaded files in this conversation. " +
         "Also exposes an async `tools` object: call any other available tool as a function, e.g. `await tools.importBills({ items, meta })`. " +
-        "Use this to compute data and invoke a tool with it in one snippet, instead of emitting the payload as a separate tool call.",
+        "Await each write call. Writes are staged and committed together after one user approval when the script succeeds; staged does not mean applied.",
     argSchema: z.object({
         code: z
             .string()
@@ -38,6 +41,7 @@ export const PlaygroundTool = createTool({
         success: z.boolean(),
         result: z.unknown().optional(),
         error: z.string().optional(),
+        change: z.unknown().optional(),
     }),
     handler: (async (
         arg: {
@@ -48,6 +52,12 @@ export const PlaygroundTool = createTool({
         ctx: ToolContext,
     ) => {
         const { history, tools } = ctx;
+        const executionContext = {
+            ...ctx,
+            resources: new Map<string, unknown>(),
+            surface: "code" as const,
+        };
+        const batch = createChangeBatch(executionContext);
         const transferable = await collectSessionFiles(history);
 
         // 宿主侧的工具调用：根据名称在本会话的工具列表中查找并执行其 handler，
@@ -58,17 +68,23 @@ export const PlaygroundTool = createTool({
                 throw new Error("playground cannot call itself.");
             }
             const tool = tools.find((t) => t.name === name);
-            if (!tool) {
+            ctx.signal?.throwIfAborted();
+            if (!tool?.exposure?.code) {
                 throw new Error(`Tool "${name}" not found.`);
             }
             const parsed = parseWithSchema(tool.argSchema, params);
-            const returns = await tool.handler(parsed as never, ctx);
+            const returns = await tool.handler(
+                parsed as never,
+                executionContext,
+            );
+            ctx.signal?.throwIfAborted();
             return parseWithSchema(tool.returnSchema, returns);
         };
 
         // 根据本会话注册的工具动态生成 `tools` 对象（排除 playground 自身），
         // 每个键经 RPC 桥接路由到宿主侧的 callHost。新增工具无需改动此处。
         const toolNames = tools
+            .filter((tool) => tool.exposure?.code)
             .map((t) => t.name)
             .filter((name) => name !== "playground");
         const toolsPrelude = toolNames
@@ -83,16 +99,14 @@ export const PlaygroundTool = createTool({
 
         const sandbox = createSandBox([], undefined, transferable, callHost);
 
+        let result: unknown;
         try {
-            const result = await sandbox.runDefaultExport(
+            result = await sandbox.runDefaultExport(
                 `${prelude}${arg.code}`,
                 arg.args ?? [],
-                arg.timeoutMs ?? 2000,
+                arg.timeoutMs ?? 10000,
+                ctx.signal,
             );
-            return {
-                success: true,
-                result,
-            };
         } catch (error) {
             return {
                 success: false,
@@ -100,6 +114,12 @@ export const PlaygroundTool = createTool({
             };
         } finally {
             sandbox.destroy();
+        }
+        try {
+            const change = await batch.finish(ctx);
+            return { success: true, result, change };
+        } catch (error) {
+            return { success: false, error: toErrorMessage(error) };
         }
     }) as never,
 });

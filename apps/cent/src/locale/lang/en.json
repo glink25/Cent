@@ -1,10 +1,23 @@
 {
+  "agent-change-approval": "Review WebMCP changes",
+  "agent-change-details": "View changes",
+  "agent-change-remember": "Remember for this WebMCP operation in this ledger",
+
+  "ai-image-test-failed": "The model could not read the test image.",
+  "agent-grants": "Some permissions skip confirmation",
+  "agent-revoke-grant": "Revoke",
+  "ai-image-input": "Image input",
+  "ai-image-auto": "Auto",
+  "ai-image-on": "Enabled",
+  "ai-image-off": "Disabled",
+
   "APP_NAME": "Cent",
   "APP_TITLE": "One bite to one cent",
   "Today": "Today",
   "ended": "end",
   "nothing-here-add-one-bill": "Nothing here, add one bill",
   "back": "Back",
+  "add-to-assistant": "Add to AI assistant",
   "settings": "Settings",
   "share-and-sync": "Share & Sync",
   "backup": "Backup",
@@ -843,5 +856,8 @@
   "zen-posts-title": "Past Zen",
   "zen-posts-empty": "No past Zen yet",
   "zen-overview-ready": "Enter Zen",
-  "zen-settings-desc": "Review, relax, and understand your finances in the way that suits you"
+  "zen-settings-desc": "Review, relax, and understand your finances in the way that suits you",
+  "ai-context-window": "Model context capacity (tokens)",
+  "ai-context-window-description": "Defaults to 131072. Enter the provider’s total context capacity. Output space is reserved and earlier conversation is summarized automatically.",
+  "ai-context-window-invalid": "Context capacity must be an integer of at least 4096"
 }

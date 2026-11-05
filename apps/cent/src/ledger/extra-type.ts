@@ -110,6 +110,9 @@ export type AIConfig = {
      * 设置过小会在思考未完成时就被 finish_reason="length" 截断。不填则使用默认值。
      */
     maxTokens?: number;
+    /** Total model context capacity; defaults conservatively to 32768. */
+    contextWindow?: number;
+    imageInput?: boolean;
     /** 浅合并到 API 请求体顶层；会话、工具和流式协议核心字段由系统保留。 */
     customParams?: JSONObject;
 };

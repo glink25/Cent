@@ -24,8 +24,8 @@ export function createCentAIProvider(
     getConfigId?: () => string | undefined,
 ): Provider {
     return createAIProvider(
-        () => {
-            const config = getAIConfig(getConfigId?.());
+        (configId) => {
+            const config = getAIConfig(configId ?? getConfigId?.());
             return { ...config, apiKey: decodeApiKey(config.apiKey) };
         },
         { formatUserAssets },

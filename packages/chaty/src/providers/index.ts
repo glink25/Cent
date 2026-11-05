@@ -1,4 +1,5 @@
 export { googleAIStudioAdapter } from "./google";
+export { supportsImages } from "./images";
 export { openAICompatibleAdapter } from "./openai";
 export {
     type AIConfigGetter,

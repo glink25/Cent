@@ -1,3 +1,4 @@
+import { addBillsToAssistant } from "../assistant/launcher";
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
 
 import { DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu";
@@ -236,6 +237,24 @@ export default function BillInfo({
                                 onSplit={toSplit}
                             />
                         )}
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            disabled={!edit.id}
+                            aria-label={t("add-to-assistant")}
+                            title={t("add-to-assistant")}
+                            onClick={() => {
+                                if (edit.id) {
+                                    addBillsToAssistant([
+                                        { ...edit, id: edit.id },
+                                    ]);
+                                    toClose();
+                                }
+                            }}
+                        >
+                            <i className="icon-[mdi--shimmer-outline] size-4" />
+                        </Button>
                     </div>
                     <div className="flex">
                         <button

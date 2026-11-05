@@ -22,6 +22,8 @@ async function collectSessionFiles(
 
 export const PlaygroundTool = createTool({
     name: "playground",
+    exposure: { native: true, code: false },
+    effect: "write",
     describe:
         "Execute JavaScript module code in a sandboxed worker. Supports getFile(index) for uploaded files in this conversation. " +
         "Also exposes an async `tools` object: call any other available tool as a function, e.g. `await tools.listSkills({})`. " +
@@ -52,6 +54,11 @@ export const PlaygroundTool = createTool({
         ctx: ToolContext,
     ) => {
         const { history, tools } = ctx;
+        const executionContext = {
+            ...ctx,
+            resources: new Map<string, unknown>(),
+            surface: "code" as const,
+        };
         const transferable = await collectSessionFiles(history);
 
         // 宿主侧的工具调用：根据名称在本会话的工具列表中查找并执行其 handler，
@@ -62,17 +69,23 @@ export const PlaygroundTool = createTool({
                 throw new Error("playground cannot call itself.");
             }
             const tool = tools.find((t) => t.name === name);
-            if (!tool) {
+            ctx.signal?.throwIfAborted();
+            if (!tool?.exposure?.code || tool.effect === "write") {
                 throw new Error(`Tool "${name}" not found.`);
             }
             const parsed = parseWithSchema(tool.argSchema, params);
-            const returns = await tool.handler(parsed as never, ctx);
+            const returns = await tool.handler(
+                parsed as never,
+                executionContext,
+            );
+            ctx.signal?.throwIfAborted();
             return parseWithSchema(tool.returnSchema, returns);
         };
 
         // 根据本会话注册的工具动态生成 `tools` 对象（排除 playground 自身），
         // 每个键经 RPC 桥接路由到宿主侧的 callHost。新增工具无需改动此处。
         const toolNames = tools
+            .filter((tool) => tool.exposure?.code && tool.effect !== "write")
             .map((t) => t.name)
             .filter((name) => name !== "playground");
         const toolsPrelude = toolNames
@@ -91,7 +104,8 @@ export const PlaygroundTool = createTool({
             const result = await sandbox.runDefaultExport(
                 `${prelude}${arg.code}`,
                 arg.args ?? [],
-                arg.timeoutMs ?? 2000,
+                arg.timeoutMs ?? 10000,
+                ctx.signal,
             );
             return {
                 success: true,

@@ -1,3 +1,8 @@
+export {
+    estimateContextTokens,
+    projectToolHistory,
+    serializeToolResult,
+} from "./context";
 export { parseResult, parseSkillMetadata } from "./parser";
 export { createSession } from "./session";
 export {
@@ -10,11 +15,19 @@ export {
     stringifyJson,
     withAbort,
 } from "./shared";
-export { createTool } from "./tooling";
+export { createTool, executeToolCall } from "./tooling";
 export type {
     AbortablePromise,
+    ApproveChange,
     AssistantMessage,
+    ChangeProposal,
+    ChangeReceipt,
     Chat,
+    ContextEvent,
+    ContextMetrics,
+    ContextPolicy,
+    ContextState,
+    ConversationReference,
     CreateToolInput,
     History,
     Message,
@@ -25,7 +38,9 @@ export type {
     ProviderRequest,
     ProviderRequestChunk,
     ProviderToolCall,
+    ReferenceResolver,
     ResolvedSkill,
+    RunActivity,
     Session,
     Skill,
     SkillInput,
@@ -33,6 +48,8 @@ export type {
     SystemMessage,
     Tool,
     ToolContext,
+    ToolDisplay,
+    ToolExposure,
     ToolJsonSchema,
     ToolMessage,
     ToolPromptDefinition,
