@@ -124,7 +124,7 @@
   "terms-of-use": "Terms of Use",
   "privacy-policy": "Privacy Policy",
   "login-to-github": "Login to Github",
-  "or-use-an-exist-token": "or use an exist token",
+  "login-with-token": "Enter a {provider} token manually",
   "token-expired-please-re-login-to-github-from-setting-page": "Token expired, Please re-login to Github from setting page.",
   "please-enter-your-github-token": "Please enter your github token",
   "stat-view-weekly": "Weekly",
