@@ -1,12 +1,12 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Bill } from "@/ledger/type";
 import { useIntl } from "@/locale";
 import { useLedgerStore } from "@/store/ledger";
-import { decodeApiKey } from "@/utils/api-key";
-import { Skeleton } from "../ui/skeleton";
-
-// 使用 React.lazy 懒加载地图组件
-const AMapContainer = lazy(() => import("@/components/map/index"));
+import MapCanvas from "../map";
+import { isCoordinate } from "../map/protocol";
+import { useMapProvider } from "../map/provider";
+import { showMapConfig } from "../settings/map-settings";
+import { Button } from "../ui/button";
 
 export default function AnalysisMap({
     bills,
@@ -15,11 +15,24 @@ export default function AnalysisMap({
 }) {
     const t = useIntl();
     const mapConfig = useLedgerStore((state) => state.infos?.meta.map);
-
+    const provider = useMapProvider(mapConfig);
+    const points = useMemo(
+        () =>
+            (bills ?? []).flatMap((bill) => {
+                const { location } = bill;
+                return location &&
+                    isCoordinate(location.latitude, location.longitude)
+                    ? [{ ...bill, location }]
+                    : [];
+            }),
+        [bills],
+    );
     const containerRef = useRef<HTMLDivElement>(null);
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
+        const element = containerRef.current;
+        if (!element) return;
         const observer = new IntersectionObserver(
             ([entry]) => {
                 if (entry.isIntersecting) {
@@ -29,31 +42,13 @@ export default function AnalysisMap({
             },
             { threshold: 0.1 },
         );
-        if (containerRef.current) {
-            observer.observe(containerRef.current);
-        }
+        observer.observe(element);
         return () => observer.disconnect();
     }, []);
 
-    const amapKey = useMemo(
-        () =>
-            mapConfig?.amapKey ? decodeApiKey(mapConfig.amapKey) : undefined,
-        [mapConfig?.amapKey],
-    );
-    const amapSecurityCode = useMemo(
-        () =>
-            mapConfig?.amapSecurityCode
-                ? decodeApiKey(mapConfig.amapSecurityCode)
-                : undefined,
-        [mapConfig?.amapSecurityCode],
-    );
-
-    if (!amapKey || !amapSecurityCode) {
-        return null;
-    }
-
-    // 检查是否有账单包含地理位置信息
-    const hasLocationData = bills?.some((bill) => bill.location);
+    const onSettings = () => {
+        void showMapConfig().catch(() => {});
+    };
 
     return (
         <div
@@ -63,7 +58,14 @@ export default function AnalysisMap({
             <h2 className="font-medium text-lg my-3 text-center">
                 {t("ledger-footprint")}
             </h2>
-            {!hasLocationData ? (
+            {!provider?.mount ? (
+                <div className="flex flex-col items-center gap-2 py-2 text-sm">
+                    <p>{t("map-error-configure-in-settings")}</p>
+                    <Button size="sm" variant="outline" onClick={onSettings}>
+                        {t("map-settings")}
+                    </Button>
+                </div>
+            ) : !points.length ? (
                 <div className="text-center text-sm opacity-60 py-2">
                     {t("ledger-no-footprint-tip")}
                 </div>
@@ -72,13 +74,12 @@ export default function AnalysisMap({
                     data-map-container
                     className="w-full h-[240px] md:h-[300px]"
                 >
-                    <Suspense fallback={<Skeleton className="w-full h-full" />}>
-                        <AMapContainer
-                            bills={bills}
-                            amapKey={amapKey}
-                            amapSecurityCode={amapSecurityCode}
-                        />
-                    </Suspense>
+                    <MapCanvas
+                        key={provider.identity}
+                        provider={provider}
+                        bills={points}
+                        onSettings={onSettings}
+                    />
                 </div>
             ) : null}
         </div>

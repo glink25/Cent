@@ -132,6 +132,9 @@ export type GlobalMeta = {
     map?: {
         amapKey?: string;
         amapSecurityCode?: string;
+        googleKey?: string;
+        googleMapId?: string;
+        defaultProvider?: "amp" | "google";
     };
     // Widget列表
     widgets?: Widget[];

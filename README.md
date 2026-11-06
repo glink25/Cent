@@ -53,7 +53,11 @@ Cent 是一个 **完全免费、开源的多人协作记账 Web App**，
 支持 30+ 种国际货币及自定义币种，实时汇率自动转换，适合出国旅行和跨境消费。为订阅服务、自动续费等创建**周期记账**模板，自动生成账单。
 
 ### 📊 统计分析 & 可视化
-多维度筛选与趋势分析、自定义分析视图、预算管理与进度监控。在**地图上查看消费足迹**，支持高德地图。
+多维度筛选与趋势分析、自定义分析视图、预算管理与进度监控。在**地图上查看消费足迹**，Web 支持高德地图和 Google Maps。
+
+Web 地图设置可同时保存高德和 Google 配置，并选择默认地图。使用 Google Maps 时，请在 Google Cloud 项目中启用计费和 Maps JavaScript API，创建按站点来源和 API 限制的浏览器 Key，再创建 JavaScript Map ID。将两项填入 Cent 的地图设置后，选择 Google Maps 并保存。 [API Key 指南](https://developers.google.com/maps/documentation/javascript/get-api-key) · [Map ID 指南](https://developers.google.com/maps/documentation/javascript/advanced-markers/start)
+
+升级会保留历史账单的坐标。部分旧版高德手动选点可能出现偏移，可在新版编辑账单并重新选点。使用同一个同步账本时，旧版 Android 保存或清除高德设置可能覆盖 Web 的 Google 配置和默认地图选择。 [地图设计与兼容约定](docs/contributing/map.md)
 
 ### 🛠️ 更多功能
 - 📱 **PWA 支持**：可安装到桌面，像原生 App 一样使用
@@ -125,7 +129,7 @@ Cent使用Cloudflare Workers部署了一个线上鉴权服务，该服务只针�
 - ✅ AI 助手功能
 - ✅ 语音记账
 - ✅ 多币种支持与汇率管理
-- ✅ 地图支出可视化（高德地图集成）
+- ✅ 地图支出可视化（Web 支持高德地图和 Google Maps）
 - ✅ 周期记账
 - ✅ 智能导入（支付宝/微信账单）
 - ✅ 标签系统升级

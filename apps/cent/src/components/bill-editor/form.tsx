@@ -13,7 +13,6 @@ import { useIntl } from "@/locale";
 import { type EditBill, useLedgerStore } from "@/store/ledger";
 import { usePreferenceStore } from "@/store/preference";
 import { cn } from "@/utils";
-import { decodeApiKey } from "@/utils/api-key";
 import { getPredictNow } from "@/utils/predict";
 import { showTagList } from "../bill-tag";
 import { showCategoryList } from "../category";
@@ -28,6 +27,7 @@ import {
     LocationPickerProvider,
     showLocationPicker,
 } from "../map/location-picker";
+import { useMapProvider } from "../map/provider";
 import CurrentLocation from "../simple-location";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "../ui/select";
 import { goAddBill } from ".";
@@ -168,35 +168,17 @@ export default function EditorForm({
     };
 
     const mapConfig = useLedgerStore((state) => state.infos?.meta.map);
-    const amapKey = useMemo(
-        () =>
-            mapConfig?.amapKey ? decodeApiKey(mapConfig.amapKey) : undefined,
-        [mapConfig?.amapKey],
-    );
-    const amapSecurityCode = useMemo(
-        () =>
-            mapConfig?.amapSecurityCode
-                ? decodeApiKey(mapConfig.amapSecurityCode)
-                : undefined,
-        [mapConfig?.amapSecurityCode],
-    );
+    const provider = useMapProvider(mapConfig);
     const handlePickLocation = useCallback(async () => {
-        if (!billState.location) return;
-        if (!amapKey || !amapSecurityCode) {
-            toast.warning(t("map-error-no-api-key"));
-            return;
+        if (!provider?.Picker) return;
+        const result = await showLocationPicker({
+            Picker: provider.Picker,
+            initial: billState.location,
+        });
+        if (result.kind === "selected") {
+            setBillState((prev) => ({ ...prev, location: result.location }));
         }
-        try {
-            const location = await showLocationPicker({
-                location: billState.location,
-                amapKey,
-                amapSecurityCode,
-            });
-            setBillState((prev) => ({ ...prev, location }));
-        } catch {
-            // Dialog cancellation should keep the original location untouched.
-        }
-    }, [amapKey, amapSecurityCode, billState.location, t]);
+    }, [provider, billState.location]);
 
     const locationRef = useRef<HTMLButtonElement>(null);
     const isAdd = useRef(!edit);
@@ -207,7 +189,8 @@ export default function EditorForm({
         ) {
             return;
         }
-        locationRef.current?.click?.();
+        const timer = window.setTimeout(() => locationRef.current?.click(), 0);
+        return () => window.clearTimeout(timer);
     }, []);
 
     const targetCurrency =
@@ -528,6 +511,10 @@ export default function EditorForm({
                                         <button
                                             type="button"
                                             className="px-1 flex items-center justify-center"
+                                            aria-label={t(
+                                                "map-location-picker-title",
+                                            )}
+                                            disabled={!provider?.Picker}
                                             onClick={handlePickLocation}
                                         >
                                             <i className="w-5 icon-[mdi--location-radius]"></i>
@@ -535,11 +522,16 @@ export default function EditorForm({
                                     </Deletable>
                                 ) : (
                                     <CurrentLocation
+                                        onError={(error) =>
+                                            toast.warning(t(error))
+                                        }
                                         ref={locationRef}
                                         className="px-1 flex items-center justify-center"
                                         onValueChange={(v) => {
                                             setBillState((prev) => {
-                                                return { ...prev, location: v };
+                                                return prev.location
+                                                    ? prev
+                                                    : { ...prev, location: v };
                                             });
                                         }}
                                     >

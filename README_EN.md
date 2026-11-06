@@ -53,7 +53,11 @@ Long press the recording button for **Voice Recording**, where AI automatically 
 Supports 30+ international currencies plus custom currencies, with real-time automatic exchange rate conversion. Perfect for international travel and cross-border transactions. Create **scheduled billing** templates for subscriptions and auto-renewals.
 
 ### 📊 Statistics & Visualization
-Multi-dimensional filtering and trend analysis, custom analysis views, budget management with progress monitoring. **View spending footprints on a map** with AMap support.
+Multi-dimensional filtering and trend analysis, custom analysis views, budget management with progress monitoring. **View spending footprints on a map** with AMap or Google Maps on the web.
+
+Web map settings can store both providers and let you choose the default. For Google Maps, enable billing and the Maps JavaScript API in Google Cloud, create a browser API key with website and API restrictions, and create a JavaScript map ID. Enter both values in Cent, select Google Maps, and save. [API key guide](https://developers.google.com/maps/documentation/javascript/get-api-key) · [Map ID guide](https://developers.google.com/maps/documentation/javascript/advanced-markers/start)
+
+The upgrade preserves existing bill coordinates. Some older locations picked on AMap may appear offset. Open the bill and pick the location again to correct it. When sharing a synced ledger, saving or clearing AMap settings on an older Android client may overwrite the Google configuration and default map choice.
 
 ### 🛠️ More Features
 - 📱 **PWA Support**: Install to desktop and use like a native app
@@ -126,7 +130,7 @@ Cent uses Cloudflare Workers to deploy an online authentication service, which o
 - ✅ AI assistant features
 - ✅ Voice recording
 - ✅ Multi-currency support and exchange rate management
-- ✅ Map visualization of expenditures (AMap integration)
+- ✅ Map visualization of expenditures (AMap and Google Maps on the web)
 - ✅ Scheduled billing
 - ✅ Smart import (Alipay/WeChat bills)
 - ✅ Tag system upgrade
