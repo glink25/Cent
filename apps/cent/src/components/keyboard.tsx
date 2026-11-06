@@ -18,10 +18,9 @@ const pointKey = ".";
 
 type Char = (typeof charKeys)[number];
 type Operator = "+" | "-" | "x" | "÷";
-type Eraser = "c";
 type Point = typeof pointKey;
 type Eq = "=";
-type Value = Char | Operator | Point | Eraser | Eq;
+type Value = Char | Operator | Point | Eq;
 
 //[ '0','1','2','.','4','5'] -> 012.45
 type Num = (Char | Point)[];
@@ -139,11 +138,6 @@ const createFormula = (
 ) => {
     const prev = _prev ?? [["0"]];
     const value = `${_value}` as Value;
-    if (value === "c") {
-        const full = prev.flat();
-        full.pop();
-        return arrayToFormula(full, precision);
-    }
     // 1，传入小数点，但上一个数字已经有小数点
     const num = prev[2] ?? prev[0];
     if (value === ".") {
@@ -235,21 +229,22 @@ const insertChar = (
     };
 };
 
-// 删除光标前的一个字符（退格语义）
+// 删除指定字符，并保留该位置作为插入点。
 const deleteChar = (
     formula: Formula,
-    cursor: number,
+    index: number,
     precision: number,
 ): { formula: Formula; cursor: number } => {
-    if (cursor === 0) {
-        return { formula, cursor };
-    }
     const full = formula.flat();
-    const candidate = [...full.slice(0, cursor - 1), ...full.slice(cursor)];
-    const newFormula = arrayToFormula(candidate, precision);
+    full.splice(index, 1);
+    // 删除左操作数后，移除失去操作数的运算符，保留合法的负号。
+    if (isOperator(full[0]) && (full[0] !== "-" || full.length === 1)) {
+        full.shift();
+    }
+    const newFormula = arrayToFormula(full, precision);
     return {
         formula: newFormula,
-        cursor: Math.min(cursor - 1, toText(newFormula).length),
+        cursor: Math.min(index, toText(newFormula).length),
     };
 };
 
@@ -298,19 +293,23 @@ export const CalculatorRoot = ({
             if (value === "r") {
                 return;
             }
-            setState(({ formula, cursor }) => {
+            setState((state) => {
+                const { formula, cursor } = state;
                 let f = formula;
                 let c = cursor;
-                for (const ch of value.split("")) {
+                const keys = value === "Delete" ? [value] : value.split("");
+                for (const ch of keys) {
                     const len = toText(f).length;
-                    if (c >= len) {
-                        // 光标在末尾：沿用既有的追加逻辑（运算符二次计算、=、退格等）
-                        f = createFormula(ch, precision, f);
-                        c = toText(f).length;
-                    } else if (ch === "c") {
-                        const r = deleteChar(f, c, precision);
+                    if (ch === "c" || ch === "Delete") {
+                        const index = ch === "c" ? c - 1 : c;
+                        if (index < 0 || index >= len) return state;
+                        const r = deleteChar(f, index, precision);
                         f = r.formula;
                         c = r.cursor;
+                    } else if (c >= len) {
+                        // 光标在末尾：沿用既有的追加逻辑（运算符二次计算、= 等）
+                        f = createFormula(ch, precision, f);
+                        c = toText(f).length;
                     } else if (ch === "=") {
                         f = createFormula("=", precision, f);
                         c = toText(f).length;
@@ -459,19 +458,37 @@ export const CalculatorValue = ({
                     onConfirm?.();
                     return;
                 }
-                if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
-                    event.preventDefault();
-                    const step = event.key === "ArrowLeft" ? -1 : 1;
-                    setCursor((position) => position + step);
-                    setCaretRevision((revision) => revision + 1);
-                    return;
-                }
-                const key = event.key === "Backspace" ? "c" : event.key;
-                if (key === "r" || !Layout.some((item) => item.label === key)) {
-                    return;
+                switch (event.key) {
+                    case "ArrowLeft":
+                        setCursor((position) => position - 1);
+                        break;
+                    case "ArrowRight":
+                        setCursor((position) => position + 1);
+                        break;
+                    case "Home":
+                    case "ArrowUp":
+                        setCursor(0);
+                        break;
+                    case "End":
+                    case "ArrowDown":
+                        setCursor(len);
+                        break;
+                    default: {
+                        const key = event.key === "Backspace" ? "c" : event.key;
+                        if (
+                            key === "r" ||
+                            (key !== "Delete" &&
+                                !Layout.some((item) => item.label === key))
+                        ) {
+                            return;
+                        }
+                        event.preventDefault();
+                        handleButtonClick(key);
+                        return;
+                    }
                 }
                 event.preventDefault();
-                handleButtonClick(key);
+                setCaretRevision((revision) => revision + 1);
             }}
             onPointerDown={(e) => {
                 e.currentTarget.focus({ preventScroll: true });
