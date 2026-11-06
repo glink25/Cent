@@ -235,6 +235,7 @@ type DialogContentProps = Omit<
     "forceMount" | "asChild"
 > &
     HTMLMotionProps<"div"> & {
+        onEnterAnimationEnd?: (content: HTMLDivElement) => void;
         from?: DialogFlipDirection;
     } & {
         swipe?: boolean;
@@ -253,6 +254,7 @@ const toPx = (v: string) => {
 
 function DialogContent({
     onOpenAutoFocus,
+    onEnterAnimationEnd,
     onCloseAutoFocus,
     onEscapeKeyDown,
     onPointerDownOutside,
@@ -416,6 +418,11 @@ function DialogContent({
         return stop;
     }, [isDesktop, fade, onClose]);
 
+    const onEnterAnimationEndRef = useRef(onEnterAnimationEnd);
+    useEffect(() => {
+        onEnterAnimationEndRef.current = onEnterAnimationEnd;
+    }, [onEnterAnimationEnd]);
+
     const initialPlayed = useRef(false);
     const exitPlayed = useRef(false);
 
@@ -432,7 +439,8 @@ function DialogContent({
                     contentRef.current!.style[prop as any] = value;
                 },
             );
-            contentRef.current
+            const content = contentRef.current;
+            content
                 ?.animate([currentVariant.initial, currentVariant.animate], {
                     ...transitionNative,
                     fill: "forwards",
@@ -440,6 +448,7 @@ function DialogContent({
                 .finished.then((ani) => {
                     ani.commitStyles();
                     ani.cancel();
+                    onEnterAnimationEndRef.current?.(content);
                 });
         } else {
             if (exitPlayed.current) {
