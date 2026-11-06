@@ -4,6 +4,7 @@ import type {
     ProviderRequestChunk,
 } from "../assistant";
 import { formatUserReferences } from "../assistant/references";
+import { withToolImages } from "../assistant/tool-images";
 import type { ReferenceDelivery } from "../components/assistant/runtime";
 import { encodeImages, isImage } from "../providers/images";
 import type {
@@ -87,9 +88,12 @@ async function encodeNativeHistory(history: History): Promise<unknown[]> {
     return history.map((message, index) => {
         if (message.role !== "user") return message;
         const count = imagesByMessage[index].length;
-        const assets = images.slice(offset, offset + count);
+        const assets = [
+            ...images.slice(offset, offset + count),
+            ...(message.toolImages ?? []),
+        ];
         offset += count;
-        const { references: _, ...content } = message;
+        const { references: _, toolImages: __, ...content } = message;
         return { ...content, raw: formatUserReferences(message), assets };
     });
 }
@@ -200,7 +204,13 @@ function createNativeBridge(transport: NativeTransport): HostBridge {
             onError,
         }) => {
             const wireHistory =
-                version >= 3 ? await encodeNativeHistory(history) : history;
+                version >= 3
+                    ? await encodeNativeHistory(
+                          purpose === "summary"
+                              ? history
+                              : withToolImages(history),
+                      )
+                    : history;
             const store = ensureNativeCallbackStore();
             const id = createRequestId();
             const cleanup = () => {

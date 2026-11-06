@@ -320,8 +320,10 @@ export const mutationTools = [
                             ? undefined
                             : (arg.code ?? old?.code);
                     const compiled = code ? compileWidget(code) : undefined;
-                    if (compiled && (!compiled.name || !compiled.apiVersion))
+                    if (compiled && !compiled.name)
                         throw new Error("Missing widget metadata");
+                    if (compiled && !compiled.apiVersion.startsWith("2."))
+                        throw new Error("Widget API v2 is required");
                     if (code && (code !== old?.code || fields?.storage)) {
                         const validated = (await validateWidget.handler(
                             { code, storage: fields?.storage ?? old?.storage },

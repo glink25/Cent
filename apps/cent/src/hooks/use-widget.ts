@@ -1,5 +1,6 @@
 import { v4 } from "uuid";
 import { useShallow } from "zustand/shallow";
+import compileWidget from "@/components/widget/core/compile";
 import type { Widget } from "@/components/widget/type";
 import { measure } from "@/measurement";
 import { useLedgerStore } from "@/store/ledger";
@@ -13,6 +14,8 @@ export function useWidget() {
     const add = async (
         widget: Omit<Widget, "id" | "createdAt" | "updatedAt">,
     ) => {
+        if (!compileWidget(widget.code).apiVersion.startsWith("2."))
+            throw new Error("Widget API v2 is required");
         const newWidget: Widget = {
             ...widget,
             id: v4(),
@@ -36,6 +39,11 @@ export function useWidget() {
         id: string,
         updates: Partial<Omit<Widget, "id" | "createdAt">>,
     ) => {
+        if (
+            updates.code !== undefined &&
+            !compileWidget(updates.code).apiVersion.startsWith("2.")
+        )
+            throw new Error("Widget API v2 is required");
         await useLedgerStore.getState().updateGlobalMeta((prev) => ({
             ...prev,
             widgets: (prev.widgets ?? []).map((w) =>

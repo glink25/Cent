@@ -252,6 +252,14 @@ export async function loadHostRuntimeConfig(
         : init.configs[0]?.id;
 
     const changeControl = host.changeControl;
+    const finishBatch =
+        init.writeBatchSupport && host.endBatch && changeControl
+            ? createHostTool(host, {
+                  name: "__finishBatch",
+                  describe: "Prepare the completed Playground write batch.",
+                  returnJsonSchema: {},
+              })
+            : undefined;
     const hostSkillIds = new Set(init.skills.map((skill) => skill.id));
 
     return {
@@ -263,21 +271,48 @@ export async function loadHostRuntimeConfig(
         referenceDraft: init.referenceDraft,
         saveReferenceDraft: host.saveReferenceDraft,
         subscribeReferenceDeliveries: host.subscribeReferenceDeliveries,
-        provider: createHostProvider(host),
+        provider: createHostProvider({
+            ...host,
+            getContextPolicy:
+                host.getContextPolicy ??
+                ((id) => {
+                    const config = init.configs.find(
+                        (entry) => entry.id === (id ?? defaultConfigId),
+                    );
+                    return { contextWindow: config?.contextWindow };
+                }),
+        }),
         tools: [
             ...fallback.tools.map((tool) => {
                 if (!host.endBatch || tool.name !== "playground") return tool;
                 return {
                     ...tool,
+                    returnSchema: finishBatch ? z.unknown() : tool.returnSchema,
                     handler: async (params: unknown, context: ToolContext) => {
                         const batchId = createRequestId();
                         const resources = new Map(context.resources);
                         resources.set(nativeBatchKey, batchId);
+                        if (finishBatch)
+                            resources.set("cent:native-batch-write", true);
                         try {
-                            return await tool.handler(params, {
-                                ...context,
-                                resources,
-                            });
+                            const batchContext = { ...context, resources };
+                            const result = await tool.handler(
+                                params,
+                                batchContext,
+                            );
+                            if (
+                                !finishBatch ||
+                                !(result as { success?: boolean })?.success
+                            )
+                                return result;
+                            context.signal?.throwIfAborted();
+                            const receipt = await finishBatch.handler(
+                                {},
+                                batchContext,
+                            );
+                            return receipt && typeof receipt === "object"
+                                ? { ...receipt, playgroundResult: result }
+                                : result;
                         } finally {
                             host.endBatch?.(batchId);
                         }

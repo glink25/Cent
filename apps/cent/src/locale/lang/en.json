@@ -746,6 +746,7 @@
   "widget-preview": "Preview",
   "widget-code": "Code",
   "widget-permissions": "Permissions",
+  "widget-upgrade-required": "This widget requires an upgrade to API v2",
   "widget-invalid-code": "Invalid widget code",
   "widget-config": "Configuration",
   "select-placeholder": "Please select",

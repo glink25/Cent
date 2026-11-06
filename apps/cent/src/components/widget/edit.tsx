@@ -1,22 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { useTheme } from "@/hooks/use-theme";
 import { useWidget } from "@/hooks/use-widget";
 import PopupLayout from "@/layouts/popup-layout";
 import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
-import { useLedgerStore } from "@/store/ledger";
 import { Button } from "../ui/button";
 import ConfigForm from "./config-form";
 import compileWidget, { Permission } from "./core/compile";
-import runWidget from "./core/runner";
 import InteractiveWidget from "./interactive";
-import WidgetPreviewSkeleton from "./skeleton";
-import type { DSLNode, Widget, WidgetPermissions } from "./type";
-import WidgetRenderer from "./widget";
+import type { Widget, WidgetPermissions } from "./type";
 
 const defaultCode = `/**
- * @widget-api 1.0
+ * @widget-api 2.0
  * @name My Widget
  * @permissions billing
  */
@@ -26,7 +21,7 @@ export const config = {
   showCount: { type: 'select', label: '显示数量', options: ['是', '否'], default: '是' }
 };
 
-export default async ({ data, settings }) => {
+export default function Main({ data, settings }) {
     const bills = data.billing || [];
     const total = bills.reduce((sum, bill) => sum + bill.amount, 0);
     const title = settings.title || '我的账单';
@@ -37,7 +32,7 @@ export default async ({ data, settings }) => {
         Text("Total: " + total).fontSize(14),
         showCount ? Text("Bills: " + bills.length).fontSize(12) : null
     ).direction('column').gap(8);
-};
+}
 `;
 
 export default function WidgetEdit({
@@ -56,9 +51,6 @@ export default function WidgetEdit({
     const [formSettings, setFormSettings] = useState<Record<string, any>>(
         edit?.settings ?? {},
     );
-    const [previewDsl, setPreviewDsl] = useState<DSLNode | null>(null);
-    const [previewError, setPreviewError] = useState<string | null>(null);
-    const [previewLoading, setPreviewLoading] = useState(true);
     const [permissions, setPermissions] = useState<WidgetPermissions>({
         edit: false,
         storage: false,
@@ -84,20 +76,6 @@ export default function WidgetEdit({
             currency: edit ? edit.permissions.includes("currency") : true,
             tag: edit ? edit.permissions.includes("tag") : true,
         });
-
-    const bills = useLedgerStore((s) => s.bills);
-    const budgets = useLedgerStore((s) => s.infos?.meta.budgets);
-    const creators = useLedgerStore((s) => s.infos?.creators);
-    const categories = useLedgerStore((s) => s.infos?.meta.categories);
-    const baseCurrency = useLedgerStore((s) => s.infos?.meta.baseCurrency);
-    const customCurrencies = useLedgerStore(
-        (s) => s.infos?.meta.customCurrencies,
-    );
-    const quickCurrencies = useLedgerStore(
-        (s) => s.infos?.meta.quickCurrencies,
-    );
-    const tags = useLedgerStore((s) => s.infos?.meta.tags);
-    const { theme } = useTheme();
 
     const compiled = useMemo(() => {
         try {
@@ -126,98 +104,6 @@ export default function WidgetEdit({
         }
     }, [compiled]);
 
-    const getData = useCallback(async () => {
-        return {
-            bills,
-            budgets,
-            filter: {},
-            creators,
-            categories,
-            baseCurrency,
-            customCurrencies,
-            quickCurrencies,
-            tags,
-        };
-    }, [
-        bills,
-        budgets,
-        creators,
-        categories,
-        baseCurrency,
-        customCurrencies,
-        quickCurrencies,
-        tags,
-    ]);
-
-    const runPreview = useCallback(async () => {
-        if (!compiled) {
-            setPreviewError("Invalid widget code");
-            setPreviewDsl(null);
-            setPreviewLoading(false);
-            return;
-        }
-
-        const activePermissions = Object.entries(allowedPermissions)
-            .filter(([, allowed]) => allowed)
-            .map(([perm]) => perm);
-
-        const hasDisallowed = compiled.permissions.some(
-            (p) => !activePermissions.includes(p),
-        );
-
-        if (hasDisallowed) {
-            setPreviewError("Some permissions are not allowed");
-            setPreviewDsl(null);
-            setPreviewLoading(false);
-            return;
-        }
-
-        if (compiled.apiVersion.startsWith("2.")) {
-            setPreviewLoading(false);
-            setPreviewError(null);
-            return;
-        }
-        setPreviewLoading(true);
-
-        try {
-            const isDark =
-                theme === "dark" ||
-                (theme === "system" &&
-                    window.matchMedia("(prefers-color-scheme: dark)").matches);
-
-            const result = await runWidget(code, {
-                settings: formSettings,
-                grants: activePermissions,
-                getData,
-                env: {
-                    theme: isDark ? "dark" : "light",
-                    language: "zh-CN",
-                },
-            });
-
-            if (result.success && result.result) {
-                const dslNode =
-                    (result.result as { _node?: DSLNode })?._node ??
-                    result.result;
-                setPreviewDsl(dslNode as DSLNode);
-                setPreviewError(null);
-            } else {
-                setPreviewError(result.error ?? "Unknown error");
-                setPreviewDsl(null);
-            }
-        } catch (err) {
-            setPreviewError(err instanceof Error ? err.message : String(err));
-            setPreviewDsl(null);
-        } finally {
-            setPreviewLoading(false);
-        }
-    }, [code, compiled, allowedPermissions, formSettings, getData, theme]);
-
-    useEffect(() => {
-        const timer = setTimeout(runPreview, 500);
-        return () => clearTimeout(timer);
-    }, [runPreview]);
-
     const handleFormChange = useCallback((key: string, value: any) => {
         setFormSettings((prev) => ({
             ...prev,
@@ -228,6 +114,11 @@ export default function WidgetEdit({
     const handleSave = async () => {
         if (!compiled) {
             toast.error(t("widget-invalid-code"));
+            return;
+        }
+
+        if (!compiled.apiVersion.startsWith("2.")) {
+            toast.error(t("widget-upgrade-required"));
             return;
         }
 
@@ -339,17 +230,13 @@ export default function WidgetEdit({
                                             }}
                                             className="w-full"
                                         />
-                                    ) : previewLoading ? (
-                                        <div className="max-w-[320px] w-full h-[120px] bg-card rounded-lg shadow-lg">
-                                            <WidgetPreviewSkeleton />
-                                        </div>
-                                    ) : previewError ? (
-                                        <div className="text-red-500 text-xs whitespace-pre-wrap select-text">
-                                            {previewError}
-                                        </div>
                                     ) : (
-                                        <div className="max-w-[320px] w-full h-[120px] bg-card rounded-lg shadow-lg">
-                                            <WidgetRenderer dsl={previewDsl} />
+                                        <div className="text-xs">
+                                            {t(
+                                                compiled
+                                                    ? "widget-upgrade-required"
+                                                    : "widget-invalid-code",
+                                            )}
                                         </div>
                                     )}
                                 </div>

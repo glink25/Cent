@@ -21,7 +21,10 @@ import type { AgentApiAdapter, AgentApiStatus } from "../types";
 // --- Web MCP typings (subset of the proposal we rely on) -------------------
 
 type McpToolResult = {
-    content: Array<{ type: "text"; text: string }>;
+    content: Array<
+        | { type: "text"; text: string }
+        | { type: "image"; mimeType: string; data: string }
+    >;
     structuredContent?: unknown;
     isError?: boolean;
 };
@@ -105,6 +108,25 @@ async function register(): Promise<boolean> {
                                 args,
                                 signal,
                             );
+                            if (
+                                tool.name === "readBillAttachment" &&
+                                data &&
+                                typeof data === "object" &&
+                                "mimeType" in data &&
+                                typeof data.mimeType === "string" &&
+                                "data" in data &&
+                                typeof data.data === "string"
+                            ) {
+                                return {
+                                    content: [
+                                        {
+                                            type: "image",
+                                            mimeType: data.mimeType,
+                                            data: data.data,
+                                        },
+                                    ],
+                                };
+                            }
                             const text =
                                 typeof data === "string"
                                     ? data

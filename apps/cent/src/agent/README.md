@@ -7,15 +7,17 @@ The internal Assistant and external Agent API share `runtime.ts`. `operations.ts
 - `discover`: native and code. Lists code operations and JSON schemas.
 - `playground`: native only. Runs an ES module exporting a default function; `tools.NAME(args)` calls declared code operations.
 - Internal sessions also expose `listSkills` / `loadSkill`. External sessions expose `readDocs`.
-- Query, aggregate, metadata, widget inspection/validation, import and widget editor actions are code-only.
+- `query`, `aggregate`, `metadata` and `listLedgerObjects` share the same implementation across chat, Zen and WebMCP. `readBillAttachment` is a direct tool. Widget inspection and validation are also available through Code Mode.
 
 `Tool.exposure` controls native and code independently. Undeclared exposure is closed. Host bridges must validate the surface and schemas; the tool list alone is not an authorization boundary. `effect` controls replay eligibility; arbitrary code execution cannot be automatically replayed as read-only.
 
 ## Data contract
 
-`query` returns real integer bill amounts, scaled 10000:1. `filter.start` is inclusive and `filter.end` exclusive, both epoch milliseconds. `categoryIds` and `tagIds` are exact IDs; an explicitly empty array matches nothing. `offset` / `limit` page the items, while statistics cover every match. `aggregate` uses the same filter and accepts an IANA time zone for month buckets. Opaque tags do not affect totals.
+`query` uses the current account's full local ledger. Amounts are integers scaled 10000:1. Time uses epoch milliseconds with inclusive start and exclusive end. `creatorId` is the author of the bill. The output is a string or null, and numeric legacy IDs are normalized to strings. `filter.creatorIds` uses exact IDs. Omission includes all creators and an empty array matches none. `metadata` gives `viewerId` and `members` for name resolution.
 
-A code invocation shares its first read snapshot across queries. New invocations refresh data. Return summaries rather than unbounded rows to the model. This snapshot does not provide cross-operation transactional writes.
+`aggregate` uses the same filters and groups by month, category, type or creator. A null creator group holds unattributed bills. Opaque tags do not change the totals. Statistics cover every matching row. `limit` only bounds the returned items. Pass `nextCursor` back as `cursor` with the same filters and fields to read the next page from the same snapshot. A cursor expires after five minutes or when its ledger scope ends.
+
+`query.fields` can request location, scheduled or widget IDs, and attachment descriptions. Use `listLedgerObjects` for budgets, saved filters, the viewer's scheduled bills and visible Widget configuration. Use the bill and attachment IDs returned by query with `readBillAttachment` to read an image. The chat provider sends it as media input and WebMCP returns image content. Full local coverage and remote sync status are reported separately.
 
 ## Widget workflow
 

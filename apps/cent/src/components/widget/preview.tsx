@@ -1,7 +1,7 @@
 import type { Bill } from "@/ledger/type";
+import { useIntl } from "@/locale";
 import compileWidget from "./core/compile";
 import InteractiveWidget from "./interactive";
-import WidgetPreviewWrapper from "./preview-wrapper";
 import type { Widget } from "./type";
 
 type WidgetPreviewProps = {
@@ -17,23 +17,17 @@ export default function WidgetPreview({
     bills,
     initialView,
 }: WidgetPreviewProps) {
-    if (compileWidget(widget.code).apiVersion.startsWith("2."))
-        return (
-            <InteractiveWidget
-                key={`${widget.id}:${widget.code}`}
-                widget={widget}
-                bills={bills}
-                className={className}
-                initialView={initialView}
-            />
-        );
+    const t = useIntl();
+    if (!compileWidget(widget.code).apiVersion.startsWith("2.")) {
+        return <p className="p-3 text-xs">{t("widget-upgrade-required")}</p>;
+    }
     return (
-        <WidgetPreviewWrapper
-            code={widget.code}
-            settings={widget.settings}
-            grants={widget.permissions}
-            className={className}
+        <InteractiveWidget
+            key={`${widget.id}:${widget.code}`}
+            widget={widget}
             bills={bills}
+            className={className}
+            initialView={initialView}
         />
     );
 }

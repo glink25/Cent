@@ -10,9 +10,7 @@ import {
 // Tailwind）。zen 的工具类由 cent 自身 Tailwind 扫描 zen 源码统一生成；zen 的纯 CSS
 // 主题（zen.css）已随 `@glink25/zen` 源码入口自动引入。
 import { z } from "zod";
-import { guardOperation } from "@/agent/guard";
-import { createDataOperations } from "@/agent/operations";
-import { readAgentSnapshot } from "@/agent/web-host";
+import { ledgerReadOperations } from "@/agent/runtime";
 import { loadStorageAPI } from "@/api/storage/dynamic";
 import { createTool, executeToolCall } from "@/assistant";
 import { getAIConfig } from "@/components/assistant/request";
@@ -33,9 +31,7 @@ import { usePreferenceStore } from "@/store/preference";
 import { useUserStore } from "@/store/user";
 import { buildZenContext } from "./analyzer";
 
-const zenOperations = createDataOperations({ snapshot: readAgentSnapshot }).map(
-    guardOperation,
-);
+const zenOperations = ledgerReadOperations;
 const zenDiscover = createTool({
     name: "discover",
     exposure: { native: true, code: true },
@@ -44,11 +40,13 @@ const zenDiscover = createTool({
     argSchema: z.object({}),
     returnSchema: z.unknown(),
     handler: () =>
-        zenOperations.map((t) => ({
-            name: t.name,
-            description: t.describe,
-            input: t.argSchema ? z.toJSONSchema(t.argSchema) : {},
-        })),
+        zenOperations
+            .filter((tool) => tool.exposure?.code)
+            .map((t) => ({
+                name: t.name,
+                description: t.describe,
+                input: t.argSchema ? z.toJSONSchema(t.argSchema) : {},
+            })),
 });
 const hostAITools = [...zenOperations, zenDiscover, PlaygroundTool] as Tool[];
 

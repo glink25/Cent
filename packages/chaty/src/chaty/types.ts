@@ -43,6 +43,7 @@ export type AIChatInitPayload = {
     bridgeVersion?: number;
     referenceSupport?: boolean;
     changeSupport?: boolean;
+    writeBatchSupport?: boolean;
     referenceDraft?: ReferenceDraft;
     configs: AIChatConfig[];
     defaultConfigId?: string;

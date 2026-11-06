@@ -758,6 +758,7 @@
   "widget-preview": "预览",
   "widget-code": "代码",
   "widget-permissions": "权限",
+  "widget-upgrade-required": "此小组件需要升级为 v2 协议",
   "widget-invalid-code": "无效的Widget代码",
   "widget-config": "配置项",
   "select-placeholder": "请选择",

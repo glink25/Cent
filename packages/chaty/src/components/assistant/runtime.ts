@@ -26,6 +26,7 @@ export type ReferenceDeliverySubscriber = (
 export type AIChatConfig = {
     id: string;
     name: string;
+    contextWindow?: number;
 };
 
 /** 首页快捷提问。 */

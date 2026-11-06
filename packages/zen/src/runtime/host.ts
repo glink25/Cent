@@ -3,6 +3,7 @@ import {
     type ProviderRequestChunk,
     type Tool,
     withAbort,
+    withToolImages,
 } from "@glink25/chaty";
 import { z } from "zod";
 import { getAndroidNativeHost, getIosNativeHost } from "./native-host";
@@ -71,7 +72,10 @@ export function createHostProvider(host: ZenRuntimeHost): Provider {
                         configId,
                         purpose,
                         maxTokens,
-                        history,
+                        history:
+                            purpose === "summary"
+                                ? history
+                                : withToolImages(history),
                         tools: tools.map(serializeTool),
                         onChunk: (chunk) => {
                             queue.push(chunk);

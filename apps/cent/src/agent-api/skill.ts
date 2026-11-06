@@ -70,7 +70,7 @@ export function buildSkillMarkdown(
         "",
         "```bash",
         `curl -X POST -H "Authorization: Bearer ${token}" -H "Content-Type: application/json" \\`,
-        `  -d '{"args": {}}' ${url}/tools/getAccountMeta`,
+        `  -d '{"args": {}}' ${url}/tools/metadata`,
         "```",
         "",
         "## 可用工具",

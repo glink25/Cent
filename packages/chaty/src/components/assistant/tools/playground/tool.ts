@@ -54,6 +54,8 @@ export const PlaygroundTool = createTool({
         ctx: ToolContext,
     ) => {
         const { history, tools } = ctx;
+        const allowWrites =
+            ctx.resources?.get("cent:native-batch-write") === true;
         const executionContext = {
             ...ctx,
             resources: new Map(ctx.resources),
@@ -70,7 +72,10 @@ export const PlaygroundTool = createTool({
             }
             const tool = tools.find((t) => t.name === name);
             ctx.signal?.throwIfAborted();
-            if (!tool?.exposure?.code || tool.effect === "write") {
+            if (
+                !tool?.exposure?.code ||
+                (!allowWrites && tool.effect === "write")
+            ) {
                 throw new Error(`Tool "${name}" not found.`);
             }
             const parsed = parseWithSchema(tool.argSchema, params);
@@ -85,7 +90,11 @@ export const PlaygroundTool = createTool({
         // 根据本会话注册的工具动态生成 `tools` 对象（排除 playground 自身），
         // 每个键经 RPC 桥接路由到宿主侧的 callHost。新增工具无需改动此处。
         const toolNames = tools
-            .filter((tool) => tool.exposure?.code && tool.effect !== "write")
+            .filter(
+                (tool) =>
+                    tool.exposure?.code &&
+                    (allowWrites || tool.effect !== "write"),
+            )
             .map((t) => t.name)
             .filter((name) => name !== "playground");
         const toolsPrelude = toolNames

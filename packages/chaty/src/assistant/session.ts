@@ -21,6 +21,7 @@ import {
 } from "./recovery";
 import { referenceTool } from "./references";
 import { cloneHistory, createUserMessage } from "./shared";
+import { retainToolImage } from "./tool-images";
 import {
     createListSkillsTool,
     createLoadSkillTool,
@@ -544,6 +545,7 @@ export function createSession({
                                   },
                               }
                             : await executeToolCall(toolMap, call, ctx(call));
+                        retainToolImage(result);
                         result.id = crypto.randomUUID();
                         result.formatted.id = call.id;
                         result.formatted.runningTime = Date.now() - started;

@@ -15,6 +15,7 @@ export {
     stringifyJson,
     withAbort,
 } from "./shared";
+export { withToolImages } from "./tool-images";
 export { createTool, executeToolCall } from "./tooling";
 export type {
     AbortablePromise,

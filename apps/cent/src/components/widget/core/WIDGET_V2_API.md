@@ -1,6 +1,6 @@
 # Widget API 2.0
 
-声明 `@widget-api 2.0`。1.x 的代码和 config/settings 继续支持；新组件使用交互式 DSL 和共享 storage，不需要 config 表单。
+声明 `@widget-api 2.0`。已有 1.x 脚本需升级后才能运行。新组件使用交互式 DSL 和共享 storage，不需要 config 表单。
 
 完整示例为[账户与转账](../examples/accounts.js)。账户余额来自账户标签下的账单，转账保存为两笔关联账单，手续费单列。组件提供按账户筛选的统计视图和排除「不计收支」标签的实际收支视图。
 

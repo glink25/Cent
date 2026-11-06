@@ -50,6 +50,7 @@ export type UserMessage = {
     role: "user";
     raw: string;
     assets?: File[];
+    toolImages?: import("./tool-images").ToolImage[];
     references?: ConversationReference[];
 };
 

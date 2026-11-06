@@ -15,7 +15,7 @@ export const widgetOperations = [
         name: "widgets",
         exposure,
         describe:
-            "Read installed widgets, including source and storage. Optional id selects one widget.",
+            "Read installed widget source and configuration. Optional id selects one widget.",
         argSchema: z.object({ id: z.string().optional() }),
         returnSchema: z.unknown(),
         handler: async ({ id }) => {
@@ -25,7 +25,9 @@ export const widgetOperations = [
             const meta = (await StorageAPI.getMeta(repo)) as GlobalMeta;
             if (useBookStore.getState().currentBookId !== repo)
                 throw new Error("Ledger changed");
-            const widgets = meta.widgets ?? [];
+            const widgets = (meta.widgets ?? []).map(
+                ({ storage: _, ...widget }) => widget,
+            );
             if (!id) return widgets;
             const widget = widgets.find((w) => w.id === id);
             if (!widget) throw new Error("Widget not found");
@@ -43,16 +45,23 @@ export const widgetOperations = [
         }),
         returnSchema: z.unknown(),
         handler: async ({ code, storage }, ctx) => {
-            const snapshot = await readAgentSnapshot();
-            ctx.signal?.throwIfAborted();
             const compiled = compileWidget(code);
+            if (!compiled.apiVersion.startsWith("2."))
+                return {
+                    valid: false,
+                    phase: "compile",
+                    error: "Widget API v2 is required",
+                };
+            const snapshot = await readAgentSnapshot();
+            const meta = await (snapshot.effectiveMeta?.() ?? snapshot.meta);
+            ctx.signal?.throwIfAborted();
             const widgetId = "agent-preview";
             const getData = async () => ({
                 bills: snapshot.bills,
-                categories: snapshot.meta.categories,
-                tags: snapshot.meta.tags,
-                baseCurrency: snapshot.meta.baseCurrency,
-                customCurrencies: snapshot.meta.customCurrencies,
+                categories: meta.categories,
+                tags: meta.tags,
+                baseCurrency: meta.baseCurrency,
+                customCurrencies: meta.customCurrencies,
             });
             const runtime = {
                 widgetId,
@@ -66,20 +75,18 @@ export const widgetOperations = [
             });
             if (!render.success)
                 return { valid: false, phase: "render", error: render.error };
-            if (compiled.apiVersion.startsWith("2.")) {
-                const computed = await runWidget(code, {
-                    grants: compiled.permissions,
-                    runtime: { ...runtime, mode: "computed" },
-                    getData: async () => ({ ...(await getData()), bills: [] }),
-                });
-                if (!computed.success)
-                    return {
-                        valid: false,
-                        phase: "computed",
-                        error: computed.error,
-                    };
-                validateComputed(computed.result, widgetId);
-            }
+            const computed = await runWidget(code, {
+                grants: compiled.permissions,
+                runtime: { ...runtime, mode: "computed" },
+                getData: async () => ({ ...(await getData()), bills: [] }),
+            });
+            if (!computed.success)
+                return {
+                    valid: false,
+                    phase: "computed",
+                    error: computed.error,
+                };
+            validateComputed(computed.result, widgetId);
             return {
                 valid: true,
                 name: compiled.name,

@@ -77,6 +77,9 @@ export default async function runWidget(
     options: RunWidgetOptions,
 ) {
     const widget = compileWidget(widgetCode);
+    if (!widget.apiVersion.startsWith("2.")) {
+        return { success: false, error: "Widget API v2 is required", widget };
+    }
 
     const permissions = widget.permissions.filter((p) =>
         (options.grants ?? widget.permissions).includes(p),
@@ -137,7 +140,6 @@ export default async function runWidget(
         env,
     };
 
-    const isV2 = widget.apiVersion.split(".")[0] === "2";
     const sandbox = createSandBox(
         [],
         undefined,
@@ -147,30 +149,28 @@ export default async function runWidget(
     let moduleUrl: string | undefined;
 
     try {
-        let code = `${InjectCode}\n${widget.code}`;
-        let args: unknown[] = [ctx];
-        if (isV2) {
-            moduleUrl = URL.createObjectURL(
-                new Blob([code], { type: "application/javascript" }),
-            );
-            code = `${RuntimeCode}\nimport * as widget from ${JSON.stringify(moduleUrl)};\nexport default input => executeWidget(widget, input);`;
-            args = [
-                {
-                    ...options.runtime,
-                    widgetId: options.runtime?.widgetId ?? "preview",
-                    now: Date.now(),
-                    context: {
-                        ...ctx,
-                        viewer: options.runtime?.viewer ?? { id: "preview" },
-                    },
+        moduleUrl = URL.createObjectURL(
+            new Blob([`${InjectCode}\n${widget.code}`], {
+                type: "application/javascript",
+            }),
+        );
+        const code = `${RuntimeCode}\nimport * as widget from ${JSON.stringify(moduleUrl)};\nexport default input => executeWidget(widget, input);`;
+        const args = [
+            {
+                ...options.runtime,
+                widgetId: options.runtime?.widgetId ?? "preview",
+                now: Date.now(),
+                context: {
+                    ...ctx,
+                    viewer: options.runtime?.viewer ?? { id: "preview" },
                 },
-            ];
-        }
+            },
+        ];
         const rendered = await sandbox.runDefaultExport(code, args, 5000);
         return {
             success: true,
             result:
-                isV2 && options.runtime?.mode !== "computed"
+                options.runtime?.mode !== "computed"
                     ? validateRuntimeResult(rendered)
                     : rendered,
             widget,

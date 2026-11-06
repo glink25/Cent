@@ -1,14 +1,7 @@
 import dayjs from "dayjs";
 import { usePageEnv } from "@/components/assistant/tools/env";
 import "@/zen/overview.css";
-import {
-    useCallback,
-    useEffect,
-    useLayoutEffect,
-    useMemo,
-    useRef,
-    useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useShallow } from "zustand/shallow";
 import { StorageAPI } from "@/api/storage";
 import CloudLoopIcon from "@/assets/icons/cloud-loop.svg?react";
@@ -104,16 +97,31 @@ export default function Page() {
     );
     useSnap(widgetContainer, 0);
 
-    const allLoaded = useRef(false);
-    // 有预算时需要加载全部bills
-    useLayoutEffect(() => {
-        if (!allLoaded.current && budgets.length > 0) {
-            useLedgerStore.getState().refreshBillList();
-            allLoaded.current = true;
-        }
-    }, [budgets.length]);
+    const [scrolledBookId, setScrolledBookId] = useState<string>();
+    const bookId = useBookStore((state) => state.currentBookId);
+    const needsFull =
+        budgets.length > 0 ||
+        homeWidgets.length > 0 ||
+        scrolledBookId === bookId;
+    useEffect(() => {
+        if (!needsFull || !bookId) return;
+        let active = true;
+        let retry: ReturnType<typeof setTimeout>;
+        const refresh = () => {
+            void useLedgerStore
+                .getState()
+                .refreshBillList()
+                .catch(() => {
+                    if (active) retry = setTimeout(refresh, 3000);
+                });
+        };
+        refresh();
+        return () => {
+            active = false;
+            clearTimeout(retry);
+        };
+    }, [bookId, needsFull]);
 
-    // 滚动时需要加载全部bills
     const onDateClick = useCallback(
         (date: dayjs.Dayjs) => {
             setCurrentDate(date);
@@ -128,12 +136,12 @@ export default function Page() {
         [bills],
     );
 
-    const onItemShow = useCallback((index: number) => {
-        if (!allLoaded.current && index >= 120) {
-            useLedgerStore.getState().refreshBillList();
-            allLoaded.current = true;
-        }
-    }, []);
+    const onItemShow = useCallback(
+        (index: number) => {
+            if (index >= 120) setScrolledBookId(bookId);
+        },
+        [bookId],
+    );
 
     const presence = useMemo(() => {
         if (ledgerAnimationShows) {

@@ -4,7 +4,7 @@ import type {
     ProviderRequestChunk,
     Tool,
 } from "../assistant";
-import { withAbort } from "../assistant";
+import { withAbort, withToolImages } from "../assistant";
 import { serializeToolResult } from "../assistant/context";
 import { formatUserReferences } from "../assistant/references";
 import { encodeImages, isImage, supportsImages } from "./images";
@@ -57,6 +57,7 @@ export function historyToMessages(
             messages.push({
                 role: "user",
                 content: `${assetPrompt ? `${assetPrompt}\n` : ""}${userContent}`,
+                ...(msg.toolImages?.length ? { images: msg.toolImages } : {}),
             });
             assetIndex += msg.assets?.length ?? 0;
         } else if (msg.role === "assistant") {
@@ -223,10 +224,20 @@ export function createAIProvider(
 
             const promise = (async () => {
                 const config = await getConfig(configId);
+                if (purpose !== "summary") history = withToolImages(history);
                 const messages = historyToMessages(history, options);
+                if (
+                    messages.some(
+                        (message) =>
+                            message.role === "user" && message.images?.length,
+                    ) &&
+                    !supportsImages(config)
+                )
+                    throw new Error("当前 AI 模型配置未启用图片输入。");
                 if (purpose !== "summary") {
                     const latest = history.findLastIndex(
-                        (message) => message.role === "user",
+                        (message) =>
+                            message.role === "user" && !message.toolImages,
                     );
                     const user = history[latest];
                     const message = messages[latest];

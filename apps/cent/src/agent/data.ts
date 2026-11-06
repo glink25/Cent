@@ -4,6 +4,7 @@ export type DataFilter = {
     start?: number;
     end?: number;
     type?: "income" | "expense";
+    creatorIds?: string[];
     categoryIds?: string[];
     tagIds?: string[];
     excludeTagIds?: string[];
@@ -11,12 +12,23 @@ export type DataFilter = {
     minAmount?: number;
     maxAmount?: number;
 };
+export function creatorKey(
+    id: Bill["creatorId"] | null | undefined,
+): string | null {
+    if (typeof id === "string") return id || null;
+    return typeof id === "number" && Number.isFinite(id) ? String(id) : null;
+}
+
 export function selectBills(bills: Bill[], filter: DataFilter): Bill[] {
     return bills
         .filter(
             (bill) =>
                 (filter.start === undefined || bill.time >= filter.start) &&
                 (filter.end === undefined || bill.time < filter.end) &&
+                (filter.creatorIds === undefined ||
+                    filter.creatorIds.includes(
+                        creatorKey(bill.creatorId) ?? "",
+                    )) &&
                 (!filter.type || bill.type === filter.type) &&
                 (filter.categoryIds === undefined ||
                     filter.categoryIds.includes(bill.categoryId)) &&
@@ -51,7 +63,7 @@ export function summarizeBills(bills: Bill[]) {
 }
 export function aggregateBills(
     bills: Bill[],
-    groupBy: "month" | "category" | "type",
+    groupBy: "month" | "category" | "type" | "creator",
     timeZone: string,
 ) {
     const formatter = new Intl.DateTimeFormat("en", {
@@ -59,7 +71,7 @@ export function aggregateBills(
         year: "numeric",
         month: "2-digit",
     });
-    const groups = new Map<string, Bill[]>();
+    const groups = new Map<string | null, Bill[]>();
     for (const bill of bills) {
         const parts = formatter.formatToParts(bill.time);
         const key =
@@ -67,12 +79,14 @@ export function aggregateBills(
                 ? `${parts.find((p) => p.type === "year")?.value}-${parts.find((p) => p.type === "month")?.value}`
                 : groupBy === "category"
                   ? bill.categoryId
-                  : bill.type;
+                  : groupBy === "creator"
+                    ? creatorKey(bill.creatorId)
+                    : bill.type;
         const rows = groups.get(key) ?? [];
         rows.push(bill);
         groups.set(key, rows);
     }
     return [...groups]
-        .sort(([a], [b]) => a.localeCompare(b))
+        .sort(([a], [b]) => (a ?? "").localeCompare(b ?? ""))
         .map(([key, rows]) => ({ key, ...summarizeBills(rows) }));
 }

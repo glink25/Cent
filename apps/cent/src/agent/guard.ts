@@ -1,6 +1,7 @@
 import type { Tool } from "@/assistant";
 import { useBookStore } from "@/store/book";
 import { useUserStore } from "@/store/user";
+import { agentLedgerScope } from "./web-host";
 
 const writes = new Map<string, Promise<unknown>>();
 /** Bind code invocations to their first ledger/viewer and serialize writes on that ledger. */
@@ -11,6 +12,7 @@ export function guardOperation(tool: Tool): Tool {
             const current = {
                 bookId: useBookStore.getState().currentBookId,
                 viewerId: useUserStore.getState().id,
+                epoch: agentLedgerScope(),
             };
             const key = "cent:bound-context";
             const bound =
@@ -21,6 +23,7 @@ export function guardOperation(tool: Tool): Tool {
                 context.signal?.throwIfAborted();
                 if (!bound.bookId) throw new Error("No active ledger");
                 if (
+                    agentLedgerScope() !== bound.epoch ||
                     useBookStore.getState().currentBookId !== bound.bookId ||
                     useUserStore.getState().id !== bound.viewerId
                 )
@@ -29,7 +32,9 @@ export function guardOperation(tool: Tool): Tool {
             check();
             const invoke = async () => {
                 check();
-                return tool.handler(args, context);
+                const result = await tool.handler(args, context);
+                if (tool.effect !== "write") check();
+                return result;
             };
             if (tool.effect !== "write") return invoke();
             const bookId = bound.bookId!;

@@ -20,7 +20,7 @@ export type EditBill = Omit<OutputType<Bill>, "id" | "creatorId"> & {
 };
 
 type LedgerStoreState = {
-    /** 首次加载时只有前200条数据，如果需要全部数据，必须调用 ledgerStore.refreshBillList() */
+    /** 首页预览或已加载的全量账单。使用 refreshBillList 请求全量。 */
     bills: OutputType<Bill>[];
     actions: Action<Bill>[];
     infos?: {
@@ -80,53 +80,80 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
         return id;
     };
 
-    const updateBillList = async (limit?: number) => {
-        const { StorageAPI, StorageDeferredAPI } = await loadStorageAPI();
+    const newBillLoad = (repo?: string) => ({
+        repo,
+        revision: 0,
+        request: 0,
+        wantsFull: false,
+        fullRequest: undefined as Promise<Full<Bill>[]> | undefined,
+    });
+    let billLoad = newBillLoad();
+
+    const updateBillList = async (limit?: number, changed = false) => {
         const repo = getCurrentFullRepoName();
-        const [bills] = await Promise.all([
-            // 贪婪更新账单数据
-            (limit && limit >= get().bills.length
-                ? StorageDeferredAPI.truncate(repo, limit)
-                : StorageDeferredAPI.filter(repo, {})
-            ).then((bills) => {
-                set(
-                    produce((state: LedgerStore) => {
-                        state.bills = bills;
-                        // state.infos = { ...deferredInfo, creators };
-                    }),
-                );
-                return bills;
-            }),
-            StorageDeferredAPI.getInfo(repo).then((deferredInfo) => {
-                set(
-                    produce((state: LedgerStore) => {
-                        state.infos = { ...state.infos, ...deferredInfo };
-                    }),
-                );
-            }),
-        ]);
-        useUserStore
-            .getState()
-            .getCollaborators(repo)
-            .then((creators) => {
-                set(
-                    produce((state: LedgerStore) => {
-                        const uid = useUserStore.getState().id;
-                        const personalMeta = state.infos?.meta.personal?.[uid];
-                        const names = personalMeta?.names;
-                        state.infos = {
-                            ...state.infos!,
-                            creators: (creators ?? []).map((c) => ({
-                                ...c,
-                                originalName: c.name,
-                                name: names?.[c.id] ?? c.name,
-                            })),
-                        };
-                    }),
-                );
-            })
-            .catch((err) => []);
-        return bills;
+        if (billLoad.repo !== repo) billLoad = newBillLoad(repo);
+        const load = billLoad;
+        if (changed) load.revision++;
+        if (limit === undefined) load.wantsFull = true;
+        if (load.fullRequest) return load.fullRequest;
+
+        const full = load.wantsFull;
+        const request = ++load.request;
+        const isCurrent = () =>
+            billLoad === load &&
+            load.request === request &&
+            useBookStore.getState().currentBookId === repo;
+
+        const read = async () => {
+            try {
+                const { StorageDeferredAPI } = await loadStorageAPI();
+                while (true) {
+                    const revision = load.revision;
+                    const [bills, info] = await Promise.all([
+                        full || limit === undefined
+                            ? StorageDeferredAPI.filter(repo, {})
+                            : StorageDeferredAPI.truncate(repo, limit),
+                        StorageDeferredAPI.getInfo(repo),
+                    ]);
+                    if (!isCurrent()) return bills;
+                    if (revision !== load.revision) continue;
+                    set((state) => ({
+                        bills,
+                        infos: { ...state.infos, ...info },
+                    }));
+                    if (revision !== load.revision) continue;
+                    void useUserStore
+                        .getState()
+                        .getCollaborators(repo)
+                        .then((creators) => {
+                            if (!isCurrent() || revision !== load.revision)
+                                return;
+                            set(
+                                produce((state: LedgerStore) => {
+                                    if (!state.infos) return;
+                                    const uid = useUserStore.getState().id;
+                                    const names =
+                                        state.infos.meta.personal?.[uid]?.names;
+                                    state.infos.creators = (creators ?? []).map(
+                                        (c) => ({
+                                            ...c,
+                                            originalName: c.name,
+                                            name: names?.[c.id] ?? c.name,
+                                        }),
+                                    );
+                                }),
+                            );
+                        })
+                        .catch(() => {});
+                    return bills;
+                }
+            } finally {
+                if (full) load.fullRequest = undefined;
+            }
+        };
+        if (!full) return read();
+        load.fullRequest = read();
+        return load.fullRequest;
     };
 
     const init = async () => {
@@ -144,8 +171,8 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
             }
             await updateBillList(MIN_SIZE);
             await StorageAPI.initBook(currentBookId);
-            // 初始化时先加载100条，后续按需加载全部
-            await updateBillList(MIN_SIZE);
+            if (useBookStore.getState().currentBookId !== currentBookId) return;
+            await updateBillList(MIN_SIZE, true);
             StorageAPI.toSync();
         } catch (err) {
             if ((err as any)?.status === 404) {
@@ -203,8 +230,9 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
     // });
 
     loadStorageAPI().then(({ StorageAPI }) => {
-        StorageAPI.onChange(() => {
-            updateBillList(MIN_SIZE);
+        StorageAPI.onChange(({ bookId }) => {
+            if (useBookStore.getState().currentBookId !== bookId) return;
+            void updateBillList(MIN_SIZE, true).catch(console.error);
             StorageAPI.getIsNeedSync().then((needSync) => {
                 if (needSync) {
                     set(
