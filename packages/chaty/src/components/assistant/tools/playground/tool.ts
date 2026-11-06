@@ -56,7 +56,7 @@ export const PlaygroundTool = createTool({
         const { history, tools } = ctx;
         const executionContext = {
             ...ctx,
-            resources: new Map<string, unknown>(),
+            resources: new Map(ctx.resources),
             surface: "code" as const,
         };
         const transferable = await collectSessionFiles(history);

@@ -1,9 +1,11 @@
 import { z } from "zod";
 import type {
+    ChangeProposal,
     Provider,
     ProviderRequestChunk,
     SkillInput,
     Tool,
+    ToolContext,
 } from "../assistant";
 import { withAbort } from "../assistant/shared";
 import type { RuntimeConfig } from "../components/assistant/runtime";
@@ -20,6 +22,8 @@ export type { RuntimeConfig };
 
 // host 注入工具的原始 JSON Schema（host 在 getInit 时给出）。序列化工具列表时
 // 优先取这里的原值，避免经 zod 往返丢失 schema。app 内置工具则直接由 zod 推导。
+const nativeBatchKey = "cent:native-batch";
+
 const hostToolDefinitions = new WeakMap<Tool, AIChatToolDefinition>();
 
 function serializeTool(tool: Tool): AIChatToolDefinition {
@@ -162,13 +166,43 @@ function createHostTool(
         returnSchema: z
             .unknown()
             .describe(JSON.stringify(tool.returnJsonSchema)),
-        handler: (params, ctx) =>
-            host.callTool({
-                callId: createRequestId(),
+        handler: async (params, ctx) => {
+            const callId = createRequestId();
+            const value = await host.callTool({
+                callId,
                 name: tool.name,
                 params,
                 history: ctx.history,
-            }),
+                surface: ctx.surface,
+                signal: ctx.signal,
+                batchId: ctx.resources?.get(nativeBatchKey) as
+                    | string
+                    | undefined,
+            });
+            const candidate = value as
+                | { kind?: string; proposal?: ChangeProposal }
+                | undefined;
+            if (candidate?.kind !== "changeProposal" || !candidate.proposal)
+                return value;
+            if (!host.changeControl)
+                throw new Error("Native approval is unavailable");
+            const proposal = candidate.proposal;
+            const decision = await ctx.approveChange?.(proposal, ctx.signal, {
+                id: callId,
+                name: tool.name,
+            });
+            const approved =
+                decision?.approved === true && !ctx.signal?.aborted;
+            return host.changeControl(
+                {
+                    operation: "decide",
+                    changeId: proposal.id,
+                    approved,
+                    remember: approved ? decision?.remember : undefined,
+                },
+                approved ? ctx.signal : undefined,
+            );
+        },
     };
     // 记住 host 给出的原始 JSON Schema，序列化工具时直接复用，避免经 zod 往返丢失。
     hostToolDefinitions.set(runtimeTool, tool);
@@ -217,15 +251,43 @@ export async function loadHostRuntimeConfig(
         ? init.defaultConfigId
         : init.configs[0]?.id;
 
+    const changeControl = host.changeControl;
+    const hostSkillIds = new Set(init.skills.map((skill) => skill.id));
+
     return {
         scope: init.scope,
+        resolveReferences: host.resolveReferences,
+        undoChange: changeControl
+            ? (changeId) => changeControl({ operation: "undo", changeId })
+            : undefined,
+        referenceDraft: init.referenceDraft,
+        saveReferenceDraft: host.saveReferenceDraft,
+        subscribeReferenceDeliveries: host.subscribeReferenceDeliveries,
         provider: createHostProvider(host),
         tools: [
-            ...fallback.tools,
+            ...fallback.tools.map((tool) => {
+                if (!host.endBatch || tool.name !== "playground") return tool;
+                return {
+                    ...tool,
+                    handler: async (params: unknown, context: ToolContext) => {
+                        const batchId = createRequestId();
+                        const resources = new Map(context.resources);
+                        resources.set(nativeBatchKey, batchId);
+                        try {
+                            return await tool.handler(params, {
+                                ...context,
+                                resources,
+                            });
+                        } finally {
+                            host.endBatch?.(batchId);
+                        }
+                    },
+                };
+            }),
             ...init.tools.map((tool) => createHostTool(host, tool)),
         ],
         skills: [
-            ...fallback.skills,
+            ...fallback.skills.filter((skill) => !hostSkillIds.has(skill.id)),
             ...init.skills.map((skill) => createHostSkill(host, skill)),
         ],
         systemPrompt: init.systemPrompt,

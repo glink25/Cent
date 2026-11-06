@@ -1,13 +1,18 @@
 import type {
+    ChangeReceipt,
     ContextPolicy,
     History,
     ProviderRequestChunk,
+    ReferenceResolver,
 } from "../assistant";
 import type {
     AIChatConfig,
     AIChatLocale,
     AIChatPresetPrompt,
     AIChatTheme,
+    ReferenceDelivery,
+    ReferenceDeliverySubscriber,
+    ReferenceDraft,
 } from "../components/assistant/runtime";
 
 export type {
@@ -35,6 +40,10 @@ export type AIChatSkillDefinition = {
 export type AIChatInitPayload = {
     /** 聊天记录隔离域。宿主应为不同账号/账本提供不同值。 */
     scope?: string;
+    bridgeVersion?: number;
+    referenceSupport?: boolean;
+    changeSupport?: boolean;
+    referenceDraft?: ReferenceDraft;
     configs: AIChatConfig[];
     defaultConfigId?: string;
     systemPrompt: string;
@@ -79,7 +88,18 @@ export type HostBridge = {
         name: string;
         params: unknown;
         history: History;
+        surface?: "native" | "code";
+        batchId?: string;
+        signal?: AbortSignal;
     }) => Promise<unknown>;
+    resolveReferences?: ReferenceResolver;
+    saveReferenceDraft?: (draft: ReferenceDraft) => void;
+    subscribeReferenceDeliveries?: ReferenceDeliverySubscriber;
+    changeControl?: (
+        decision: ChangeControl,
+        signal?: AbortSignal,
+    ) => Promise<ChangeReceipt>;
+    endBatch?: (batchId: string) => void;
     loadSkill?: (args: { id: string }) => Promise<AIChatSkillDefinition>;
 };
 
@@ -90,8 +110,33 @@ export type HostBridge = {
  * async callback 协议。即使 Android 能同步返回字符串，也只把同步能力作为内部
  * 实现细节，不暴露给上层。
  */
+export type ChangeControl =
+    | {
+          operation: "decide";
+          changeId: string;
+          approved: boolean;
+          remember?: boolean;
+      }
+    | { operation: "undo"; changeId: string };
+
 export type NativeBridgeMessage =
     | { id: string; type: "getInit" }
+    | {
+          id: string;
+          type: "changeControl";
+          payload: ChangeControl & { callId: string };
+      }
+    | { id: string; type: "referencesReady" }
+    | {
+          id: string;
+          type: "saveReferenceDraft";
+          payload: ReferenceDraft;
+      }
+    | {
+          id: string;
+          type: "referencesConsumed";
+          payload: { deliveryId: string };
+      }
     | {
           id: string;
           type: "requestAI";
@@ -100,7 +145,7 @@ export type NativeBridgeMessage =
               configId?: string;
               purpose?: "response" | "summary";
               maxTokens?: number;
-              history: History;
+              history: unknown[];
               tools: AIChatToolDefinition[];
           };
       }
@@ -109,6 +154,8 @@ export type NativeBridgeMessage =
           type: "cancelRequest";
           payload: { requestId: string };
       }
+    | { id: string; type: "cancelTool"; payload: { callId: string } }
+    | { id: string; type: "endBatch"; payload: { batchId: string } }
     | {
           id: string;
           type: "callTool";
@@ -117,6 +164,8 @@ export type NativeBridgeMessage =
               name: string;
               params: unknown;
               history: History;
+              surface?: "native" | "code";
+              batchId?: string;
           };
       };
 
@@ -145,6 +194,7 @@ export type IosNativeBridge = {
 declare global {
     interface Window {
         AIChatHost?: HostBridge;
+        __AIChatDeliverReferences?: (delivery: ReferenceDelivery) => void;
         __AIChatNativeCallbacks?: Record<string, NativeCallback>;
         CentAiChatNative?: AndroidNativeBridge;
         webkit?: {

@@ -3,6 +3,7 @@ import { createTool, type Tool } from "@/assistant";
 import compileWidget from "@/components/widget/core/compile";
 import { BillCategories } from "@/ledger/category";
 import type { Bill, GlobalMeta } from "@/ledger/type";
+import { deleteBillsInput } from "./bill-tool-contract";
 import { getChangeStatus, proposeChange } from "./changes";
 import { widgetOperations } from "./widget-operations";
 
@@ -256,10 +257,7 @@ export const mutationTools = [
                     .min(1)
                     .max(100),
             }),
-            z.object({
-                action: z.literal("delete"),
-                ids: z.array(id).min(1).max(100),
-            }),
+            deleteBillsInput,
         ]),
         returnSchema: z.unknown(),
         handler: (arg, ctx) =>

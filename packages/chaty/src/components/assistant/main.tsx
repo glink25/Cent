@@ -35,6 +35,7 @@ type Input = {
     text: string;
     assets: File[];
     references?: ConversationReference[];
+    receivedDeliveryIds?: string[];
 };
 
 type AssistantContext = {
@@ -131,7 +132,58 @@ function Root({
             }),
         [],
     );
-    const [input, setInput] = useState<Input>(EMPTY_INPUT);
+    const [input, setInput] = useState<Input>(() => ({
+        ...EMPTY_INPUT,
+        text: runtime.referenceDraft?.text ?? "",
+        references: runtime.referenceDraft?.references.filter(
+            (ref) => ref.hostScope === runtime.scope,
+        ),
+    }));
+    const deliveries = useRef(new Map<string, (() => void) | null>());
+    useEffect(
+        () =>
+            runtime.subscribeReferenceDeliveries?.((delivery, acknowledge) => {
+                const known = deliveries.current.get(delivery.id);
+                if (known === null) {
+                    acknowledge();
+                    return;
+                }
+                deliveries.current.set(delivery.id, acknowledge);
+                if (known) return;
+                const incoming = delivery.references
+                    .filter((ref) => ref.hostScope === runtime.scope)
+                    .map((ref) => ({ ...ref }));
+                setInput((value) => ({
+                    ...value,
+                    receivedDeliveryIds: [
+                        ...(value.receivedDeliveryIds ?? []),
+                        delivery.id,
+                    ],
+                    references: mergeReferences([
+                        ...(value.references ?? []),
+                        ...incoming,
+                    ]),
+                }));
+            }),
+        [runtime.scope, runtime.subscribeReferenceDeliveries],
+    );
+    useEffect(() => {
+        runtime.saveReferenceDraft?.({
+            text: input.text,
+            references: input.references ?? [],
+        });
+        for (const id of input.receivedDeliveryIds ?? []) {
+            const acknowledge = deliveries.current.get(id);
+            if (!acknowledge) continue;
+            deliveries.current.set(id, null);
+            acknowledge();
+        }
+    }, [
+        runtime.saveReferenceDraft,
+        input.text,
+        input.references,
+        input.receivedDeliveryIds,
+    ]);
     const [currentChatId, setCurrentChatId] = useState<Chat["id"]>();
     const sendingRef = useRef(false);
     const activeRequestsRef = useRef(new Set<{ abort: () => void }>());
@@ -184,8 +236,6 @@ function Root({
     useEffect(() => applyThemePreference(runtime.theme), [runtime.theme]);
 
     useEffect(() => {
-        setInput(EMPTY_INPUT);
-        setCurrentChatId(undefined);
         return () => {
             for (const request of activeRequestsRef.current) {
                 request.abort();
@@ -199,7 +249,7 @@ function Root({
             ...value,
             references: mergeReferences([
                 ...(value.references ?? []),
-                ...references,
+                ...references.map((ref) => ({ ...ref })),
             ]),
         }));
         onReferencesConsumed?.();
@@ -334,13 +384,9 @@ function Root({
                         accepted = true;
                         setInput((value) => ({
                             ...EMPTY_INPUT,
+                            receivedDeliveryIds: value.receivedDeliveryIds,
                             references: value.references?.filter(
-                                (ref) =>
-                                    !payload.references?.some(
-                                        (sent) =>
-                                            sent.id === ref.id &&
-                                            sent.type === ref.type,
-                                    ),
+                                (ref) => !payload.references?.includes(ref),
                             ),
                         }));
                     }

@@ -1,4 +1,11 @@
-import type { ProviderRequestChunk } from "../assistant";
+import type {
+    ChangeReceipt,
+    History,
+    ProviderRequestChunk,
+} from "../assistant";
+import { formatUserReferences } from "../assistant/references";
+import type { ReferenceDelivery } from "../components/assistant/runtime";
+import { encodeImages, isImage } from "../providers/images";
 import type {
     AIChatInitPayload,
     HostBridge,
@@ -48,9 +55,9 @@ type NativeTransport = (message: NativeBridgeMessage) => void;
 function nativePromise<T>(
     transport: NativeTransport,
     build: (id: string) => NativeBridgeMessage,
+    id = createRequestId(),
 ): Promise<T> {
     const store = ensureNativeCallbackStore();
-    const id = createRequestId();
     return new Promise<T>((resolve, reject) => {
         store[id] = {
             resolve: (value) => {
@@ -71,16 +78,117 @@ function nativePromise<T>(
     });
 }
 
+async function encodeNativeHistory(history: History): Promise<unknown[]> {
+    const imagesByMessage = history.map((message) =>
+        message.role === "user" ? (message.assets ?? []).filter(isImage) : [],
+    );
+    const images = await encodeImages(imagesByMessage.flat());
+    let offset = 0;
+    return history.map((message, index) => {
+        if (message.role !== "user") return message;
+        const count = imagesByMessage[index].length;
+        const assets = images.slice(offset, offset + count);
+        offset += count;
+        const { references: _, ...content } = message;
+        return { ...content, raw: formatUserReferences(message), assets };
+    });
+}
+
+function cancelableNativePromise<T>(
+    transport: NativeTransport,
+    callId: string,
+    build: (id: string) => NativeBridgeMessage,
+    signal?: AbortSignal,
+): Promise<T> {
+    signal?.throwIfAborted();
+    const store = ensureNativeCallbackStore();
+    const id = createRequestId();
+    const pending = nativePromise<T>(transport, build, id);
+    const cancel = () => {
+        try {
+            transport({
+                id: createRequestId(),
+                type: "cancelTool",
+                payload: { callId },
+            });
+        } catch {
+            // The view may have disconnected.
+        }
+        store[id]?.reject?.(signal?.reason ?? new Error("Tool cancelled"));
+    };
+    signal?.addEventListener("abort", cancel, { once: true });
+    if (signal?.aborted) cancel();
+    return pending.finally(() => signal?.removeEventListener("abort", cancel));
+}
+
 /** 由 transport 构造标准 `HostBridge`。 */
 function createNativeBridge(transport: NativeTransport): HostBridge {
-    return {
-        getInit: () =>
-            nativePromise<AIChatInitPayload>(transport, (id) => ({
-                id,
-                type: "getInit",
-            })),
+    let version = 0;
+    const host: HostBridge = {
+        getInit: async () => {
+            const init = await nativePromise<AIChatInitPayload>(
+                transport,
+                (id) => ({
+                    id,
+                    type: "getInit",
+                }),
+            );
+            version = init.bridgeVersion ?? 0;
+            if (version >= 3 && init.changeSupport) {
+                host.changeControl = (decision, signal) => {
+                    const callId = createRequestId();
+                    return cancelableNativePromise<ChangeReceipt>(
+                        transport,
+                        callId,
+                        (id) => ({
+                            id,
+                            type: "changeControl",
+                            payload: { ...decision, callId },
+                        }),
+                        signal,
+                    );
+                };
+            }
+            if (version >= 3 && init.referenceSupport) {
+                host.resolveReferences = async (references, signal) =>
+                    (await host.callTool({
+                        callId: createRequestId(),
+                        name: "__resolveReferences",
+                        params: { references },
+                        history: [],
+                        signal,
+                    })) as unknown[];
+                host.saveReferenceDraft = (draft) => {
+                    transport({
+                        id: createRequestId(),
+                        type: "saveReferenceDraft",
+                        payload: draft,
+                    });
+                };
+                host.subscribeReferenceDeliveries = (receive) => {
+                    const deliver = (delivery: ReferenceDelivery) =>
+                        receive(delivery, () => {
+                            transport({
+                                id: createRequestId(),
+                                type: "referencesConsumed",
+                                payload: { deliveryId: delivery.id },
+                            });
+                        });
+                    window.__AIChatDeliverReferences = deliver;
+                    transport({
+                        id: createRequestId(),
+                        type: "referencesReady",
+                    });
+                    return () => {
+                        if (window.__AIChatDeliverReferences === deliver)
+                            delete window.__AIChatDeliverReferences;
+                    };
+                };
+            }
+            return init;
+        },
 
-        requestAI: ({
+        requestAI: async ({
             requestId,
             configId,
             purpose,
@@ -91,6 +199,8 @@ function createNativeBridge(transport: NativeTransport): HostBridge {
             onDone,
             onError,
         }) => {
+            const wireHistory =
+                version >= 3 ? await encodeNativeHistory(history) : history;
             const store = ensureNativeCallbackStore();
             const id = createRequestId();
             const cleanup = () => {
@@ -116,7 +226,7 @@ function createNativeBridge(transport: NativeTransport): HostBridge {
                     payload: {
                         requestId,
                         configId,
-                        history,
+                        history: wireHistory,
                         tools,
                         purpose,
                         maxTokens,
@@ -145,13 +255,52 @@ function createNativeBridge(transport: NativeTransport): HostBridge {
             return handle;
         },
 
-        callTool: ({ callId, name, params, history }) =>
-            nativePromise<unknown>(transport, (id) => ({
-                id,
-                type: "callTool",
-                payload: { callId, name, params, history },
-            })),
+        callTool: ({
+            callId,
+            name,
+            params,
+            history,
+            surface,
+            batchId,
+            signal,
+        }) => {
+            signal?.throwIfAborted();
+            if (version < 3) {
+                return nativePromise<unknown>(transport, (id) => ({
+                    id,
+                    type: "callTool",
+                    payload: { callId, name, params, history },
+                }));
+            }
+            return cancelableNativePromise<unknown>(
+                transport,
+                callId,
+                (id) => ({
+                    id,
+                    type: "callTool",
+                    payload: {
+                        callId,
+                        name,
+                        params,
+                        surface,
+                        batchId,
+                        history: [],
+                    },
+                }),
+                signal,
+            );
+        },
+        endBatch: (batchId) => {
+            if (version >= 3) {
+                transport({
+                    id: createRequestId(),
+                    type: "endBatch",
+                    payload: { batchId },
+                });
+            }
+        },
     };
+    return host;
 }
 
 /** Android WebView：`window.CentAiChatNative.postMessage(JSON.stringify(message))`。 */

@@ -1,11 +1,26 @@
 import type {
     ChangeReceipt,
     ContextPolicy,
+    ConversationReference,
     Provider,
     ReferenceResolver,
     SkillInput,
     Tool,
 } from "../../assistant";
+
+export type ReferenceDraft = {
+    text: string;
+    references: ConversationReference[];
+};
+
+export type ReferenceDelivery = {
+    id: string;
+    references: ConversationReference[];
+};
+
+export type ReferenceDeliverySubscriber = (
+    receive: (delivery: ReferenceDelivery, acknowledge: () => void) => void,
+) => () => void;
 
 /** UI 可选择的模型 / 配置项（仅展示用，真正的请求参数由 provider 解析）。 */
 export type AIChatConfig = {
@@ -32,6 +47,9 @@ export type RuntimeConfig = {
     scope?: string;
     provider: Provider;
     resolveReferences?: ReferenceResolver;
+    referenceDraft?: ReferenceDraft;
+    saveReferenceDraft?: (draft: ReferenceDraft) => void;
+    subscribeReferenceDeliveries?: ReferenceDeliverySubscriber;
     undoChange?: (id: string) => Promise<ChangeReceipt>;
     contextPolicy?: ContextPolicy;
     tools: Tool[];

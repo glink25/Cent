@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { createTool } from "./tooling";
-import type { ConversationReference, ReferenceResolver } from "./type";
+import type {
+    ConversationReference,
+    ReferenceResolver,
+    UserMessage,
+} from "./type";
 
 export function mergeReferences(references: ConversationReference[]) {
     return [
@@ -41,4 +45,14 @@ export function referenceTool(resolve: ReferenceResolver) {
             };
         },
     });
+}
+
+export function formatUserReferences(message: UserMessage): string {
+    if (!message.references?.length) return message.raw;
+    const refs = message.references.map(({ type, id, label }) => ({
+        type,
+        id,
+        label,
+    }));
+    return `${message.raw}\nHost references (read with readReferences): ${JSON.stringify(refs)}`;
 }

@@ -6,6 +6,7 @@ import type {
 } from "../assistant";
 import { withAbort } from "../assistant";
 import { serializeToolResult } from "../assistant/context";
+import { formatUserReferences } from "../assistant/references";
 import { encodeImages, isImage, supportsImages } from "./images";
 import { getAdapter } from "./registry";
 import type {
@@ -45,9 +46,7 @@ export function historyToMessages(
     let assetIndex = 1;
     for (const msg of history) {
         if (msg.role === "user") {
-            const userContent = msg.references?.length
-                ? `${msg.raw}\nHost references (read with readReferences): ${JSON.stringify(msg.references.map(({ type, id, label }) => ({ type, id, label })))}`
-                : msg.raw;
+            const userContent = formatUserReferences(msg);
             const assetPrompt =
                 msg.assets && msg.assets.length > 0
                     ? options.formatUserAssets?.(
