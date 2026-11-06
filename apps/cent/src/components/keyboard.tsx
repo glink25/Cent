@@ -18,10 +18,9 @@ const pointKey = ".";
 
 type Char = (typeof charKeys)[number];
 type Operator = "+" | "-" | "x" | "÷";
-type Eraser = "c";
 type Point = typeof pointKey;
 type Eq = "=";
-type Value = Char | Operator | Point | Eraser | Eq;
+type Value = Char | Operator | Point | Eq;
 
 //[ '0','1','2','.','4','5'] -> 012.45
 type Num = (Char | Point)[];
@@ -33,7 +32,7 @@ type CalculatorContextType = {
     handleButtonClick: (value: ButtonValue) => void;
     formula: Formula;
     cursor: number;
-    setCursor: (idx: number) => void;
+    setCursor: (position: number | ((cursor: number) => number)) => void;
     valueRef: React.RefObject<HTMLDivElement | null>;
     Layout: {
         label: string;
@@ -139,11 +138,6 @@ const createFormula = (
 ) => {
     const prev = _prev ?? [["0"]];
     const value = `${_value}` as Value;
-    if (value === "c") {
-        const full = prev.flat();
-        full.pop();
-        return arrayToFormula(full, precision);
-    }
     // 1，传入小数点，但上一个数字已经有小数点
     const num = prev[2] ?? prev[0];
     if (value === ".") {
@@ -235,21 +229,22 @@ const insertChar = (
     };
 };
 
-// 删除光标前的一个字符（退格语义）
+// 删除指定字符，并保留该位置作为插入点。
 const deleteChar = (
     formula: Formula,
-    cursor: number,
+    index: number,
     precision: number,
 ): { formula: Formula; cursor: number } => {
-    if (cursor === 0) {
-        return { formula, cursor };
-    }
     const full = formula.flat();
-    const candidate = [...full.slice(0, cursor - 1), ...full.slice(cursor)];
-    const newFormula = arrayToFormula(candidate, precision);
+    full.splice(index, 1);
+    // 删除左操作数后，移除失去操作数的运算符，保留合法的负号。
+    if (isOperator(full[0]) && (full[0] !== "-" || full.length === 1)) {
+        full.shift();
+    }
+    const newFormula = arrayToFormula(full, precision);
     return {
         formula: newFormula,
-        cursor: Math.min(cursor - 1, toText(newFormula).length),
+        cursor: Math.min(index, toText(newFormula).length),
     };
 };
 
@@ -276,31 +271,45 @@ export const CalculatorRoot = ({
 
     const Layout = useMemo(() => getLayout(multiplyKey), [multiplyKey]);
 
-    const setCursor = useCallback((idx: number) => {
-        setState((prev) => ({
-            ...prev,
-            cursor: Math.max(0, Math.min(idx, toText(prev.formula).length)),
-        }));
-    }, []);
+    const setCursor = useCallback(
+        (position: number | ((cursor: number) => number)) => {
+            setState((prev) => {
+                const next =
+                    typeof position === "number"
+                        ? position
+                        : position(prev.cursor);
+                const cursor = Math.max(
+                    0,
+                    Math.min(next, toText(prev.formula).length),
+                );
+                return cursor === prev.cursor ? prev : { ...prev, cursor };
+            });
+        },
+        [],
+    );
 
     const handleButtonClick = useCallback(
         (value: ButtonValue) => {
             if (value === "r") {
                 return;
             }
-            setState(({ formula, cursor }) => {
+            setState((state) => {
+                const { formula, cursor } = state;
                 let f = formula;
                 let c = cursor;
-                for (const ch of value.split("")) {
+                const keys = value === "Delete" ? [value] : value.split("");
+                for (const ch of keys) {
                     const len = toText(f).length;
-                    if (c >= len) {
-                        // 光标在末尾：沿用既有的追加逻辑（运算符二次计算、=、退格等）
-                        f = createFormula(ch, precision, f);
-                        c = toText(f).length;
-                    } else if (ch === "c") {
-                        const r = deleteChar(f, c, precision);
+                    if (ch === "c" || ch === "Delete") {
+                        const index = ch === "c" ? c - 1 : c;
+                        if (index < 0 || index >= len) return state;
+                        const r = deleteChar(f, index, precision);
                         f = r.formula;
                         c = r.cursor;
+                    } else if (c >= len) {
+                        // 光标在末尾：沿用既有的追加逻辑（运算符二次计算、= 等）
+                        f = createFormula(ch, precision, f);
+                        c = toText(f).length;
                     } else if (ch === "=") {
                         f = createFormula("=", precision, f);
                         c = toText(f).length;
@@ -361,6 +370,7 @@ export const CalculatorValue = ({
     const spansRef = useRef<(HTMLSpanElement | null)[]>([]);
     const draggingRef = useRef(false);
     const [caretLeft, setCaretLeft] = useState(0);
+    const [caretRevision, setCaretRevision] = useState(0);
 
     // 计算光标的水平位置（绝对定位，不影响文本布局）
     useLayoutEffect(() => {
@@ -373,7 +383,7 @@ export const CalculatorValue = ({
         let left: number;
         if (count === 0) {
             // 文本右对齐，空内容时光标在右侧
-            left = container.clientWidth;
+            left = container.clientWidth - 4;
         } else if (cursor >= count) {
             const last = spans[count - 1];
             left = last ? last.offsetLeft + last.offsetWidth : 0;
@@ -385,8 +395,8 @@ export const CalculatorValue = ({
         // 长金额时保证光标可见
         if (left < container.scrollLeft) {
             container.scrollLeft = left;
-        } else if (left > container.scrollLeft + container.clientWidth) {
-            container.scrollLeft = left - container.clientWidth;
+        } else if (left + 2 > container.scrollLeft + container.clientWidth) {
+            container.scrollLeft = left + 2 - container.clientWidth;
         }
     }, [text, cursor]);
 
@@ -427,7 +437,7 @@ export const CalculatorValue = ({
             aria-label={label}
             tabIndex={0}
             className={cn(
-                "relative touch-none focus-visible:outline focus-visible:outline-2",
+                "relative touch-none pr-1 focus-visible:outline focus-visible:outline-2",
                 className,
             )}
             onFocus={() => setFocused(true)}
@@ -448,16 +458,42 @@ export const CalculatorValue = ({
                     onConfirm?.();
                     return;
                 }
-                const key = event.key === "Backspace" ? "c" : event.key;
-                if (key === "r" || !Layout.some((item) => item.label === key)) {
-                    return;
+                switch (event.key) {
+                    case "ArrowLeft":
+                        setCursor((position) => position - 1);
+                        break;
+                    case "ArrowRight":
+                        setCursor((position) => position + 1);
+                        break;
+                    case "Home":
+                    case "ArrowUp":
+                        setCursor(0);
+                        break;
+                    case "End":
+                    case "ArrowDown":
+                        setCursor(len);
+                        break;
+                    default: {
+                        const key = event.key === "Backspace" ? "c" : event.key;
+                        if (
+                            key === "r" ||
+                            (key !== "Delete" &&
+                                !Layout.some((item) => item.label === key))
+                        ) {
+                            return;
+                        }
+                        event.preventDefault();
+                        handleButtonClick(key);
+                        return;
+                    }
                 }
                 event.preventDefault();
-                handleButtonClick(key);
+                setCaretRevision((revision) => revision + 1);
             }}
             onPointerDown={(e) => {
                 e.currentTarget.focus({ preventScroll: true });
                 setCursor(pointerToCursor(e.clientX));
+                setCaretRevision((revision) => revision + 1);
                 e.currentTarget.setPointerCapture(e.pointerId);
                 draggingRef.current = true;
             }}
@@ -484,12 +520,13 @@ export const CalculatorValue = ({
                 </span>
             ))}
             <span
+                key={`caret:${text}:${cursor}:${caretRevision}`}
                 aria-hidden
                 className={cn(
-                    "absolute top-0 bottom-0 w-[2px] bg-current opacity-0 pointer-events-none",
-                    focused && "animate-caret-blink",
+                    "absolute top-0 bottom-0 w-[2px] bg-current pointer-events-none",
+                    focused ? "calculator-caret-blink" : "invisible",
                 )}
-                style={{ left: caretLeft, transform: "translateX(-1px)" }}
+                style={{ left: caretLeft }}
             />
         </div>
     );
