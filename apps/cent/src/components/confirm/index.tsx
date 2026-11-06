@@ -73,6 +73,31 @@ export default function createConfirmProvider<Value, Returned = Value>(
             });
         };
 
+        const retryInitialFocus = (content: HTMLDivElement) => {
+            const active = document.activeElement;
+            if (
+                !initialFocus ||
+                !content.isConnected ||
+                (active !== document.body && active !== content)
+            )
+                return;
+
+            const { instances } = useGlobalConfirmStore.getState();
+            const current = instances[instanceId];
+            if (!current?.visible || current.openId !== openId) return;
+            const covered = Object.entries(instances).some(
+                ([id, instance]) =>
+                    id !== instanceId &&
+                    instance.visible &&
+                    (instance.zIndex ?? 0) >= (current.zIndex ?? 0),
+            );
+            if (covered) return;
+
+            content.querySelector<HTMLElement>(initialFocus)?.focus({
+                preventScroll: true,
+            });
+        };
+
         return (
             <Dialog
                 key={openId}
@@ -111,10 +136,17 @@ export default function createConfirmProvider<Value, Returned = Value>(
                                           initialFocus,
                                       )
                                     : null;
-                                (target ?? content).focus({
-                                    preventScroll: true,
-                                });
+                                target?.focus({ preventScroll: true });
+                                if (
+                                    !target ||
+                                    document.activeElement !== target
+                                ) {
+                                    content.focus({ preventScroll: true });
+                                }
                             }}
+                            onEnterAnimationEnd={
+                                initialFocus ? retryInitialFocus : undefined
+                            }
                             onCloseAutoFocus={(e) => {
                                 e.preventDefault();
                                 const target = returnFocusRef.current;

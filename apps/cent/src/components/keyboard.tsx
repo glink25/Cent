@@ -33,7 +33,7 @@ type CalculatorContextType = {
     handleButtonClick: (value: ButtonValue) => void;
     formula: Formula;
     cursor: number;
-    setCursor: (idx: number) => void;
+    setCursor: (position: number | ((cursor: number) => number)) => void;
     valueRef: React.RefObject<HTMLDivElement | null>;
     Layout: {
         label: string;
@@ -276,12 +276,22 @@ export const CalculatorRoot = ({
 
     const Layout = useMemo(() => getLayout(multiplyKey), [multiplyKey]);
 
-    const setCursor = useCallback((idx: number) => {
-        setState((prev) => ({
-            ...prev,
-            cursor: Math.max(0, Math.min(idx, toText(prev.formula).length)),
-        }));
-    }, []);
+    const setCursor = useCallback(
+        (position: number | ((cursor: number) => number)) => {
+            setState((prev) => {
+                const next =
+                    typeof position === "number"
+                        ? position
+                        : position(prev.cursor);
+                const cursor = Math.max(
+                    0,
+                    Math.min(next, toText(prev.formula).length),
+                );
+                return cursor === prev.cursor ? prev : { ...prev, cursor };
+            });
+        },
+        [],
+    );
 
     const handleButtonClick = useCallback(
         (value: ButtonValue) => {
@@ -361,6 +371,7 @@ export const CalculatorValue = ({
     const spansRef = useRef<(HTMLSpanElement | null)[]>([]);
     const draggingRef = useRef(false);
     const [caretLeft, setCaretLeft] = useState(0);
+    const [caretRevision, setCaretRevision] = useState(0);
 
     // 计算光标的水平位置（绝对定位，不影响文本布局）
     useLayoutEffect(() => {
@@ -373,7 +384,7 @@ export const CalculatorValue = ({
         let left: number;
         if (count === 0) {
             // 文本右对齐，空内容时光标在右侧
-            left = container.clientWidth;
+            left = container.clientWidth - 4;
         } else if (cursor >= count) {
             const last = spans[count - 1];
             left = last ? last.offsetLeft + last.offsetWidth : 0;
@@ -385,8 +396,8 @@ export const CalculatorValue = ({
         // 长金额时保证光标可见
         if (left < container.scrollLeft) {
             container.scrollLeft = left;
-        } else if (left > container.scrollLeft + container.clientWidth) {
-            container.scrollLeft = left - container.clientWidth;
+        } else if (left + 2 > container.scrollLeft + container.clientWidth) {
+            container.scrollLeft = left + 2 - container.clientWidth;
         }
     }, [text, cursor]);
 
@@ -427,7 +438,7 @@ export const CalculatorValue = ({
             aria-label={label}
             tabIndex={0}
             className={cn(
-                "relative touch-none focus-visible:outline focus-visible:outline-2",
+                "relative touch-none pr-1 focus-visible:outline focus-visible:outline-2",
                 className,
             )}
             onFocus={() => setFocused(true)}
@@ -448,6 +459,13 @@ export const CalculatorValue = ({
                     onConfirm?.();
                     return;
                 }
+                if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+                    event.preventDefault();
+                    const step = event.key === "ArrowLeft" ? -1 : 1;
+                    setCursor((position) => position + step);
+                    setCaretRevision((revision) => revision + 1);
+                    return;
+                }
                 const key = event.key === "Backspace" ? "c" : event.key;
                 if (key === "r" || !Layout.some((item) => item.label === key)) {
                     return;
@@ -458,6 +476,7 @@ export const CalculatorValue = ({
             onPointerDown={(e) => {
                 e.currentTarget.focus({ preventScroll: true });
                 setCursor(pointerToCursor(e.clientX));
+                setCaretRevision((revision) => revision + 1);
                 e.currentTarget.setPointerCapture(e.pointerId);
                 draggingRef.current = true;
             }}
@@ -484,12 +503,13 @@ export const CalculatorValue = ({
                 </span>
             ))}
             <span
+                key={`caret:${text}:${cursor}:${caretRevision}`}
                 aria-hidden
                 className={cn(
-                    "absolute top-0 bottom-0 w-[2px] bg-current opacity-0 pointer-events-none",
-                    focused && "animate-caret-blink",
+                    "absolute top-0 bottom-0 w-[2px] bg-current pointer-events-none",
+                    focused ? "calculator-caret-blink" : "invisible",
                 )}
-                style={{ left: caretLeft, transform: "translateX(-1px)" }}
+                style={{ left: caretLeft }}
             />
         </div>
     );

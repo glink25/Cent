@@ -311,3 +311,18 @@ button {
 .scrollbar-hidden::-webkit-scrollbar {
 	display: none;
 }
+
+@media (prefers-reduced-motion: no-preference) {
+	.calculator-caret-blink {
+		animation: calculator-caret-blink 1s step-end 250ms infinite;
+	}
+}
+
+@keyframes calculator-caret-blink {
+	0% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0;
+	}
+}
