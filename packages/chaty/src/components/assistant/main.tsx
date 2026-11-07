@@ -1,3 +1,4 @@
+import { mergeReferences } from "@glink25/agent-core/assistant/references";
 import {
     createContext,
     type Dispatch,
@@ -19,7 +20,6 @@ import {
     createSession,
     type History,
 } from "../../assistant";
-import { mergeReferences } from "../../assistant/references";
 import { showFilePicker } from "../file-picker";
 import { Button } from "../ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";

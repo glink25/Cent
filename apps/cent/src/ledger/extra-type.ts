@@ -133,6 +133,7 @@ export type PersonalMeta = {
     reverseIncomeExpenseColors?: boolean;
     homeWidgets?: string[]; // 首页展示的widget列表，元素为widget id
     assistant?: {
+        extraPrompt?: string;
         bigmodel?: {
             apiKey?: string;
         };

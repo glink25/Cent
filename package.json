@@ -15,7 +15,8 @@
 		"build:zen": "pnpm --filter @glink25/zen build",
 		"lint": "pnpm -r lint",
 		"pre-commit": "pnpm -r lint",
-		"prepare": "husky"
+		"prepare": "husky",
+		"test:agent-core": "pnpm --filter @glink25/agent-core test"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.2.2",

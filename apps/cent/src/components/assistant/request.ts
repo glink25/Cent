@@ -1,8 +1,8 @@
-import type { ChatMessage } from "@glink25/chaty/providers";
+import type { ChatMessage } from "@glink25/agent-core/providers";
 import {
     createStreamingRequest,
     parseStream as parseProviderStream,
-} from "@glink25/chaty/providers";
+} from "@glink25/agent-core/providers";
 import type { AIConfig } from "@/ledger/extra-type";
 import { useLedgerStore } from "@/store/ledger";
 import { usePreferenceStore } from "@/store/preference";

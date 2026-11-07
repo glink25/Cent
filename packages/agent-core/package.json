@@ -1,0 +1,27 @@
+{
+	"name": "@glink25/agent-core",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": "./src/assistant/index.ts",
+		"./assistant/*": "./src/assistant/*.ts",
+		"./providers": "./src/providers/index.ts",
+		"./providers/*": "./src/providers/*.ts",
+		"./bridge": "./src/bridge/host.ts",
+		"./bridge/*": "./src/bridge/*.ts",
+		"./playground": "./src/playground/index.ts",
+		"./playground/*": "./src/playground/*.ts",
+		"./ledger-tools": "./src/ledger-tools.ts"
+	},
+	"scripts": {
+		"test": "vitest run"
+	},
+	"dependencies": {
+		"zod": "^4.1.11",
+		"jsonrepair": "^3.13.3"
+	},
+	"devDependencies": {
+		"vitest": "^4.1.9"
+	}
+}

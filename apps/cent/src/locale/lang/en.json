@@ -1,4 +1,8 @@
 {
+  "assistant-extra-prompt": "Extra assistant prompt",
+  "assistant-extra-prompt-description": "Add instructions for the AI assistant. Changes save automatically and sync with your personal settings for this ledger.",
+  "assistant-extra-prompt-reset": "Reset",
+  "assistant-extra-prompt-save-failed": "Could not save the extra assistant prompt.",
   "agent-change-approval": "Review WebMCP changes",
   "agent-change-details": "View changes",
   "agent-change-remember": "Remember for this WebMCP operation in this ledger",

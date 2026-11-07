@@ -41,6 +41,9 @@ importers:
       '@dnd-kit/utilities':
         specifier: ^3.2.2
         version: 3.2.2(react@19.1.1)
+      '@glink25/agent-core':
+        specifier: workspace:*
+        version: link:../../packages/agent-core
       '@glink25/chaty':
         specifier: workspace:*
         version: link:../../packages/chaty
@@ -322,8 +325,24 @@ importers:
         specifier: ^7.3.0
         version: 7.3.0
 
+  packages/agent-core:
+    dependencies:
+      jsonrepair:
+        specifier: ^3.13.3
+        version: 3.13.3
+      zod:
+        specifier: ^4.1.11
+        version: 4.4.3
+    devDependencies:
+      vitest:
+        specifier: ^4.1.9
+        version: 4.1.9(@types/node@24.3.1)(vite@8.0.8(@types/node@24.3.1)(esbuild@0.27.2)(jiti@2.6.1)(sass-embedded@1.93.3)(sass@1.93.3)(terser@5.46.1))
+
   packages/chaty:
     dependencies:
+      '@glink25/agent-core':
+        specifier: workspace:*
+        version: link:../agent-core
       dompurify:
         specifier: ^3.4.17
         version: 3.4.17
@@ -471,13 +490,14 @@ importers:
         version: 5.8.3
 
   packages/zen:
+    dependencies:
+      '@glink25/agent-core':
+        specifier: workspace:*
+        version: link:../agent-core
     devDependencies:
       '@biomejs/biome':
         specifier: 2.2.2
         version: 2.2.2
-      '@glink25/chaty':
-        specifier: workspace:*
-        version: link:../chaty
       '@glink25/tailwind-config':
         specifier: workspace:*
         version: link:../tailwind-config
@@ -2811,6 +2831,7 @@ packages:
   '@smithy/smithy-client@4.10.11':
     resolution: {integrity: sha512-6o804SCyHGMXAb5mFJ+iTy9kVKv7F91a9szN0J+9X6p8A0NrdpUxdaC57aye2ipQkP2C4IAqETEpGZ0Zj77Haw==}
     engines: {node: '>=18.0.0'}
+    deprecated: Deprecated due to a bug in custom logger data redaction. See https://github.com/aws/aws-sdk-js-v3/issues/8393.
 
   '@smithy/types@4.12.0':
     resolution: {integrity: sha512-9YcuJVTOBDjg9LWo23Qp0lTQ3D7fQsQtwle0jVfpbUHy9qBwCEgKuVH4FqFB3VYu0nwdHKiEMA+oXz7oV8X1kw==}
@@ -3767,6 +3788,7 @@ packages:
   eslint@9.34.0:
     resolution: {integrity: sha512-RNCHRX5EwdrESy3Jc9o8ie8Bog+PeYvvSR8sDGoZxNFTvZ4dlxUB3WzQ3bQMztFrSRODGrLLj8g6OFuGY/aiQg==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
     peerDependencies:
       jiti: '*'
@@ -5924,7 +5946,7 @@ snapshots:
   '@antfu/install-pkg@1.1.0':
     dependencies:
       package-manager-detector: 1.3.0
-      tinyexec: 1.0.1
+      tinyexec: 1.2.4
 
   '@antfu/utils@8.1.1': {}
 

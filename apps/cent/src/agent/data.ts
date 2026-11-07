@@ -66,22 +66,24 @@ export function aggregateBills(
     groupBy: "month" | "category" | "type" | "creator",
     timeZone: string,
 ) {
-    const formatter = new Intl.DateTimeFormat("en", {
-        timeZone,
-        year: "numeric",
-        month: "2-digit",
-    });
+    const formatter =
+        groupBy === "month"
+            ? new Intl.DateTimeFormat("en", {
+                  timeZone,
+                  year: "numeric",
+                  month: "2-digit",
+              })
+            : undefined;
     const groups = new Map<string | null, Bill[]>();
     for (const bill of bills) {
-        const parts = formatter.formatToParts(bill.time);
-        const key =
-            groupBy === "month"
-                ? `${parts.find((p) => p.type === "year")?.value}-${parts.find((p) => p.type === "month")?.value}`
-                : groupBy === "category"
-                  ? bill.categoryId
-                  : groupBy === "creator"
-                    ? creatorKey(bill.creatorId)
-                    : bill.type;
+        const parts = formatter?.formatToParts(bill.time);
+        const key = parts
+            ? `${parts.find((p) => p.type === "year")?.value}-${parts.find((p) => p.type === "month")?.value}`
+            : groupBy === "category"
+              ? bill.categoryId
+              : groupBy === "creator"
+                ? creatorKey(bill.creatorId)
+                : bill.type;
         const rows = groups.get(key) ?? [];
         rows.push(bill);
         groups.set(key, rows);

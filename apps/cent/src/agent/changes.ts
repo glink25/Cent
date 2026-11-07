@@ -393,7 +393,14 @@ export function createChangeBatch(context: ToolContext) {
         },
     };
     context.resources?.set(batchKey, batch);
-    return batch;
+    return {
+        finish: batch.finish,
+        dispose() {
+            closed = true;
+            if (context.resources?.get(batchKey) === batch)
+                context.resources.delete(batchKey);
+        },
+    };
 }
 
 export async function proposeChange(

@@ -1,4 +1,8 @@
 {
+  "assistant-extra-prompt": "AI 助手额外提示词",
+  "assistant-extra-prompt-description": "为 AI 助手补充指令。修改会自动保存，并随当前账本的个人设置同步。",
+  "assistant-extra-prompt-reset": "恢复默认",
+  "assistant-extra-prompt-save-failed": "无法保存 AI 助手额外提示词。",
   "agent-change-approval": "审批 WebMCP 变更",
   "agent-change-details": "查看差异",
   "agent-change-remember": "在当前账本对此类 WebMCP 操作不再提示",

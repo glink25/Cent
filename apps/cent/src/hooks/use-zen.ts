@@ -1,9 +1,7 @@
 import dayjs from "dayjs";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { create } from "zustand";
+import { useCallback, useEffect, useState } from "react";
 import { useShallow } from "zustand/shallow";
 import { loadStorageAPI } from "@/api/storage/dynamic";
-import type { Full } from "@/database/stash";
 import type { PersonalMeta } from "@/ledger/extra-type";
 import { measure } from "@/measurement";
 import { useBookStore } from "@/store/book";
@@ -15,64 +13,13 @@ import {
     isZenEntranceOpen,
     showZenDialog,
 } from "@/zen";
-import type { ZenDayId, ZenPost } from "@/zen/types";
-
-type ZenPostsState = {
-    posts: Full<ZenPost>[];
-    refresh: () => Promise<void>;
-    upsert: (post: ZenPost) => Promise<void>;
-};
+import { readZenPost } from "@/zen/storage";
 
 const EMPTY_AI_CONFIGS: NonNullable<
     NonNullable<PersonalMeta["assistant"]>["configs"]
 > = [];
 
 const zenMeasurementState = { ready: false };
-
-const useZenPostsState = create<ZenPostsState>()((set, get) => {
-    const refresh = async () => {
-        const { StorageAPI } = await loadStorageAPI();
-        const bookId = useBookStore.getState().currentBookId;
-        if (!bookId) return;
-        const posts = await StorageAPI.getAllZenItems(bookId);
-        set({ posts: posts ?? [] });
-    };
-    const upsert = async (post: ZenPost) => {
-        const { StorageAPI } = await loadStorageAPI();
-        const bookId = useBookStore.getState().currentBookId;
-        if (!bookId) return;
-        await StorageAPI.batchZen(bookId, [{ type: "update", value: post }]);
-        await get().refresh();
-    };
-    loadStorageAPI().then(({ StorageAPI }) => {
-        StorageAPI.onZenChange?.(() => void get().refresh());
-        void get().refresh();
-    });
-    return { posts: [], refresh, upsert };
-});
-
-export function getPersonalZenPosts(userId = useUserStore.getState().id) {
-    return useZenPostsState
-        .getState()
-        .posts.filter((post) => post.userId === userId);
-}
-
-export function getZenPostById(
-    id: ZenDayId,
-    userId = useUserStore.getState().id,
-) {
-    return getPersonalZenPosts(userId).find(
-        (post) => post.id === `zen-${id}-${userId}`,
-    );
-}
-
-export function refreshZenPosts() {
-    return useZenPostsState.getState().refresh();
-}
-
-export function upsertZenPost(post: ZenPost) {
-    return useZenPostsState.getState().upsert(post);
-}
 
 export function useZen() {
     const userId = useUserStore((state) => state.id);
@@ -91,13 +38,6 @@ export function useZen() {
         }),
     );
     const configs = storedConfigs ?? EMPTY_AI_CONFIGS;
-    const allPosts = useZenPostsState((state) => state.posts);
-    const refreshPosts = useZenPostsState((state) => state.refresh);
-    const upsertPost = useZenPostsState((state) => state.upsert);
-    const posts = useMemo(
-        () => allPosts.filter((post) => post.userId === userId),
-        [allPosts, userId],
-    );
     const updateSettings = useCallback(
         (value: NonNullable<PersonalMeta["zen"]>) =>
             useLedgerStore.getState().updatePersonalMeta((prev) => ({
@@ -106,28 +46,18 @@ export function useZen() {
             })),
         [],
     );
-    const getPostByDayId = useCallback(
-        (dayId: string) =>
-            posts.find((post) => post.id === `zen-${dayId}-${userId}`),
-        [posts, userId],
-    );
-
     return {
         settings: zen,
         configs,
         defaultConfigId,
-        hasAIConfig: configs.length > 0,
-        posts,
-        todayPost: getPostByDayId(getZenDayId()),
-        getPostByDayId,
-        refreshPosts,
-        upsertPost,
         updateSettings,
     };
 }
 
 export function useZenOverview() {
-    const { settings, getPostByDayId } = useZen();
+    const { settings } = useZen();
+    const bookId = useBookStore((state) => state.currentBookId);
+    const userId = String(useUserStore((state) => state.id));
     const [now, setNow] = useState(dayjs());
 
     useEffect(() => {
@@ -137,10 +67,41 @@ export function useZenOverview() {
 
     const enabled = Boolean(settings?.enabled);
     const dayId = getZenDayId(now);
+    const key = JSON.stringify([bookId, userId, dayId]);
+    const [availability, setAvailability] = useState<{
+        key: string;
+        hasPost: boolean;
+    }>();
+    useEffect(() => {
+        if (!enabled || !bookId) return;
+        let active = true;
+        let revision = 0;
+        let unsubscribe: (() => void) | undefined;
+        const refresh = async () => {
+            const current = ++revision;
+            const post = await readZenPost(bookId, userId, dayId);
+            if (active && current === revision)
+                setAvailability({ key, hasPost: Boolean(post) });
+        };
+        void loadStorageAPI()
+            .then(({ StorageAPI }) => {
+                if (!active) return;
+                unsubscribe = StorageAPI.onZenChange(({ bookId: changed }) => {
+                    if (changed === bookId) void refresh().catch(() => {});
+                });
+                return refresh();
+            })
+            .catch(() => {});
+        return () => {
+            active = false;
+            unsubscribe?.();
+        };
+    }, [bookId, dayId, enabled, key, userId]);
     const ready =
         enabled &&
-        isZenEntranceOpen(settings?.scheduledTime, now) &&
-        !getPostByDayId(dayId);
+        availability?.key === key &&
+        !availability.hasPost &&
+        isZenEntranceOpen(settings?.scheduledTime, now);
     zenMeasurementState.ready = ready;
     const styleName = getZenStyleName(now);
     const open = useCallback(() => {

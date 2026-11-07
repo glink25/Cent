@@ -185,7 +185,7 @@ export const mutationTools = [
         effect: "write",
         exposure: writable,
         describe:
-            "Propose adding bills. Amount is an integer scaled by 10000; time is epoch milliseconds. Use existing category and tag IDs, or supply new definitions under meta.",
+            "Propose adding bills. Amount is an integer scaled by 10000; time is epoch milliseconds. Use existing category and tag IDs, or supply new definitions under meta. Before proposing a bulk import, remind the user to back up their data or test in a temporary empty ledger.",
         argSchema: z.object({
             items: z.array(billFields).min(1).max(100),
             meta: z
@@ -248,7 +248,7 @@ export const mutationTools = [
         effect: "write",
         exposure: writable,
         describe:
-            "Propose updating or deleting explicit bill IDs owned by the current user. Amount is an integer scaled by 10000. Use references or query first.",
+            "Propose updating or deleting explicit bill IDs owned by the current user. Amount is an integer scaled by 10000. Use references or query first. Before proposing a deletion or bulk edit, remind the user to back up their data or test in a temporary empty ledger.",
         argSchema: z.discriminatedUnion("action", [
             z.object({
                 action: z.literal("update"),
@@ -298,7 +298,7 @@ export const mutationTools = [
         effect: "write",
         exposure: writable,
         describe:
-            "Propose creating, updating or removing a widget. Preview code via validateWidget first. Updates retain its ID and any unspecified settings/storage.",
+            "Propose creating, updating or removing a widget. Preview code via validateWidget first. Updates retain its ID and any unspecified settings/storage. Before proposing a widget deletion, remind the user to back up their data or test in a temporary empty ledger.",
         argSchema: widgetInput,
         returnSchema: z.unknown(),
         handler: (arg, ctx) =>
@@ -403,7 +403,7 @@ export const mutationTools = [
         effect: "write",
         exposure: writable,
         describe:
-            "Propose upserting a business metadata record by ID, or setting a currency/home widget list. Does not delete metadata or edit credentials.",
+            "Propose upserting a business metadata record by ID, or setting a currency/home widget list. Does not delete metadata or edit credentials. Before proposing changes to key ledger settings, remind the user to back up their data or test in a temporary empty ledger.",
         argSchema: metaInput,
         returnSchema: z.unknown(),
         handler: ({ resource, value }, ctx) =>

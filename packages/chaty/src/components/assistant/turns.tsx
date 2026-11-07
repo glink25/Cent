@@ -85,10 +85,7 @@ function Turn({
     activeTool?: string;
 }) {
     const { t } = useI18n();
-    const [open, setOpen] = useState(active);
-    useEffect(() => {
-        setOpen(active);
-    }, [active]);
+    const [open, setOpen] = useState(false);
     const [now, setNow] = useState(Date.now());
     useEffect(() => {
         if (!active) return;
@@ -98,7 +95,13 @@ function Turn({
     const user = messages[0]?.role === "user" ? messages[0] : undefined;
     const last = messages.at(-1);
     const final =
-        !active && last?.role === "assistant" && !last.formatted.tools?.length
+        last?.role === "assistant" &&
+        !last.formatted.tools?.length &&
+        (!active ||
+            (last.formatted.answer &&
+                (!liveActivity ||
+                    (liveActivity.phase === "answering" &&
+                        liveActivity.messageId === last.id))))
             ? last
             : undefined;
     const processRef = useRef<HTMLDivElement>(null);
@@ -217,7 +220,7 @@ function Turn({
                                     />
                                 ),
                             )}
-                            {active && open && (
+                            {active && open && !final && (
                                 <Peek
                                     activity={liveActivity}
                                     history={messages}
@@ -230,14 +233,17 @@ function Turn({
                     </Collapsible.Content>
                 </Collapsible.Root>
             )}
-            {final && <MessageBubble message={final} hideThought />}
-            {active && !open && (
+            {final && (
+                <MessageBubble key={final.id} message={final} hideThought />
+            )}
+            {active && !open && !final && (
                 <Peek
                     activity={liveActivity}
                     history={messages}
                     tools={tools}
                     fallback={fallback}
                     approval={!!approval}
+                    summaryOnly
                 />
             )}
             {markersAfter(final)}

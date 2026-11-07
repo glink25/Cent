@@ -88,6 +88,7 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
         fullRequest: undefined as Promise<Full<Bill>[]> | undefined,
     });
     let billLoad = newBillLoad();
+    let personalMetaWrite = Promise.resolve();
 
     const updateBillList = async (limit?: number, changed = false) => {
         const repo = getCurrentFullRepoName();
@@ -357,29 +358,40 @@ export const useLedgerStore = create<LedgerStore>()((set, get) => {
             ]);
         },
         updatePersonalMeta: async (v) => {
-            const { StorageAPI } = await loadStorageAPI();
             const repo = getCurrentFullRepoName();
-            const prevMeta = await StorageAPI.getMeta(repo);
             const uid = useUserStore.getState().id;
-            const personalMeta: PersonalMeta =
-                (prevMeta as GlobalMeta | undefined)?.personal?.[uid] ?? {};
-            const newPersonalMeta =
-                typeof v === "function"
-                    ? v(personalMeta)
-                    : { ...personalMeta, ...v };
-            const newMeta = {
-                ...prevMeta,
-                personal: {
-                    ...prevMeta.personal,
-                    [uid]: newPersonalMeta,
-                },
-            };
-            await StorageAPI.batch(repo, [
-                {
-                    type: "meta",
-                    metaValue: newMeta,
-                },
-            ]);
+            const write = personalMetaWrite.then(async () => {
+                const { StorageAPI } = await loadStorageAPI();
+                if (
+                    useBookStore.getState().currentBookId !== repo ||
+                    useUserStore.getState().id !== uid
+                ) {
+                    throw new Error("Ledger or account changed");
+                }
+                const prevMeta = (await StorageAPI.getMeta(repo)) ?? {};
+                if (
+                    useBookStore.getState().currentBookId !== repo ||
+                    useUserStore.getState().id !== uid
+                ) {
+                    throw new Error("Ledger or account changed");
+                }
+                const personalMeta = prevMeta.personal?.[uid] ?? {};
+                const updated =
+                    typeof v === "function"
+                        ? v(personalMeta)
+                        : { ...personalMeta, ...v };
+                await StorageAPI.batch(repo, [
+                    {
+                        type: "meta",
+                        metaValue: {
+                            ...prevMeta,
+                            personal: { ...prevMeta.personal, [uid]: updated },
+                        },
+                    },
+                ]);
+            });
+            personalMetaWrite = write.catch(() => {});
+            return write;
         },
 
         batchImportFromBills: async (

@@ -66,12 +66,14 @@ export function Peek({
     tools,
     fallback,
     approval,
+    summaryOnly,
 }: {
     activity?: RunActivity;
     history: History;
     tools: Tool[];
     fallback?: string;
     approval?: boolean;
+    summaryOnly?: boolean;
 }) {
     const { t } = useI18n();
     const [display, setDisplay] = useState("");
@@ -93,8 +95,8 @@ export function Peek({
         ? t("flowApproval")
         : fallback ||
           (action
-              ? `${t(phase === "preparing" ? "flowPreparing" : "flowExecuting")} ${action.label}${action.summary ? ` · ${action.summary}` : ""}`
-              : thoughtTail(thought) || t("flowThinking"));
+              ? `${t(phase === "preparing" ? "flowPreparing" : "flowExecuting")} ${action.label}${!summaryOnly && action.summary ? ` · ${action.summary}` : ""}`
+              : (!summaryOnly && thoughtTail(thought)) || t("flowThinking"));
     useEffect(() => {
         const update = () => {
             lastUpdate.current = Date.now();
@@ -108,6 +110,8 @@ export function Peek({
         }
     }, [text]);
     if (phase === "answering") return null;
+    if (summaryOnly)
+        return <p className="text-sm text-muted-foreground">{text}</p>;
     return (
         <details
             key={`${phase}-${activity?.callId ?? activity?.messageId ?? ""}`}

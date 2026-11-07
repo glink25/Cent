@@ -4,16 +4,28 @@ import {
     createTool,
     type History,
     type Provider,
+    type SkillInput,
     type Tool,
     type ToolMessage,
-} from "@glink25/chaty";
-import type { ZenDirectorMode, ZenLocale } from "../runtime/types";
+} from "@glink25/agent-core";
+import dayjs from "dayjs";
+import { z } from "zod";
+import type {
+    ZenDirectorMode,
+    ZenLocale,
+    ZenRuntimeHost,
+} from "../runtime/types";
+import {
+    getCalendarPosition,
+    getDefaultZenPeriod,
+    getSuggestedZenPeriods,
+} from "./date";
 import {
     createFallbackEpilogueStep,
     createFallbackReflectionStep,
     createFallbackZenStep,
 } from "./fallback";
-import { canShowEpilogue } from "./journey";
+import { canShowEpilogue, mergeDirectorState } from "./journey";
 import {
     ZenFocusDecisionSchema,
     ZenUIStepSchema,
@@ -22,6 +34,7 @@ import {
 import type {
     ZenContext,
     ZenFocusDecision,
+    ZenPost,
     ZenSessionState,
     ZenUIStep,
 } from "./types";
@@ -50,6 +63,15 @@ function createDecideZenFocusTool(
         argSchema: ZenFocusDecisionSchema,
         returnSchema: ZenFocusDecisionSchema,
         handler: (decision) => {
+            const { start, end } = decision.period;
+            if (
+                !Number.isSafeInteger(start) ||
+                !Number.isSafeInteger(end) ||
+                start > end
+            )
+                throw new Error(
+                    "Choose a valid review period in epoch milliseconds",
+                );
             onDecision(decision);
             return decision;
         },
@@ -121,35 +143,62 @@ function compactSessionState(session: ZenSessionState) {
     };
 }
 
-function contextSignature(context: ZenContext) {
-    return `${context.zenDayId}:${context.period.start}-${context.period.end}`;
-}
-
-/** period 无关、一个 session 内不变的背景信息，只在首轮下发一次。 */
-function backgroundContext(context: ZenContext) {
+export function createZenOpeningContext(
+    zenDayId: string,
+    latest?: Pick<ZenPost, "completedAt">,
+    now = dayjs(),
+): ZenContext {
     return {
-        zenDayId: context.zenDayId,
-        now: context.now,
-        calendarPosition: context.calendarPosition,
-        recentZenPosts: context.recentZenPosts,
-        lastZenPost: context.lastZenPost,
-        suggestedPeriods: context.suggestedPeriods,
+        zenDayId,
+        now: now.toISOString(),
+        calendarPosition: getCalendarPosition(now),
+        period: getDefaultZenPeriod({ now }),
+        suggestedPeriods: getSuggestedZenPeriods({ now, lastZenPost: latest }),
+        lastZenPost: latest,
+        recentZenPosts: [],
+        dataStatus: "unread",
+        summary: {
+            billCount: 0,
+            incomeTotal: 0,
+            expenseTotal: 0,
+            netAmount: 0,
+            currency: "",
+        },
+        topCategories: [],
+        budgets: [],
+        candidateBills: [],
+        candidateGroups: [],
+        signals: [],
+        habitPatterns: [],
     };
 }
 
-/** 与 period 绑定、period 变化即重算的分析结果，首轮 + period 变化时下发。 */
-function periodContext(context: ZenContext) {
-    return {
-        period: context.period,
-        focusDecision: context.focusDecision,
-        summary: context.summary,
-        topCategories: context.topCategories,
-        budgets: context.budgets,
-        signals: context.signals,
-        candidateGroups: context.candidateGroups,
-        candidateBills: context.candidateBills,
-        habitPatterns: context.habitPatterns,
-    };
+function createReadZenHistoryTool(listPosts: ZenRuntimeHost["listZenPosts"]) {
+    return createTool({
+        name: "readZenHistory",
+        exposure: { native: true, code: true },
+        effect: "read",
+        describe:
+            "Read up to five short summaries of recent saved Zen reflections for the current user and ledger. Use only when the user's chosen topic benefits from continuity.",
+        argSchema: z.object({
+            limit: z.number().int().min(1).max(5).default(2),
+        }),
+        returnSchema: z.unknown(),
+        async handler({ limit }, { signal }) {
+            signal?.throwIfAborted();
+            const posts = await listPosts({ limit: limit + 1 });
+            signal?.throwIfAborted();
+            return {
+                items: posts.slice(0, limit).map((post) => ({
+                    completedAt: post.completedAt,
+                    period: post.period,
+                    title: post.title?.slice(0, 120),
+                    summary: post.summary?.slice(0, 300),
+                })),
+                hasMore: posts.length > limit,
+            };
+        },
+    });
 }
 
 function normalizeStepProgress(
@@ -198,7 +247,14 @@ function invalidStepReason(
     const current = session.steps.length + 1;
     if (
         step.mode === "completion" &&
-        !canShowEpilogue(session, context, current)
+        !canShowEpilogue(
+            {
+                ...session,
+                exploration: mergeDirectorState(session.exploration, step),
+            },
+            context,
+            current,
+        )
     ) {
         return "结语出现得太早：继续承接用户回答，并探索尚未覆盖的维度。";
     }
@@ -215,7 +271,10 @@ export async function requestNextZenStep({
     session,
     context,
     provider,
-    hostTools,
+    hostTools = [],
+    skills = [],
+    listPosts,
+    resources = new Map<string, unknown>(),
     configId,
     directorMode,
     locale = "zh",
@@ -224,8 +283,11 @@ export async function requestNextZenStep({
 }: {
     session: ZenSessionState;
     context: ZenContext;
-    provider: Provider;
-    hostTools: Tool[];
+    provider?: Provider;
+    hostTools?: Tool[];
+    skills?: SkillInput[];
+    listPosts?: ZenRuntimeHost["listZenPosts"];
+    resources?: Map<string, unknown>;
     configId?: string;
     directorMode: ZenDirectorMode;
     locale?: ZenLocale;
@@ -237,11 +299,11 @@ export async function requestNextZenStep({
     contextState?: ContextState;
     usedFallback: boolean;
     focusDecision?: ZenFocusDecision;
-    sentContextSignature?: string;
 }> {
     if (directorMode === "local") {
         return createFallbackResult(session, context, locale);
     }
+    if (!provider) throw new Error("Zen AI runtime is unavailable");
     const previousFieldTypes =
         session.currentStep?.mode === "interaction"
             ? session.currentStep.fields.map((field) => field.type)
@@ -251,15 +313,20 @@ export async function requestNextZenStep({
         latestFocusDecision = decision;
     });
     const firstTurn = !session.history?.length;
-    const periodSig = contextSignature(context);
-    const includePeriodBlock =
-        firstTurn || session.sentContextSignature !== periodSig;
-    const zenContext = {
-        ...(firstTurn ? backgroundContext(context) : {}),
-        ...(includePeriodBlock ? periodContext(context) : {}),
-    };
     const payload = {
-        ...(firstTurn || includePeriodBlock ? { zenContext } : {}),
+        ...(firstTurn
+            ? {
+                  zenContext: {
+                      zenDayId: context.zenDayId,
+                      now: context.now,
+                      timeZone:
+                          Intl.DateTimeFormat().resolvedOptions().timeZone,
+                      calendarPosition: context.calendarPosition,
+                      suggestedPeriods: context.suggestedPeriods,
+                      lastZenCompletedAt: context.lastZenPost?.completedAt,
+                  },
+              }
+            : {}),
         sessionState: compactSessionState(session),
         lastUserInput,
         constraints: {
@@ -277,32 +344,37 @@ export async function requestNextZenStep({
     };
 
     const systemPrompt = await zenSystemPromptLoaded;
-    const runDirector = async (correction?: string) => {
+    const tools = [
+        DecideZenFocusTool,
+        ShowZenStepTool,
+        ...hostTools,
+        ...(listPosts ? [createReadZenHistoryTool(listPosts)] : []),
+    ] as Tool[];
+    const runDirector = async (
+        baseHistory = stripSystemMessages(session.history ?? []),
+        contextCheckpoint = session.contextState,
+        correction?: string,
+    ) => {
         const next = createSession({
-            history: stripSystemMessages(session.history ?? []),
-            contextState: session.contextState,
+            history: baseHistory,
+            contextState: contextCheckpoint,
             provider,
-            tools: [
-                DecideZenFocusTool,
-                ShowZenStepTool,
-                ...hostTools,
-            ] as Tool[],
-            skills: [],
+            tools,
+            skills,
             systemPrompt,
             configId,
         });
         signal?.throwIfAborted();
         const pending = next({
-            message: JSON.stringify({ ...payload, correction }),
-            assets: [],
+            message: JSON.stringify(correction ? { correction } : payload),
+            resources,
         });
         const cancel = () => pending.abort();
         signal?.addEventListener("abort", cancel, { once: true });
-        const stream = await pending;
-        let history: History = session.history ?? [];
-        let contextState = session.contextState;
+        let history = baseHistory;
+        let contextState = contextCheckpoint;
         try {
-            for await (const chunk of stream) {
+            for await (const chunk of await pending) {
                 history = chunk.history;
                 contextState = chunk.contextState;
             }
@@ -310,9 +382,7 @@ export async function requestNextZenStep({
             signal?.removeEventListener("abort", cancel);
         }
         signal?.throwIfAborted();
-        const currentHistory = history.slice(
-            stripSystemMessages(session.history ?? []).length + 1,
-        );
+        const currentHistory = history.slice(baseHistory.length + 2);
         const step = getLatestZenStep(currentHistory);
         if (!step) {
             const toolError = getLatestZenStepError(currentHistory);
@@ -328,7 +398,11 @@ export async function requestNextZenStep({
     let result = await runDirector();
     const firstInvalidReason = invalidStepReason(result.step, session, context);
     if (firstInvalidReason) {
-        result = await runDirector(firstInvalidReason);
+        result = await runDirector(
+            stripSystemMessages(result.history),
+            result.contextState,
+            firstInvalidReason,
+        );
     }
     const finalInvalidReason = invalidStepReason(result.step, session, context);
     if (finalInvalidReason) throw new Error(finalInvalidReason);
@@ -338,6 +412,5 @@ export async function requestNextZenStep({
         contextState: result.contextState,
         usedFallback: false,
         focusDecision: latestFocusDecision,
-        sentContextSignature: periodSig,
     };
 }

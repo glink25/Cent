@@ -1,4 +1,8 @@
-import { z } from "zod";
+import {
+    defaultFields,
+    LEDGER_AMOUNT_SCALE,
+    ledgerToolContracts,
+} from "@glink25/agent-core/ledger-tools";
 import { createTool, type Tool, type ToolContext } from "@/assistant";
 import type { Bill, GlobalMeta } from "@/ledger/type";
 import {
@@ -22,40 +26,14 @@ export type AgentSnapshot = {
     readAttachment?: (bill: Bill, index: number) => Promise<Blob>;
 };
 export type AgentDataHost = { snapshot(): Promise<AgentSnapshot> };
-const filterSchema = z.object({
-    start: z.number().optional().describe("Inclusive epoch milliseconds"),
-    end: z.number().optional().describe("Exclusive epoch milliseconds"),
-    type: z.enum(["income", "expense"]).optional(),
-    creatorIds: z.array(z.string().min(1)).optional(),
-    categoryIds: z
-        .array(z.string())
-        .optional()
-        .describe("Exact IDs; empty array matches nothing"),
-    tagIds: z.array(z.string()).optional(),
-    excludeTagIds: z.array(z.string()).optional(),
-    keyword: z.string().optional(),
-    minAmount: z.number().int().optional(),
-    maxAmount: z.number().int().optional(),
-});
-const defaultFields = [
-    "id",
-    "time",
-    "type",
-    "amount",
-    "categoryId",
-    "tagIds",
-    "comment",
-    "currency",
-    "extra",
-    "creatorId",
-] as const;
-const billFields = [
-    ...defaultFields,
-    "location",
-    "scheduledId",
-    "widgetId",
-    "attachments",
-] as const;
+
+const ledgerUnits = { amountScale: LEDGER_AMOUNT_SCALE } as const;
+
+const snapshotKey = "cent:read-snapshot";
+
+export function getAgentTurnSnapshot(resources?: Map<string, unknown>) {
+    return resources?.get(snapshotKey) as Promise<AgentSnapshot> | undefined;
+}
 const ledgerObjectFields = {
     budgets: [
         "id",
@@ -114,13 +92,14 @@ type Cursor = {
 
 export function createDataOperations(host: AgentDataHost): Tool[] {
     const snapshotFor = (ctx: ToolContext): Promise<AgentSnapshot> => {
-        const key = "cent:read-snapshot";
-        const existing = ctx.resources?.get(key) as
-            | Promise<AgentSnapshot>
-            | undefined;
+        const existing = getAgentTurnSnapshot(ctx.resources);
         if (existing) return existing;
         const pending = host.snapshot();
-        ctx.resources?.set(key, pending);
+        ctx.resources?.set(snapshotKey, pending);
+        void pending.catch(() => {
+            if (getAgentTurnSnapshot(ctx.resources) === pending)
+                ctx.resources?.delete(snapshotKey);
+        });
         return pending;
     };
     const cursors = new Map<string, Cursor>();
@@ -167,21 +146,9 @@ export function createDataOperations(host: AgentDataHost): Tool[] {
         });
         return token;
     };
-    const exposure = { code: true, native: true };
     return [
         createTool({
-            name: "query",
-            exposure,
-            describe:
-                "Read bills. Amounts are integers in 1/10000 base-currency units. Time interval is [start,end). Stable ascending time/id order. Statistics cover ALL matches. offset/limit page only items. Read all pages before custom analysis; use aggregate for complete totals.",
-            argSchema: z.object({
-                filter: filterSchema.optional(),
-                offset: z.number().int().nonnegative().default(0),
-                limit: z.number().int().min(1).max(1000).default(100),
-                cursor: z.string().optional(),
-                fields: z.array(z.enum(billFields)).optional(),
-            }),
-            returnSchema: z.unknown(),
+            ...ledgerToolContracts.query,
             handler: async ({ filter, offset, limit, fields, cursor }, ctx) => {
                 const active = await snapshotFor(ctx);
                 const signature = JSON.stringify([
@@ -203,7 +170,7 @@ export function createDataOperations(host: AgentDataHost): Tool[] {
                 const page = rows.slice(offset, offset + limit);
                 return {
                     bookId: snapshot.bookId,
-                    amountScale: 10000,
+                    ...ledgerUnits,
                     currency: snapshot.meta.baseCurrency ?? "CNY",
                     matchedCount: rows.length,
                     returnedCount: page.length,
@@ -273,25 +240,14 @@ export function createDataOperations(host: AgentDataHost): Tool[] {
             },
         }),
         createTool({
-            name: "aggregate",
-            exposure,
-            describe:
-                "Aggregate ALL matching bills in base currency, integer units 10000:1. Group by month/category/type/creator; specify IANA timeZone for monthly buckets. opaque tags do not change totals. No top-N truncation.",
-            argSchema: z.object({
-                filter: filterSchema.optional(),
-                groupBy: z
-                    .enum(["month", "category", "type", "creator"])
-                    .default("month"),
-                timeZone: z.string().optional(),
-            }),
-            returnSchema: z.unknown(),
+            ...ledgerToolContracts.aggregate,
             handler: async ({ filter, groupBy, timeZone }, ctx) => {
                 const snapshot = await snapshotFor(ctx);
                 ctx.signal?.throwIfAborted();
                 const rows = selectBills(snapshot.bills, filter ?? {});
                 return {
                     bookId: snapshot.bookId,
-                    amountScale: 10000,
+                    ...ledgerUnits,
                     currency: snapshot.meta.baseCurrency ?? "CNY",
                     skippedCount: snapshot.skippedCount ?? 0,
                     localComplete: true,
@@ -307,12 +263,7 @@ export function createDataOperations(host: AgentDataHost): Tool[] {
             },
         }),
         createTool({
-            name: "metadata",
-            exposure,
-            describe:
-                "Read the current viewer and ledger members, plus effective categories, tags, currencies and computed metadata. Entries with widgetId are computed and read-only.",
-            argSchema: z.object({}),
-            returnSchema: z.unknown(),
+            ...ledgerToolContracts.metadata,
             handler: async (_, ctx) => {
                 const snapshot = await snapshotFor(ctx);
                 ctx.signal?.throwIfAborted();
@@ -325,7 +276,7 @@ export function createDataOperations(host: AgentDataHost): Tool[] {
                 } = await (snapshot.effectiveMeta?.() ?? snapshot.meta);
                 return {
                     bookId: snapshot.bookId,
-                    amountScale: 10000,
+                    ...ledgerUnits,
                     baseCurrency,
                     viewerId: snapshot.viewerId,
                     members: snapshot.members,
@@ -337,22 +288,7 @@ export function createDataOperations(host: AgentDataHost): Tool[] {
             },
         }),
         createTool({
-            name: "listLedgerObjects",
-            exposure,
-            describe:
-                "Read budgets, your scheduled bills, saved filters, and visible widget configuration.",
-            argSchema: z.object({
-                kind: z.enum([
-                    "budgets",
-                    "scheduleds",
-                    "savedFilters",
-                    "widgets",
-                ]),
-                id: z.string().optional(),
-                limit: z.number().int().min(1).max(1000).default(100),
-                cursor: z.string().optional(),
-            }),
-            returnSchema: z.unknown(),
+            ...ledgerToolContracts.listLedgerObjects,
             handler: async ({ kind, id, limit, cursor }, ctx) => {
                 const active = await snapshotFor(ctx);
                 const signature = JSON.stringify([kind, id]);
@@ -425,15 +361,7 @@ export function createDataOperations(host: AgentDataHost): Tool[] {
             },
         }),
         createTool({
-            name: "readBillAttachment",
-            exposure: { native: true, code: false },
-            describe:
-                "Read one image attachment by bill ID and attachment ID from query.",
-            argSchema: z.object({
-                billId: z.string(),
-                attachmentId: z.string().regex(/^(0|[1-9][0-9]*)$/),
-            }),
-            returnSchema: z.unknown(),
+            ...ledgerToolContracts.readBillAttachment,
             handler: async ({ billId, attachmentId }, ctx) => {
                 const snapshot = await snapshotFor(ctx);
                 const bill = snapshot.bills.find((row) => row.id === billId);

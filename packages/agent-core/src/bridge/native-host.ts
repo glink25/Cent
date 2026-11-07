@@ -3,10 +3,11 @@ import type {
     History,
     ProviderRequestChunk,
 } from "../assistant";
+import { createAgentId as createRequestId } from "../assistant/id";
 import { formatUserReferences } from "../assistant/references";
 import { withToolImages } from "../assistant/tool-images";
-import type { ReferenceDelivery } from "../components/assistant/runtime";
 import { encodeImages, isImage } from "../providers/images";
+import type { ReferenceDelivery } from "./runtime";
 import type {
     AIChatInitPayload,
     HostBridge,
@@ -14,6 +15,7 @@ import type {
     NativeBridgeMessage,
     NativeCallback,
 } from "./types";
+import { AGENT_BRIDGE_VERSION } from "./types";
 
 /**
  * Native bridge adapter。
@@ -29,12 +31,6 @@ function ensureNativeCallbackStore(): Record<string, NativeCallback> {
         window.__AIChatNativeCallbacks = {};
     }
     return window.__AIChatNativeCallbacks;
-}
-
-function createRequestId(): string {
-    return (
-        globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`
-    );
 }
 
 /** 把任意 native 回传的错误标准化为 `Error`。 */
@@ -127,8 +123,26 @@ function cancelableNativePromise<T>(
 
 /** 由 transport 构造标准 `HostBridge`。 */
 function createNativeBridge(transport: NativeTransport): HostBridge {
-    let version = 0;
     const host: HostBridge = {
+        zen: (operation, params, signal) => {
+            const callId = createRequestId();
+            return cancelableNativePromise(
+                transport,
+                callId,
+                (id) => ({
+                    id,
+                    type: "zen",
+                    payload: { operation, params, callId },
+                }),
+                signal,
+            );
+        },
+        closeZen: () =>
+            transport({
+                id: createRequestId(),
+                type: "zen",
+                payload: { operation: "close", callId: createRequestId() },
+            }),
         getInit: async () => {
             const init = await nativePromise<AIChatInitPayload>(
                 transport,
@@ -137,8 +151,16 @@ function createNativeBridge(transport: NativeTransport): HostBridge {
                     type: "getInit",
                 }),
             );
-            version = init.bridgeVersion ?? 0;
-            if (version >= 3 && init.changeSupport) {
+            if (init.bridgeVersion !== AGENT_BRIDGE_VERSION)
+                throw new Error("Incompatible native agent bridge");
+            if (init.extraPromptSupport) {
+                host.getExtraPrompt = () =>
+                    nativePromise<string>(transport, (id) => ({
+                        id,
+                        type: "getExtraPrompt",
+                    }));
+            }
+            if (init.changeSupport) {
                 host.changeControl = (decision, signal) => {
                     const callId = createRequestId();
                     return cancelableNativePromise<ChangeReceipt>(
@@ -153,7 +175,7 @@ function createNativeBridge(transport: NativeTransport): HostBridge {
                     );
                 };
             }
-            if (version >= 3 && init.referenceSupport) {
+            if (init.referenceSupport) {
                 host.resolveReferences = async (references, signal) =>
                     (await host.callTool({
                         callId: createRequestId(),
@@ -203,14 +225,9 @@ function createNativeBridge(transport: NativeTransport): HostBridge {
             onDone,
             onError,
         }) => {
-            const wireHistory =
-                version >= 3
-                    ? await encodeNativeHistory(
-                          purpose === "summary"
-                              ? history
-                              : withToolImages(history),
-                      )
-                    : history;
+            const wireHistory = await encodeNativeHistory(
+                purpose === "summary" ? history : withToolImages(history),
+            );
             const store = ensureNativeCallbackStore();
             const id = createRequestId();
             const cleanup = () => {
@@ -265,23 +282,8 @@ function createNativeBridge(transport: NativeTransport): HostBridge {
             return handle;
         },
 
-        callTool: ({
-            callId,
-            name,
-            params,
-            history,
-            surface,
-            batchId,
-            signal,
-        }) => {
+        callTool: ({ callId, name, params, surface, batchId, signal }) => {
             signal?.throwIfAborted();
-            if (version < 3) {
-                return nativePromise<unknown>(transport, (id) => ({
-                    id,
-                    type: "callTool",
-                    payload: { callId, name, params, history },
-                }));
-            }
             return cancelableNativePromise<unknown>(
                 transport,
                 callId,
@@ -301,13 +303,11 @@ function createNativeBridge(transport: NativeTransport): HostBridge {
             );
         },
         endBatch: (batchId) => {
-            if (version >= 3) {
-                transport({
-                    id: createRequestId(),
-                    type: "endBatch",
-                    payload: { batchId },
-                });
-            }
+            transport({
+                id: createRequestId(),
+                type: "endBatch",
+                payload: { batchId },
+            });
         },
     };
     return host;

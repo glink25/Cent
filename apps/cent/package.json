@@ -73,7 +73,8 @@
 		"zod": "^4.4.3",
 		"zustand": "^5.0.8",
 		"zustand-computed": "^2.1.0",
-		"zustand-indexeddb": "^0.1.1"
+		"zustand-indexeddb": "^0.1.1",
+		"@glink25/agent-core": "workspace:*"
 	},
 	"devDependencies": {
 		"@amap/amap-jsapi-types": "^0.0.15",

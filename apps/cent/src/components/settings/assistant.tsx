@@ -1,5 +1,15 @@
-import { createAIProvider, supportsImages } from "@glink25/chaty/providers";
-import { type ReactNode, useCallback, useEffect, useState } from "react";
+import {
+    createAIProvider,
+    supportsImages,
+} from "@glink25/agent-core/providers";
+import {
+    type ReactNode,
+    useCallback,
+    useEffect,
+    useId,
+    useRef,
+    useState,
+} from "react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/shallow";
 import { listChangeGrants, revokeChangeGrant } from "@/agent/changes";
@@ -7,6 +17,7 @@ import { assistantScope } from "@/components/assistant/launcher";
 import PopupLayout from "@/layouts/popup-layout";
 import type { AIConfig, JSONObject } from "@/ledger/extra-type";
 import { useIntl } from "@/locale";
+import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
 import { cn } from "@/utils";
@@ -510,19 +521,98 @@ const [ConfigFormProvider, showConfigForm] = createConfirmProvider(ConfigForm, {
         "h-full w-full max-h-full max-w-full rounded-none sm:rounded-md sm:max-h-[min(520px,calc(100vh-32px))] sm:w-[90vw] sm:max-w-[500px]",
 });
 
+function ExtraPromptEditor({
+    scope,
+    stored,
+}: {
+    scope: string;
+    stored: string;
+}) {
+    const t = useIntl();
+    const inputId = useId();
+    const [draft, setDraft] = useState<string>();
+    const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+    const pending = useRef<() => void>(undefined);
+
+    useEffect(() => () => pending.current?.(), []);
+    useEffect(() => {
+        if (draft === stored && !pending.current) setDraft(undefined);
+    }, [draft, stored]);
+
+    const update = (text: string, immediately = false) => {
+        setDraft(text);
+        clearTimeout(timer.current);
+        pending.current = () => {
+            clearTimeout(timer.current);
+            pending.current = undefined;
+            if (assistantScope() !== scope) return;
+            void useLedgerStore
+                .getState()
+                .updatePersonalMeta((prev) => {
+                    const assistant = { ...prev.assistant };
+                    if (text.trim()) assistant.extraPrompt = text;
+                    else delete assistant.extraPrompt;
+                    return { ...prev, assistant };
+                })
+                .then(() => {
+                    if (!text.trim())
+                        setDraft((current) =>
+                            current === text ? "" : current,
+                        );
+                })
+                .catch(() =>
+                    toast.error(t("assistant-extra-prompt-save-failed")),
+                );
+        };
+        if (immediately) pending.current();
+        else timer.current = setTimeout(pending.current, 350);
+    };
+
+    return (
+        <div className="space-y-2 px-4 py-3">
+            <div className="flex items-start justify-between gap-2">
+                <div>
+                    <label htmlFor={inputId}>
+                        {t("assistant-extra-prompt")}
+                    </label>
+                    <p className="text-xs opacity-60">
+                        {t("assistant-extra-prompt-description")}
+                    </p>
+                </div>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => update("", true)}
+                >
+                    {t("assistant-extra-prompt-reset")}
+                </Button>
+            </div>
+            <textarea
+                id={inputId}
+                className="w-full min-h-60 border rounded-lg p-2 text-xs font-mono"
+                value={draft ?? stored}
+                onChange={(event) => update(event.currentTarget.value)}
+            />
+        </div>
+    );
+}
+
 // 主配置列表界面
 function Form({ onCancel }: { onCancel?: () => void }) {
     const t = useIntl();
     const { id: userId } = useUserStore();
 
     // 获取配置列表和默认配置ID
-    const { configs, defaultConfigId } = useLedgerStore(
+    const bookId = useBookStore((state) => state.currentBookId);
+    const { configs, defaultConfigId, extraPrompt, ready } = useLedgerStore(
         useShallow((state) => {
             const assistantData =
                 state.infos?.meta.personal?.[userId]?.assistant;
             return {
                 configs: assistantData?.configs,
                 defaultConfigId: assistantData?.defaultConfigId,
+                extraPrompt: assistantData?.extraPrompt,
+                ready: !!state.infos,
             };
         }),
     );
@@ -682,6 +772,13 @@ function Form({ onCancel }: { onCancel?: () => void }) {
             }
         >
             <div className="flex-1 flex flex-col overflow-y-auto pb-4">
+                {bookId && userId && ready && (
+                    <ExtraPromptEditor
+                        key={assistantScope()}
+                        scope={assistantScope()}
+                        stored={extraPrompt ?? ""}
+                    />
+                )}
                 {/* 配置列表 */}
                 <div className="px-4">
                     <div className="text-sm font-medium py-2">

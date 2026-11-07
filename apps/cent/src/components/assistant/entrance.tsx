@@ -99,6 +99,15 @@ export default function AssistantButton() {
     const runtime = useMemo<RuntimeConfig>(
         () => ({
             ...CentAIConfig,
+            getExtraPrompt: async () => {
+                if (!currentBookId) return undefined;
+                if (assistantScope() !== scopeKey)
+                    throw new Error("Ledger or account changed");
+                const meta = await StorageAPI.getMeta(currentBookId);
+                if (assistantScope() !== scopeKey)
+                    throw new Error("Ledger or account changed");
+                return meta?.personal?.[userId]?.assistant?.extraPrompt;
+            },
             provider: createAssistantTokenUsageProvider(
                 CentAIConfig.provider,
                 (request) =>
@@ -148,6 +157,7 @@ export default function AssistantButton() {
         [
             currentBookId,
             scopeKey,
+            userId,
             configs,
             defaultConfigId,
             presetPrompts,

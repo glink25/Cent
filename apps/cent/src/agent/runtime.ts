@@ -1,5 +1,5 @@
-import { z } from "zod";
-import { createTool, parseSkillMetadata, type Tool } from "@/assistant";
+import { DiscoverTools } from "@glink25/agent-core/bridge";
+import { parseSkillMetadata, type Tool } from "@/assistant";
 import { withDebugLog } from "@/components/assistant/debug-log";
 import { EnvTool } from "@/components/assistant/tools/env-tool";
 import {
@@ -15,7 +15,7 @@ import { withToolDisplay } from "./tool-display";
 import { readAgentSnapshot } from "./web-host";
 import { widgetOperations } from "./widget-operations";
 
-export const ledgerReadOperations = createDataOperations({
+const ledgerReadOperations = createDataOperations({
     snapshot: readAgentSnapshot,
 }).map((tool) => withDebugLog(guardOperation(tool), false));
 const operations: Tool[] = [
@@ -26,28 +26,14 @@ const operations: Tool[] = [
     ].map((tool) => withDebugLog(guardOperation(tool))),
 ];
 
-const discover = createTool({
-    name: "discover",
-    exposure: { code: true, native: true },
-    describe:
-        "Discover Cent operations callable via playground tools.NAME(args). Returns schemas and exact data units. Read widget skill before generating code.",
-    argSchema: z.object({}),
-    returnSchema: z.array(z.unknown()),
-    handler: () =>
-        [
-            ...operations.filter((tool) => tool.exposure?.code),
-            ...mutationTools.filter((tool) => tool.exposure?.code),
-        ].map((tool) => ({
-            name: tool.name,
-            description: tool.describe,
-            input: tool.argSchema ? z.toJSONSchema(tool.argSchema) : {},
-            output: z.toJSONSchema(tool.returnSchema),
-        })),
-});
-
 export const CentAgentConfig = {
     tools: (
-        [...operations, ...mutationTools, discover, PlaygroundTool] as Tool[]
+        [
+            ...operations,
+            ...mutationTools,
+            DiscoverTools,
+            PlaygroundTool,
+        ] as Tool[]
     ).map(withToolDisplay),
     skills: [
         parseSkillMetadata(principles),
@@ -60,4 +46,16 @@ export const CentAgentConfig = {
 查询记账人时使用 metadata 的成员目录和 viewerId，按 creator 聚合或用 creatorIds 筛选。只有当用户指代当前页面的内容，先用 getEnv 读取实时条件。单项修改可用原生写入工具；多项修改可在 playground 内逐项 await 写入工具，脚本成功后整批确认。staged 不是已写入，查看 change 回执或 getChangeStatus。
 模型生成过长的工具参数也可能中断。收到可恢复协议错误时，缩短单次代码、拆分任务并修正参数；错误提示未执行的批次可重试，之前成功的写操作不能重复提交。
 `.trim(),
+};
+
+const ledgerReadNames = new Set(ledgerReadOperations.map((tool) => tool.name));
+
+export const CentReviewAgentConfig = {
+    tools: CentAgentConfig.tools.filter(
+        (tool) =>
+            ledgerReadNames.has(tool.name) ||
+            tool.name === DiscoverTools.name ||
+            tool.name === PlaygroundTool.name,
+    ),
+    skills: [PlaygroundSkill],
 };

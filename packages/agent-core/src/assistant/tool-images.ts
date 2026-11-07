@@ -1,3 +1,4 @@
+import { createAgentId } from "./id";
 import type { History, ToolMessage } from "./type";
 
 export type ToolImage = { mimeType: string; data: string };
@@ -22,7 +23,7 @@ export function retainToolImage(message: ToolMessage) {
         typeof value.mimeType !== "string"
     )
         return;
-    const imageId = crypto.randomUUID();
+    const imageId = createAgentId();
     const valid =
         supported.has(value.mimeType) && value.data.length <= 6_990_508;
     if (valid) {

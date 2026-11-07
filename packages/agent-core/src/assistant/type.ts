@@ -312,6 +312,8 @@ export type NextInput = {
     message: string;
     assets?: File[];
     references?: ConversationReference[];
+    /** Optional host-owned cache shared by tools in this turn. */
+    resources?: Map<string, unknown>;
 };
 
 export type Next = (

@@ -1,124 +1,85 @@
-import type {
-    NativeBridgeMessage,
-    NativeCallback,
-    ZenRuntimeHost,
-} from "./types";
+import { adaptHostRuntime } from "@glink25/agent-core/bridge";
+import {
+    getAndroidNativeHost,
+    getIosNativeHost,
+} from "@glink25/agent-core/bridge/native-host";
+import type { AIChatInitPayload } from "@glink25/agent-core/bridge/types";
+import {
+    PlaygroundSkill,
+    PlaygroundTool,
+} from "@glink25/agent-core/playground";
+import type { ZenRuntimeHost } from "./types";
 
-type Sender = (message: NativeBridgeMessage) => void;
-const id = () =>
-    globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
+const nativeHost = () => getAndroidNativeHost() ?? getIosNativeHost();
 
-function callbacks() {
-    if (!window.__ZenNativeCallbacks) window.__ZenNativeCallbacks = {};
-    return window.__ZenNativeCallbacks;
+export function requestHostClose() {
+    nativeHost()?.closeZen?.();
 }
 
-function request<T>(
-    send: Sender,
-    type: NativeBridgeMessage["type"],
-    payload?: unknown,
-): Promise<T> {
-    const messageId = id();
-    return new Promise<T>((resolve, reject) => {
-        callbacks()[messageId] = {
-            resolve: (value) => {
-                delete callbacks()[messageId];
-                resolve(value as T);
-            },
-            reject: (error) => {
-                delete callbacks()[messageId];
-                reject(normalizeError(error));
-            },
-        };
-        send({
-            id: messageId,
-            type,
-            ...(payload === undefined ? {} : { payload }),
-        } as NativeBridgeMessage);
-    });
-}
-
-function normalizeError(error: unknown) {
-    if (error instanceof Error) return error;
-    if (error && typeof error === "object" && "message" in error)
-        return new Error(String(error.message));
-    return new Error(String(error));
-}
-
-function createNativeHost(send: Sender): ZenRuntimeHost {
+export function getNativeZenHost(): ZenRuntimeHost | undefined {
+    const host = nativeHost();
+    const call = host?.zen;
+    const getInit = host?.getInit;
+    if (!host || !getInit || !call) return undefined;
+    let init: AIChatInitPayload;
     return {
-        getInit: () => request(send, "getInit"),
-        getZenContext: (payload) => request(send, "getZenContext", payload),
-        listZenPosts: (payload = {}) => request(send, "listZenPosts", payload),
-        mutateZenPosts: (payload) => request(send, "mutateZenPosts", payload),
-        callAITool: (payload) => request(send, "callAITool", payload),
-        requestAI: (payload) => {
-            const messageId = id();
-            const callback: NativeCallback = {
-                onChunk: payload.onChunk,
-                onDone: () => {
-                    delete callbacks()[messageId];
-                    payload.onDone();
-                },
-                onError: (error) => {
-                    delete callbacks()[messageId];
-                    payload.onError(normalizeError(error));
-                },
-            };
-            callbacks()[messageId] = callback;
-            send({
-                id: messageId,
-                type: "requestAI",
-                payload: {
-                    requestId: payload.requestId,
-                    configId: payload.configId,
-                    purpose: payload.purpose,
-                    maxTokens: payload.maxTokens,
-                    history: payload.history,
-                    tools: payload.tools,
-                },
-            });
+        async getInit() {
+            init = await getInit();
+            if (init.surface !== "zen" || !init.zen)
+                throw new Error("Native host did not initialize Zen");
             return {
-                cancel: () => {
-                    delete callbacks()[messageId];
-                    send({
-                        id: id(),
-                        type: "cancelAIRequest",
-                        payload: { requestId: payload.requestId },
-                    });
-                },
+                ...init.zen,
+                style: init.zen.style as Awaited<
+                    ReturnType<ZenRuntimeHost["getInit"]>
+                >["style"],
+                configs: init.configs,
+                defaultConfigId: init.defaultConfigId,
+                locale: init.locale,
+                theme: init.theme,
+                aiTools: [],
             };
         },
+        getSessionRuntime() {
+            return adaptHostRuntime(
+                host,
+                {
+                    ...init,
+                    tools: init.tools.filter((tool) => tool.effect === "read"),
+                    changeSupport: false,
+                    writeBatchSupport: false,
+                },
+                { tools: [PlaygroundTool], skills: [PlaygroundSkill] },
+            );
+        },
+        async getZenStart(params) {
+            const result = await call<
+                Awaited<ReturnType<NonNullable<ZenRuntimeHost["getZenStart"]>>>
+            >("getZenStart", params);
+            return {
+                completed: result.completed ?? undefined,
+                latest: result.latest ?? undefined,
+            };
+        },
+        getZenContext: (params) => call("getZenContext", params),
+        listZenPosts: (params) => call("listZenPosts", params),
+        mutateZenPosts: (params) => call("mutateZenPosts", params),
+        async resolveStepContext({ step, context, signal }) {
+            const evidence = await call<
+                Pick<
+                    typeof context,
+                    "candidateBills" | "topCategories" | "budgets" | "summary"
+                >
+            >(
+                "resolveZenStepContext",
+                {
+                    period: context.period,
+                    blocks: step.content.filter(
+                        (block) => block.type === "entityList",
+                    ),
+                },
+                signal,
+            );
+            return { ...context, ...evidence };
+        },
     };
-}
-
-/**
- * Ask the native shell to dismiss the zen surface. The standalone app has no
- * window chrome of its own, so its in-page close button routes here; the native
- * bridge (Android `CentZenNative` / iOS `webkit`) tears down the webview.
- */
-export function requestHostClose() {
-    const message: NativeBridgeMessage = { id: id(), type: "close" };
-    const android = window.CentZenNative;
-    if (android) {
-        android.postMessage(JSON.stringify(message));
-        return;
-    }
-    window.webkit?.messageHandlers?.CentZenNative?.postMessage(message);
-}
-
-export function getAndroidNativeHost() {
-    const bridge = window.CentZenNative;
-    return bridge
-        ? createNativeHost((message) =>
-              bridge.postMessage(JSON.stringify(message)),
-          )
-        : undefined;
-}
-
-export function getIosNativeHost() {
-    const bridge = window.webkit?.messageHandlers?.CentZenNative;
-    return bridge
-        ? createNativeHost((message) => bridge.postMessage(message))
-        : undefined;
 }

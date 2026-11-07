@@ -191,7 +191,8 @@ export default function createSandBox(
                     reject(signal?.reason ?? new Error("Aborted"));
                 };
 
-                // 超时只统计沙盒自身的计算时间：当存在正在进行的宿主 RPC 调用时暂停计时，
+                // 超时只统计沙盒自身的计算时间：当存在正在进行的宿主 RPC 调用
+                // （例如 importBills 弹出的预览对话框在等待用户确认）时暂停计时，
                 // 全部完成后再重新计时，避免误判超时。
                 let timeoutId: ReturnType<typeof setTimeout> | null = null;
                 let inflightRpc = 0;

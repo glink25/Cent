@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { createAgentId } from "./id";
 import { createTool } from "./tooling";
 import type {
     ContextPolicy,
@@ -14,7 +15,7 @@ export const SUMMARY_PROMPT = `Summarize the supplied conversation as historical
 export function ensureMessageIds(history: History): History {
     return history.map((message) => ({
         ...message,
-        id: message.id ?? crypto.randomUUID(),
+        id: message.id ?? createAgentId(),
     }));
 }
 

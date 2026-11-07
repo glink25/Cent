@@ -4,8 +4,8 @@ import { marked } from "marked";
 import { Collapsible } from "radix-ui";
 import { useId, useLayoutEffect, useRef, useState } from "react";
 import "./prose.css";
+import type { Message, Tool } from "@glink25/agent-core";
 import { toast } from "sonner";
-import type { Message, Tool } from "../../assistant/type";
 import { useI18n } from "./i18n";
 import { actionSummary } from "./turn-model";
 

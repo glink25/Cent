@@ -14,7 +14,6 @@ import { BillCategories } from "@/ledger/category";
 import type { Bill, GlobalMeta } from "@/ledger/type";
 import { intlCategory } from "@/ledger/utils";
 import { t } from "@/locale";
-import { useLedgerStore } from "@/store/ledger";
 import type {
     ZenContext,
     ZenDayId,
@@ -35,21 +34,10 @@ type ZenPeriodAnalysis = Omit<
     | "lastZenPost"
 >;
 
-function categoryNameById() {
-    const categories = getAllCategories();
-    const map = new Map(categories.map((category) => [category.id, category]));
-    return (id: string) => map.get(id)?.name ?? id;
-}
-
-const getAllCategories = () => {
-    const savedCategories = useLedgerStore.getState().infos?.meta.categories;
-
-    const categories = (savedCategories ?? BillCategories).map((v) => {
-        const cate = intlCategory(v, t);
-        return cate;
-    });
-    return categories;
-};
+export const getZenCategories = (meta?: GlobalMeta) =>
+    (meta?.categories ?? BillCategories).map((category) =>
+        intlCategory(category, t),
+    );
 
 function trimComment(comment: string | undefined) {
     if (!comment) return undefined;
@@ -116,6 +104,71 @@ function buildCandidateGroup({
     };
 }
 
+export function analyzeZenBudgets(
+    budgets: NonNullable<GlobalMeta["budgets"]>,
+    bills: Bill[],
+    period: ZenPeriod,
+    allCategories: ReturnType<typeof getZenCategories>,
+): ZenContext["budgets"] {
+    const names = new Map(allCategories.map(({ id, name }) => [id, name]));
+    const getCategoryName = (id: string) => names.get(id) ?? id;
+    return budgets.flatMap((budget) => {
+        const [, currentRange] = budgetRange(budget, period.end);
+        if (!currentRange) return [];
+        const [start, end] = currentRange;
+        if (end.valueOf() < period.start || start.valueOf() > period.end) {
+            return [];
+        }
+        const encountered = budgetEncountered(
+            budget,
+            bills,
+            currentRange,
+            allCategories,
+        );
+        const totalBudget = budgetTotal(budget);
+        const ratio = totalBudget > 0 ? encountered.totalUsed / totalBudget : 0;
+        const categories = budget.categoriesBudget?.map((category) => {
+            const used =
+                encountered.categoriesUsed?.find(
+                    (item) => item.id === category.id,
+                )?.used ?? 0;
+            const categoryRatio =
+                category.budget > 0 ? used / category.budget : 0;
+            return {
+                id: category.id,
+                name: getCategoryName(category.id),
+                budget: category.budget,
+                used,
+                ratio: categoryRatio,
+                status:
+                    categoryRatio >= 1
+                        ? "over_limit"
+                        : categoryRatio >= 0.8
+                          ? "near_limit"
+                          : "normal",
+            } as const;
+        });
+        return [
+            {
+                id: budget.id,
+                title: budget.title,
+                periodStart: start.valueOf(),
+                periodEnd: end.valueOf(),
+                totalBudget,
+                totalUsed: encountered.totalUsed,
+                ratio,
+                status:
+                    ratio >= 1
+                        ? "over_limit"
+                        : ratio >= 0.8
+                          ? "near_limit"
+                          : "normal",
+                categories,
+            } as const,
+        ];
+    });
+}
+
 export function analyzeZenPeriod({
     bills,
     meta,
@@ -125,8 +178,9 @@ export function analyzeZenPeriod({
     meta?: GlobalMeta;
     period: ZenPeriod;
 }): ZenPeriodAnalysis {
-    const getCategoryName = categoryNameById();
-    const allCategories = getAllCategories();
+    const allCategories = getZenCategories(meta);
+    const names = new Map(allCategories.map(({ id, name }) => [id, name]));
+    const getCategoryName = (id: string) => names.get(id) ?? id;
     const periodBills = bills.filter(
         (bill) => bill.time >= period.start && bill.time <= period.end,
     );
@@ -520,61 +574,12 @@ export function analyzeZenPeriod({
         }
     }
 
-    const budgets = (meta?.budgets ?? []).flatMap((budget) => {
-        const [, currentRange] = budgetRange(budget, period.end);
-        if (!currentRange) return [];
-        const [start, end] = currentRange;
-        if (end.valueOf() < period.start || start.valueOf() > period.end) {
-            return [];
-        }
-        const encountered = budgetEncountered(
-            budget,
-            bills,
-            currentRange,
-            allCategories,
-        );
-        const totalBudget = budgetTotal(budget);
-        const ratio = totalBudget > 0 ? encountered.totalUsed / totalBudget : 0;
-        const categories = budget.categoriesBudget?.map((category) => {
-            const used =
-                encountered.categoriesUsed?.find(
-                    (item) => item.id === category.id,
-                )?.used ?? 0;
-            const categoryRatio =
-                category.budget > 0 ? used / category.budget : 0;
-            return {
-                id: category.id,
-                name: getCategoryName(category.id),
-                budget: category.budget,
-                used,
-                ratio: categoryRatio,
-                status:
-                    categoryRatio >= 1
-                        ? "over_limit"
-                        : categoryRatio >= 0.8
-                          ? "near_limit"
-                          : "normal",
-            } as const;
-        });
-        return [
-            {
-                id: budget.id,
-                title: budget.title,
-                periodStart: start.valueOf(),
-                periodEnd: end.valueOf(),
-                totalBudget,
-                totalUsed: encountered.totalUsed,
-                ratio,
-                status:
-                    ratio >= 1
-                        ? "over_limit"
-                        : ratio >= 0.8
-                          ? "near_limit"
-                          : "normal",
-                categories,
-            } as const,
-        ];
-    });
+    const budgets = analyzeZenBudgets(
+        meta?.budgets ?? [],
+        bills,
+        period,
+        allCategories,
+    );
 
     for (const budget of budgets) {
         if (budget.status === "normal") continue;

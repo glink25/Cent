@@ -1,3 +1,5 @@
+/// <reference path="../raw.d.ts" />
+
 import { z } from "zod";
 import {
     compressionBoundaries,
@@ -10,6 +12,7 @@ import {
     validContextState,
 } from "./context";
 import { prepareContext } from "./context-manager";
+import { createAgentId } from "./id";
 import { parseResult } from "./parser";
 import {
     apiRetryDelay,
@@ -57,6 +60,7 @@ export function createSession({
     tools,
     skills,
     systemPrompt,
+    getExtraPrompt,
     configId,
     contextPolicy = {},
     contextState,
@@ -68,6 +72,7 @@ export function createSession({
     tools: Tool[];
     skills: SkillInput[];
     systemPrompt?: string;
+    getExtraPrompt?: () => string | undefined | Promise<string | undefined>;
     configId?: string;
     contextPolicy?: ContextPolicy;
     contextState?: ContextState;
@@ -188,7 +193,7 @@ export function createSession({
 
     const nativeTools = runtimeTools.filter((tool) => tool.exposure?.native);
 
-    const next = (({ message, assets, references }: NextInput) => {
+    const next = (({ message, assets, references, resources }: NextInput) => {
         const controller = new AbortController();
         let pending: ReturnType<Provider["request"]> | undefined;
         const working: History = [
@@ -209,6 +214,7 @@ export function createSession({
             tools: runtimeTools,
             signal: controller.signal,
             surface: "native",
+            resources,
         });
         async function* run(): AsyncGenerator<TurnResult> {
             let protocolBackoff = 0;
@@ -217,6 +223,14 @@ export function createSession({
             let recoveryHint: string | undefined;
             let outputCeiling = 32768;
             try {
+                const extraPrompt = await getExtraPrompt?.();
+                controller.signal.throwIfAborted();
+                if (extraPrompt?.trim()) {
+                    working[0] = {
+                        ...systemMessage,
+                        raw: `${systemMessage.raw}\n\nUser preferences for this ledger:\n${extraPrompt}`,
+                    };
+                }
                 const policy = {
                     ...(await provider.getContextPolicy?.(configId)),
                     ...contextPolicy,
@@ -226,7 +240,7 @@ export function createSession({
                 while (true) {
                     controller.signal.throwIfAborted();
                     for (const message of working)
-                        message.id ??= crypto.randomUUID();
+                        message.id ??= createAgentId();
                     const coveredIndex = checkpoint
                         ? working.findIndex(
                               (m) => m.id === checkpoint?.coveredThroughId,
@@ -258,7 +272,7 @@ export function createSession({
                                 ? working.at(-2)
                                 : working.at(-1);
                         contextEvent = {
-                            id: crypto.randomUUID(),
+                            id: createAgentId(),
                             anchorId: anchor?.id ?? working.at(-1)?.id ?? "",
                         };
                         contextStatus = "compacting";
@@ -299,7 +313,7 @@ export function createSession({
                     let finalMessage:
                         | ReturnType<typeof parseResult>
                         | undefined;
-                    const responseId = crypto.randomUUID();
+                    const responseId = createAgentId();
                     const requestedOutput =
                         policy.maxOutputTokens ?? baseOutput;
                     try {
@@ -546,7 +560,7 @@ export function createSession({
                               }
                             : await executeToolCall(toolMap, call, ctx(call));
                         retainToolImage(result);
-                        result.id = crypto.randomUUID();
+                        result.id = createAgentId();
                         result.formatted.id = call.id;
                         result.formatted.runningTime = Date.now() - started;
                         working.push(result);
@@ -614,9 +628,14 @@ export function createSession({
         async function* stream(): AsyncGenerator<TurnResult> {
             for await (const result of run()) {
                 for (const message of result.history)
-                    message.id ??= crypto.randomUUID();
+                    message.id ??= createAgentId();
                 yield {
                     ...result,
+                    history: result.history.map((message) =>
+                        message.id === systemMessage.id
+                            ? systemMessage
+                            : message,
+                    ),
                     contextState: checkpoint,
                     contextEvent,
                     contextStatus,
