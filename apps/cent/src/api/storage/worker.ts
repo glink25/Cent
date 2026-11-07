@@ -163,6 +163,7 @@ const startPredict = async (
 const exposed = {
     init: (v: any) => {},
     getInfo,
+    readAllBills: (bookId: string) => getDB(bookId).itemBucket.getItems(),
     filter,
     analysis,
     exportToArrayBuffer,

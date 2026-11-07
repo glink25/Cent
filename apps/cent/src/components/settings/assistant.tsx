@@ -1,9 +1,23 @@
-import { type ReactNode, useCallback, useEffect, useState } from "react";
+import {
+    createAIProvider,
+    supportsImages,
+} from "@glink25/agent-core/providers";
+import {
+    type ReactNode,
+    useCallback,
+    useEffect,
+    useId,
+    useRef,
+    useState,
+} from "react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/shallow";
+import { listChangeGrants, revokeChangeGrant } from "@/agent/changes";
+import { assistantScope } from "@/components/assistant/launcher";
 import PopupLayout from "@/layouts/popup-layout";
 import type { AIConfig, JSONObject } from "@/ledger/extra-type";
 import { useIntl } from "@/locale";
+import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
 import { cn } from "@/utils";
@@ -51,6 +65,10 @@ function ConfigForm({
     const [apiKey, setApiKey] = useState(edit ? decodeApiKey(edit.apiKey) : "");
     const [apiUrl, setApiUrl] = useState(edit?.apiUrl ?? "");
     const [model, setModel] = useState(edit?.model ?? "");
+    const [contextWindow, setContextWindow] = useState(
+        edit?.contextWindow?.toString() ?? "",
+    );
+    const [imageInput, setImageInput] = useState(edit?.imageInput);
     const [apiType, setApiType] = useState<AIConfig["apiType"]>(
         edit?.apiType ?? "open-ai-compatible",
     );
@@ -79,6 +97,16 @@ function ConfigForm({
             return;
         }
 
+        const capacity = contextWindow.trim()
+            ? Number(contextWindow)
+            : undefined;
+        if (
+            capacity !== undefined &&
+            (!Number.isSafeInteger(capacity) || capacity < 4096)
+        ) {
+            toast.error(t("ai-context-window-invalid"));
+            return;
+        }
         let customParams: JSONObject | undefined;
         try {
             customParams = parseCustomParams(customParamsText);
@@ -95,6 +123,8 @@ function ConfigForm({
             apiUrl: apiUrl.trim(),
             model: model.trim(),
             apiType: apiType,
+            contextWindow: capacity,
+            imageInput,
         };
         if (customParams) {
             config.customParams = customParams;
@@ -110,6 +140,8 @@ function ConfigForm({
         model,
         apiType,
         customParamsText,
+        contextWindow,
+        imageInput,
         edit,
         onConfirm,
         t,
@@ -121,6 +153,16 @@ function ConfigForm({
             return;
         }
 
+        const capacity = contextWindow.trim()
+            ? Number(contextWindow)
+            : undefined;
+        if (
+            capacity !== undefined &&
+            (!Number.isSafeInteger(capacity) || capacity < 4096)
+        ) {
+            toast.error(t("ai-context-window-invalid"));
+            return;
+        }
         let customParams: JSONObject | undefined;
         try {
             customParams = parseCustomParams(customParamsText);
@@ -140,6 +182,8 @@ function ConfigForm({
                 apiUrl: apiUrl.trim(),
                 model: model.trim(),
                 apiType: apiType,
+                contextWindow: capacity,
+                imageInput,
             };
             if (customParams) {
                 testConfig.customParams = customParams;
@@ -158,7 +202,45 @@ function ConfigForm({
                 },
             ];
 
-            await requestAIWithConfig(testMessages, testConfig);
+            if (supportsImages(testConfig)) {
+                const canvas = document.createElement("canvas");
+                canvas.width = 480;
+                canvas.height = 160;
+                const drawing = canvas.getContext("2d");
+                if (!drawing) throw new Error(t("ai-image-test-failed"));
+                drawing.fillStyle = "white";
+                drawing.fillRect(0, 0, canvas.width, canvas.height);
+                drawing.font = "bold 58px monospace";
+                drawing.fillStyle = "black";
+                drawing.fillText("QA 48.75", 36, 100);
+                const image = await new Promise<Blob | null>((resolve) =>
+                    canvas.toBlob(resolve, "image/png"),
+                );
+                if (!image) throw new Error(t("ai-image-test-failed"));
+                const provider = createAIProvider(() => testConfig);
+                const stream = await provider.request({
+                    history: [
+                        {
+                            role: "user",
+                            raw: "Read the number in the image. Reply with the number only.",
+                            assets: [
+                                new File([image], "vision-test.png", {
+                                    type: "image/png",
+                                }),
+                            ],
+                        },
+                    ],
+                    tools: [],
+                    maxTokens: 2048,
+                });
+                let answer = "";
+                for await (const chunk of stream)
+                    answer = chunk.answer ?? answer;
+                if (!answer.includes("48.75"))
+                    throw new Error(t("ai-image-test-failed"));
+            } else {
+                await requestAIWithConfig(testMessages, testConfig);
+            }
             toast.success(t("connection-success"));
             return;
         } catch (error) {
@@ -168,7 +250,17 @@ function ConfigForm({
         } finally {
             setIsTesting(false);
         }
-    }, [apiKey, apiUrl, model, apiType, customParamsText, edit, t]);
+    }, [
+        apiKey,
+        apiUrl,
+        model,
+        apiType,
+        customParamsText,
+        contextWindow,
+        imageInput,
+        edit,
+        t,
+    ]);
 
     return (
         <PopupLayout
@@ -319,6 +411,47 @@ function ConfigForm({
                         </div>
                     </div>
 
+                    <label className="px-4 text-sm flex gap-2 items-center">
+                        {t("ai-image-input")}
+                        <select
+                            value={
+                                imageInput === undefined
+                                    ? "auto"
+                                    : String(imageInput)
+                            }
+                            onChange={(event) =>
+                                setImageInput(
+                                    event.currentTarget.value === "auto"
+                                        ? undefined
+                                        : event.currentTarget.value === "true",
+                                )
+                            }
+                        >
+                            <option value="auto">{t("ai-image-auto")}</option>
+                            <option value="true">{t("ai-image-on")}</option>
+                            <option value="false">{t("ai-image-off")}</option>
+                        </select>
+                    </label>
+                    <div className="px-4">
+                        <div className="text-sm py-1">
+                            {t("ai-context-window")}
+                        </div>
+                        <Input
+                            name="ai-context-window"
+                            type="number"
+                            min={4096}
+                            step={1}
+                            placeholder="131072"
+                            value={contextWindow}
+                            onChange={(event) =>
+                                setContextWindow(event.currentTarget.value)
+                            }
+                        />
+                        <div className="text-xs opacity-60 mt-1">
+                            {t("ai-context-window-description")}
+                        </div>
+                    </div>
+
                     <div className="px-4">
                         <div className="text-sm py-1">
                             {t("ai-config-custom-params")}
@@ -388,19 +521,98 @@ const [ConfigFormProvider, showConfigForm] = createConfirmProvider(ConfigForm, {
         "h-full w-full max-h-full max-w-full rounded-none sm:rounded-md sm:max-h-[min(520px,calc(100vh-32px))] sm:w-[90vw] sm:max-w-[500px]",
 });
 
+function ExtraPromptEditor({
+    scope,
+    stored,
+}: {
+    scope: string;
+    stored: string;
+}) {
+    const t = useIntl();
+    const inputId = useId();
+    const [draft, setDraft] = useState<string>();
+    const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+    const pending = useRef<() => void>(undefined);
+
+    useEffect(() => () => pending.current?.(), []);
+    useEffect(() => {
+        if (draft === stored && !pending.current) setDraft(undefined);
+    }, [draft, stored]);
+
+    const update = (text: string, immediately = false) => {
+        setDraft(text);
+        clearTimeout(timer.current);
+        pending.current = () => {
+            clearTimeout(timer.current);
+            pending.current = undefined;
+            if (assistantScope() !== scope) return;
+            void useLedgerStore
+                .getState()
+                .updatePersonalMeta((prev) => {
+                    const assistant = { ...prev.assistant };
+                    if (text.trim()) assistant.extraPrompt = text;
+                    else delete assistant.extraPrompt;
+                    return { ...prev, assistant };
+                })
+                .then(() => {
+                    if (!text.trim())
+                        setDraft((current) =>
+                            current === text ? "" : current,
+                        );
+                })
+                .catch(() =>
+                    toast.error(t("assistant-extra-prompt-save-failed")),
+                );
+        };
+        if (immediately) pending.current();
+        else timer.current = setTimeout(pending.current, 350);
+    };
+
+    return (
+        <div className="space-y-2 px-4 py-3">
+            <div className="flex items-start justify-between gap-2">
+                <div>
+                    <label htmlFor={inputId}>
+                        {t("assistant-extra-prompt")}
+                    </label>
+                    <p className="text-xs opacity-60">
+                        {t("assistant-extra-prompt-description")}
+                    </p>
+                </div>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => update("", true)}
+                >
+                    {t("assistant-extra-prompt-reset")}
+                </Button>
+            </div>
+            <textarea
+                id={inputId}
+                className="w-full min-h-60 border rounded-lg p-2 text-xs font-mono"
+                value={draft ?? stored}
+                onChange={(event) => update(event.currentTarget.value)}
+            />
+        </div>
+    );
+}
+
 // 主配置列表界面
 function Form({ onCancel }: { onCancel?: () => void }) {
     const t = useIntl();
     const { id: userId } = useUserStore();
 
     // 获取配置列表和默认配置ID
-    const { configs, defaultConfigId } = useLedgerStore(
+    const bookId = useBookStore((state) => state.currentBookId);
+    const { configs, defaultConfigId, extraPrompt, ready } = useLedgerStore(
         useShallow((state) => {
             const assistantData =
                 state.infos?.meta.personal?.[userId]?.assistant;
             return {
                 configs: assistantData?.configs,
                 defaultConfigId: assistantData?.defaultConfigId,
+                extraPrompt: assistantData?.extraPrompt,
+                ready: !!state.infos,
             };
         }),
     );
@@ -651,6 +863,14 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                         </div>
                     )}
                 </div>
+                {bookId && userId && ready && (
+                    <ExtraPromptEditor
+                        key={assistantScope()}
+                        scope={assistantScope()}
+                        stored={extraPrompt ?? ""}
+                    />
+                )}
+                <AgentGrants />
             </div>
             <ConfigFormProvider />
         </PopupLayout>
@@ -685,5 +905,27 @@ export default function AssistantSettingsItem() {
             </Button>
             <AssistantProvider />
         </div>
+    );
+}
+
+function AgentGrants() {
+    const t = useIntl();
+    const [grants, setGrants] = useState(() => listChangeGrants());
+    const current = grants.filter((grant) => grant.scope === assistantScope());
+    if (!current.length) return null;
+    return (
+        <section className="px-4 py-2 flex items-center justify-between gap-3">
+            <div className="text-sm font-medium">{t("agent-grants")}</div>
+            <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                    current.forEach((grant) => revokeChangeGrant(grant.key));
+                    setGrants(listChangeGrants());
+                }}
+            >
+                {t("agent-revoke-grant")}
+            </Button>
+        </section>
     );
 }

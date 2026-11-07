@@ -107,7 +107,7 @@ export function getDefaultZenPeriod({
     lastZenPost,
 }: {
     now?: dayjs.Dayjs;
-    lastZenPost?: ZenPost;
+    lastZenPost?: Pick<ZenPost, "completedAt">;
 }): ZenPeriod {
     if (lastZenPost) {
         return {
@@ -128,7 +128,7 @@ export function getSuggestedZenPeriods({
     lastZenPost,
 }: {
     now?: dayjs.Dayjs;
-    lastZenPost?: ZenPost;
+    lastZenPost?: Pick<ZenPost, "completedAt">;
 }): ZenSuggestedPeriod[] {
     const periods: ZenSuggestedPeriod[] = [];
     if (lastZenPost) {

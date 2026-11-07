@@ -47,7 +47,10 @@ export const useDebugLogStore = create<DebugLogState>((set) => ({
     setPanelOpen: (v) => set({ panelOpen: v }),
 }));
 
-export function withDebugLog<A, R>(tool: Tool<A, R>): Tool<A, R> {
+export function withDebugLog<A, R>(
+    tool: Tool<A, R>,
+    includePayload = true,
+): Tool<A, R> {
     return {
         ...tool,
         handler: async (arg, ctx) => {
@@ -55,14 +58,14 @@ export function withDebugLog<A, R>(tool: Tool<A, R>): Tool<A, R> {
             const id = store.push({
                 name: tool.name,
                 startedAt: Date.now(),
-                params: arg,
+                params: includePayload ? arg : undefined,
                 status: "running",
             });
             try {
                 const result = await tool.handler(arg, ctx);
                 useDebugLogStore.getState().update(id, {
                     status: "success",
-                    result,
+                    ...(includePayload ? { result } : {}),
                     endedAt: Date.now(),
                 });
                 return result;

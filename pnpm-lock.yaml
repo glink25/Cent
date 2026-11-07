@@ -41,6 +41,9 @@ importers:
       '@dnd-kit/utilities':
         specifier: ^3.2.2
         version: 3.2.2(react@19.1.1)
+      '@glink25/agent-core':
+        specifier: workspace:*
+        version: link:../../packages/agent-core
       '@glink25/chaty':
         specifier: workspace:*
         version: link:../../packages/chaty
@@ -50,6 +53,9 @@ importers:
       '@glink25/zen':
         specifier: workspace:*
         version: link:../../packages/zen
+      '@googlemaps/js-api-loader':
+        specifier: ^2.1.3
+        version: 2.1.3
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.63.0(react@19.1.1))
@@ -228,6 +234,9 @@ importers:
       '@tailwindcss/vite':
         specifier: ^4.1.12
         version: 4.1.12(vite@8.0.8(@types/node@24.3.1)(esbuild@0.27.2)(jiti@2.6.1)(sass-embedded@1.93.3)(sass@1.93.3)(terser@5.46.1))
+      '@types/google.maps':
+        specifier: ^3.66.9
+        version: 3.66.9
       '@types/lodash-es':
         specifier: ^4.17.12
         version: 4.17.12
@@ -316,7 +325,27 @@ importers:
         specifier: ^7.3.0
         version: 7.3.0
 
+  packages/agent-core:
+    dependencies:
+      jsonrepair:
+        specifier: ^3.13.3
+        version: 3.13.3
+      zod:
+        specifier: ^4.1.11
+        version: 4.4.3
+    devDependencies:
+      vitest:
+        specifier: ^4.1.9
+        version: 4.1.9(@types/node@24.3.1)(vite@8.0.8(@types/node@24.3.1)(esbuild@0.27.2)(jiti@2.6.1)(sass-embedded@1.93.3)(sass@1.93.3)(terser@5.46.1))
+
   packages/chaty:
+    dependencies:
+      '@glink25/agent-core':
+        specifier: workspace:*
+        version: link:../agent-core
+      dompurify:
+        specifier: ^3.4.17
+        version: 3.4.17
     devDependencies:
       '@biomejs/biome':
         specifier: 2.2.2
@@ -461,13 +490,14 @@ importers:
         version: 5.8.3
 
   packages/zen:
+    dependencies:
+      '@glink25/agent-core':
+        specifier: workspace:*
+        version: link:../agent-core
     devDependencies:
       '@biomejs/biome':
         specifier: 2.2.2
         version: 2.2.2
-      '@glink25/chaty':
-        specifier: workspace:*
-        version: link:../chaty
       '@glink25/tailwind-config':
         specifier: workspace:*
         version: link:../tailwind-config
@@ -1614,6 +1644,9 @@ packages:
     peerDependenciesMeta:
       typescript:
         optional: true
+
+  '@googlemaps/js-api-loader@2.1.3':
+    resolution: {integrity: sha512-1t6umwRufEGzIPjHPjPeuuY1dCal0zU2bZeomkf4OA0MprFdlKCnXY3zeFkzDaCvKjwbFubeapm61P5+EbrAoA==}
 
   '@hookform/resolvers@5.2.2':
     resolution: {integrity: sha512-A/IxlMLShx3KjV/HeTcTfaMxdwy690+L/ZADoeaTltLx+CVuzkeVIPuybK3jrRfw7YZnmdKsVVHAlEPIAEUNlA==}
@@ -2798,6 +2831,7 @@ packages:
   '@smithy/smithy-client@4.10.11':
     resolution: {integrity: sha512-6o804SCyHGMXAb5mFJ+iTy9kVKv7F91a9szN0J+9X6p8A0NrdpUxdaC57aye2ipQkP2C4IAqETEpGZ0Zj77Haw==}
     engines: {node: '>=18.0.0'}
+    deprecated: Deprecated due to a bug in custom logger data redaction. See https://github.com/aws/aws-sdk-js-v3/issues/8393.
 
   '@smithy/types@4.12.0':
     resolution: {integrity: sha512-9YcuJVTOBDjg9LWo23Qp0lTQ3D7fQsQtwle0jVfpbUHy9qBwCEgKuVH4FqFB3VYu0nwdHKiEMA+oXz7oV8X1kw==}
@@ -3072,6 +3106,9 @@ packages:
 
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
+
+  '@types/google.maps@3.66.9':
+    resolution: {integrity: sha512-6OmfZjuSMDG5oTzW6f2JM1by1rUrdCMBxtru2OJXfX44N3DqQSh8lEgwZbrHjoswYiapRf30vUCHjTs9sKDJdQ==}
 
   '@types/hoist-non-react-statics@3.3.7':
     resolution: {integrity: sha512-PQTyIulDkIDro8P+IHbKCsw7U2xxBYflVzW/FgWdCAePD9xGSidgA76/GeJ6lBKoblyhf9pBY763gbrN+1dI8g==}
@@ -3621,6 +3658,9 @@ packages:
     resolution: {integrity: sha512-GrwoxYN+uWlzO8uhUXRl0P+kHE4GtVPfYzVLcUxPL7KNdHKj66vvlhiweIHqYYXWlw+T8iLMp42Lm67ghw4WMQ==}
     engines: {node: '>= 4'}
 
+  dompurify@3.4.17:
+    resolution: {integrity: sha512-B/pSlYVHQ58kqISD/yDjuJ1yfzI34m1gF4lAod2bwSRhiN4K5Cl3H8Af7hqB2PmTL911tdEudnnXn5FnhRoz0w==}
+
   domutils@2.8.0:
     resolution: {integrity: sha512-w96Cjofp72M5IIhpjgobBimYEfoPjx1Vx0BSX9P30WBdZW2WIKU0T1Bd0kz2eNZ9ikjKgHbEyKx8BB6H1L3h3A==}
 
@@ -3748,6 +3788,7 @@ packages:
   eslint@9.34.0:
     resolution: {integrity: sha512-RNCHRX5EwdrESy3Jc9o8ie8Bog+PeYvvSR8sDGoZxNFTvZ4dlxUB3WzQ3bQMztFrSRODGrLLj8g6OFuGY/aiQg==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
     peerDependencies:
       jiti: '*'
@@ -5905,7 +5946,7 @@ snapshots:
   '@antfu/install-pkg@1.1.0':
     dependencies:
       package-manager-detector: 1.3.0
-      tinyexec: 1.0.1
+      tinyexec: 1.2.4
 
   '@antfu/utils@8.1.1': {}
 
@@ -7439,6 +7480,10 @@ snapshots:
       tslib: 2.8.1
     optionalDependencies:
       typescript: 5.8.3
+
+  '@googlemaps/js-api-loader@2.1.3':
+    dependencies:
+      '@types/google.maps': 3.66.9
 
   '@hookform/resolvers@5.2.2(react-hook-form@7.63.0(react@19.1.1))':
     dependencies:
@@ -9025,6 +9070,8 @@ snapshots:
 
   '@types/estree@1.0.8': {}
 
+  '@types/google.maps@3.66.9': {}
+
   '@types/hoist-non-react-statics@3.3.7(@types/react@19.1.12)':
     dependencies:
       '@types/react': 19.1.12
@@ -9589,6 +9636,10 @@ snapshots:
   domhandler@4.3.1:
     dependencies:
       domelementtype: 2.3.0
+
+  dompurify@3.4.17:
+    optionalDependencies:
+      '@types/trusted-types': 2.0.7
 
   domutils@2.8.0:
     dependencies:

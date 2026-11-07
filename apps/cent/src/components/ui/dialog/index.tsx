@@ -184,13 +184,13 @@ function DialogTrigger(props: DialogTriggerProps) {
 type DialogPortalProps = Omit<
     React.ComponentProps<typeof DialogPrimitive.Portal>,
     "forceMount"
->;
+> & { onExitComplete?: () => void };
 
-function DialogPortal(props: DialogPortalProps) {
+function DialogPortal({ onExitComplete, ...props }: DialogPortalProps) {
     const { isOpen } = useDialog();
 
     return (
-        <AnimatePresence>
+        <AnimatePresence onExitComplete={onExitComplete}>
             {isOpen && (
                 <DialogPrimitive.Portal
                     data-slot="dialog-portal"

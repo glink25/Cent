@@ -1,5 +1,5 @@
+import { mergeCustomParams } from "@glink25/agent-core/providers/provider";
 import { describe, expect, it } from "vitest";
-import { mergeCustomParams } from "./provider";
 
 describe("mergeCustomParams", () => {
     const generated = {

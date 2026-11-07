@@ -66,30 +66,21 @@ own local tools:
   structured `{ action, values }` response.
 - `decideZenFocus`: select a review period.
 
-Every AI request contains both sets of tools. Zen-local calls execute inside
-the package; host tool calls go through `callAITool`. The reserved local names
-cannot be overridden by the host.
+Zen registers its card, focus and bounded history tools with the shared
+`@glink25/agent-core` session. The host supplies its read-only ledger tools.
+The same Playground uses the available tools in Chaty and Zen.
 
 ## HTML host discovery
 
-The standalone page discovers the first available host:
+The standalone page checks `window.ZenHost`, then a same-origin parent's
+`ZenHost`, then the v4 native agent bridge. Android registers
+`window.CentAiChatNative`; iOS uses the WKWebView handler with the same name.
+Both use `window.__AIChatNativeCallbacks` for one-shot and streaming responses.
 
-1. `window.ZenHost`
-2. same-origin `window.parent.ZenHost`
-3. Android `window.CentZenNative`
-4. iOS `window.webkit.messageHandlers.CentZenNative`
-
-Component messages and AI messages have distinct native message types:
-
-- Component: `getInit`, `getZenContext`, `listZenPosts`, `mutateZenPosts`
-- AI: `requestAI`, `cancelAIRequest`, `callAITool`
-
-Native code responds through `window.__ZenNativeCallbacks[id]`. One-shot
-component calls use `resolve`/`reject`; AI streaming uses `onChunk` followed by
-exactly one `onDone` or `onError`.
-
-Android receives JSON strings through `CentZenNative.postMessage`. iOS receives
-decoded JavaScript objects through the `CentZenNative` WKScriptMessageHandler.
+Model requests and tools use the shared `requestAI` and `callTool` messages.
+The trusted component uses the `zen` message for starting a review, reading
+history, resolving evidence, saving and closing. See the agent-core README
+for release pinning and resource verification.
 
 ## History behavior
 

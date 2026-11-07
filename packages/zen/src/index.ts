@@ -9,8 +9,6 @@ export { getHostBridge } from "./runtime/host";
 export { resolveZenDirectorConfig } from "./runtime/model";
 export { requestHostClose } from "./runtime/native-host";
 export type {
-    NativeBridgeMessage,
-    NativeCallback,
     ZenAIToolDefinition,
     ZenDirectorMode,
     ZenInitPayload,

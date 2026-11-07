@@ -1,0 +1,76 @@
+{
+  "bridgeVersion": 4,
+  "amountScale": 10000,
+  "zenOperations": [
+    "getZenStart",
+    "getZenContext",
+    "listZenPosts",
+    "mutateZenPosts",
+    "resolveZenStepContext",
+    "close"
+  ],
+  "readTools": [
+    "query",
+    "aggregate",
+    "metadata",
+    "listLedgerObjects",
+    "readBillAttachment"
+  ],
+  "bills": [
+    {
+      "id": "before",
+      "time": 1735689600999,
+      "type": "expense",
+      "amount": 50000,
+      "categoryId": "food",
+      "creatorId": "42"
+    },
+    {
+      "id": "at-start",
+      "time": 1735689601000,
+      "type": "expense",
+      "amount": 12345,
+      "categoryId": "food",
+      "creatorId": 42
+    },
+    {
+      "id": "inside",
+      "time": 1735689601999,
+      "type": "income",
+      "amount": 34567,
+      "categoryId": "salary",
+      "creatorId": "42"
+    },
+    {
+      "id": "at-end",
+      "time": 1735689602000,
+      "type": "income",
+      "amount": 100000,
+      "categoryId": "salary",
+      "creatorId": "42"
+    }
+  ],
+  "query": {
+    "filter": {
+      "start": 1735689601000,
+      "end": 1735689602000,
+      "creatorIds": [
+        "42"
+      ]
+    },
+    "fields": [
+      "id"
+    ],
+    "limit": 10
+  },
+  "expected": {
+    "ids": [
+      "at-start",
+      "inside"
+    ],
+    "count": 2,
+    "income": 34567,
+    "expense": 12345,
+    "net": 22222
+  }
+}

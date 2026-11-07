@@ -3,17 +3,10 @@ import { MainAssistant, type RuntimeConfig } from "@glink25/chaty/ui";
 // 生成（见 tailwind.config.mjs 的 content），避免引入第二份编译产物导致 layer 冲突。
 // 这里只需补充 chaty 的 markdown 渲染样式（纯 CSS，无工具类冲突）。
 import "@glink25/chaty/prose.css";
-import {
-    type RefObject,
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from "react";
-import { createPortal } from "react-dom";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useShallow } from "zustand/shallow";
-import { StorageAPI } from "@/api/storage";
+import { undoChange } from "@/agent/changes";
+import { StorageAPI, StorageDeferredAPI } from "@/api/storage";
 import { useIsDesktop } from "@/hooks/use-media-query";
 import { useTheme } from "@/hooks/use-theme";
 import { useIntl, useLocale } from "@/locale";
@@ -26,8 +19,8 @@ import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
 import createConfirmProvider from "../confirm";
-import { HintTooltip } from "../hint";
 import AssistantForm from "./form";
+import { assistantScope, useAssistantLauncher } from "./launcher";
 import { getAIConfig } from "./request";
 import { CentAIConfig } from "./tools";
 
@@ -40,18 +33,16 @@ const [AssistantFormProvider, , showAssistant] = createConfirmProvider(
     },
 );
 
-export default function AssistantButton({
-    sidePanelRef,
-}: {
-    sidePanelRef: RefObject<HTMLElement | null>;
-}) {
+export default function AssistantButton() {
     const isDesktop = useIsDesktop();
+    const desktopRef = useRef(isDesktop);
+    desktopRef.current = isDesktop;
     const t = useIntl();
     const { locale } = useLocale();
     const { theme } = useTheme();
     const [isMobileAssistantShows, setIsMobileAssistantShows] = useState(false);
-    const [isDesktopAssistantShows, setIsDesktopAssistantShows] =
-        useState(false);
+    const { open, references } = useAssistantLauncher();
+    const dismiss = () => useAssistantLauncher.setState({ open: false });
     const dismissMobileAssistantRef = useRef<() => void>(undefined);
 
     const userId = useUserStore((s) => s.id);
@@ -104,9 +95,19 @@ export default function AssistantButton({
         [t],
     );
 
+    const scopeKey = assistantScope();
     const runtime = useMemo<RuntimeConfig>(
         () => ({
             ...CentAIConfig,
+            getExtraPrompt: async () => {
+                if (!currentBookId) return undefined;
+                if (assistantScope() !== scopeKey)
+                    throw new Error("Ledger or account changed");
+                const meta = await StorageAPI.getMeta(currentBookId);
+                if (assistantScope() !== scopeKey)
+                    throw new Error("Ledger or account changed");
+                return meta?.personal?.[userId]?.assistant?.extraPrompt;
+            },
             provider: createAssistantTokenUsageProvider(
                 CentAIConfig.provider,
                 (request) =>
@@ -115,6 +116,36 @@ export default function AssistantButton({
             scope: currentBookId
                 ? `${StorageAPI.type}:${currentBookId}`
                 : undefined,
+            undoChange,
+            resolveReferences: async (refs, signal) => {
+                const valid = refs.map((ref) => {
+                    return ref.type === "cent.bill" &&
+                        ref.hostScope === scopeKey
+                        ? ref.id
+                        : undefined;
+                });
+                const bills =
+                    valid.some(Boolean) && currentBookId
+                        ? await StorageDeferredAPI.filter(currentBookId, {})
+                        : [];
+                signal?.throwIfAborted();
+                return refs.map((ref, index) => {
+                    const id = valid[index];
+                    const { hostScope, ...displayRef } = ref;
+                    if (!id || assistantScope() !== scopeKey)
+                        return { ref: displayRef, status: "forbidden" };
+                    const bill = bills.find((item) => item.id === id);
+                    if (!bill) return { ref: displayRef, status: "deleted" };
+                    const { images, ...fields } = bill;
+                    return {
+                        ref: displayRef,
+                        status: "ok",
+                        bill: fields,
+                        imageCount: images?.length ?? 0,
+                        amountScale: 10000,
+                    };
+                });
+            },
             configs,
             defaultConfigId,
             presetPrompts,
@@ -125,6 +156,8 @@ export default function AssistantButton({
         }),
         [
             currentBookId,
+            scopeKey,
+            userId,
             configs,
             defaultConfigId,
             presetPrompts,
@@ -138,63 +171,58 @@ export default function AssistantButton({
         setIsMobileAssistantShows(true);
         const { promise, cancel } = showAssistant();
         dismissMobileAssistantRef.current = cancel;
-        promise.finally(() => {
-            setIsMobileAssistantShows(false);
-        });
+        void promise
+            .catch(() => undefined)
+            .then(() => {
+                setIsMobileAssistantShows(false);
+                if (!desktopRef.current)
+                    useAssistantLauncher.setState({ open: false });
+            });
     }, []);
 
-    const toShowAssistant = () => {
-        if (isDesktop) {
-            if (!isDesktopAssistantShows) {
-                measure("assistant_opened", { surface: "desktop" });
-            }
-            setIsDesktopAssistantShows((v) => !v);
-        } else {
+    useEffect(() => {
+        if (isDesktop || !open) dismissMobileAssistantRef.current?.();
+        else if (!isMobileAssistantShows) {
             measure("assistant_opened", { surface: "mobile" });
             toShowMobileAssistant();
         }
-    };
+    }, [isDesktop, open, isMobileAssistantShows, toShowMobileAssistant]);
 
-    const isAssistantShows = isDesktopAssistantShows || isMobileAssistantShows;
-
-    useEffect(() => {
-        if (isDesktop) {
-            dismissMobileAssistantRef.current?.();
-
-            if (isAssistantShows) {
-                setIsDesktopAssistantShows(true);
-            }
-        } else {
-            setIsDesktopAssistantShows(false);
-            if (isAssistantShows) {
-                toShowMobileAssistant();
-            }
-        }
-    }, [isDesktop, isAssistantShows, toShowMobileAssistant]);
     return (
         <MainAssistant.Root
+            key={assistantScope()}
             runtime={runtime}
+            references={references.filter(
+                (reference) => reference.hostScope === scopeKey,
+            )}
+            onReferencesConsumed={() =>
+                useAssistantLauncher.setState({ references: [] })
+            }
             selectedConfigId={defaultConfigId ?? configs[0]?.id}
             onConfigChange={onConfigChange}
         >
-            <HintTooltip
-                persistKey="assistantHintShows"
-                content={"AI助手移到这了"}
-            >
-                <button
-                    type="button"
-                    className="w-10 h-8 flex items-center justify-center rounded-full transition-transform hover:scale-110 active:scale-95 cursor-pointer hover:bg-accent"
-                    onClick={() => {
-                        toShowAssistant();
-                    }}
-                >
-                    <i className="icon-[mdi--shimmer-outline] text-lg bg-gradient-to-tr from-cyan-400 via-blue-500 to-purple-600"></i>
-                </button>
-            </HintTooltip>
             <AssistantFormProvider />
-            {isDesktopAssistantShows &&
-                sidePanelRef.current &&
-                createPortal(<MainAssistant.Content />, sidePanelRef.current)}
+            {isDesktop && (
+                <aside
+                    inert={!open}
+                    aria-hidden={!open}
+                    className={`h-full shrink-0 overflow-hidden transition-[width] duration-250 ease-in-out motion-reduce:transition-none ${open ? "w-[min(400px,48vw)]" : "w-0"}`}
+                >
+                    <div
+                        className={`ml-auto flex h-full w-[min(400px,48vw)] flex-col overflow-hidden border-l transition-opacity duration-200 motion-reduce:transition-none ${open ? "opacity-100" : "opacity-0"}`}
+                    >
+                        <button
+                            type="button"
+                            className="self-end px-3"
+                            onClick={dismiss}
+                            aria-label={t("cancel")}
+                        >
+                            ×
+                        </button>
+                        <MainAssistant.Content />
+                    </div>
+                </aside>
+            )}
         </MainAssistant.Root>
     );
 }

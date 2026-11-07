@@ -1,86 +1,151 @@
-import { useCallback, useState } from "react";
+import { useId, useState } from "react";
 import { toast } from "sonner";
-import { useShallow } from "zustand/shallow";
 import PopupLayout from "@/layouts/popup-layout";
+import {
+    defaultMapProvider,
+    type MapProviderId,
+    readMapConfig,
+} from "@/ledger/map-config";
 import { useIntl } from "@/locale";
 import { measure } from "@/measurement";
 import { useLedgerStore } from "@/store/ledger";
-import { decodeApiKey, encodeApiKey } from "@/utils/api-key";
+import { encodeApiKey } from "@/utils/api-key";
 import createConfirmProvider from "../confirm";
-import modal from "../modal";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "../ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 
-// 地图配置表单
+function Credential({
+    label,
+    value,
+    onChange,
+    secret = true,
+}: {
+    label: string;
+    value: string;
+    onChange: (value: string) => void;
+    secret?: boolean;
+}) {
+    const id = useId();
+    const t = useIntl();
+    const [visible, setVisible] = useState(false);
+    return (
+        <div className="flex flex-col gap-1 text-sm">
+            <label htmlFor={id}>{label}</label>
+            <div className="flex gap-1">
+                <Input
+                    id={id}
+                    type={secret && !visible ? "password" : "text"}
+                    autoComplete="off"
+                    value={value}
+                    onChange={(event) => onChange(event.currentTarget.value)}
+                />
+                {secret && (
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-pressed={visible}
+                        aria-label={t("map-show-credential")}
+                        onClick={() => setVisible(!visible)}
+                    >
+                        <i
+                            aria-hidden="true"
+                            className={
+                                visible
+                                    ? "icon-[mdi--eye-off] size-4"
+                                    : "icon-[mdi--eye] size-4"
+                            }
+                        />
+                    </Button>
+                )}
+            </div>
+        </div>
+    );
+}
+
 function MapConfigForm({ onCancel }: { onCancel?: () => void }) {
     const t = useIntl();
+    const config = useLedgerStore((state) => state.infos?.meta.map);
+    const [initial] = useState(() => readMapConfig(config));
+    const [initialDefault] = useState(() => defaultMapProvider(config));
+    const [amapKey, setAmapKey] = useState(initial.amp.key);
+    const [securityCode, setSecurityCode] = useState(initial.amp.securityCode);
+    const [googleKey, setGoogleKey] = useState(initial.google.key);
+    const [mapId, setMapId] = useState(initial.google.mapId);
+    const [provider, setProvider] = useState<MapProviderId>(initialDefault);
+    const [saving, setSaving] = useState(false);
 
-    // 获取当前配置
-    const mapConfig = useLedgerStore(
-        useShallow((state) => state.infos?.meta.map),
-    );
+    const ampReady = !!(amapKey.trim() && securityCode.trim());
+    const googleReady = !!(googleKey.trim() && mapId.trim());
+    const ampEdited =
+        amapKey !== initial.amp.key ||
+        securityCode !== initial.amp.securityCode;
+    const googleEdited =
+        googleKey !== initial.google.key || mapId !== initial.google.mapId;
 
-    const [amapKey, setAmapKey] = useState(
-        mapConfig?.amapKey ? decodeApiKey(mapConfig.amapKey) : "",
-    );
-    const [amapSecurityCode, setAmapSecurityCode] = useState(
-        mapConfig?.amapSecurityCode
-            ? decodeApiKey(mapConfig.amapSecurityCode)
-            : "",
-    );
-    const [showAmapKey, setShowAmapKey] = useState(false);
-    const [showAmapSecurityCode, setShowAmapSecurityCode] = useState(false);
-
-    const handleSave = useCallback(async () => {
-        // 验证
-        if (!amapKey.trim()) {
-            toast.error(t("amap-key-required"));
+    async function save() {
+        if (saving) return;
+        if (
+            (ampEdited &&
+                Boolean(amapKey.trim()) !== Boolean(securityCode.trim())) ||
+            (googleEdited &&
+                Boolean(googleKey.trim()) !== Boolean(mapId.trim()))
+        ) {
+            toast.error(t("map-config-incomplete"));
             return;
         }
-        if (!amapSecurityCode.trim()) {
-            toast.error(t("amap-security-code-required"));
-            return;
+        setSaving(true);
+        try {
+            await useLedgerStore.getState().updateGlobalMeta((meta) => {
+                const map = { ...meta.map };
+                if (ampEdited) {
+                    if (ampReady) {
+                        map.amapKey = encodeApiKey(amapKey.trim());
+                        map.amapSecurityCode = encodeApiKey(
+                            securityCode.trim(),
+                        );
+                    } else {
+                        delete map.amapKey;
+                        delete map.amapSecurityCode;
+                    }
+                }
+                if (googleEdited) {
+                    if (googleReady) {
+                        map.googleKey = encodeApiKey(googleKey.trim());
+                        map.googleMapId = mapId.trim();
+                    } else {
+                        delete map.googleKey;
+                        delete map.googleMapId;
+                    }
+                }
+                if (
+                    provider !== initialDefault &&
+                    (provider === "amp" ? ampReady : googleReady)
+                ) {
+                    map.defaultProvider = provider;
+                }
+                return { ...meta, map };
+            });
+            measure("feature_config_changed", {
+                feature: "map",
+                action: ampReady || googleReady ? "enable" : "disable",
+            });
+            toast.success(t("map-config-saved"));
+            onCancel?.();
+        } catch {
+            toast.error(t("map-config-save-failed"));
+        } finally {
+            setSaving(false);
         }
-
-        // 保存配置
-        await useLedgerStore.getState().updateGlobalMeta((prev) => {
-            if (!prev.map) {
-                prev.map = {};
-            }
-
-            prev.map.amapKey = encodeApiKey(amapKey.trim());
-            prev.map.amapSecurityCode = encodeApiKey(amapSecurityCode.trim());
-
-            return prev;
-        });
-        measure("feature_config_changed", { feature: "map", action: "enable" });
-
-        toast.success(t("map-config-saved"));
-        onCancel?.();
-    }, [amapKey, amapSecurityCode, onCancel, t]);
-
-    const handleClear = useCallback(async () => {
-        await modal.prompt({ title: t("are-you-sure-to-clear-map-config") });
-        // 清除配置
-        await useLedgerStore.getState().updateGlobalMeta((prev) => {
-            if (prev.map) {
-                delete prev.map.amapKey;
-                delete prev.map.amapSecurityCode;
-            }
-            return prev;
-        });
-        measure("feature_config_changed", {
-            feature: "map",
-            action: "disable",
-        });
-
-        setAmapKey("");
-        setAmapSecurityCode("");
-        toast.success(t("map-config-cleared"));
-        onCancel?.();
-    }, [onCancel, t]);
-
-    const hasConfig = mapConfig?.amapKey || mapConfig?.amapSecurityCode;
+    }
 
     return (
         <PopupLayout
@@ -88,139 +153,147 @@ function MapConfigForm({ onCancel }: { onCancel?: () => void }) {
             onBack={onCancel}
             className="h-full overflow-hidden"
         >
-            <div className="flex-1 flex flex-col pb-4 gap-4 overflow-hidden">
-                <div className="flex-1 flex flex-col gap-4 overflow-y-auto">
-                    {/* 说明文本 */}
-                    <div className="px-4">
-                        <div className="text-sm opacity-60">
-                            {t("map-settings-description")}
-                        </div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6">
+                <div className="flex items-center justify-between gap-3 rounded-xl bg-muted/60 px-3 py-2">
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                        <i
+                            aria-hidden="true"
+                            className="icon-[mdi--map-outline] size-5 text-muted-foreground"
+                        />
+                        {t("map-default-provider")}
                     </div>
-
-                    {/* 高德地图 Key */}
-                    <div className="px-4">
-                        <div className="text-sm py-1 font-medium">
-                            {t("amap-key")}
-                        </div>
-                        <div className="relative">
-                            <Input
-                                name="amap-key"
-                                type={showAmapKey ? "text" : "password"}
-                                placeholder={t("amap-key-placeholder")}
-                                value={amapKey}
-                                onChange={(e) =>
-                                    setAmapKey(e.currentTarget.value)
-                                }
-                                className="pr-10"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setShowAmapKey(!showAmapKey)}
-                                className="absolute right-0 top-0 h-full px-3 flex items-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
-                            >
-                                {showAmapKey ? (
-                                    <i className="icon-[mdi--eye-off] size-4"></i>
-                                ) : (
-                                    <i className="icon-[mdi--eye] size-4"></i>
-                                )}
-                            </button>
-                        </div>
-                        <div className="text-xs opacity-60 mt-1">
-                            {t("amap-key-description")}
-                        </div>
-                    </div>
-
-                    {/* 高德地图安全密钥 */}
-                    <div className="px-4">
-                        <div className="text-sm py-1 font-medium">
-                            {t("amap-security-code")}
-                        </div>
-                        <div className="relative">
-                            <Input
-                                name="amap-security-code"
-                                type={
-                                    showAmapSecurityCode ? "text" : "password"
-                                }
-                                placeholder={t(
-                                    "amap-security-code-placeholder",
-                                )}
-                                value={amapSecurityCode}
-                                onChange={(e) =>
-                                    setAmapSecurityCode(e.currentTarget.value)
-                                }
-                                className="pr-10"
-                            />
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    setShowAmapSecurityCode(
-                                        !showAmapSecurityCode,
-                                    )
-                                }
-                                className="absolute right-0 top-0 h-full px-3 flex items-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
-                            >
-                                {showAmapSecurityCode ? (
-                                    <i className="icon-[mdi--eye-off] size-4"></i>
-                                ) : (
-                                    <i className="icon-[mdi--eye] size-4"></i>
-                                )}
-                            </button>
-                        </div>
-                        <div className="text-xs opacity-60 mt-1">
-                            {t("amap-security-code-description")}
-                        </div>
-                    </div>
-
-                    {/* 帮助链接 */}
-                    <div className="px-4">
-                        <div className="text-xs opacity-60">
-                            {t("map-settings-help", {
-                                a: (chunks: React.ReactNode) => (
-                                    <a
-                                        href="https://lbs.amap.com/api/jsapi-v2/guide/abc/prepare"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-blue-500 hover:text-blue-600 underline"
-                                    >
-                                        {chunks}
-                                    </a>
-                                ),
-                            })}
-                        </div>
-                    </div>
+                    <Select
+                        value={provider}
+                        onValueChange={(value) =>
+                            setProvider(value === "google" ? "google" : "amp")
+                        }
+                    >
+                        <SelectTrigger
+                            size="sm"
+                            aria-label={t("map-default-provider")}
+                            className="bg-background"
+                        >
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="amp" disabled={!ampReady}>
+                                {t("map-provider-amap")}
+                            </SelectItem>
+                            <SelectItem value="google" disabled={!googleReady}>
+                                Google Maps
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
-
-                {/* 按钮组 */}
-                <div className="px-4 flex flex-col gap-2">
-                    {hasConfig && (
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleClear}
-                            className="w-full text-red-500 hover:text-red-600"
-                        >
-                            {t("clear-map-config")}
-                        </Button>
-                    )}
-                    <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={onCancel}
-                            className="flex-1"
-                        >
-                            {t("cancel")}
-                        </Button>
-                        <Button
-                            variant="default"
-                            size="sm"
-                            onClick={handleSave}
-                            className="flex-1"
-                        >
-                            {t("save")}
-                        </Button>
-                    </div>
-                </div>
+                <Tabs defaultValue={initialDefault} className="mt-5">
+                    <TabsList
+                        className="grid w-full grid-cols-2"
+                        aria-label={t("map-settings")}
+                    >
+                        <TabsTrigger value="amp">
+                            {t("map-provider-amap")}
+                        </TabsTrigger>
+                        <TabsTrigger value="google">Google Maps</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="amp" className="space-y-3 pt-2">
+                        <Credential
+                            label={t("amap-key")}
+                            value={amapKey}
+                            onChange={setAmapKey}
+                        />
+                        <Credential
+                            label={t("amap-security-code")}
+                            value={securityCode}
+                            onChange={setSecurityCode}
+                        />
+                        <div className="flex items-center justify-between gap-2">
+                            <p className="text-xs text-muted-foreground">
+                                {t("map-settings-help", {
+                                    a: (children: React.ReactNode) => (
+                                        <a
+                                            className="underline underline-offset-2"
+                                            href="https://lbs.amap.com/api/jsapi-v2/guide/abc/prepare"
+                                            target="_blank"
+                                            rel="noreferrer"
+                                        >
+                                            {children}
+                                        </a>
+                                    ),
+                                })}
+                            </p>
+                            {(amapKey || securityCode) && (
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="shrink-0 text-muted-foreground"
+                                    onClick={() => {
+                                        setAmapKey("");
+                                        setSecurityCode("");
+                                    }}
+                                >
+                                    {t("clear-map-config")}
+                                </Button>
+                            )}
+                        </div>
+                    </TabsContent>
+                    <TabsContent value="google" className="space-y-3 pt-2">
+                        <Credential
+                            label={t("map-google-key")}
+                            value={googleKey}
+                            onChange={setGoogleKey}
+                        />
+                        <Credential
+                            label={t("map-google-map-id")}
+                            value={mapId}
+                            onChange={setMapId}
+                            secret={false}
+                        />
+                        <p className="text-xs leading-relaxed text-muted-foreground">
+                            {t("map-google-setup")}
+                        </p>
+                        <div className="flex items-center justify-between gap-2">
+                            <a
+                                className="text-xs text-muted-foreground underline underline-offset-2"
+                                href="https://developers.google.com/maps/documentation/javascript/advanced-markers/start"
+                                target="_blank"
+                                rel="noreferrer"
+                            >
+                                {t("map-google-docs")}
+                            </a>
+                            {(googleKey || mapId) && (
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="shrink-0 text-muted-foreground"
+                                    onClick={() => {
+                                        setGoogleKey("");
+                                        setMapId("");
+                                    }}
+                                >
+                                    {t("clear-map-config")}
+                                </Button>
+                            )}
+                        </div>
+                    </TabsContent>
+                </Tabs>
+            </div>
+            <div className="flex shrink-0 justify-end gap-2 border-t px-4 py-3 sm:px-6">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onCancel}
+                    className="min-w-20"
+                >
+                    {t("cancel")}
+                </Button>
+                <Button
+                    size="sm"
+                    onClick={save}
+                    disabled={saving}
+                    className="min-w-20"
+                >
+                    {t("save")}
+                </Button>
             </div>
         </PopupLayout>
     );
@@ -232,7 +305,7 @@ const [MapConfigFormProvider, showMapConfig] = createConfirmProvider(
         dialogTitle: "map-settings",
         dialogModalClose: true,
         contentClassName:
-            "h-full w-full max-h-full max-w-full rounded-none sm:rounded-md sm:max-h-[min(520px,calc(100vh-32px))] sm:w-[90vw] sm:max-w-[500px]",
+            "h-full w-full max-h-full max-w-full rounded-none sm:rounded-md sm:max-h-[min(490px,calc(100vh-32px))] sm:w-[90vw] sm:max-w-[440px]",
     },
 );
 
@@ -242,7 +315,7 @@ export default function MapSettingsItem() {
         <div className="map-settings">
             <Button
                 onClick={() => {
-                    showMapConfig();
+                    void showMapConfig().catch(() => {});
                 }}
                 variant="ghost"
                 className="w-full py-4 rounded-none h-auto"
@@ -255,7 +328,8 @@ export default function MapSettingsItem() {
                     <i className="icon-[mdi--chevron-right] size-5"></i>
                 </div>
             </Button>
-            <MapConfigFormProvider />
         </div>
     );
 }
+
+export { MapConfigFormProvider, showMapConfig };

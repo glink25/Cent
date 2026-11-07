@@ -25,7 +25,6 @@ export type TokenUsageApiType =
 
 export type UsageMetric =
     | "book_count"
-    | "custom_theme_enabled"
     | "widget_count"
     | "home_widget_count"
     | "collaborator_count"
@@ -67,8 +66,6 @@ export type UsageBucket =
 export type ConfigFeature =
     | "book"
     | "collaborator"
-    | "custom_theme"
-    | "preset"
     | "widget"
     | "home_widget"
     | "category"

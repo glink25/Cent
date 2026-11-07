@@ -5,6 +5,7 @@
 	"exports": {
 		".": "./src/assistant/index.ts",
 		"./providers": "./src/providers/index.ts",
+		"./host": "./src/chaty/host.ts",
 		"./ui": "./src/ui/index.ts",
 		"./prose.css": "./src/components/assistant/prose.css"
 	},
@@ -68,5 +69,9 @@
 		"zod": "^4.1.11",
 		"zustand": "^5.0.8",
 		"zustand-indexeddb": "^0.1.1"
+	},
+	"dependencies": {
+		"dompurify": "^3.4.17",
+		"@glink25/agent-core": "workspace:*"
 	}
 }

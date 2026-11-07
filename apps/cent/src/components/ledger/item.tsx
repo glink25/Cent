@@ -35,6 +35,8 @@ interface BaseBillItemProps {
     className?: string;
     showTime?: boolean;
     showAssets?: boolean;
+    /** 内容半透明；图标保持实心背景以遮挡时间轴 */
+    dimmed?: boolean;
 }
 
 /** 纯展示组件，接收已解析好的数据，不依赖任何 store hook */
@@ -53,6 +55,7 @@ export function BaseBillItem({
     className,
     showTime,
     showAssets,
+    dimmed,
 }: BaseBillItemProps) {
     return (
         <button
@@ -67,9 +70,19 @@ export function BaseBillItem({
             {/* 左侧图标 + 信息 */}
             <div className="flex items-center overflow-hidden">
                 <div className="rounded-full bg-background border w-10 h-10 flex-shrink-0 flex items-center justify-center">
-                    {category?.icon && <CategoryIcon icon={category.icon} />}
+                    {category?.icon && (
+                        <CategoryIcon
+                            icon={category.icon}
+                            className={dimmed ? "opacity-50" : undefined}
+                        />
+                    )}
                 </div>
-                <div className="flex flex-col px-4 overflow-hidden">
+                <div
+                    className={cn(
+                        "flex flex-col px-4 overflow-hidden",
+                        dimmed && "opacity-50",
+                    )}
+                >
                     <div className="flex text-md gap-1 h-6">
                         <div className="flex-shrink-0 font-semibold">
                             {category ? category.name : ""}
@@ -95,7 +108,9 @@ export function BaseBillItem({
                         )}
                     </div>
                 </div>
-                <div className="flex-1 flex gap-2">
+                <div
+                    className={cn("flex-1 flex gap-2", dimmed && "opacity-50")}
+                >
                     {showAssets &&
                         images?.map((img, i) => (
                             <SmartImage
@@ -109,7 +124,12 @@ export function BaseBillItem({
             </div>
 
             {/* 金额 */}
-            <div className="bill-item-tail text-right">
+            <div
+                className={cn(
+                    "bill-item-tail text-right",
+                    dimmed && "opacity-50",
+                )}
+            >
                 <div
                     className={`text-lg font-bold truncate flex-shrink-0 flex flex-col items-end ${
                         type === "expense"
@@ -193,6 +213,7 @@ export default function BillItem({
             images={bill.images}
             onClick={onClick}
             className={className}
+            dimmed={tags?.some((tag) => tag.opaque)}
             showTime={showTime}
             showAssets={showAssets}
         />

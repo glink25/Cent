@@ -6,6 +6,7 @@ import {
     useCallback,
     useEffect,
     useMemo,
+    useRef,
     useState,
 } from "react";
 import Loading from "../components/loading";
@@ -13,7 +14,7 @@ import { useIntl } from "../i18n";
 import { useZenRuntime } from "../runtime/context";
 import { cn } from "../utils";
 import { getZenDayId, isZenEntranceOpen, resolveZenStyleName } from "./date";
-import { requestNextZenStep } from "./director";
+import { createZenOpeningContext, requestNextZenStep } from "./director";
 import {
     createFallbackEpilogueStep,
     createLocalZenJourneyPlan,
@@ -48,7 +49,7 @@ type ZenDialogState =
 
 function createJourneyState(
     local: boolean,
-    lastZenPost: ZenPost | undefined,
+    lastZenPost: Pick<ZenPost, "completedAt"> | undefined,
     now: number,
 ) {
     if (!local)
@@ -941,7 +942,11 @@ function CompletedView({
                 }
                 footer={
                     <ZenActions className="pt-0 flex-wrap">
-                        <ZenButton variant="ghost" onClick={onViewHistory}>
+                        <ZenButton
+                            variant="ghost"
+                            disabled={pending}
+                            onClick={onViewHistory}
+                        >
                             {t("zen-view-history")}
                         </ZenButton>
                         <ZenButton
@@ -980,10 +985,12 @@ function CompletedView({
 
 function LockedView({
     scheduledTime,
+    pending,
     onClose,
     onViewHistory,
 }: {
     scheduledTime: string;
+    pending: boolean;
     onClose?: () => void;
     onViewHistory: () => void;
 }) {
@@ -998,7 +1005,11 @@ function LockedView({
                 }
                 footer={
                     <ZenActions className="pt-0">
-                        <ZenButton variant="ghost" onClick={onViewHistory}>
+                        <ZenButton
+                            variant="ghost"
+                            disabled={pending}
+                            onClick={onViewHistory}
+                        >
                             {t("zen-view-history")}
                         </ZenButton>
                         <ZenButton onClick={onClose}>
@@ -1022,29 +1033,76 @@ export function ZenExperience({
     onConfirm?: (v: undefined) => void;
 }) {
     const t = useIntl();
-    const { host, init: runtimeInit, provider, aiTools } = useZenRuntime();
+    const { host, init: runtimeInit, session: runtime } = useZenRuntime();
     const [state, setState] = useState<ZenDialogState>({ type: "loading" });
     const [pending, setPending] = useState(false);
     const [posts, setPosts] = useState<ZenPost[]>([]);
     const [view, setView] = useState<"today" | "history">("today");
+    const activeRun = useRef<AbortController | null>(null);
+    const reviewResources = useRef(new Map<string, unknown>());
+    useEffect(() => () => activeRun.current?.abort(), []);
     const todayLabel = useMemo(() => dayjs().format("YYYY-MM-DD"), []);
     const styleName = useMemo(
         () => resolveZenStyleName(runtimeInit.style),
         [runtimeInit.style],
     );
 
+    const readStart = useCallback(
+        async (zenDayId: string) => {
+            if (host.getZenStart) return host.getZenStart({ zenDayId });
+            const posts = await host.listZenPosts({ limit: 2 });
+            const todayId = `zen-${zenDayId}-${runtimeInit.userId}`;
+            return {
+                completed: posts.find((post) => post.id === todayId),
+                latest: posts.find((post) => post.id !== todayId),
+            };
+        },
+        [host, runtimeInit.userId],
+    );
+
+    const startReview = useCallback(
+        async (
+            zenDayId: string,
+            latest?: Pick<ZenPost, "completedAt">,
+            isCancelled: () => boolean = () => false,
+        ) => {
+            const { bookId, userId, directorMode } = runtimeInit;
+            const local = directorMode === "local";
+            const context = local
+                ? await host.getZenContext({ zenDayId })
+                : createZenOpeningContext(zenDayId, latest);
+            if (isCancelled()) return;
+            reviewResources.current = new Map();
+            const now = Date.now();
+            setState({
+                type: "active",
+                context,
+                session: {
+                    id: zenDayId,
+                    bookId,
+                    userId,
+                    period: context.period,
+                    steps: [],
+                    extractedInsights: [],
+                    ...createJourneyState(local, context.lastZenPost, now),
+                    exploration: createZenExplorationState(),
+                    status: "active",
+                    createdAt: now,
+                    updatedAt: now,
+                },
+            });
+        },
+        [host, runtimeInit],
+    );
+
     const initialize = useCallback(
         async (isCancelled: () => boolean = () => false) => {
             try {
-                const { bookId, userId } = runtimeInit;
-                if (!bookId) throw new Error(t("zen-select-book-first"));
+                if (!runtimeInit.bookId)
+                    throw new Error(t("zen-select-book-first"));
                 const zenDayId = getZenDayId();
-                const recentZenPosts = await host.listZenPosts();
+                const { completed, latest } = await readStart(zenDayId);
                 if (isCancelled()) return;
-                setPosts(recentZenPosts);
-                const completed = recentZenPosts.find(
-                    (post) => post.id === `zen-${zenDayId}-${userId}`,
-                );
                 if (completed) {
                     setState({ type: "completed", post: completed });
                     return;
@@ -1054,28 +1112,7 @@ export function ZenExperience({
                     setState({ type: "locked", scheduledTime });
                     return;
                 }
-                const context = await host.getZenContext({ zenDayId });
-                if (isCancelled()) return;
-                const now = Date.now();
-                const journey = createJourneyState(
-                    runtimeInit.directorMode === "local",
-                    context.lastZenPost,
-                    now,
-                );
-                const session: ZenSessionState = {
-                    id: zenDayId,
-                    bookId,
-                    userId,
-                    period: context.period,
-                    steps: [],
-                    extractedInsights: [],
-                    ...journey,
-                    exploration: createZenExplorationState(),
-                    status: "active",
-                    createdAt: now,
-                    updatedAt: now,
-                };
-                setState({ type: "active", session, context });
+                await startReview(zenDayId, latest, isCancelled);
             } catch (error) {
                 if (!isCancelled())
                     setState({
@@ -1087,7 +1124,7 @@ export function ZenExperience({
                     });
             }
         },
-        [host, runtimeInit, t],
+        [readStart, runtimeInit, startReview, t],
     );
 
     useEffect(() => {
@@ -1113,31 +1150,67 @@ export function ZenExperience({
             session: ZenSessionState,
             lastUserInput?: unknown,
         ) => {
+            activeRun.current?.abort();
+            const controller = new AbortController();
+            activeRun.current = controller;
             setPending(true);
+            const resources = reviewResources.current;
             try {
                 const result = await requestNextZenStep({
                     session,
                     context: current.context,
-                    provider,
-                    hostTools: aiTools,
+                    provider: runtime?.provider,
+                    hostTools: runtime?.tools,
+                    skills: runtime?.skills,
+                    listPosts: (args) => host.listZenPosts(args),
+                    resources,
                     configId: runtimeInit.defaultConfigId,
                     directorMode: runtimeInit.directorMode,
                     locale: runtimeInit.locale,
                     lastUserInput,
+                    signal: controller.signal,
                 });
-                const nextContext = result.focusDecision
-                    ? await host.getZenContext({
-                          zenDayId: session.id,
+                controller.signal.throwIfAborted();
+                let nextContext = result.focusDecision
+                    ? {
+                          ...current.context,
+                          period: result.focusDecision.period,
                           focusDecision: result.focusDecision,
-                      })
+                          candidateBills: [],
+                          topCategories: [],
+                          budgets: [],
+                      }
                     : current.context;
+                if (
+                    runtimeInit.directorMode === "ai" &&
+                    result.step.content.some(
+                        (block) => block.type === "entityList",
+                    )
+                ) {
+                    nextContext = host.resolveStepContext
+                        ? await host.resolveStepContext({
+                              step: result.step,
+                              context: nextContext,
+                              resources,
+                              signal: controller.signal,
+                          })
+                        : await host.getZenContext({
+                              zenDayId: session.id,
+                              focusDecision: nextContext.focusDecision ?? {
+                                  period: nextContext.period,
+                                  label: "",
+                                  reason: "",
+                              },
+                          });
+                }
+                controller.signal.throwIfAborted();
                 const nextSession: ZenSessionState = {
                     ...session,
                     period: nextContext.period,
                     focusDecision: nextContext.focusDecision,
                     currentStep: result.step,
                     history: result.history,
-                    sentContextSignature: result.sentContextSignature,
+                    contextState: result.contextState,
                     exploration: mergeDirectorState(
                         session.exploration,
                         result.step,
@@ -1160,48 +1233,27 @@ export function ZenExperience({
                 };
                 updateActive(current, nextSession, nextContext);
             } catch (error) {
+                if (controller.signal.aborted) return;
                 setState({
                     type: "error",
                     message:
                         error instanceof Error ? error.message : String(error),
                 });
             } finally {
-                setPending(false);
+                if (activeRun.current === controller) setPending(false);
             }
         },
-        [aiTools, host, provider, runtimeInit, updateActive],
+        [host, runtime, runtimeInit, updateActive],
     );
 
     const restartZen = useCallback(async () => {
         setPending(true);
         try {
-            const { bookId, userId } = runtimeInit;
-            if (!bookId) throw new Error(t("zen-select-book-first"));
+            if (!runtimeInit.bookId)
+                throw new Error(t("zen-select-book-first"));
             const zenDayId = getZenDayId();
-            const context = await host.getZenContext({ zenDayId });
-            const now = Date.now();
-            const journey = createJourneyState(
-                runtimeInit.directorMode === "local",
-                context.lastZenPost,
-                now,
-            );
-            setState({
-                type: "active",
-                context,
-                session: {
-                    id: zenDayId,
-                    bookId,
-                    userId,
-                    period: context.period,
-                    steps: [],
-                    extractedInsights: [],
-                    ...journey,
-                    exploration: createZenExplorationState(),
-                    status: "active",
-                    createdAt: now,
-                    updatedAt: now,
-                },
-            });
+            const { latest } = await readStart(zenDayId);
+            await startReview(zenDayId, latest);
         } catch (error) {
             setState({
                 type: "error",
@@ -1210,7 +1262,7 @@ export function ZenExperience({
         } finally {
             setPending(false);
         }
-    }, [host, runtimeInit, t]);
+    }, [readStart, runtimeInit.bookId, startReview, t]);
 
     useEffect(() => {
         if (state.type === "active" && !state.session.currentStep && !pending)
@@ -1256,12 +1308,31 @@ export function ZenExperience({
             await host.mutateZenPosts({
                 mutations: [{ type: "upsert", post }],
             });
-            setPosts(await host.listZenPosts());
             setState({ type: "completed", post });
+        } catch (error) {
+            setState({
+                type: "error",
+                message: error instanceof Error ? error.message : String(error),
+            });
         } finally {
             setPending(false);
         }
     }, [host, state]);
+
+    const viewHistory = useCallback(async () => {
+        setPending(true);
+        try {
+            setPosts(await host.listZenPosts());
+            setView("history");
+        } catch (error) {
+            setState({
+                type: "error",
+                message: error instanceof Error ? error.message : String(error),
+            });
+        } finally {
+            setPending(false);
+        }
+    }, [host]);
 
     const forgetZenPost = useCallback(
         async (post: ZenPost) => {
@@ -1285,7 +1356,10 @@ export function ZenExperience({
             return;
         const nextSession: ZenSessionState = {
             ...state.session,
-            journeyPlan: extendZenJourney(state.session.journeyPlan),
+            journeyPlan: extendZenJourney(
+                state.session.journeyPlan,
+                state.session.steps.length + 1,
+            ),
             currentStep: undefined,
             updatedAt: Date.now(),
         };
@@ -1377,8 +1451,9 @@ export function ZenExperience({
                 {state.type === "locked" && (
                     <LockedView
                         scheduledTime={state.scheduledTime}
+                        pending={pending}
                         onClose={onCancel}
-                        onViewHistory={() => setView("history")}
+                        onViewHistory={viewHistory}
                     />
                 )}
                 {state.type === "completed" && (
@@ -1387,7 +1462,7 @@ export function ZenExperience({
                         pending={pending}
                         onClose={onCancel}
                         onRestart={restartZen}
-                        onViewHistory={() => setView("history")}
+                        onViewHistory={viewHistory}
                     />
                 )}
                 {state.type === "active" && !activeStep && (

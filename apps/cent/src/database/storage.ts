@@ -76,6 +76,47 @@ export class BillIndexedDBStorage implements StashStorage {
         });
     }
 
+    async getItem<T>(id: string): Promise<T | undefined> {
+        const db = await this.getDB();
+        try {
+            return (await db.get(StashBucket.ITEM_NAME, id)) as T | undefined;
+        } finally {
+            db.close();
+        }
+    }
+
+    async readRecentItems<T>(
+        limit: number,
+        matchesId: (id: string) => boolean,
+        matches: (item: T) => boolean,
+        idPrefix?: string,
+    ): Promise<T[]> {
+        if (limit <= 0) return [];
+        const db = await this.getDB();
+        try {
+            const store = db.transaction(StashBucket.ITEM_NAME).store;
+            const items: T[] = [];
+            let cursor =
+                idPrefix === undefined
+                    ? await store.index("time").openCursor(null, "prev")
+                    : await store.openCursor(
+                          IDBKeyRange.bound(idPrefix, `${idPrefix}\uffff`),
+                          "prev",
+                      );
+            while (cursor) {
+                if (matchesId(cursor.primaryKey)) {
+                    const item = cursor.value as T;
+                    if (matches(item)) items.push(item);
+                }
+                if (items.length === limit) break;
+                cursor = await cursor.continue();
+            }
+            return items;
+        } finally {
+            db.close();
+        }
+    }
+
     createArrayableStorage: ArrayableStorageFactory = (name) => {
         return {
             put: async (...v) => {
@@ -125,6 +166,13 @@ export class BillIndexedDBStorage implements StashStorage {
 
                 const localItems: any[] = [];
                 const range = IDBKeyRange.bound(-Infinity, Infinity);
+                if (limit === undefined && name === StashBucket.ITEM_NAME) {
+                    try {
+                        return (await index.getAll(range)).reverse();
+                    } finally {
+                        db.close();
+                    }
+                }
                 let cursor = await index.openCursor(range, direction);
                 while (cursor) {
                     localItems.push(cursor.value);

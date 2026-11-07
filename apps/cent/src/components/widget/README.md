@@ -1,3 +1,7 @@
+## Widget 2.0
+
+新版交互式 API、共享 storage 和 computed 元数据见 [Widget 2.0 API](./core/WIDGET_V2_API.md)。下文保留为 1.x 配置表单与展示流程的历史说明。
+
 ## Widget 功能介绍
 
 Cent 致力于成为最好的记账App，但是用户的需求是做不完的，总有这样那样的细节无法考虑周到。为了让用户完全自定义自己的账本，Cent决定使用全新的 Widget API ，用于满足不同用户的高级自定义需求。

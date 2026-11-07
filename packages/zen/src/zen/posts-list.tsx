@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { useIntl } from "../i18n";
 import { cn } from "../utils";
 import { getZenPostDayId, type ZenStyleName } from "./date";
+import { savedReflections } from "./post-view";
 import type { ZenPost } from "./types";
 
 function PostDetail({
@@ -62,6 +63,37 @@ function PostDetail({
                 <p className="text-sm leading-8 zen-text-muted">
                     {post.summary}
                 </p>
+                {savedReflections(post).map((reflection) => (
+                    <details
+                        key={reflection.id}
+                        className="zen-surface rounded-xl p-4 text-sm"
+                    >
+                        <summary className="cursor-pointer">
+                            {reflection.title ??
+                                reflection.text[0] ??
+                                reflection.id}
+                        </summary>
+                        <div className="mt-3 space-y-2 leading-7">
+                            {reflection.text.map((text, i) => (
+                                <p key={i}>{text}</p>
+                            ))}
+                            {reflection.answers.map((answer, i) => (
+                                <p key={i} className="zen-text-muted">
+                                    {answer}
+                                </p>
+                            ))}
+                            {reflection.snapshots.length > 0 && (
+                                <pre className="overflow-auto whitespace-pre-wrap text-xs">
+                                    {JSON.stringify(
+                                        reflection.snapshots,
+                                        null,
+                                        2,
+                                    )}
+                                </pre>
+                            )}
+                        </div>
+                    </details>
+                ))}
                 {post.intention && (
                     <div className="zen-surface rounded-[1.35rem] p-4 text-sm leading-7">
                         {post.intention}
