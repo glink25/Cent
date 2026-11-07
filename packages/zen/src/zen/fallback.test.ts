@@ -1,4 +1,4 @@
-import { type Provider, withAbort } from "@glink25/chaty";
+import { type Provider, withAbort } from "@glink25/agent-core";
 import { describe, expect, it, vi } from "vitest";
 import { resolveZenDirectorConfig } from "../runtime/model";
 import { requestNextZenStep } from "./director";
