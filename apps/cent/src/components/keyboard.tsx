@@ -34,6 +34,9 @@ type CalculatorContextType = {
     cursor: number;
     setCursor: (position: number | ((cursor: number) => number)) => void;
     valueRef: React.RefObject<HTMLDivElement | null>;
+    keyboardActive: boolean;
+    caretRevision: number;
+    restartCaret: () => void;
     Layout: {
         label: string;
         cols: number;
@@ -251,12 +254,16 @@ const deleteChar = (
 // --- Components ---
 export const CalculatorRoot = ({
     children,
+    canUsePhysicalKeyboard,
+    onConfirm,
     initialValue,
     onValueChange,
     precision = 3,
     multiplyKey,
 }: {
+    canUsePhysicalKeyboard?: (scope: HTMLElement) => boolean;
     initialValue?: number;
+    onConfirm?: () => void;
     onValueChange?: (v: number) => void;
     children: React.ReactNode;
     precision?: number;
@@ -268,6 +275,18 @@ export const CalculatorRoot = ({
     });
 
     const valueRef = useRef<HTMLDivElement>(null);
+    const [keyboardActive, setKeyboardActive] = useState(false);
+    const [caretRevision, setCaretRevision] = useState(0);
+    const restartCaret = () => setCaretRevision((revision) => revision + 1);
+
+    const acceptsKeyboard = (scope: HTMLElement, target: EventTarget | null) =>
+        target instanceof HTMLElement &&
+        scope.contains(target) &&
+        (target === valueRef.current ||
+            (!target.isContentEditable &&
+                !target.closest(
+                    'input, textarea, select, [role="textbox"], [role="combobox"], [role="spinbutton"], [role="slider"], [role="menu"], [role="listbox"], [role="grid"], [role="tablist"], [aria-haspopup][aria-expanded="true"]',
+                )));
 
     const Layout = useMemo(() => getLayout(multiplyKey), [multiplyKey]);
 
@@ -336,13 +355,92 @@ export const CalculatorRoot = ({
             value={{
                 handleButtonClick,
                 valueRef,
+                keyboardActive,
+                caretRevision,
+                restartCaret,
                 formula: state.formula,
                 cursor: state.cursor,
                 setCursor,
                 Layout,
             }}
         >
-            {children}
+            {/* biome-ignore lint/a11y/noStaticElementInteractions: Delegates amount keys from focused controls within the editor. */}
+            <div
+                className="contents"
+                onFocus={(event) =>
+                    setKeyboardActive(
+                        acceptsKeyboard(event.currentTarget, event.target),
+                    )
+                }
+                onBlur={(event) =>
+                    setKeyboardActive(
+                        acceptsKeyboard(
+                            event.currentTarget,
+                            event.relatedTarget,
+                        ),
+                    )
+                }
+                onKeyDown={(event) => {
+                    if (
+                        event.defaultPrevented ||
+                        !acceptsKeyboard(event.currentTarget, event.target) ||
+                        !acceptsKeyboard(
+                            event.currentTarget,
+                            document.activeElement,
+                        ) ||
+                        canUsePhysicalKeyboard?.(event.currentTarget) ===
+                            false ||
+                        event.nativeEvent.isComposing ||
+                        event.keyCode === 229 ||
+                        event.ctrlKey ||
+                        event.metaKey ||
+                        event.altKey
+                    ) {
+                        return;
+                    }
+                    if (event.key === "Enter") {
+                        if (document.activeElement === valueRef.current) {
+                            event.preventDefault();
+                            onConfirm?.();
+                        }
+                        return;
+                    }
+                    switch (event.key) {
+                        case "ArrowLeft":
+                            setCursor((position) => position - 1);
+                            break;
+                        case "ArrowRight":
+                            setCursor((position) => position + 1);
+                            break;
+                        case "Home":
+                        case "ArrowUp":
+                            setCursor(0);
+                            break;
+                        case "End":
+                        case "ArrowDown":
+                            setCursor(toText(state.formula).length);
+                            break;
+                        default: {
+                            const key =
+                                event.key === "Backspace" ? "c" : event.key;
+                            if (
+                                key === "r" ||
+                                (key !== "Delete" &&
+                                    !Layout.some((item) => item.label === key))
+                            ) {
+                                return;
+                            }
+                            event.preventDefault();
+                            handleButtonClick(key);
+                            return;
+                        }
+                    }
+                    event.preventDefault();
+                    restartCaret();
+                }}
+            >
+                {children}
+            </div>
         </CalculatorContext.Provider>
     );
 };
@@ -350,19 +448,23 @@ export const CalculatorRoot = ({
 export const CalculatorValue = ({
     className,
     label,
-    onConfirm,
 }: {
     className?: string;
     label: string;
-    onConfirm?: () => void;
 }) => {
     const ctx = useContext(CalculatorContext);
     if (!ctx) {
         throw new Error("CalculatorValue must be used within Calculator.Root");
     }
-    const { formula, cursor, setCursor, handleButtonClick, Layout, valueRef } =
-        ctx;
-    const [focused, setFocused] = useState(false);
+    const {
+        formula,
+        cursor,
+        setCursor,
+        valueRef,
+        keyboardActive,
+        caretRevision,
+        restartCaret,
+    } = ctx;
     const text = toText(formula);
     const len = text.length;
 
@@ -370,7 +472,6 @@ export const CalculatorValue = ({
     const spansRef = useRef<(HTMLSpanElement | null)[]>([]);
     const draggingRef = useRef(false);
     const [caretLeft, setCaretLeft] = useState(0);
-    const [caretRevision, setCaretRevision] = useState(0);
 
     // 计算光标的水平位置（绝对定位，不影响文本布局）
     useLayoutEffect(() => {
@@ -440,60 +541,10 @@ export const CalculatorValue = ({
                 "relative touch-none pr-1 focus-visible:outline focus-visible:outline-2",
                 className,
             )}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
-            onKeyDown={(event) => {
-                if (
-                    event.defaultPrevented ||
-                    event.nativeEvent.isComposing ||
-                    event.keyCode === 229 ||
-                    event.ctrlKey ||
-                    event.metaKey ||
-                    event.altKey
-                ) {
-                    return;
-                }
-                if (event.key === "Enter") {
-                    event.preventDefault();
-                    onConfirm?.();
-                    return;
-                }
-                switch (event.key) {
-                    case "ArrowLeft":
-                        setCursor((position) => position - 1);
-                        break;
-                    case "ArrowRight":
-                        setCursor((position) => position + 1);
-                        break;
-                    case "Home":
-                    case "ArrowUp":
-                        setCursor(0);
-                        break;
-                    case "End":
-                    case "ArrowDown":
-                        setCursor(len);
-                        break;
-                    default: {
-                        const key = event.key === "Backspace" ? "c" : event.key;
-                        if (
-                            key === "r" ||
-                            (key !== "Delete" &&
-                                !Layout.some((item) => item.label === key))
-                        ) {
-                            return;
-                        }
-                        event.preventDefault();
-                        handleButtonClick(key);
-                        return;
-                    }
-                }
-                event.preventDefault();
-                setCaretRevision((revision) => revision + 1);
-            }}
             onPointerDown={(e) => {
                 e.currentTarget.focus({ preventScroll: true });
                 setCursor(pointerToCursor(e.clientX));
-                setCaretRevision((revision) => revision + 1);
+                restartCaret();
                 e.currentTarget.setPointerCapture(e.pointerId);
                 draggingRef.current = true;
             }}
@@ -524,7 +575,7 @@ export const CalculatorValue = ({
                 aria-hidden
                 className={cn(
                     "absolute top-0 bottom-0 w-[2px] bg-current pointer-events-none",
-                    focused ? "calculator-caret-blink" : "invisible",
+                    keyboardActive ? "calculator-caret-blink" : "invisible",
                 )}
                 style={{ left: caretLeft }}
             />

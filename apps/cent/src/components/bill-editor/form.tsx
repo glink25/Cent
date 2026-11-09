@@ -17,6 +17,7 @@ import { getPredictNow } from "@/utils/predict";
 import { showTagList } from "../bill-tag";
 import { showCategoryList } from "../category";
 import { CategoryItem } from "../category/item";
+import { useGlobalConfirmStore } from "../confirm/state";
 import { DatePicker } from "../date-picker";
 import Deletable from "../deletable";
 import { FORMAT_IMAGE_SUPPORTED, showFilePicker } from "../file-picker";
@@ -34,6 +35,35 @@ import { goAddBill } from ".";
 import { RemarkHint } from "./remark";
 import ResizeHandle from "./resize";
 import TagGroupSelector from "./tag-group";
+
+const canUseAmountKeyboard = (scope: HTMLElement) => {
+    const owner = scope.closest<HTMLElement>("[data-confirm-id]");
+    const ownerId = owner?.dataset.confirmId;
+    if (
+        !ownerId ||
+        owner?.dataset.state !== "open" ||
+        scope.querySelector('[aria-haspopup][aria-expanded="true"]')
+    )
+        return false;
+    const { instances } = useGlobalConfirmStore.getState();
+    const current = instances[ownerId];
+    return (
+        current?.visible === true &&
+        !Object.entries(instances).some(
+            ([id, instance]) =>
+                id !== ownerId &&
+                instance.visible &&
+                (instance.zIndex ?? 0) >= (current.zIndex ?? 0),
+        )
+    );
+};
+
+// Safari can leave pointer-activated buttons without focus.
+const keepButtonFocus = (button: HTMLButtonElement) => {
+    if (document.activeElement !== button) {
+        button.focus({ preventScroll: true });
+    }
+};
 
 const defaultBill = {
     type: "expense" as Bill["type"],
@@ -244,7 +274,9 @@ export default function EditorForm({
     useWheelScrollX(tagSelectorRef);
     return (
         <Calculator.Root
+            canUsePhysicalKeyboard={canUseAmountKeyboard}
             multiplyKey={multiplyKey}
+            onConfirm={toConfirm}
             initialValue={calculatorInitialValue}
             onValueChange={(n) => {
                 setBillState((v) => {
@@ -272,7 +304,7 @@ export default function EditorForm({
             }}
         >
             <PopupLayout
-                className="h-full gap-2 pb-0 scrollbar-hidden"
+                className="bill-editor h-full gap-2 pb-0 scrollbar-hidden"
                 onBack={goBack}
                 title={
                     <div className="pl-[54px] w-full min-h-12 rounded-lg flex pt-2 pb-0 overflow-hidden scrollbar-hidden">
@@ -341,7 +373,6 @@ export default function EditorForm({
                                 )}
                                 <Calculator.Value
                                     label={t("amount")}
-                                    onConfirm={toConfirm}
                                     className={cn(
                                         "text-white text-3xl font-semibold text-right bg-transparent max-w-full overflow-x-auto scrollbar-hidden",
                                     )}
@@ -370,7 +401,8 @@ export default function EditorForm({
                                     key={item.id}
                                     category={item}
                                     selected={billState.categoryId === item.id}
-                                    onMouseDown={() => {
+                                    onClick={(event) => {
+                                        keepButtonFocus(event.currentTarget);
                                         handleParentCategoryClick(item.id);
                                     }}
                                 />
@@ -380,7 +412,8 @@ export default function EditorForm({
                                 className={cn(
                                     `rounded-lg border flex-1 py-1 px-2 h-8 flex gap-2 items-center justify-center whitespace-nowrap cursor-pointer`,
                                 )}
-                                onClick={() => {
+                                onClick={(event) => {
+                                    keepButtonFocus(event.currentTarget);
                                     showCategoryList(billState.type);
                                 }}
                             >
@@ -406,7 +439,10 @@ export default function EditorForm({
                                                 billState.categoryId ===
                                                 subCategory.id
                                             }
-                                            onMouseDown={() => {
+                                            onClick={(event) => {
+                                                keepButtonFocus(
+                                                    event.currentTarget,
+                                                );
                                                 setBillState((v) => ({
                                                     ...v,
                                                     categoryId: subCategory.id,
@@ -442,7 +478,8 @@ export default function EditorForm({
                         className={cn(
                             `rounded-lg border py-1 px-2 h-8 flex gap-2 items-center justify-center whitespace-nowrap cursor-pointer`,
                         )}
-                        onClick={() => {
+                        onClick={(event) => {
+                            keepButtonFocus(event.currentTarget);
                             showTagList();
                         }}
                     >
