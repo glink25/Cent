@@ -32,7 +32,7 @@ export default function WidgetModal({
         createConfirmProvider(ModalContent, {
             dialogTitle: title,
             contentClassName:
-                "flex flex-col overflow-hidden max-h-[90dvh] w-[95vw] max-w-[640px] p-0",
+                "flex h-full w-full max-h-full max-w-full flex-col overflow-hidden rounded-none pt-[var(--safe-area-inset-top)] pb-[var(--safe-area-inset-bottom)] pl-[var(--safe-area-inset-left)] pr-[var(--safe-area-inset-right)] sm:h-auto sm:max-h-[90dvh] sm:w-[90vw] sm:max-w-[640px] sm:rounded-md sm:p-0",
             initialFocus: "[data-widget-modal-title]",
             onExitComplete: () => onExited(id),
         }),

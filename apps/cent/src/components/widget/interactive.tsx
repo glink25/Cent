@@ -574,7 +574,7 @@ export default function InteractiveWidget({
                     >
                         {entry.title ?? widget.name}
                     </h2>
-                    <div className="min-h-0 overflow-y-auto">
+                    <div className="min-h-0 grow overflow-y-auto">
                         {renderView(entry)}
                         {eventError(entry.id)}
                     </div>
