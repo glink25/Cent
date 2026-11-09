@@ -2,14 +2,7 @@ import {
     createAIProvider,
     supportsImages,
 } from "@glink25/agent-core/providers";
-import {
-    type ReactNode,
-    useCallback,
-    useEffect,
-    useId,
-    useRef,
-    useState,
-} from "react";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/shallow";
 import { listChangeGrants, revokeChangeGrant } from "@/agent/changes";
@@ -34,6 +27,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "../ui/select";
+import { PromptEditorItem } from "./prompt-editor";
 
 function parseCustomParams(value: string): JSONObject | undefined {
     const trimmed = value.trim();
@@ -529,71 +523,22 @@ function ExtraPromptEditor({
     stored: string;
 }) {
     const t = useIntl();
-    const inputId = useId();
-    const [draft, setDraft] = useState<string>();
-    const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
-    const pending = useRef<() => void>(undefined);
-
-    useEffect(() => () => pending.current?.(), []);
-    useEffect(() => {
-        if (draft === stored && !pending.current) setDraft(undefined);
-    }, [draft, stored]);
-
-    const update = (text: string, immediately = false) => {
-        setDraft(text);
-        clearTimeout(timer.current);
-        pending.current = () => {
-            clearTimeout(timer.current);
-            pending.current = undefined;
-            if (assistantScope() !== scope) return;
-            void useLedgerStore
-                .getState()
-                .updatePersonalMeta((prev) => {
+    return (
+        <PromptEditorItem
+            stored={stored}
+            description={t("assistant-extra-prompt-description")}
+            resetLabel={t("assistant-extra-prompt-reset")}
+            onSave={async (text) => {
+                if (assistantScope() !== scope)
+                    throw new Error("Ledger or account changed");
+                await useLedgerStore.getState().updatePersonalMeta((prev) => {
                     const assistant = { ...prev.assistant };
                     if (text.trim()) assistant.extraPrompt = text;
                     else delete assistant.extraPrompt;
                     return { ...prev, assistant };
-                })
-                .then(() => {
-                    if (!text.trim())
-                        setDraft((current) =>
-                            current === text ? "" : current,
-                        );
-                })
-                .catch(() =>
-                    toast.error(t("assistant-extra-prompt-save-failed")),
-                );
-        };
-        if (immediately) pending.current();
-        else timer.current = setTimeout(pending.current, 350);
-    };
-
-    return (
-        <div className="space-y-2 px-4 py-3">
-            <div className="flex items-start justify-between gap-2">
-                <div>
-                    <label htmlFor={inputId}>
-                        {t("assistant-extra-prompt")}
-                    </label>
-                    <p className="text-xs opacity-60">
-                        {t("assistant-extra-prompt-description")}
-                    </p>
-                </div>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => update("", true)}
-                >
-                    {t("assistant-extra-prompt-reset")}
-                </Button>
-            </div>
-            <textarea
-                id={inputId}
-                className="w-full min-h-60 border rounded-lg p-2 text-xs font-mono"
-                value={draft ?? stored}
-                onChange={(event) => update(event.currentTarget.value)}
-            />
-        </div>
+                });
+            }}
+        />
     );
 }
 
