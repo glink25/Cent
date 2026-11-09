@@ -11,10 +11,12 @@ export function HintTooltip({
     children,
     persistKey,
     content,
+    paused,
 }: {
     children?: ReactNode;
     persistKey: GuidePersistKey;
     content?: ReactNode;
+    paused?: boolean;
 }) {
     const isLogin = useIsLogin();
     const shows = useGuideStore((state) => state[persistKey]);
@@ -22,19 +24,21 @@ export function HintTooltip({
     const curBook = useBookStore((state) => state.currentBookId);
 
     useEffect(() => {
-        setTimeout(() => {
+        if (paused) return;
+        const timer = window.setTimeout(() => {
             const shows = useGuideStore.getState()[persistKey];
             if (!shows) {
                 setOpen(true);
             }
         }, 1000);
-    }, [persistKey]);
+        return () => window.clearTimeout(timer);
+    }, [paused, persistKey]);
     if (!isLogin || !curBook || shows) {
         return children;
     }
     return (
         <Popover
-            open={open}
+            open={open && !paused}
             onOpenChange={(v) => {
                 if (!v) {
                     useGuideStore.setState((prev) => ({

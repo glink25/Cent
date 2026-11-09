@@ -4,7 +4,7 @@ import {
     Zen,
     type ZenRuntimeHost,
 } from "@glink25/zen";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CentReviewAgentConfig } from "@/agent/runtime";
 import { agentLedgerScope } from "@/agent/web-host";
 import { loadStorageAPI } from "@/api/storage/dynamic";
@@ -188,11 +188,32 @@ export function createCentZenHost(): ZenRuntimeHost {
 
 function ZenHostForm({ onCancel }: { onCancel?: () => void }) {
     const [host] = useState(createCentZenHost);
+    const frame = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const viewport = window.visualViewport;
+        const element = frame.current;
+        if (!viewport || !element) return;
+
+        const fitViewport = () => {
+            // Mobile keyboards can shrink the visual viewport without resizing the dialog.
+            element.style.maxHeight =
+                viewport.scale === 1 ? `${viewport.height}px` : "";
+        };
+        fitViewport();
+        viewport.addEventListener("resize", fitViewport);
+        return () => viewport.removeEventListener("resize", fitViewport);
+    }, []);
+
     const handleClose = () => {
         interruptZenTokenUsage();
         onCancel?.();
     };
-    return <Zen host={host} onClose={handleClose} />;
+    return (
+        <div ref={frame} className="h-full w-full">
+            <Zen host={host} onClose={handleClose} />
+        </div>
+    );
 }
 
 export const [ZenDialogProvider, showZenDialog] = createConfirmProvider(

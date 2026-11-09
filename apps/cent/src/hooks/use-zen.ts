@@ -59,6 +59,7 @@ export function useZenOverview() {
     const bookId = useBookStore((state) => state.currentBookId);
     const userId = String(useUserStore((state) => state.id));
     const [now, setNow] = useState(dayjs());
+    const [isOpen, setIsOpen] = useState(false);
 
     useEffect(() => {
         const timer = window.setInterval(() => setNow(dayjs()), 30_000);
@@ -108,8 +109,11 @@ export function useZenOverview() {
         measure("zen_opened", {
             state: zenMeasurementState.ready ? "ready" : "manual",
         });
-        showZenDialog().catch(() => {});
+        setIsOpen(true);
+        void showZenDialog()
+            .catch(() => {})
+            .finally(() => setIsOpen(false));
     }, []);
 
-    return { dayId, enabled, ready, styleName, open };
+    return { dayId, enabled, ready, styleName, isOpen, open };
 }

@@ -1,7 +1,7 @@
 /* 首页 Zen 提示卡的独立横向主题。它们不复用全屏 Zen Mode 的背景与动效。 */
 .zen-overview {
 	--zen-overview-text: #292524;
-	--zen-overview-muted: rgba(41, 37, 36, 0.66);
+	--zen-overview-muted: #575049;
 	--zen-overview-button-bg: rgba(28, 25, 23, 0.86);
 	--zen-overview-button-hover: #1c1917;
 	--zen-overview-button-text: #fff;
@@ -39,6 +39,11 @@
 
 .zen-overview-entry:hover {
 	background: var(--zen-overview-button-hover);
+}
+
+.zen-overview button:focus-visible {
+	outline: 2px solid var(--zen-overview-text);
+	outline-offset: 2px;
 }
 
 /* 暖沙晨光：沙色基底，鼠尾草与淡蓝光从横向两端轻轻汇入。 */
@@ -81,9 +86,9 @@
 /* 极光：将全屏颜料流压缩成几条横向柔光丝带。 */
 .zen-overview-style-aurora {
 	--zen-overview-text: #391636;
-	--zen-overview-muted: rgba(57, 22, 54, 0.62);
-	--zen-overview-button-bg: linear-gradient(135deg, #f460a0, #7555ed);
-	--zen-overview-button-hover: linear-gradient(135deg, #ff765f, #6546df);
+	--zen-overview-muted: #54234c;
+	--zen-overview-button-bg: linear-gradient(135deg, #af326e, #6442bd);
+	--zen-overview-button-hover: linear-gradient(135deg, #a22960, #5533ad);
 	--zen-overview-button-shadow: 0 6px 18px rgba(109, 71, 220, 0.28);
 	background: linear-gradient(105deg, #fff0e8 0%, #f8ddeb 48%, #c9f2f2 100%);
 }
@@ -125,9 +130,9 @@
 /* 海岸：上方浅海、下方暖沙，浪线沿长边横贯卡片。 */
 .zen-overview-style-beach {
 	--zen-overview-text: #244251;
-	--zen-overview-muted: rgba(36, 66, 81, 0.65);
-	--zen-overview-button-bg: linear-gradient(135deg, #147eb8, #4bbac8);
-	--zen-overview-button-hover: linear-gradient(135deg, #0e6fa6, #3eacbc);
+	--zen-overview-muted: #2f4d5c;
+	--zen-overview-button-bg: linear-gradient(135deg, #145f88, #206f7d);
+	--zen-overview-button-hover: linear-gradient(135deg, #114f75, #195e6c);
 	--zen-overview-button-shadow: 0 6px 16px rgba(18, 126, 184, 0.24);
 	background: linear-gradient(
 		180deg,
@@ -168,7 +173,7 @@
 /* 红月：纯黑横幅与左侧裁切红月，保留极低幅度的呼吸。 */
 .zen-overview-style-red-moon {
 	--zen-overview-text: #fff;
-	--zen-overview-muted: rgba(255, 255, 255, 0.68);
+	--zen-overview-muted: #fff2f2;
 	--zen-overview-button-bg: rgba(255, 255, 255, 0.14);
 	--zen-overview-button-hover: rgba(255, 255, 255, 0.22);
 	--zen-overview-button-text: #fff;
@@ -209,7 +214,7 @@
 /* 雨夜：深青底、短程斜雨与压扁在卡片底部的涟漪。 */
 .zen-overview-style-rain {
 	--zen-overview-text: #edf9f7;
-	--zen-overview-muted: rgba(218, 240, 238, 0.66);
+	--zen-overview-muted: #d1e3e1;
 	--zen-overview-button-bg: rgba(189, 231, 226, 0.16);
 	--zen-overview-button-hover: rgba(189, 231, 226, 0.24);
 	--zen-overview-button-text: #effbf9;
@@ -262,13 +267,9 @@
 /* 星夜：深蓝横向夜空、稀疏星点与从下缘升起的一弯月光。 */
 .zen-overview-style-star-night {
 	--zen-overview-text: #f7f8ff;
-	--zen-overview-muted: rgba(226, 232, 255, 0.66);
-	--zen-overview-button-bg: linear-gradient(
-		135deg,
-		rgba(99, 130, 239, 0.86),
-		rgba(148, 111, 232, 0.82)
-	);
-	--zen-overview-button-hover: linear-gradient(135deg, #748fff, #a184f4);
+	--zen-overview-muted: #d4dcf4;
+	--zen-overview-button-bg: linear-gradient(135deg, #4055b4, #6347b0);
+	--zen-overview-button-hover: linear-gradient(135deg, #384ca5, #553c9d);
 	--zen-overview-button-text: #fff;
 	--zen-overview-button-shadow: 0 6px 18px rgba(84, 101, 222, 0.3);
 	background:

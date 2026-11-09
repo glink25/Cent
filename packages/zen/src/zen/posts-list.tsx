@@ -1,8 +1,8 @@
 import "./zen.css";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useIntl } from "../i18n";
-import { cn } from "../utils";
 import { getZenPostDayId, type ZenStyleName } from "./date";
+import { ZenFrame } from "./frame";
 import { savedReflections } from "./post-view";
 import type { ZenPost } from "./types";
 
@@ -19,6 +19,18 @@ function PostDetail({
     const [confirming, setConfirming] = useState(false);
     const [pending, setPending] = useState(false);
     const [error, setError] = useState<string>();
+    const cancelRef = useRef<HTMLButtonElement>(null);
+    const forgetRef = useRef<HTMLButtonElement>(null);
+
+    useEffect(() => {
+        if (confirming) cancelRef.current?.focus();
+    }, [confirming]);
+
+    const cancelForget = () => {
+        setConfirming(false);
+        setError(undefined);
+        requestAnimationFrame(() => forgetRef.current?.focus());
+    };
 
     const forget = async () => {
         setPending(true);
@@ -36,14 +48,21 @@ function PostDetail({
         }
     };
     return (
-        <div className="zen-card zen-card--solid z-[3] flex min-h-0 flex-1 flex-col overflow-hidden rounded-[2rem] p-6 sm:p-8">
+        <div
+            className="zen-card zen-card--solid zen-scroll relative min-h-0 flex-1 overflow-y-auto rounded-[2rem] p-5 sm:p-7"
+            data-main-scroll-target
+        >
             <div className="flex items-center gap-3">
                 <button
                     type="button"
-                    className="zen-close-btn grid size-10 place-items-center rounded-full"
+                    aria-label={t("zen-posts-back")}
+                    className="zen-close-btn grid size-11 shrink-0 place-items-center rounded-full"
                     onClick={onBack}
                 >
-                    <i className="icon-[mdi--arrow-left] size-5" />
+                    <i
+                        aria-hidden="true"
+                        className="icon-[mdi--arrow-left] size-5"
+                    />
                 </button>
                 <div>
                     <div className="text-xs zen-text-subtle">
@@ -56,7 +75,7 @@ function PostDetail({
                     </h2>
                 </div>
             </div>
-            <div className="mt-6 flex-1 space-y-5 overflow-y-auto">
+            <div className="mt-5 space-y-5">
                 <blockquote className="zen-quote rounded-[1.6rem] p-5 text-base leading-8">
                     {post.quote}
                 </blockquote>
@@ -83,7 +102,7 @@ function PostDetail({
                                 </p>
                             ))}
                             {reflection.snapshots.length > 0 && (
-                                <pre className="overflow-auto whitespace-pre-wrap text-xs">
+                                <pre className="whitespace-pre-wrap text-xs">
                                     {JSON.stringify(
                                         reflection.snapshots,
                                         null,
@@ -100,24 +119,25 @@ function PostDetail({
                     </div>
                 )}
             </div>
-            <div className="mt-5 border-t border-red-500/15 pt-4">
+            <div className="zen-forget-section mt-5 border-t pt-4">
                 {confirming ? (
                     <div className="space-y-3">
-                        <p className="text-sm leading-6 text-red-700 dark:text-red-300">
+                        <p className="zen-danger-text text-sm leading-6">
                             {t("zen-post-forget-confirm")}
                         </p>
-                        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                        <div className="flex flex-wrap justify-end gap-2">
                             <button
                                 type="button"
                                 className="zen-btn zen-btn--ghost min-h-11 rounded-full px-5 text-sm disabled:opacity-45"
+                                ref={cancelRef}
                                 disabled={pending}
-                                onClick={() => setConfirming(false)}
+                                onClick={cancelForget}
                             >
                                 {t("zen-post-forget-cancel")}
                             </button>
                             <button
                                 type="button"
-                                className="min-h-11 rounded-full bg-red-600 px-5 text-sm font-medium text-white transition hover:bg-red-700 disabled:pointer-events-none disabled:opacity-45"
+                                className="zen-btn zen-btn--danger min-h-11 rounded-full px-5 text-sm font-medium transition disabled:opacity-45"
                                 disabled={pending}
                                 onClick={() => void forget()}
                             >
@@ -130,7 +150,8 @@ function PostDetail({
                 ) : (
                     <button
                         type="button"
-                        className="min-h-10 rounded-full px-4 text-sm text-red-700 transition hover:bg-red-500/10 dark:text-red-300"
+                        ref={forgetRef}
+                        className="zen-btn zen-btn--ghost zen-danger-text min-h-11 rounded-full px-4 text-sm transition"
                         onClick={() => {
                             setError(undefined);
                             setConfirming(true);
@@ -140,7 +161,10 @@ function PostDetail({
                     </button>
                 )}
                 {error && (
-                    <p className="mt-2 text-sm text-red-700 dark:text-red-300">
+                    <p
+                        role="alert"
+                        className="zen-danger-text mt-2 whitespace-pre-wrap text-sm"
+                    >
                         {error}
                     </p>
                 )}
@@ -173,65 +197,57 @@ export function ZenPostsView({
     );
 
     return (
-        <div
-            className={cn(
-                "zen-root zen-text relative flex h-full flex-col overflow-hidden px-4 sm:px-6 pt-[max(var(--safe-area-inset-top),20px)] pb-[max(var(--safe-area-inset-bottom),20px)]",
-                `zen-style-${styleName}`,
-            )}
+        <ZenFrame
+            styleName={styleName}
+            onClose={onCancel}
+            closeLabel={t("zen-posts-back-today")}
+            header={
+                <h1 className="px-1 text-sm font-medium zen-heading">
+                    {t("zen-posts-title")}
+                </h1>
+            }
         >
-            <div className="zen-overlay pointer-events-none absolute inset-0" />
-            <div className="relative mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col gap-4">
-                <div className="zen-header-bar flex items-center justify-between rounded-full px-4 py-2">
-                    <h1 className="text-sm font-medium zen-heading">
-                        {t("zen-posts-title")}
-                    </h1>
-                    <button
-                        type="button"
-                        className="zen-close-btn grid size-10 place-items-center rounded-full"
-                        onClick={onCancel}
-                    >
-                        <i className="icon-[mdi--close] size-5" />
-                    </button>
+            {selected ? (
+                <PostDetail
+                    post={selected}
+                    onBack={() => setSelected(undefined)}
+                    onForget={async (post) => {
+                        await onForget(post);
+                        setSelected(undefined);
+                    }}
+                />
+            ) : (
+                <div
+                    data-main-scroll-target
+                    className="zen-card zen-scroll relative flex min-h-0 flex-1 flex-col overflow-y-auto rounded-[2rem] p-5 sm:p-7"
+                >
+                    {sortedPosts.length === 0 ? (
+                        <div className="grid flex-1 place-items-center text-sm zen-text-muted">
+                            {t("zen-posts-empty")}
+                        </div>
+                    ) : (
+                        <div className="grid gap-3">
+                            {sortedPosts.map((post) => (
+                                <button
+                                    key={post.id}
+                                    type="button"
+                                    className="zen-option min-w-0 rounded-[1.35rem] p-4 text-left transition hover:-translate-y-0.5"
+                                    onClick={() => setSelected(post)}
+                                >
+                                    <span className="block text-xs zen-text-subtle">
+                                        {getZenPostDayId(post)}
+                                    </span>
+                                    <span className="mt-1 block font-medium zen-heading">
+                                        {post.title ??
+                                            post.theme?.title ??
+                                            post.summary}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
-                {selected ? (
-                    <PostDetail
-                        post={selected}
-                        onBack={() => setSelected(undefined)}
-                        onForget={async (post) => {
-                            await onForget(post);
-                            setSelected(undefined);
-                        }}
-                    />
-                ) : (
-                    <div className="zen-card z-[3] flex min-h-0 flex-1 flex-col overflow-y-auto rounded-[2rem] p-5 sm:p-7">
-                        {sortedPosts.length === 0 ? (
-                            <div className="grid flex-1 place-items-center text-sm zen-text-muted">
-                                {t("zen-posts-empty")}
-                            </div>
-                        ) : (
-                            <div className="grid gap-3">
-                                {sortedPosts.map((post) => (
-                                    <button
-                                        key={post.id}
-                                        type="button"
-                                        className="zen-option rounded-[1.35rem] p-4 text-left transition hover:-translate-y-0.5"
-                                        onClick={() => setSelected(post)}
-                                    >
-                                        <span className="block text-xs zen-text-subtle">
-                                            {getZenPostDayId(post)}
-                                        </span>
-                                        <span className="mt-1 block font-medium zen-heading">
-                                            {post.title ??
-                                                post.theme?.title ??
-                                                post.summary}
-                                        </span>
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                )}
-            </div>
-        </div>
+            )}
+        </ZenFrame>
     );
 }

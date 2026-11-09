@@ -176,22 +176,29 @@ export default function Page() {
                     {currentBook && (
                         <button
                             type="button"
-                            className="absolute bottom-2 left-4 text-xs opacity-60 flex items-center gap-1 cursor-pointer"
+                            className={cn(
+                                "absolute bottom-1 left-4 flex min-h-6 max-w-[calc(100%-2rem)] items-center gap-1 text-xs opacity-80",
+                                zenOverview.enabled &&
+                                    "max-w-[calc(100%-8rem)]",
+                                showZenOverview && "opacity-100",
+                            )}
                             onClick={() => {
                                 showBookGuide();
                             }}
                         >
-                            <i className="icon-[mdi--book]"></i>
-                            {currentBook.name}
+                            <i
+                                aria-hidden="true"
+                                className="icon-[mdi--book] shrink-0"
+                            />
+                            <span className="truncate">{currentBook.name}</span>
                         </button>
                     )}
                     {zenOverview.enabled && (
                         <button
                             type="button"
                             className={cn(
-                                "absolute bottom-2 rounded-full bg-background/20 inline-flex justify-center items-center px-2 right-4 text-xs opacity-70 cursor-pointer transition hover:opacity-100",
-                                showZenOverview &&
-                                    "zen-overview-entry opacity-100",
+                                "absolute bottom-1 right-4 inline-flex min-h-6 max-w-24 items-center justify-center rounded-full bg-background/20 px-2 text-xs cursor-pointer transition",
+                                showZenOverview && "zen-overview-entry",
                             )}
                             onClick={zenOverview.open}
                         >
@@ -261,6 +268,7 @@ export default function Page() {
                 </div>
                 <HintTooltip
                     persistKey={"cloudSyncHintShows"}
+                    paused={zenOverview.isOpen}
                     content={t("zen-cloud-sync-tooltip")}
                 >
                     <button
