@@ -718,7 +718,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
         >
             <div className="flex-1 flex flex-col overflow-y-auto pb-4">
                 {/* 配置列表 */}
-                <div className="px-4">
+                <div className="px-4 pb-2">
                     <div className="text-sm font-medium py-2">
                         {t("ai-config-list")}
                     </div>
