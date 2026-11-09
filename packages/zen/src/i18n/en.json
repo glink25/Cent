@@ -222,6 +222,7 @@
 	"tags-only": "Tags specified",
 	"tags-only-description": "only transactions with these tags would be accounted",
 	"total-budget": "Total Budget",
+	"total-budget-hint": "Total and category budgets are two equivalent views. Category budgets are not deducted from the total and the two are not added together; when budgeting per category, set the total to the same amount as the sum of the category budgets.",
 	"budget-finished": "Budget Finished",
 	"daily-expense": "Daily expense",
 	"daily-left": "Daily Left",
