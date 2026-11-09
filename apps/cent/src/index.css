@@ -318,6 +318,11 @@ button {
 	}
 }
 
+.bill-editor:has([aria-haspopup][aria-expanded="true"])
+	.calculator-caret-blink {
+	visibility: hidden;
+}
+
 @keyframes calculator-caret-blink {
 	0% {
 		opacity: 1;
