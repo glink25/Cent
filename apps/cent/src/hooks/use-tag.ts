@@ -1,28 +1,26 @@
 import { useCallback, useMemo } from "react";
-import { useShallow } from "zustand/shallow";
 import type { BillTag } from "@/components/bill-tag/type";
+import {
+    assertEditable,
+    type EffectiveEntry,
+} from "@/components/widget/core/computed";
 import type { BillTagGroup } from "@/ledger/type";
+import { groupTags } from "@/ledger/utils";
 import { t } from "@/locale";
 import { measure } from "@/measurement";
 import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
+import { useWidgetMeta } from "./use-widget-meta";
 
 export function useTag() {
-    const [tags = [], tagGroups = []] = useLedgerStore(
-        useShallow((state) => {
-            const userId = useUserStore.getState().id;
-            return [
-                state.infos?.meta.tags,
-                state.infos?.meta.personal?.[userId]?.tagGroups,
-            ];
-        }),
-    );
+    const { tags, tagGroups } = useWidgetMeta();
 
     const updateTag = useCallback(
         (
             id: string,
             newTag: (Omit<BillTag, "id"> & { id?: string }) | undefined,
         ) => {
+            assertEditable(id);
             const exists = useLedgerStore
                 .getState()
                 .infos?.meta.tags?.some((tag) => tag.id === id);
@@ -68,37 +66,17 @@ export function useTag() {
         [],
     );
 
-    const grouped = useMemo(() => {
-        const group = tagGroups.map((group) => {
-            return {
-                ...group,
-                tags: (
-                    group.tagIds?.map((tid) =>
-                        tags.find((v) => v.id === tid),
-                    ) ?? []
-                ).filter((v) => v !== undefined),
-            };
-        });
-        const unGroup = tags.filter((v) =>
-            tagGroups.every((g) => !g.tagIds?.includes(v.id)),
-        );
-        return [
-            ...group,
-            {
-                name: t("un-grouped"),
-                id: "un-group",
-                tags: unGroup,
-                color: "gray",
-                tagIds: unGroup.map((v) => v.id),
-            },
-        ];
-    }, [tagGroups, tags]);
+    const grouped = useMemo(
+        () => groupTags(tags, tagGroups, t("un-grouped")),
+        [tags, tagGroups],
+    );
 
     const updateGroup = useCallback(
         (
             id: string,
             newGroup: (Omit<BillTagGroup, "id"> & { id?: string }) | undefined,
         ) => {
+            assertEditable(id);
             const userId = useUserStore.getState().id;
             const exists = useLedgerStore
                 .getState()
@@ -151,6 +129,7 @@ export function useTag() {
     );
 
     const topUpGroup = useCallback((groupId: string) => {
+        assertEditable(groupId);
         return useLedgerStore.getState().updatePersonalMeta((prev) => {
             const target = prev.tagGroups?.find((v) => v.id === groupId);
             if (!target) {
@@ -172,4 +151,6 @@ export function useTag() {
         topUpGroup,
     };
 }
-export type BillTagGroupDetail = BillTagGroup & { tags: BillTag[] };
+export type BillTagGroupDetail = EffectiveEntry<BillTagGroup> & {
+    tags: EffectiveEntry<BillTag>[];
+};

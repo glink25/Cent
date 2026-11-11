@@ -1,6 +1,8 @@
 import { Toaster } from "@glink25/toast";
 import { useEffect, useRef } from "react";
 import { Outlet } from "react-router";
+import Assistant from "@/components/assistant";
+import { usePageEnv } from "@/components/assistant/tools/env";
 import { BillEditorProvider } from "@/components/bill-editor";
 import { BillInfoProvider } from "@/components/bill-info";
 import { TagListProvider } from "@/components/bill-tag";
@@ -22,8 +24,9 @@ import { SortableListProvider } from "@/components/sortable";
 import { SortableListWithEnableProvider } from "@/components/sortable/enable";
 import { SortableGroupProvider } from "@/components/sortable/group";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import WebMcpApproval from "@/components/webmcp-approval";
 import { WidgetEditProvider } from "@/components/widget/edit-form";
-import { useInitPreset } from "@/hooks/use-preset";
+import { useApplyIncomeExpenseColors } from "@/hooks/use-income-expense-colors";
 import {
     useQuickEntryByClipboard,
     useQuickEntryByRelayr,
@@ -43,6 +46,7 @@ import { ZenDialogProvider } from "@/zen";
 let zenStatusMeasured = false;
 
 export default function MainLayout() {
+    usePageEnv();
     useMeasurementUsageSnapshot();
     useQuickGoAdd();
     useQuickEntryByClipboard();
@@ -75,14 +79,17 @@ export default function MainLayout() {
         applyScheduledRef.current();
     }, []);
 
-    useInitPreset();
+    useApplyIncomeExpenseColors();
 
     return (
         <ThemeProvider>
             <TooltipProvider>
                 <Navigation />
-                <div className="w-full h-full sm:pl-18">
-                    <Outlet />
+                <div className="flex w-full h-full sm:pl-18">
+                    <div className="min-w-0 flex-1 h-full">
+                        <Outlet />
+                    </div>
+                    <Assistant />
                 </div>
                 <BillEditorProvider />
                 <BillInfoProvider />
@@ -104,6 +111,7 @@ export default function MainLayout() {
                 <CategoryListProvider />
                 <ZenDialogProvider />
                 <ModalProvider />
+                <WebMcpApproval />
                 <Toaster />
             </TooltipProvider>
         </ThemeProvider>

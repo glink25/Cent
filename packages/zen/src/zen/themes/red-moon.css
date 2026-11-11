@@ -3,6 +3,10 @@
  * ============================================================ */
 
 .zen-root.zen-style-red-moon {
+	--zen-color-scheme: dark;
+	--zen-card-solid: #190e10;
+	--zen-control-solid: #2b171b;
+	--zen-danger: #ffb0a9;
 	position: relative; /* 必须：为伪元素提供定位基准 */
 	background: #000000; /* 保持父级纯黑底色 */
 	overflow: hidden; /* 开启裁剪，防止红日放大时溢出画布 */
@@ -55,80 +59,67 @@
 	.zen-option {
 		border-radius: 0;
 	}
-	.zen-card--solid {
-		background: none;
-	}
 	--zen-overlay: none;
 	--zen-card-hairline: none;
-	--zen-card-bg: none;
-	--zen-card-shadow: none;
-	--zen-header-bg: none;
-	--zen-header-ring: none;
-	--zen-header-shadow: none;
-	--zen-text: white;
-	--zen-text-muted: white;
-	--zen-text-subtle: white;
-	--zen-close-text: white;
-	--zen-close-bg: none;
-	--zen-close-ring: none;
-	--zen-close-shadow: none;
-	--zen-heading: white;
-	--zen-option-bg: none;
-	--zen-option-ring: none;
-	--zen-option-shadow: none;
-	--zen-option-text: white;
-	--zen-option-bg-hover: none;
-	--zen-option-text-hover: white;
-	--zen-option-active-bg: none;
-	--zen-option-active-text: white;
-	--zen-footer-bg: none;
+	--zen-card-bg: rgba(18, 8, 10, 0.68);
+	--zen-card-ring: rgba(255, 220, 220, 0.24);
+	--zen-card-shadow: 0 0 transparent;
+	--zen-header-bg: rgba(23, 8, 10, 0.76);
+	--zen-header-ring: rgba(255, 220, 220, 0.26);
+	--zen-header-shadow: 0 0 transparent;
+	--zen-text: #fff4f4;
+	--zen-text-muted: #f1d8d9;
+	--zen-text-subtle: #e2c5c7;
+	--zen-close-text: #fff4f4;
+	--zen-close-text-hover: #fff;
+	--zen-close-bg: rgba(255, 220, 220, 0.1);
+	--zen-close-bg-hover: rgba(255, 220, 220, 0.2);
+	--zen-close-ring: rgba(255, 220, 220, 0.28);
+	--zen-heading: #fff;
+	--zen-btn-bg: #f4d8da;
+	--zen-btn-bg-hover: #fff0f0;
+	--zen-btn-text: #2c1014;
+	--zen-btn-shadow: 0 0 transparent;
+	--zen-btn-shadow-hover: 0 0 transparent;
+	--zen-option-bg: rgba(255, 220, 220, 0.08);
+	--zen-option-ring: rgba(255, 220, 220, 0.3);
+	--zen-option-shadow: 0 0 transparent;
+	--zen-option-text: #fff4f4;
+	--zen-option-bg-hover: rgba(255, 220, 220, 0.17);
+	--zen-footer-bg: rgba(20, 9, 11, 0.28);
 	--zen-footer-shadow: none;
-	--zen-ghost-bg: none;
-	--zen-ghost-ring: none;
-	--zen-ghost-shadow: none;
-	--zen-ghost-text: white;
-	--zen-surface-bg: none;
-	--zen-surface-ring: none;
-	--zen-surface-shadow: none;
-	--zen-accent: black;
-	--zen-accent-light: black;
-	--zen-slider-progress: black;
-	--zen-slider-rest: white;
-	.zen-range::-webkit-slider-thumb {
-		width: 8px;
-		height: 8px;
-		margin-top: -2px;
-		background: white;
-		box-shadow:
-			0 10px 26px rgba(38, 110, 70, 0.28),
-			0 0 0 7px rgba(187, 247, 208, 0.4);
-	}
-	.zen-range::-moz-range-progress {
-		background: white;
-	}
-	.zen-range::-webkit-slider-runnable-track {
-		box-shadow: none;
-		height: 4px;
-	}
-	--zen-accent-strong: white;
-	--zen-accent-soft: none;
-	--zen-accent-ring: none;
-	--zen-accent-text: white;
-	--zen-accent-shadow: none;
-	--zen-badge-bg: white;
-	--zen-badge-text: black;
+	--zen-ghost-bg: var(--zen-option-bg);
+	--zen-ghost-bg-hover: var(--zen-option-bg-hover);
+	--zen-ghost-ring: var(--zen-option-ring);
+	--zen-ghost-shadow: 0 0 transparent;
+	--zen-ghost-text: var(--zen-text);
+	--zen-surface-bg: rgba(255, 220, 220, 0.08);
+	--zen-surface-ring: rgba(255, 220, 220, 0.24);
+	--zen-surface-shadow: 0 0 transparent;
+	--zen-accent: #e58b91;
+	--zen-accent-light: #f7c7ca;
+	--zen-slider-rest: rgba(255, 220, 220, 0.36);
+	--zen-accent-strong: #f5b7bd;
+	--zen-accent-soft: #663037;
+	--zen-accent-ring: #f5b7bd;
+	--zen-accent-text: #fff4f4;
+	--zen-accent-shadow: 0 0 transparent;
+	--zen-badge-bg: #f4d8da;
+	--zen-badge-text: #2c1014;
+	--zen-chip-bg: var(--zen-surface-bg);
+	--zen-chip-text: var(--zen-text);
 	.zen-quote {
 		border-radius: 0;
-		border-left: 2px solid white;
+		border-left: 2px solid #e58b91;
 	}
-	--zen-quote-bg: none;
-	--zen-quote-ring: none;
-	--zen-quote-shadow: none;
-	--zen-input-text: white;
-	--zen-input-placeholder: white;
-	--zen-input-ring: none;
-	--zen-input-shadow: none;
-	--zen-ring-focus: rgba(221, 221, 221, 0.8);
+	--zen-quote-bg: var(--zen-surface-bg);
+	--zen-quote-ring: transparent;
+	--zen-input-bg: var(--zen-surface-bg);
+	--zen-input-text: var(--zen-text);
+	--zen-input-placeholder: var(--zen-text-subtle);
+	--zen-input-ring: var(--zen-option-ring);
+	--zen-ring-focus: #ffc4c9;
+	--zen-thumb-shadow: 0 0 0 5px rgba(255, 220, 220, 0.2);
 }
 
 /* 呼吸动画：使用 transform 替代 background-size */
@@ -151,7 +142,4 @@
 
 		background-position: 0% -2%;
 	}
-}
-.dark .zen-root.zen-style-red-moon {
-	/* same with light */
 }

@@ -1,7 +1,9 @@
 import { useShallow } from "zustand/shallow";
+import { assistantScope } from "@/components/assistant/launcher";
 import { DEFAULT_VOICE_PROMPT_TEMPLATE } from "@/components/assistant/text-to-bill";
 import PopupLayout from "@/layouts/popup-layout";
 import { useIntl } from "@/locale";
+import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
 import { usePreference } from "@/store/preference";
 import { useUserStore } from "@/store/user";
@@ -17,11 +19,15 @@ import {
 } from "../ui/select";
 import { Switch } from "../ui/switch";
 
+import { PromptEditorItem } from "./prompt-editor";
+
 const FOLLOW_DEFAULT = "__default__";
 
 function Form({ onCancel }: { onCancel?: () => void }) {
     const t = useIntl();
     const { id: userId } = useUserStore();
+    useBookStore((state) => state.currentBookId);
+    const scope = assistantScope();
 
     // 获取AI配置信息
     const { configs = [], defaultConfigId } = useLedgerStore(
@@ -169,34 +175,20 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                     </div>
                 )}
                 {voiceEnabled && hasAIConfig && (
-                    <div className="w-full px-4 pb-2 flex flex-col gap-2">
-                        <div className="flex justify-between items-start gap-2">
-                            <div className="text-sm min-w-0 flex-1">
-                                <div>{t("voice-custom-prompt")}</div>
-                                <div className="text-xs opacity-60">
-                                    {t("voice-custom-prompt-description")}
-                                </div>
-                            </div>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                    setVoicePromptTemplate(undefined);
-                                }}
-                            >
-                                {t("voice-custom-prompt-reset")}
-                            </Button>
-                        </div>
-                        <textarea
-                            className="w-full min-h-60 border rounded-lg p-2 text-xs font-mono"
-                            value={
-                                voicePromptTemplate ??
-                                DEFAULT_VOICE_PROMPT_TEMPLATE
-                            }
-                            onChange={(e) => {
-                                setVoicePromptTemplate(e.currentTarget.value);
-                            }}
-                        />
+                    <PromptEditorItem
+                        key={scope}
+                        stored={
+                            voicePromptTemplate ?? DEFAULT_VOICE_PROMPT_TEMPLATE
+                        }
+                        defaultValue={DEFAULT_VOICE_PROMPT_TEMPLATE}
+                        description={t("voice-custom-prompt-description")}
+                        resetLabel={t("voice-custom-prompt-reset")}
+                        onSave={(text, reset) => {
+                            if (assistantScope() !== scope)
+                                throw new Error("Ledger or account changed");
+                            setVoicePromptTemplate(reset ? undefined : text);
+                        }}
+                    >
                         <div className="text-xs opacity-60 flex flex-col gap-1">
                             <div>{t("voice-prompt-variables-title")}</div>
                             <ul className="list-disc pl-4 space-y-0.5">
@@ -222,7 +214,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                                 </li>
                             </ul>
                         </div>
-                    </div>
+                    </PromptEditorItem>
                 )}
             </div>
         </PopupLayout>

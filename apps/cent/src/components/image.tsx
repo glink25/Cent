@@ -4,7 +4,6 @@ import {
     useCallback,
     useEffect,
     useLayoutEffect,
-    useRef,
     useState,
 } from "react";
 import { StorageAPI } from "@/api/storage";
@@ -42,51 +41,44 @@ export function SmartImageCore({
     const [url, setUrl] = useState<string>(
         typeof source === "string" ? source : "",
     );
-    const objectUrlRef = useRef<string | null>(null);
+    const book = useBookStore((state) => state.currentBookId);
 
     useEffect(() => {
-        const book = useBookStore.getState().currentBookId;
-        if (!book) {
-            return;
-        }
-        if (!(source instanceof File)) {
-            // 普通字符串 url
-            if (StorageAPI.getOnlineAsset) {
-                cacheInDB(StorageAPI.getOnlineAsset, GetOnlineAssetsCacheKey)?.(
-                    source,
-                    book,
-                )
-                    .then((file) => {
-                        if (file === undefined) {
-                            setUrl(source);
-                            return;
-                        }
-                        const objectUrl = URL.createObjectURL(file);
-                        objectUrlRef.current = objectUrl;
-                        setUrl(objectUrl);
-                    })
-                    .catch((error) => {
-                        console.error(error);
-                        setStatus("error");
-                    });
-                return;
-            }
-            setUrl(source);
-            return () => {};
-        }
-        // 如果传入的是 File，创建 blob url
-        const objectUrl = URL.createObjectURL(source);
-        objectUrlRef.current = objectUrl;
-        setUrl(objectUrl);
-
-        // 组件卸载或 source 改变时清理
-        return () => {
-            if (objectUrlRef.current) {
-                URL.revokeObjectURL(objectUrlRef.current);
-                objectUrlRef.current = null;
-            }
+        let active = true;
+        let objectUrl: string | undefined;
+        const showFile = (file: Blob) => {
+            objectUrl = URL.createObjectURL(file);
+            setUrl(objectUrl);
         };
-    }, [source]);
+
+        setStatus("loading");
+        if (source instanceof File) {
+            showFile(source);
+        } else if (book && StorageAPI.getOnlineAsset) {
+            setUrl("");
+            cacheInDB(StorageAPI.getOnlineAsset, GetOnlineAssetsCacheKey)?.(
+                source,
+                book,
+            )
+                .then((file) => {
+                    if (!active) return;
+                    if (file) showFile(file);
+                    else setUrl(source);
+                })
+                .catch((error) => {
+                    if (!active) return;
+                    console.error(error);
+                    setStatus("error");
+                });
+        } else {
+            setUrl(source);
+        }
+
+        return () => {
+            active = false;
+            if (objectUrl) URL.revokeObjectURL(objectUrl);
+        };
+    }, [book, source]);
 
     const onLoad = useCallback(() => {
         setStatus("loaded");

@@ -1,13 +1,7 @@
 import dayjs from "dayjs";
+import { usePageEnv } from "@/components/assistant/tools/env";
 import "@/zen/overview.css";
-import {
-    useCallback,
-    useEffect,
-    useLayoutEffect,
-    useMemo,
-    useRef,
-    useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useShallow } from "zustand/shallow";
 import { StorageAPI } from "@/api/storage";
 import CloudLoopIcon from "@/assets/icons/cloud-loop.svg?react";
@@ -60,6 +54,14 @@ export default function Page() {
                 : "icon-[mdi--cloud-remove-outline] text-red-600";
 
     const [currentDate, setCurrentDate] = useState(dayjs());
+    usePageEnv({
+        type: "home",
+        date: currentDate.format("YYYY-MM-DD"),
+        range: [
+            currentDate.startOf("day").valueOf(),
+            currentDate.add(1, "day").startOf("day").valueOf(),
+        ],
+    });
     const zenOverview = useZenOverview();
     const showZenOverview = zenOverview.ready;
     const ledgerRef = useRef<any>(null);
@@ -95,16 +97,31 @@ export default function Page() {
     );
     useSnap(widgetContainer, 0);
 
-    const allLoaded = useRef(false);
-    // 有预算时需要加载全部bills
-    useLayoutEffect(() => {
-        if (!allLoaded.current && budgets.length > 0) {
-            useLedgerStore.getState().refreshBillList();
-            allLoaded.current = true;
-        }
-    }, [budgets.length]);
+    const [scrolledBookId, setScrolledBookId] = useState<string>();
+    const bookId = useBookStore((state) => state.currentBookId);
+    const needsFull =
+        budgets.length > 0 ||
+        homeWidgets.length > 0 ||
+        scrolledBookId === bookId;
+    useEffect(() => {
+        if (!needsFull || !bookId) return;
+        let active = true;
+        let retry: ReturnType<typeof setTimeout>;
+        const refresh = () => {
+            void useLedgerStore
+                .getState()
+                .refreshBillList()
+                .catch(() => {
+                    if (active) retry = setTimeout(refresh, 3000);
+                });
+        };
+        refresh();
+        return () => {
+            active = false;
+            clearTimeout(retry);
+        };
+    }, [bookId, needsFull]);
 
-    // 滚动时需要加载全部bills
     const onDateClick = useCallback(
         (date: dayjs.Dayjs) => {
             setCurrentDate(date);
@@ -119,12 +136,12 @@ export default function Page() {
         [bills],
     );
 
-    const onItemShow = useCallback((index: number) => {
-        if (!allLoaded.current && index >= 120) {
-            useLedgerStore.getState().refreshBillList();
-            allLoaded.current = true;
-        }
-    }, []);
+    const onItemShow = useCallback(
+        (index: number) => {
+            if (index >= 120) setScrolledBookId(bookId);
+        },
+        [bookId],
+    );
 
     const presence = useMemo(() => {
         if (ledgerAnimationShows) {
@@ -159,22 +176,29 @@ export default function Page() {
                     {currentBook && (
                         <button
                             type="button"
-                            className="absolute bottom-2 left-4 text-xs opacity-60 flex items-center gap-1 cursor-pointer"
+                            className={cn(
+                                "absolute bottom-1 left-4 flex min-h-6 max-w-[calc(100%-2rem)] items-center gap-1 text-xs opacity-80",
+                                zenOverview.enabled &&
+                                    "max-w-[calc(100%-8rem)]",
+                                showZenOverview && "opacity-100",
+                            )}
                             onClick={() => {
                                 showBookGuide();
                             }}
                         >
-                            <i className="icon-[mdi--book]"></i>
-                            {currentBook.name}
+                            <i
+                                aria-hidden="true"
+                                className="icon-[mdi--book] shrink-0"
+                            />
+                            <span className="truncate">{currentBook.name}</span>
                         </button>
                     )}
                     {zenOverview.enabled && (
                         <button
                             type="button"
                             className={cn(
-                                "absolute bottom-2 rounded-full bg-background/20 inline-flex justify-center items-center px-2 right-4 text-xs opacity-70 cursor-pointer transition hover:opacity-100",
-                                showZenOverview &&
-                                    "zen-overview-entry opacity-100",
+                                "absolute bottom-1 right-4 inline-flex min-h-6 max-w-24 items-center justify-center rounded-full bg-background/20 px-2 text-xs cursor-pointer transition",
+                                showZenOverview && "zen-overview-entry",
                             )}
                             onClick={zenOverview.open}
                         >
@@ -244,6 +268,7 @@ export default function Page() {
                 </div>
                 <HintTooltip
                     persistKey={"cloudSyncHintShows"}
+                    paused={zenOverview.isOpen}
                     content={t("zen-cloud-sync-tooltip")}
                 >
                     <button

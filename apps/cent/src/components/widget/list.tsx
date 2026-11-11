@@ -90,7 +90,7 @@ export default function WidgetList({ onCancel }: { onCancel?: () => void }) {
                                     </Button>
                                 </div>
                             </div>
-                            <div className="h-[120px] w-full bg-card rounded-lg shadow overflow-hidden border py-2">
+                            <div className="h-[120px] w-full bg-card rounded-lg shadow overflow-hidden border">
                                 <WidgetPreview widget={widget} />
                             </div>
                             <div className="flex items-center justify-end gap-2">

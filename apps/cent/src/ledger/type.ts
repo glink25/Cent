@@ -68,6 +68,9 @@ export type Bill = {
     /** 其他额外信息 */
     extra?: {
         scheduledId?: string;
+        /** Host-owned creation identity. Widget private fields use wc-<instanceId>. */
+        widgetId?: string;
+        [key: `wc-${string}`]: unknown;
     };
 };
 
@@ -100,6 +103,8 @@ export type BillCategory = {
  * @example 一次旅行中的所有消费事件都可以使用一个tag记录，例如xxx旅行
  */
 export type BillTag = {
+    /** 包含此tag的账单是否需要在首页列表中表示为半透明样式 */
+    opaque?: boolean;
     // tag的唯一标识符
     id: string;
     // tag的名称
@@ -127,6 +132,9 @@ export type GlobalMeta = {
     map?: {
         amapKey?: string;
         amapSecurityCode?: string;
+        googleKey?: string;
+        googleMapId?: string;
+        defaultProvider?: "amp" | "google";
     };
     // Widget列表
     widgets?: Widget[];

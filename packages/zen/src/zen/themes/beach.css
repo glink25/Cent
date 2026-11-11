@@ -7,6 +7,11 @@
  * 迁移自 beach.html：严格保留核心海浪动画与玻璃表单质感。
  * ============================================================ */
 .zen-root.zen-style-beach {
+
+	--zen-color-scheme: light;
+	--zen-card-solid: #f3eedf;
+	--zen-control-solid: #f9f7ef;
+	--zen-danger: #972e29;
 	position: relative; /* 为海浪伪元素提供定位基准 */
 	overflow: hidden;
 
@@ -61,20 +66,12 @@
 	/* 文字（ink / muted，迁移自 beach.html） */
 	--zen-heading: #244251;
 	--zen-text: #244251;
-	--zen-text-muted: rgba(36, 66, 81, 0.62);
-	--zen-text-subtle: rgba(36, 66, 81, 0.45);
+	--zen-text-muted: #2f4d5c;
+	--zen-text-subtle: #385361;
 
 	/* 主按钮（迁移自 beach.html button 的蓝青渐变） */
-	--zen-btn-bg: linear-gradient(
-		135deg,
-		rgba(18, 126, 184, 0.92),
-		rgba(77, 190, 205, 0.86)
-	);
-	--zen-btn-bg-hover: linear-gradient(
-		135deg,
-		rgba(14, 110, 166, 0.96),
-		rgba(64, 178, 196, 0.92)
-	);
+	--zen-btn-bg: linear-gradient(135deg, #145f88, #206f7d);
+	--zen-btn-bg-hover: linear-gradient(135deg, #114f75, #195e6c);
 	--zen-btn-text: #ffffff;
 	--zen-btn-shadow: 0 14px 30px rgba(18, 126, 184, 0.22);
 	--zen-btn-shadow-hover: 0 18px 38px rgba(18, 126, 184, 0.3);
@@ -95,17 +92,17 @@
 	--zen-input-bg: rgba(255, 255, 255, 0.34);
 	--zen-input-ring: rgba(255, 255, 255, 0.5);
 	--zen-input-text: #244251;
-	--zen-input-placeholder: rgba(36, 66, 81, 0.4);
+	--zen-input-placeholder: var(--zen-text-subtle);
 
 	--zen-chip-bg: rgba(255, 255, 255, 0.42);
 	--zen-chip-text: #244251;
-	--zen-header-bg: rgba(255, 255, 255, 0.28);
+	--zen-header-bg: rgba(255, 255, 255, 0.62);
 	--zen-header-ring: rgba(255, 255, 255, 0.4);
 	--zen-header-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42);
 	--zen-close-bg: rgba(255, 255, 255, 0.32);
 	--zen-close-bg-hover: rgba(255, 255, 255, 0.5);
 	--zen-close-ring: rgba(255, 255, 255, 0.42);
-	--zen-close-text: rgba(36, 66, 81, 0.62);
+	--zen-close-text: #2f4d5c;
 	--zen-close-text-hover: #244251;
 	--zen-footer-bg: rgba(255, 255, 255, 0.12);
 	--zen-footer-shadow: 0 -18px 36px rgba(255, 255, 255, 0.16);
@@ -123,7 +120,7 @@
 	--zen-quote-ring: rgba(255, 255, 255, 0.5);
 	--zen-badge-bg: rgba(98, 212, 238, 0.45);
 	--zen-badge-text: #0a3a55;
-	--zen-ring-focus: rgba(26, 161, 212, 0.8);
+	--zen-ring-focus: #155b78;
 	--zen-thumb-shadow:
 		0 10px 26px rgba(18, 126, 184, 0.28), 0 0 0 7px rgba(216, 248, 255, 0.5);
 }
@@ -216,9 +213,6 @@
 /* 第二道浪错峰半个周期，与第一道交替起落 */
 .zen-root.zen-style-beach::after {
 	animation-delay: -9s;
-}
-.dark .zen-root.zen-style-beach {
-	/* same with light */
 }
 
 /* 海浪：冲下漫过画面（浪花越过屏幕一半）后向上回退淡去（迁移自 waveWash） */

@@ -94,6 +94,13 @@ export const registerSlideGesture = <S = any>(
 
     let scrollable: ReturnType<typeof detectTargetScrollable> = false;
     const onTouchStart = (evt: TouchEvent) => {
+        if (
+            evt.target instanceof Element &&
+            evt.target.closest("[data-dialog-swipe-ignore]")
+        ) {
+            realTouchStart = undefined;
+            return;
+        }
         const touch = evt.touches[0];
         const scrollTarget = dom.querySelector<HTMLElement>(
             "[data-main-scroll-target]",

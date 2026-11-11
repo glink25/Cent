@@ -1,12 +1,14 @@
-import type { Provider, Tool } from "@glink25/chaty";
 import { createContext, useContext } from "react";
-import type { ZenInitPayload, ZenRuntimeHost } from "./types";
+import type {
+    ZenInitPayload,
+    ZenRuntimeHost,
+    ZenSessionRuntime,
+} from "./types";
 
 export type ZenRuntime = {
     host: ZenRuntimeHost;
     init: ZenInitPayload;
-    provider: Provider;
-    aiTools: Tool[];
+    session?: ZenSessionRuntime;
 };
 
 export const ZenRuntimeContext = createContext<ZenRuntime | undefined>(

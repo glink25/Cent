@@ -8,10 +8,10 @@
  *
  * 设计：语义化 CSS 变量 + 语义类。
  * - `.zen-root` 定义所有主题 token 的「基线默认值」（亮色玻璃风），作为各风格未覆盖项的回退。
- * - `.dark .zen-root` 定义基线暗色值。
+ * - `.dark .zen-root.zen-style-default` 仅调整暖沙预设的暗色值。
  * - `.zen-root.zen-style-{aurora,beach,red-moon,rain,star-night}` 为各自包含的动效主题，
  *   在各自块内整体覆盖背景、强调色族及（深底主题）文字/卡片等 token；
- *   `.dark` 版只写「same as light」，忽略系统明暗。`zen-style-default` 直接沿用本文件基线 token。
+ *   其他预设在宿主明暗切换时保留自己的色板。
  * - 语义类（.zen-card / .zen-surface / .zen-btn …）只引用 token，预设切换即整体重新着色。
  *
  * 风格名由 src/zen/date.ts 的 getZenStyleName() 按日期计算，每天稳定轮换。
@@ -21,6 +21,15 @@
  * 主题 token —— 默认（亮色 / 风格 0 暖沙）
  * ============================================================ */
 .zen-root {
+	color-scheme: var(--zen-color-scheme);
+	container: zen / size;
+	overflow-wrap: anywhere;
+	--zen-color-scheme: light;
+	--zen-card-solid: #faf3e8;
+	--zen-control-solid: #fff8ed;
+	--zen-danger: #972e29;
+	--zen-danger-bg: #a93531;
+	--zen-danger-hover: #8a2724;
 	--zen-bg:
 		radial-gradient(
 			circle at 18% 22%,
@@ -69,7 +78,7 @@
 	--zen-heading: #0c0a09;
 	--zen-text: #292524;
 	--zen-text-muted: #57534e;
-	--zen-text-subtle: #78716c;
+	--zen-text-subtle: #645b55;
 
 	/* 主按钮 */
 	--zen-btn-bg: rgba(28, 25, 23, 0.88);
@@ -96,7 +105,7 @@
 	--zen-input-bg: rgba(255, 255, 255, 0.34);
 	--zen-input-ring: rgba(255, 255, 255, 0.35);
 	--zen-input-text: #292524;
-	--zen-input-placeholder: #a8a29e;
+	--zen-input-placeholder: var(--zen-text-subtle);
 
 	/* 药丸 / 角标 / 顶栏 / 底栏 */
 	--zen-chip-bg: rgba(255, 255, 255, 0.36);
@@ -127,7 +136,7 @@
 	--zen-quote-ring: rgba(255, 255, 255, 0.35);
 	--zen-badge-bg: rgba(253, 230, 138, 0.55);
 	--zen-badge-text: #451a03;
-	--zen-ring-focus: rgba(253, 230, 138, 0.8);
+	--zen-ring-focus: #835315;
 	--zen-thumb-shadow:
 		0 10px 26px rgba(128, 84, 38, 0.28), 0 0 0 7px rgba(255, 231, 194, 0.36);
 }
@@ -135,7 +144,12 @@
 /* ============================================================
  * 主题 token —— 默认（暗色 / 风格 0 暖沙）
  * ============================================================ */
-.dark .zen-root {
+.dark .zen-root.zen-style-default {
+	--zen-color-scheme: dark;
+	--zen-ring-focus: #f4cc8f;
+	--zen-card-solid: #211d19;
+	--zen-control-solid: #29231f;
+	--zen-danger: #ffb0a9;
 	--zen-bg:
 		radial-gradient(
 			circle at 18% 18%,
@@ -175,7 +189,7 @@
 	--zen-heading: #fafaf9;
 	--zen-text: #f5f5f4;
 	--zen-text-muted: #d6d3d1;
-	--zen-text-subtle: #a8a29e;
+	--zen-text-subtle: #c1b9b2;
 
 	--zen-btn-bg: rgba(254, 243, 199, 0.9);
 	--zen-btn-bg-hover: #fffbeb;
@@ -194,7 +208,7 @@
 	--zen-input-bg: rgba(255, 255, 255, 0.08);
 	--zen-input-ring: rgba(255, 255, 255, 0.1);
 	--zen-input-text: #f5f5f4;
-	--zen-input-placeholder: #78716c;
+	--zen-input-placeholder: var(--zen-text-subtle);
 
 	--zen-chip-bg: rgba(255, 255, 255, 0.08);
 	--zen-chip-text: #f5f5f4;
@@ -270,11 +284,60 @@
 		inset 0 0 0 1px var(--zen-card-ring);
 }
 .zen-card--solid {
-	background: rgba(255, 255, 255, 0.62);
+	background: var(--zen-card-solid);
 }
-.dark .zen-card--solid {
-	background: rgba(12, 10, 9, 0.52);
+
+.zen-frame {
+	--zen-frame-gutter: 16px;
+	--zen-frame-inset: 16px;
+	gap: 14px;
+	padding:
+		max(var(--safe-area-inset-top, 0px), var(--zen-frame-inset))
+		max(var(--safe-area-inset-right, 0px), var(--zen-frame-gutter))
+		max(var(--safe-area-inset-bottom, 0px), var(--zen-frame-inset))
+		max(var(--safe-area-inset-left, 0px), var(--zen-frame-gutter));
 }
+
+@container zen (min-width: 640px) and (min-height: 520px) {
+	.zen-frame {
+		--zen-frame-gutter: 24px;
+		--zen-frame-inset: 28px;
+		gap: 20px;
+	}
+}
+
+@container zen (max-height: 460px) {
+	.zen-frame {
+		--zen-frame-inset: 8px;
+		gap: 8px;
+	}
+
+	.zen-footer {
+		padding-block: 8px;
+	}
+}
+
+.zen-scroll {
+	overscroll-behavior: contain;
+	touch-action: pan-y;
+}
+
+@container zen (max-height: 260px) {
+	.zen-card-layout {
+		display: block;
+		overflow-y: auto;
+		touch-action: pan-y;
+	}
+
+	.zen-card-layout > .zen-scroll {
+		overflow: visible;
+	}
+}
+
+.zen-forget-section {
+	border-color: color-mix(in srgb, var(--zen-danger) 32%, transparent);
+}
+
 .zen-card::before {
 	content: "";
 	position: absolute;
@@ -334,7 +397,19 @@
 .zen-btn--ghost:hover:not(:disabled) {
 	background: var(--zen-ghost-bg-hover);
 }
-.zen-btn:focus-visible {
+.zen-danger-text {
+	color: var(--zen-danger);
+}
+
+.zen-btn--danger {
+	color: #fff;
+	background: var(--zen-danger-bg);
+}
+
+.zen-btn--danger:hover:not(:disabled) {
+	background: var(--zen-danger-hover);
+}
+.zen-root :is(button, input, textarea, select, summary):focus-visible {
 	outline: 2px solid var(--zen-ring-focus);
 	outline-offset: 2px;
 }
@@ -349,7 +424,8 @@
 .zen-option:hover:not(:disabled) {
 	background: var(--zen-option-bg-hover);
 }
-.zen-option--active {
+.zen-option--active,
+.zen-option--active:hover:not(:disabled) {
 	color: var(--zen-accent-text);
 	background: var(--zen-accent-soft);
 	box-shadow:
@@ -372,11 +448,30 @@
 		inset 0 0 0 1px var(--zen-input-ring);
 }
 .zen-input::placeholder {
+	opacity: 1;
 	color: var(--zen-input-placeholder);
 }
-.zen-input:focus-visible {
-	outline: 2px solid var(--zen-ring-focus);
-	outline-offset: 2px;
+select.zen-input {
+	background-color: var(--zen-control-solid);
+}
+
+.zen-input:disabled,
+.zen-switch:disabled {
+	opacity: 0.65;
+}
+
+.zen-switch {
+	background: var(--zen-option-bg);
+	box-shadow: inset 0 0 0 1px var(--zen-option-ring);
+}
+
+.zen-switch[aria-checked="true"] {
+	background: var(--zen-accent-soft);
+	box-shadow: inset 0 0 0 2px var(--zen-accent-strong);
+}
+
+.zen-switch-thumb {
+	background: var(--zen-text);
 }
 
 .zen-quote {
@@ -525,6 +620,7 @@
 	.zen-gradient-drift,
 	.zen-gradient-focus,
 	.zen-card-enter,
+	.zen-root .animate-spin,
 	.zen-root.zen-style-aurora::before,
 	.zen-root.zen-style-aurora::after,
 	.zen-root.zen-style-beach::before,

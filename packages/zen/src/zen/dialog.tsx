@@ -6,6 +6,7 @@ import {
     useCallback,
     useEffect,
     useMemo,
+    useRef,
     useState,
 } from "react";
 import Loading from "../components/loading";
@@ -13,12 +14,13 @@ import { useIntl } from "../i18n";
 import { useZenRuntime } from "../runtime/context";
 import { cn } from "../utils";
 import { getZenDayId, isZenEntranceOpen, resolveZenStyleName } from "./date";
-import { requestNextZenStep } from "./director";
+import { createZenOpeningContext, requestNextZenStep } from "./director";
 import {
     createFallbackEpilogueStep,
     createLocalZenJourneyPlan,
     createLocalZenSeed,
 } from "./fallback";
+import { ZenFrame } from "./frame";
 import {
     createZenExplorationState,
     createZenJourneyPlan,
@@ -48,7 +50,7 @@ type ZenDialogState =
 
 function createJourneyState(
     local: boolean,
-    lastZenPost: ZenPost | undefined,
+    lastZenPost: Pick<ZenPost, "completedAt"> | undefined,
     now: number,
 ) {
     if (!local)
@@ -250,15 +252,11 @@ function CardShell({
                 className,
             )}
         >
-            <div className="relative flex min-h-0 flex-1 flex-col">
+            <div className="zen-card-layout relative flex min-h-0 flex-1 flex-col">
                 {children}
             </div>
         </div>
     );
-}
-
-function ZenBackdropFx(_props: { styleName: string }) {
-    return null;
 }
 
 function ZenCardLayout({
@@ -272,17 +270,15 @@ function ZenCardLayout({
 }) {
     return (
         <>
-            <div className="shrink-0 p-5 pb-4 sm:p-7 sm:pb-5">{header}</div>
             <div
-                className={cn(
-                    "min-h-0 flex-1 overflow-y-auto px-5 pb-5 sm:px-7 sm:pb-7",
-                    footer && "pb-4 sm:pb-5",
-                )}
+                data-main-scroll-target
+                className="zen-scroll min-h-0 flex-1 overflow-y-auto p-5 sm:p-7"
             >
+                <div className="mb-4 sm:mb-5">{header}</div>
                 {children}
             </div>
             {footer && (
-                <div className="zen-footer shrink-0 px-5 pb-5 pt-3 sm:px-7 sm:pb-7">
+                <div className="zen-footer shrink-0 px-4 py-3 sm:px-7 sm:pb-5">
                     {footer}
                 </div>
             )}
@@ -304,20 +300,9 @@ function ZenSurface({
     );
 }
 
-function ZenActions({
-    children,
-    className,
-}: {
-    children: ReactNode;
-    className?: string;
-}) {
+function ZenActions({ children }: { children: ReactNode }) {
     return (
-        <div
-            className={cn(
-                "flex flex-col-reverse gap-3 pt-1 sm:flex-row sm:justify-end",
-                className,
-            )}
-        >
+        <div className="flex flex-wrap justify-end gap-2 [&>button]:grow sm:[&>button]:grow-0">
             {children}
         </div>
     );
@@ -335,7 +320,7 @@ function ZenButton({
         <button
             type="button"
             className={cn(
-                "zen-btn inline-flex min-h-12 items-center justify-center rounded-full px-6 text-sm font-medium transition duration-300 disabled:pointer-events-none disabled:opacity-45",
+                "zen-btn inline-flex min-h-12 items-center justify-center rounded-full px-4 py-2 text-sm font-medium sm:px-6 transition duration-300 disabled:pointer-events-none disabled:opacity-45",
                 variant === "ghost" && "zen-btn--ghost",
                 className,
             )}
@@ -356,10 +341,11 @@ function ZenOptionButton({
         <button
             type="button"
             className={cn(
-                "zen-option group relative min-h-16 overflow-hidden rounded-[1.35rem] p-4 text-left transition duration-300 hover:-translate-y-0.5 disabled:pointer-events-none disabled:opacity-55",
+                "zen-option group relative min-h-12 overflow-hidden rounded-[1.35rem] p-3 text-left sm:p-4 transition duration-300 hover:-translate-y-0.5 disabled:pointer-events-none disabled:opacity-55",
                 active && "zen-option--active",
                 className,
             )}
+            aria-pressed={active}
             {...props}
         >
             <span className="zen-option-bar pointer-events-none absolute inset-y-3 left-0 w-1 rounded-full transition" />
@@ -424,8 +410,8 @@ function EntityList({
                 (bill) =>
                     bill && (
                         <ZenSurface key={bill.id}>
-                            <div className="flex items-start justify-between gap-3">
-                                <div>
+                            <div className="flex flex-wrap items-start justify-between gap-2">
+                                <div className="min-w-0">
                                     <div className="text-sm font-medium zen-heading">
                                         {bill.categoryName}
                                     </div>
@@ -433,7 +419,7 @@ function EntityList({
                                         {dayjs(bill.time).format("YYYY-MM-DD")}
                                     </div>
                                 </div>
-                                <div className="zen-chip rounded-full px-3 py-1 text-sm font-semibold">
+                                <div className="zen-chip min-w-0 max-w-full rounded-full px-3 py-1 text-sm font-semibold">
                                     {formatAmount(
                                         bill.amount,
                                         context.summary.currency,
@@ -455,7 +441,7 @@ function EntityList({
                             <div className="text-sm font-medium zen-heading">
                                 {category.name}
                             </div>
-                            <div className="mt-2 flex justify-between text-xs zen-text-subtle">
+                            <div className="mt-2 flex flex-wrap justify-between gap-2 text-xs zen-text-subtle">
                                 <span>{category.count}</span>
                                 <span>
                                     {formatAmount(
@@ -539,15 +525,34 @@ function ContentBlockView({
 }
 
 function FieldLabel({ field }: { field: ZenFormField }) {
+    const grouped =
+        field.type === "singleChoice" ||
+        field.type === "multiChoice" ||
+        field.type === "rating";
+    const label = (
+        <>
+            {field.label}
+            {field.required && <span className="ml-1 opacity-60">*</span>}
+        </>
+    );
+
     return (
-        <div>
-            <label
-                className="text-sm font-medium zen-heading"
-                htmlFor={`zen-field-${field.id}`}
-            >
-                {field.label}
-                {field.required && <span className="ml-1 opacity-60">*</span>}
-            </label>
+        <div className="min-w-0">
+            {grouped ? (
+                <span
+                    id={`zen-label-${field.id}`}
+                    className="text-sm font-medium zen-heading"
+                >
+                    {label}
+                </span>
+            ) : (
+                <label
+                    className="text-sm font-medium zen-heading"
+                    htmlFor={`zen-field-${field.id}`}
+                >
+                    {label}
+                </label>
+            )}
             {field.description && (
                 <p className="mt-1 text-xs leading-5 zen-text-subtle">
                     {field.description}
@@ -582,7 +587,7 @@ function FormFieldView({
                 >,
             ) => onChange(event.target.value),
             className:
-                "zen-input w-full rounded-[1.25rem] p-4 text-sm leading-7 outline-none disabled:opacity-60",
+                "zen-input w-full rounded-[1.25rem] p-3 leading-7 outline-none disabled:opacity-60 sm:text-sm",
         };
         return (
             <div className="space-y-3">
@@ -605,7 +610,10 @@ function FormFieldView({
         return (
             <div className="space-y-3">
                 <FieldLabel field={field} />
-                <div className="grid gap-2">
+                <fieldset
+                    aria-labelledby={`zen-label-${field.id}`}
+                    className="grid min-w-0 gap-2"
+                >
                     {field.options.map((option) => {
                         const active = selected.includes(option.id);
                         return (
@@ -637,7 +645,7 @@ function FormFieldView({
                             </ZenOptionButton>
                         );
                     })}
-                </div>
+                </fieldset>
             </div>
         );
     }
@@ -650,7 +658,7 @@ function FormFieldView({
                     value={String(value)}
                     disabled={disabled}
                     onChange={(event) => onChange(event.target.value)}
-                    className="zen-input min-h-12 w-full rounded-[1.25rem] px-4 text-sm outline-none"
+                    className="zen-input min-h-12 w-full min-w-0 rounded-[1.25rem] px-4 outline-none"
                 >
                     <option value="">—</option>
                     {field.options.map((option) => (
@@ -682,6 +690,7 @@ function FormFieldView({
                         id={`zen-field-${field.id}`}
                         className="zen-range w-full"
                         type="range"
+                        data-dialog-swipe-ignore
                         min={field.min}
                         max={field.max}
                         step={field.step ?? 1}
@@ -696,7 +705,7 @@ function FormFieldView({
                         {numeric}
                     </div>
                 </ZenSurface>
-                <div className="flex justify-between text-xs zen-text-subtle">
+                <div className="flex justify-between gap-3 text-xs zen-text-subtle [&>span]:min-w-0 [&>span]:flex-1 [&>span:last-child]:text-right">
                     <span>{field.minLabel}</span>
                     <span>{field.maxLabel}</span>
                 </div>
@@ -707,7 +716,10 @@ function FormFieldView({
         return (
             <div className="space-y-3">
                 <FieldLabel field={field} />
-                <div className="flex flex-wrap gap-2">
+                <fieldset
+                    aria-labelledby={`zen-label-${field.id}`}
+                    className="flex min-w-0 flex-wrap gap-2"
+                >
                     {Array.from(
                         { length: field.max },
                         (_, index) => index + 1,
@@ -717,15 +729,16 @@ function FormFieldView({
                             variant={
                                 Number(value) === rating ? "primary" : "ghost"
                             }
-                            className="size-11 min-h-11 px-0"
+                            className="size-11 min-h-11 px-0 sm:px-0"
+                            aria-pressed={Number(value) === rating}
                             disabled={disabled}
                             onClick={() => onChange(rating)}
                         >
                             {rating}
                         </ZenButton>
                     ))}
-                </div>
-                <div className="flex justify-between text-xs zen-text-subtle">
+                </fieldset>
+                <div className="flex justify-between gap-3 text-xs zen-text-subtle [&>span]:min-w-0 [&>span]:flex-1 [&>span:last-child]:text-right">
                     <span>{field.lowLabel}</span>
                     <span>{field.highLabel}</span>
                 </div>
@@ -742,13 +755,11 @@ function FormFieldView({
                 aria-checked={Boolean(value)}
                 disabled={disabled}
                 onClick={() => onChange(!value)}
-                className={cn(
-                    "relative h-8 w-14 shrink-0 rounded-full transition bg-[var(--zen-btn-bg)]",
-                )}
+                className="zen-switch relative h-11 w-14 shrink-0 rounded-full transition"
             >
                 <span
                     className={cn(
-                        "absolute top-1 size-6 rounded-full bg-white shadow transition",
+                        "zen-switch-thumb absolute top-2.5 size-6 rounded-full shadow transition",
                         value ? "left-7" : "left-1",
                     )}
                 />
@@ -759,15 +770,18 @@ function FormFieldView({
 
 function FormStep({
     step,
+    isAI,
     context,
     pending,
     onSubmit,
 }: {
     step: Extract<ZenUIStep, { mode: "interaction" }>;
+    isAI: boolean;
     context: ZenContext;
     pending: boolean;
     onSubmit: (submission: ZenFormSubmission) => void;
 }) {
+    const t = useIntl();
     const [values, setValues] = useState<Record<string, ZenFormValue>>(() =>
         initialValues(step.fields),
     );
@@ -790,30 +804,44 @@ function FormStep({
                     </div>
                 }
                 footer={
-                    <ZenActions className="pt-0">
-                        {step.allowSkip && (
+                    <div>
+                        <output className="block text-sm zen-text-muted">
+                            {pending && (
+                                <span className="mb-2 flex items-center gap-2">
+                                    <Loading className="[&_i]:size-4" />
+                                    {t(
+                                        isAI
+                                            ? "zen-loading-ai-next"
+                                            : "zen-loading-next",
+                                    )}
+                                </span>
+                            )}
+                        </output>
+                        <ZenActions>
+                            {step.allowSkip && (
+                                <ZenButton
+                                    variant="ghost"
+                                    disabled={pending}
+                                    onClick={() =>
+                                        onSubmit({ action: "skip", values: {} })
+                                    }
+                                >
+                                    {step.skipLabel ?? t("zen-skip")}
+                                </ZenButton>
+                            )}
                             <ZenButton
-                                variant="ghost"
-                                disabled={pending}
+                                disabled={pending || !valid}
                                 onClick={() =>
-                                    onSubmit({ action: "skip", values: {} })
+                                    onSubmit({ action: "submit", values })
                                 }
                             >
-                                {step.skipLabel ?? "跳过"}
+                                {step.submitLabel}
                             </ZenButton>
-                        )}
-                        <ZenButton
-                            disabled={pending || !valid}
-                            onClick={() =>
-                                onSubmit({ action: "submit", values })
-                            }
-                        >
-                            {step.submitLabel}
-                        </ZenButton>
-                    </ZenActions>
+                        </ZenActions>
+                    </div>
                 }
             >
-                <div className="space-y-7">
+                <div aria-busy={pending} className="space-y-4 sm:space-y-7">
                     {step.content.map((block, index) => (
                         <ContentBlockView
                             key={`${block.type}-${index}`}
@@ -870,7 +898,7 @@ function CompletionStep({
                     </div>
                 }
                 footer={
-                    <ZenActions className="pt-0">
+                    <ZenActions>
                         {onContinue ? (
                             <ZenButton
                                 variant="ghost"
@@ -940,8 +968,12 @@ function CompletedView({
                     </div>
                 }
                 footer={
-                    <ZenActions className="pt-0 flex-wrap">
-                        <ZenButton variant="ghost" onClick={onViewHistory}>
+                    <ZenActions>
+                        <ZenButton
+                            variant="ghost"
+                            disabled={pending}
+                            onClick={onViewHistory}
+                        >
                             {t("zen-view-history")}
                         </ZenButton>
                         <ZenButton
@@ -980,10 +1012,12 @@ function CompletedView({
 
 function LockedView({
     scheduledTime,
+    pending,
     onClose,
     onViewHistory,
 }: {
     scheduledTime: string;
+    pending: boolean;
     onClose?: () => void;
     onViewHistory: () => void;
 }) {
@@ -997,8 +1031,12 @@ function LockedView({
                     </h2>
                 }
                 footer={
-                    <ZenActions className="pt-0">
-                        <ZenButton variant="ghost" onClick={onViewHistory}>
+                    <ZenActions>
+                        <ZenButton
+                            variant="ghost"
+                            disabled={pending}
+                            onClick={onViewHistory}
+                        >
                             {t("zen-view-history")}
                         </ZenButton>
                         <ZenButton onClick={onClose}>
@@ -1022,29 +1060,76 @@ export function ZenExperience({
     onConfirm?: (v: undefined) => void;
 }) {
     const t = useIntl();
-    const { host, init: runtimeInit, provider, aiTools } = useZenRuntime();
+    const { host, init: runtimeInit, session: runtime } = useZenRuntime();
     const [state, setState] = useState<ZenDialogState>({ type: "loading" });
     const [pending, setPending] = useState(false);
     const [posts, setPosts] = useState<ZenPost[]>([]);
     const [view, setView] = useState<"today" | "history">("today");
+    const activeRun = useRef<AbortController | null>(null);
+    const reviewResources = useRef(new Map<string, unknown>());
+    useEffect(() => () => activeRun.current?.abort(), []);
     const todayLabel = useMemo(() => dayjs().format("YYYY-MM-DD"), []);
     const styleName = useMemo(
         () => resolveZenStyleName(runtimeInit.style),
         [runtimeInit.style],
     );
 
+    const readStart = useCallback(
+        async (zenDayId: string) => {
+            if (host.getZenStart) return host.getZenStart({ zenDayId });
+            const posts = await host.listZenPosts({ limit: 2 });
+            const todayId = `zen-${zenDayId}-${runtimeInit.userId}`;
+            return {
+                completed: posts.find((post) => post.id === todayId),
+                latest: posts.find((post) => post.id !== todayId),
+            };
+        },
+        [host, runtimeInit.userId],
+    );
+
+    const startReview = useCallback(
+        async (
+            zenDayId: string,
+            latest?: Pick<ZenPost, "completedAt">,
+            isCancelled: () => boolean = () => false,
+        ) => {
+            const { bookId, userId, directorMode } = runtimeInit;
+            const local = directorMode === "local";
+            const context = local
+                ? await host.getZenContext({ zenDayId })
+                : createZenOpeningContext(zenDayId, latest);
+            if (isCancelled()) return;
+            reviewResources.current = new Map();
+            const now = Date.now();
+            setState({
+                type: "active",
+                context,
+                session: {
+                    id: zenDayId,
+                    bookId,
+                    userId,
+                    period: context.period,
+                    steps: [],
+                    extractedInsights: [],
+                    ...createJourneyState(local, context.lastZenPost, now),
+                    exploration: createZenExplorationState(),
+                    status: "active",
+                    createdAt: now,
+                    updatedAt: now,
+                },
+            });
+        },
+        [host, runtimeInit],
+    );
+
     const initialize = useCallback(
         async (isCancelled: () => boolean = () => false) => {
             try {
-                const { bookId, userId } = runtimeInit;
-                if (!bookId) throw new Error(t("zen-select-book-first"));
+                if (!runtimeInit.bookId)
+                    throw new Error(t("zen-select-book-first"));
                 const zenDayId = getZenDayId();
-                const recentZenPosts = await host.listZenPosts();
+                const { completed, latest } = await readStart(zenDayId);
                 if (isCancelled()) return;
-                setPosts(recentZenPosts);
-                const completed = recentZenPosts.find(
-                    (post) => post.id === `zen-${zenDayId}-${userId}`,
-                );
                 if (completed) {
                     setState({ type: "completed", post: completed });
                     return;
@@ -1054,28 +1139,7 @@ export function ZenExperience({
                     setState({ type: "locked", scheduledTime });
                     return;
                 }
-                const context = await host.getZenContext({ zenDayId });
-                if (isCancelled()) return;
-                const now = Date.now();
-                const journey = createJourneyState(
-                    runtimeInit.directorMode === "local",
-                    context.lastZenPost,
-                    now,
-                );
-                const session: ZenSessionState = {
-                    id: zenDayId,
-                    bookId,
-                    userId,
-                    period: context.period,
-                    steps: [],
-                    extractedInsights: [],
-                    ...journey,
-                    exploration: createZenExplorationState(),
-                    status: "active",
-                    createdAt: now,
-                    updatedAt: now,
-                };
-                setState({ type: "active", session, context });
+                await startReview(zenDayId, latest, isCancelled);
             } catch (error) {
                 if (!isCancelled())
                     setState({
@@ -1087,7 +1151,7 @@ export function ZenExperience({
                     });
             }
         },
-        [host, runtimeInit, t],
+        [readStart, runtimeInit, startReview, t],
     );
 
     useEffect(() => {
@@ -1113,31 +1177,67 @@ export function ZenExperience({
             session: ZenSessionState,
             lastUserInput?: unknown,
         ) => {
+            activeRun.current?.abort();
+            const controller = new AbortController();
+            activeRun.current = controller;
             setPending(true);
+            const resources = reviewResources.current;
             try {
                 const result = await requestNextZenStep({
                     session,
                     context: current.context,
-                    provider,
-                    hostTools: aiTools,
+                    provider: runtime?.provider,
+                    hostTools: runtime?.tools,
+                    skills: runtime?.skills,
+                    listPosts: (args) => host.listZenPosts(args),
+                    resources,
                     configId: runtimeInit.defaultConfigId,
                     directorMode: runtimeInit.directorMode,
                     locale: runtimeInit.locale,
                     lastUserInput,
+                    signal: controller.signal,
                 });
-                const nextContext = result.focusDecision
-                    ? await host.getZenContext({
-                          zenDayId: session.id,
+                controller.signal.throwIfAborted();
+                let nextContext = result.focusDecision
+                    ? {
+                          ...current.context,
+                          period: result.focusDecision.period,
                           focusDecision: result.focusDecision,
-                      })
+                          candidateBills: [],
+                          topCategories: [],
+                          budgets: [],
+                      }
                     : current.context;
+                if (
+                    runtimeInit.directorMode === "ai" &&
+                    result.step.content.some(
+                        (block) => block.type === "entityList",
+                    )
+                ) {
+                    nextContext = host.resolveStepContext
+                        ? await host.resolveStepContext({
+                              step: result.step,
+                              context: nextContext,
+                              resources,
+                              signal: controller.signal,
+                          })
+                        : await host.getZenContext({
+                              zenDayId: session.id,
+                              focusDecision: nextContext.focusDecision ?? {
+                                  period: nextContext.period,
+                                  label: "",
+                                  reason: "",
+                              },
+                          });
+                }
+                controller.signal.throwIfAborted();
                 const nextSession: ZenSessionState = {
                     ...session,
                     period: nextContext.period,
                     focusDecision: nextContext.focusDecision,
                     currentStep: result.step,
                     history: result.history,
-                    sentContextSignature: result.sentContextSignature,
+                    contextState: result.contextState,
                     exploration: mergeDirectorState(
                         session.exploration,
                         result.step,
@@ -1160,48 +1260,27 @@ export function ZenExperience({
                 };
                 updateActive(current, nextSession, nextContext);
             } catch (error) {
+                if (controller.signal.aborted) return;
                 setState({
                     type: "error",
                     message:
                         error instanceof Error ? error.message : String(error),
                 });
             } finally {
-                setPending(false);
+                if (activeRun.current === controller) setPending(false);
             }
         },
-        [aiTools, host, provider, runtimeInit, updateActive],
+        [host, runtime, runtimeInit, updateActive],
     );
 
     const restartZen = useCallback(async () => {
         setPending(true);
         try {
-            const { bookId, userId } = runtimeInit;
-            if (!bookId) throw new Error(t("zen-select-book-first"));
+            if (!runtimeInit.bookId)
+                throw new Error(t("zen-select-book-first"));
             const zenDayId = getZenDayId();
-            const context = await host.getZenContext({ zenDayId });
-            const now = Date.now();
-            const journey = createJourneyState(
-                runtimeInit.directorMode === "local",
-                context.lastZenPost,
-                now,
-            );
-            setState({
-                type: "active",
-                context,
-                session: {
-                    id: zenDayId,
-                    bookId,
-                    userId,
-                    period: context.period,
-                    steps: [],
-                    extractedInsights: [],
-                    ...journey,
-                    exploration: createZenExplorationState(),
-                    status: "active",
-                    createdAt: now,
-                    updatedAt: now,
-                },
-            });
+            const { latest } = await readStart(zenDayId);
+            await startReview(zenDayId, latest);
         } catch (error) {
             setState({
                 type: "error",
@@ -1210,7 +1289,7 @@ export function ZenExperience({
         } finally {
             setPending(false);
         }
-    }, [host, runtimeInit, t]);
+    }, [readStart, runtimeInit.bookId, startReview, t]);
 
     useEffect(() => {
         if (state.type === "active" && !state.session.currentStep && !pending)
@@ -1256,12 +1335,31 @@ export function ZenExperience({
             await host.mutateZenPosts({
                 mutations: [{ type: "upsert", post }],
             });
-            setPosts(await host.listZenPosts());
             setState({ type: "completed", post });
+        } catch (error) {
+            setState({
+                type: "error",
+                message: error instanceof Error ? error.message : String(error),
+            });
         } finally {
             setPending(false);
         }
     }, [host, state]);
+
+    const viewHistory = useCallback(async () => {
+        setPending(true);
+        try {
+            setPosts(await host.listZenPosts());
+            setView("history");
+        } catch (error) {
+            setState({
+                type: "error",
+                message: error instanceof Error ? error.message : String(error),
+            });
+        } finally {
+            setPending(false);
+        }
+    }, [host]);
 
     const forgetZenPost = useCallback(
         async (post: ZenPost) => {
@@ -1285,7 +1383,10 @@ export function ZenExperience({
             return;
         const nextSession: ZenSessionState = {
             ...state.session,
-            journeyPlan: extendZenJourney(state.session.journeyPlan),
+            journeyPlan: extendZenJourney(
+                state.session.journeyPlan,
+                state.session.steps.length + 1,
+            ),
             currentStep: undefined,
             updatedAt: Date.now(),
         };
@@ -1314,119 +1415,110 @@ export function ZenExperience({
         );
 
     return (
-        <div
-            data-status={pending ? "loading" : "ready"}
-            className={cn(
-                "zen-root zen-text zen-gradient-drift relative h-full overflow-hidden",
-                `zen-style-${styleName}`,
-                isBackgroundFocused && "zen-gradient-focus",
-            )}
-        >
-            <div className="zen-overlay pointer-events-none absolute inset-0" />
-            <ZenBackdropFx styleName={styleName} />
-            <div className="relative mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col gap-5 px-4 pt-[max(var(--safe-area-inset-top),20px)] pb-[max(var(--safe-area-inset-bottom),20px)] sm:px-6 sm:py-7">
-                <div className="zen-header-bar flex shrink-0 items-center justify-between gap-3 rounded-full px-3 py-2">
-                    <div>
-                        <div className="text-xs uppercase tracking-[0.2em] zen-text-muted">
-                            {t("zen-header-label")}
-                        </div>
-                        <div className="text-sm zen-text-subtle">
-                            {todayLabel}
-                        </div>
+        <ZenFrame
+            styleName={styleName}
+            pending={isBackgroundFocused}
+            onClose={onCancel}
+            header={
+                <>
+                    <div className="text-xs uppercase tracking-[0.2em] zen-text-muted">
+                        {t("zen-header-label")}
                     </div>
-                    <button
-                        type="button"
-                        className="zen-close-btn grid size-11 place-items-center rounded-full transition"
-                        onClick={onCancel}
-                    >
-                        <i className="icon-[mdi--close] size-5" />
-                    </button>
-                </div>
-                {state.type === "loading" && (
-                    <CardShell className="min-h-72">
-                        <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center text-sm zen-text-muted">
-                            <div className="zen-surface rounded-full p-4 backdrop-blur-xl">
-                                <Loading className="[&_i]:size-6" />
-                            </div>
-                            <div>{t("zen-loading-open")}</div>
-                        </div>
-                    </CardShell>
-                )}
-                {state.type === "error" && (
-                    <CardShell>
-                        <ZenCardLayout
-                            header={
-                                <h2 className="text-2xl font-semibold zen-heading">
-                                    {t("zen-error-title")}
-                                </h2>
-                            }
-                            footer={
-                                <ZenActions className="pt-0">
-                                    <ZenButton onClick={onCancel}>
-                                        {t("zen-close")}
-                                    </ZenButton>
-                                </ZenActions>
-                            }
-                        >
-                            <p className="text-sm leading-7 zen-text-muted">
-                                {state.message}
-                            </p>
-                        </ZenCardLayout>
-                    </CardShell>
-                )}
-                {state.type === "locked" && (
-                    <LockedView
-                        scheduledTime={state.scheduledTime}
-                        onClose={onCancel}
-                        onViewHistory={() => setView("history")}
-                    />
-                )}
-                {state.type === "completed" && (
-                    <CompletedView
-                        post={state.post}
-                        pending={pending}
-                        onClose={onCancel}
-                        onRestart={restartZen}
-                        onViewHistory={() => setView("history")}
-                    />
-                )}
-                {state.type === "active" && !activeStep && (
-                    <CardShell>
-                        <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center zen-text-muted">
-                            <div className="text-2xl font-medium">
-                                {t("zen-loading-period")}
-                            </div>
-                            <div className="text-sm">
-                                {t("zen-loading-period-desc-1")}
-                            </div>
-                        </div>
-                    </CardShell>
-                )}
-                {activeStep?.mode === "interaction" && activeContext && (
-                    <FormStep
-                        key={activeStep.stepId}
-                        step={activeStep}
-                        context={activeContext}
-                        pending={pending}
-                        onSubmit={submitInteraction}
-                    />
-                )}
-                {activeStep?.mode === "completion" && (
-                    <CompletionStep
-                        step={activeStep}
-                        pending={pending}
-                        onFinish={finishZen}
-                        onRestart={restartZen}
-                        onContinue={
-                            state.type === "active" &&
-                            runtimeInit.directorMode === "ai" &&
-                            !state.session.journeyPlan.extensionUsed
-                                ? continueDeeper
-                                : undefined
+                    <div className="text-sm zen-text-subtle">{todayLabel}</div>
+                </>
+            }
+        >
+            {state.type === "loading" && (
+                <CardShell>
+                    <output className="zen-scroll flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-y-auto p-4 text-center text-sm zen-text-muted">
+                        <span className="zen-surface rounded-full p-4 backdrop-blur-xl">
+                            <Loading className="[&_i]:size-6" />
+                        </span>
+                        <span>{t("zen-loading-open")}</span>
+                    </output>
+                </CardShell>
+            )}
+            {state.type === "error" && (
+                <CardShell>
+                    <ZenCardLayout
+                        header={
+                            <h2 className="text-2xl font-semibold zen-heading">
+                                {t("zen-error-title")}
+                            </h2>
                         }
-                    />
-                )}
-            </div>
-        </div>
+                        footer={
+                            <ZenActions>
+                                <ZenButton onClick={onCancel}>
+                                    {t("zen-close")}
+                                </ZenButton>
+                            </ZenActions>
+                        }
+                    >
+                        <p
+                            role="alert"
+                            className="whitespace-pre-wrap text-sm leading-7 zen-text-muted"
+                        >
+                            {state.message}
+                        </p>
+                    </ZenCardLayout>
+                </CardShell>
+            )}
+            {state.type === "locked" && (
+                <LockedView
+                    scheduledTime={state.scheduledTime}
+                    pending={pending}
+                    onClose={onCancel}
+                    onViewHistory={viewHistory}
+                />
+            )}
+            {state.type === "completed" && (
+                <CompletedView
+                    post={state.post}
+                    pending={pending}
+                    onClose={onCancel}
+                    onRestart={restartZen}
+                    onViewHistory={viewHistory}
+                />
+            )}
+            {state.type === "active" && !activeStep && (
+                <CardShell>
+                    <output className="zen-scroll flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-y-auto p-4 text-center zen-text-muted">
+                        <Loading className="[&_i]:size-6" />
+                        <span className="text-lg font-medium">
+                            {t(
+                                runtimeInit.directorMode === "ai"
+                                    ? "zen-loading-ai-first"
+                                    : "zen-loading-period",
+                            )}
+                        </span>
+                    </output>
+                </CardShell>
+            )}
+            {activeStep?.mode === "interaction" && activeContext && (
+                <FormStep
+                    key={`${activeStep.stepId}-${activeStep.progress.current}`}
+                    step={activeStep}
+                    isAI={runtimeInit.directorMode === "ai"}
+                    context={activeContext}
+                    pending={pending}
+                    onSubmit={submitInteraction}
+                />
+            )}
+            {activeStep?.mode === "completion" && (
+                <CompletionStep
+                    step={activeStep}
+                    pending={pending}
+                    onFinish={finishZen}
+                    onRestart={restartZen}
+                    onContinue={
+                        state.type === "active" &&
+                        runtimeInit.directorMode === "ai" &&
+                        !state.session.journeyPlan.extensionUsed
+                            ? continueDeeper
+                            : undefined
+                    }
+                />
+            )}
+        </ZenFrame>
     );
 }

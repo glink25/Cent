@@ -1,6 +1,2 @@
-import type { Skill } from "@/assistant";
-import { parseSkillMetadata } from "@/assistant/parser";
-import playgroundSkill from "./skill.md?raw";
-
+export { PlaygroundSkill } from "@glink25/agent-core/playground";
 export { PlaygroundTool } from "./tool";
-export const PlaygroundSkill: Skill = parseSkillMetadata(playgroundSkill);

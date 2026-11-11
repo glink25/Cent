@@ -7,17 +7,71 @@ sandboxed `playground` tool.
 The host owns model credentials, real API requests, injected tools, and injected
 skills.
 
+## Long conversations
+
+Chaty keeps the complete original history for display, attachments and tool
+execution. Before **every** model call it builds a separate bounded projection:
+earlier conversation summary + recent complete turns + the current request.
+This also applies to custom `Provider` implementations used with `createSession`.
+
+- Tool observations default to 12,000 serialized characters. Oversized results
+  return valid JSON with `truncated`, execution status, a preview and a stable
+  reference. This is a display limit, not an execution failure. `readConversation`
+  reads original `raw`, `returns`, `errors`, `params` or assistant `tools` fields
+  in pages (4,000 characters by default, maximum 8,000). Original records stay
+  available until the conversation is deleted. Code-mode internal RPC results
+  are not subject to this observation limit.
+- The default context capacity is 131,072 tokens, less the effective output
+  allowance (default 8,192) and a 2,048-token safety margin. Mixed-language token
+  counts are estimates, including schemas and arguments, not provider tokenizer
+  counts. Set `AIConfig.contextWindow` to the actual model capacity. Custom
+  providers can implement `getContextPolicy(configId)`; callers may override
+  defaults with `createSession({ contextPolicy })`.
+- At 80% of the input budget, Chaty summarizes older records with the current
+  model, no tools, targeting 55%. It prefers keeping three completed user turns
+  plus the current turn, reducing retention when necessary. Long current turns
+  can compact earlier completed batches while keeping the latest two. Retained
+  arguments and Gemini signatures are never rewritten. Original attachment
+  numbering remains stable.
+- Persist `TurnResult.contextState` with the chat and pass it back to the next
+  `createSession`. It contains a versioned summary, source boundary, digest and
+  compaction count. Missing or stale checkpoints are rebuilt from original
+  records. `contextMetrics` reports estimated input, budget, compactions and
+  summary duration without recording message contents.
+- `contextStatus` is `compacting`, `ready` or `deferred`. Failed, timed-out or
+  truncated summaries never replace the previous checkpoint. If the original
+  context still fits, generation continues; otherwise Chaty stops with a
+  recoverable error. Network, rate-limit and server failures get up to five
+  retries per request. Context-limit errors can temporarily lower the effective
+  window and use the same compaction flow. Output-length truncation can
+  temporarily increase the output allowance, then retry a smaller step if
+  needed. An incomplete batch never runs; tool rounds and protocol recovery
+  have no fixed count limit and remain cancellable. Recovery notices and
+  cancellation are transient. Completed compactions are shown in the timeline
+  at their original message/tool boundary.
+
+Native bridges accept optional `purpose` and `maxTokens` request fields. Summary
+requests have `purpose: "summary"` and an empty `tools` list; hosts must honor that
+list. Existing hosts remain compatible using the conservative default budget.
+Zen can keep the checkpoint in session state without changing its saved posts.
+External WebMCP agents manage their own conversation context.
+
+Design references: [OpenAI session memory](https://developers.openai.com/cookbook/examples/agents_sdk/session_memory),
+[Anthropic context engineering](https://www.anthropic.com/research/effective-context-engineering-for-ai-agents),
+[LangChain context management](https://www.langchain.com/blog/context-management-for-deepagents),
+and [Manus context engineering](https://manus.im/blog/Context-Engineering-for-AI-Agents-Lessons-from-Building-Manus).
+
 ## Tool calling
 
 Tool calling uses the **native function/tool-calling protocol**, not a custom
-text format. On each turn the app serializes every available tool (app-native +
+text format. On each turn the app serializes native-exposed tools (app-native +
 host-injected) to JSON Schema and passes them to `requestAI` via `tools`. The
 host forwards these as the underlying model API's native `tools` field, and
 returns the model's tool calls back through `onChunk` as `chunk.toolCalls`
 (with `chunk.finishReason === "tool_calls"`). The app then executes each call —
 app-native tools run locally, injected tools go back to the host via `callTool`
-— and feeds the results into the next turn. `<overview>` titles are still parsed
-from streamed text; only tool calling moved to the native protocol.
+— and feeds bounded results into the next model request. Conversation titles
+come from the first user message; streamed prose is not parsed as an XML protocol.
 
 ```ts
 type ProviderToolCall = { id: string; name: string; params: unknown };

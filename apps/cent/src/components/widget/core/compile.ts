@@ -1,4 +1,6 @@
 const Permission = {
+    Edit: "edit",
+    Storage: "storage",
     Billing: "billing",
     Filter: "filter",
     Budget: "budget",
@@ -99,7 +101,7 @@ function parseConfigObject(configStr: string): WidgetSettingsForm {
 
             if (defaultMatch) {
                 item.default = defaultMatch[2]
-                    ? parseInt(defaultMatch[2])
+                    ? parseInt(defaultMatch[2], 10)
                     : defaultMatch[1];
             }
 

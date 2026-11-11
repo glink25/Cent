@@ -1,7 +1,6 @@
 import { resolve } from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
-import { buildSync } from "esbuild";
 import Info from "unplugin-info/vite";
 import { defineConfig, loadEnv, type PluginOption } from "vite";
 import { analyzer } from "vite-bundle-analyzer";
@@ -25,13 +24,6 @@ export default defineConfig(({ mode }) => {
                     injectOptions: {
                         data: {
                             VITE_GTAG_SCRIPT: env.VITE_GTAG_SCRIPT || "",
-                            injectPresetScript: buildSync({
-                                entryPoints: ["src/inline/load-preset.ts"],
-                                bundle: true,
-                                minify: true,
-                                write: false,
-                                format: "iife",
-                            }).outputFiles[0].text,
                         },
                     },
                 },
@@ -110,7 +102,7 @@ export default defineConfig(({ mode }) => {
         // chaty / zen 是 workspace 源码包（非预编译 dist），交给 Vite 直接当源码处理，
         // 不要被 esbuild 预打包成外部依赖（否则其 `#/` 子路径导入与 Tailwind 扫描会失效）。
         optimizeDeps: {
-            exclude: ["@glink25/chaty", "@glink25/zen"],
+            exclude: ["@glink25/agent-core", "@glink25/chaty", "@glink25/zen"],
         },
         worker: {
             format: "es",

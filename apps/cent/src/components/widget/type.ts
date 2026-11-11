@@ -6,6 +6,7 @@ export type Widget = {
     code: string;
     permissions: string[];
     settings?: Record<string, any>;
+    storage?: Record<string, unknown>;
     createdAt: number;
     updatedAt: number;
 };
@@ -15,7 +16,23 @@ export type WidgetStore = {
 };
 
 export type DSLNode = {
-    type: "Flex" | "Text" | "Image" | "Container";
+    type:
+        | "Flex"
+        | "Text"
+        | "Image"
+        | "Container"
+        | "Button"
+        | "FilePicker"
+        | "Attachment"
+        | "Input"
+        | "ChoiceGroup"
+        | "Choice"
+        | "Select"
+        | "Switch"
+        | "DateTimePicker"
+        | "Line";
+    key?: string;
+    events?: { onTap?: string; onChange?: string };
     props: Record<string, any>;
     children: DSLNode[];
     style: DSLStyle;
@@ -31,6 +48,18 @@ export type DSLStyle = {
     gap?: number;
     width?: number | string;
     height?: number | string;
+    wrap?: boolean;
+    grow?: number;
+    shrink?: number;
+    minWidth?: number;
+    maxWidth?: number;
+    minHeight?: number;
+    paddingX?: number;
+    paddingY?: number;
+    borderWidth?: number;
+    borderColor?: string;
+    fontWeight?: "normal" | "medium" | "semibold" | "bold";
+    textAlign?: "start" | "center" | "end";
     mode?: "cover" | "contain";
     background?: string;
     padding?: number | string;
@@ -38,6 +67,8 @@ export type DSLStyle = {
 };
 
 export type WidgetPermissions = {
+    edit: boolean;
+    storage: boolean;
     billing: boolean;
     filter: boolean;
     budget: boolean;

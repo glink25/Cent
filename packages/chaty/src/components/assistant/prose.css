@@ -108,3 +108,43 @@
 .prose.prose-sm {
 	font-size: 0.875rem;
 }
+
+.flow-detail {
+    max-height: 280px;
+    overflow: auto;
+    overscroll-behavior: contain;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background: var(--muted);
+    padding: 0.75rem;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+}
+.flow-peek {
+    animation: flow-peek-in 160ms ease-out;
+}
+@keyframes flow-peek-in {
+    from { opacity: 0.5; }
+    to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .flow-peek { animation: none; }
+}
+
+.flow-process[data-state="open"] {
+    animation: flow-process-open 180ms ease-out;
+}
+.flow-process[data-state="closed"] {
+    animation: flow-process-close 160ms ease-in;
+}
+@keyframes flow-process-open {
+    from { height: 0; opacity: 0; }
+    to { height: var(--radix-collapsible-content-height); opacity: 1; }
+}
+@keyframes flow-process-close {
+    from { height: var(--radix-collapsible-content-height); opacity: 1; }
+    to { height: 0; opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .flow-process { animation: none !important; }
+}

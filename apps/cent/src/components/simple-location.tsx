@@ -1,94 +1,89 @@
-import type React from "react";
-import { type ReactNode, type RefObject, useCallback, useState } from "react";
+import {
+    type ReactNode,
+    type RefObject,
+    useEffect,
+    useRef,
+    useState,
+} from "react";
 import type { GeoLocation } from "@/ledger/type";
+import { useIntl } from "@/locale";
 import { cn } from "@/utils";
+import { isCoordinate } from "./map/protocol";
+
+type LocationError =
+    | "location-permission-denied"
+    | "location-timeout"
+    | "location-unavailable";
 
 interface CurrentLocationProps {
-    /**
-     * 当成功获取到位置信息或发生错误时触发的回调函数。
-     * @param data 成功时的位置数据，如果失败则为 null。
-     * @param error 失败时的错误对象，如果成功则为 null。
-     */
     onValueChange?: (data: GeoLocation) => void;
-    onError?: (error: GeolocationPositionError) => void;
-    /** 按钮的文本内容，默认为 "获取当前位置" */
+    onError?: (error: LocationError) => void;
     children?: ReactNode;
     className?: string;
     ref?: RefObject<HTMLButtonElement | null>;
 }
 
-const CurrentLocation: React.FC<CurrentLocationProps> = ({
+export default function CurrentLocation({
     onValueChange,
     onError,
     children,
     className,
     ref,
-}) => {
-    // const handleError = useCallback(
-    // 	(error: GeolocationPositionError) => {
-    // 		setIsLoading(false);
-    // 		let errorMessage: string;
-
-    // 		switch (error.code) {
-    // 			case error.PERMISSION_DENIED:
-    // 				errorMessage = "权限被拒绝：请授权网站访问您的位置。";
-    // 				break;
-    // 			case error.POSITION_UNAVAILABLE:
-    // 				errorMessage = "位置信息不可用：请检查您的设备定位服务是否开启。";
-    // 				break;
-    // 			case error.TIMEOUT:
-    // 				errorMessage = "请求超时：无法在规定时间内获取位置。";
-    // 				break;
-    // 			default:
-    // 				errorMessage = "发生未知定位错误。";
-    // 				break;
-    // 		}
-    // 		onValueChange(null, error);
-    // 	},
-    // 	[onValueChange],
-    // );
+}: CurrentLocationProps) {
+    const t = useIntl();
+    const request = useRef(0);
+    const [loading, setLoading] = useState(false);
+    useEffect(
+        () => () => {
+            request.current++;
+        },
+        [],
+    );
+    if (!navigator.geolocation) return null;
 
     const getLocation = () => {
-        if (!("geolocation" in navigator)) {
-            return;
-        }
-        // 调用 Geolocation API
+        const id = ++request.current;
+        setLoading(true);
         navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const { latitude, longitude, accuracy } = position.coords;
-
-                // 整理需要回调的数据
-                const data: GeoLocation = {
-                    latitude,
-                    longitude,
-                    accuracy,
-                };
-
-                // 成功回调
-                onValueChange?.(data);
+            ({ coords: { latitude, longitude, accuracy } }) => {
+                if (request.current !== id) return;
+                setLoading(false);
+                if (
+                    !isCoordinate(latitude, longitude) ||
+                    !Number.isFinite(accuracy) ||
+                    accuracy < 0
+                ) {
+                    onError?.("location-unavailable");
+                    return;
+                }
+                onValueChange?.({ latitude, longitude, accuracy });
             },
-            onError,
-            {
-                enableHighAccuracy: true,
-                timeout: 10000, // 10秒超时
-                maximumAge: 0, // 不使用缓存
+            (error) => {
+                if (request.current !== id) return;
+                setLoading(false);
+                onError?.(
+                    error.code === 1
+                        ? "location-permission-denied"
+                        : error.code === 3
+                          ? "location-timeout"
+                          : "location-unavailable",
+                );
             },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
         );
     };
-    if (!("geolocation" in navigator)) {
-        return null;
-    }
 
     return (
         <button
             ref={ref}
             type="button"
             onClick={getLocation}
+            disabled={loading}
             className={cn(className)}
+            aria-label={t("map-current-location")}
+            title={t("map-current-location")}
         >
             {children}
         </button>
     );
-};
-
-export default CurrentLocation;
+}
