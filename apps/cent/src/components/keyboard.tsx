@@ -399,10 +399,8 @@ export const CalculatorRoot = ({
                         return;
                     }
                     if (event.key === "Enter") {
-                        if (document.activeElement === valueRef.current) {
-                            event.preventDefault();
-                            onConfirm?.();
-                        }
+                        event.preventDefault();
+                        onConfirm?.();
                         return;
                     }
                     switch (event.key) {
