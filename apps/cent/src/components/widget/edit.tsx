@@ -17,23 +17,20 @@ const defaultCode = `/**
  */
 
 export const config = {
-  title: { type: 'text', label: '组件标题', default: '我的账单' },
-  showCount: { type: 'select', label: '显示数量', options: ['是', '否'], default: '是' }
+    title: { type: "text", label: "组件标题", default: "我的账单" },
+    showCount: { type: "select", label: "显示数量", options: ["是", "否"], default: "是" }
 };
 
 export default function Main({ data, settings }) {
-    const bills = data.billing || [];
-    const total = bills.reduce((sum, bill) => sum + bill.amount, 0);
-    const title = settings.title || '我的账单';
-    const showCount = settings.showCount === '是';
-    
-    return Flex(
-        Text(title).fontSize(16).bold(),
+    const bills = data.billing ?? [];
+    const total = bills.reduce((sum, bill) => sum + bill.amount, 0) / 10000;
+
+    return Column(
+        Text(settings.title || "我的账单").fontSize(16).bold(true),
         Text("Total: " + total).fontSize(14),
-        showCount ? Text("Bills: " + bills.length).fontSize(12) : null
-    ).direction('column').gap(8);
-}
-`;
+        (settings.showCount ?? "是") === "是" ? Text("Bills: " + bills.length).fontSize(12) : null
+    ).gap(8).padding(12);
+}`;
 
 export default function WidgetEdit({
     edit,

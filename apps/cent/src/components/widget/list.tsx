@@ -20,29 +20,6 @@ export default function WidgetList({ onCancel }: { onCancel?: () => void }) {
             className="h-full overflow-hidden"
         >
             <div className="flex-1 flex flex-col overflow-hidden">
-                <div className="flex items-center justify-between px-2">
-                    <div className="px-2 text-xs text-foreground/80">
-                        {t("widget-description")}
-                    </div>
-                    {widgets.length > 0 && (
-                        <Button
-                            variant="ghost"
-                            className="p-1 h-fit"
-                            onClick={async () => {
-                                const ordered = await showSortableList(
-                                    widgets.map((w) => ({
-                                        id: w.id,
-                                        name: w.name,
-                                    })),
-                                );
-                                await reorder(ordered.map((o) => o.id));
-                            }}
-                        >
-                            <i className="icon-[mdi--reorder-horizontal]"></i>
-                        </Button>
-                    )}
-                </div>
-
                 <div className="w-full flex-1 overflow-y-auto flex flex-col gap-2 p-2">
                     <div className="flex flex-wrap items-center gap-2">
                         <Button
@@ -57,17 +34,30 @@ export default function WidgetList({ onCancel }: { onCancel?: () => void }) {
                         </Button>
                         <Button asChild variant="link">
                             <a
-                                href="https://github.com/glink25/Cent/discussions/categories/widget-showcase"
+                                href="https://github.com/glink25/Cent/discussions/categories/widget-showcase?discussions_q=is%3Aopen+category%3A%22Widget+Showcase%22"
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
                                 {t("widget-showcase")}
-                                <i
-                                    className="icon-[mdi--open-in-new] size-4"
-                                    aria-hidden="true"
-                                />
                             </a>
                         </Button>
+                        {widgets.length > 0 && (
+                            <Button
+                                variant="ghost"
+                                className="p-1 h-fit"
+                                onClick={async () => {
+                                    const ordered = await showSortableList(
+                                        widgets.map((w) => ({
+                                            id: w.id,
+                                            name: w.name,
+                                        })),
+                                    );
+                                    await reorder(ordered.map((o) => o.id));
+                                }}
+                            >
+                                <i className="icon-[mdi--reorder-horizontal]"></i>
+                            </Button>
+                        )}
                     </div>
                     {widgets.map((widget) => (
                         <div
