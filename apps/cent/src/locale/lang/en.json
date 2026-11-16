@@ -801,6 +801,7 @@
   "zen-select-book-first": "Please select a ledger book first",
   "zen-saved-toast": "Today's Zen saved",
   "zen-header-label": "cent zen",
+  "zen-personality-prompt-description": "Customize the Zen mentor’s tone and wording.",
   "zen-loading-open": "Opening today's Zen...",
   "zen-error-title": "Zen is Unavailable",
   "zen-loading-period": "Entering Zen mode...",

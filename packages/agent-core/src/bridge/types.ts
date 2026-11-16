@@ -55,6 +55,7 @@ export type AIChatInitPayload = {
         userId: string;
         bookId: string;
         scheduledTime?: string;
+        personalityPrompt?: string;
         directorMode: "ai" | "local";
         style?: string | null;
     };

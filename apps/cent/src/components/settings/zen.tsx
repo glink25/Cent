@@ -1,7 +1,12 @@
+import { defaultZenPersonality } from "@glink25/zen";
+import { assistantScope } from "@/components/assistant/launcher";
 import { useZen } from "@/hooks/use-zen";
 import PopupLayout from "@/layouts/popup-layout";
 import { useIntl } from "@/locale";
 import { measure } from "@/measurement";
+import { useBookStore } from "@/store/book";
+import { useLedgerStore } from "@/store/ledger";
+import { useUserStore } from "@/store/user";
 import { cn } from "@/utils";
 import createConfirmProvider from "../confirm";
 import { Button } from "../ui/button";
@@ -14,6 +19,7 @@ import {
     SelectValue,
 } from "../ui/select";
 import { Switch } from "../ui/switch";
+import { PromptEditorItem } from "./prompt-editor";
 
 const FOLLOW_DEFAULT = "__default__";
 const NO_MODEL = "__none__";
@@ -40,6 +46,11 @@ function Form({ onCancel }: { onCancel?: () => void }) {
               ? (zen.aiConfigId as string)
               : FOLLOW_DEFAULT;
     const scheduledTime = zen?.scheduledTime ?? "21:00";
+    const bookId = useBookStore((state) => state.currentBookId);
+    const metaReady = useLedgerStore((state) => Boolean(state.infos));
+    const userId = useUserStore((state) => state.id);
+    const scope = assistantScope();
+    const personalityPrompt = zen?.personalityPrompt;
 
     return (
         <PopupLayout
@@ -114,6 +125,39 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                         </SelectContent>
                     </Select>
                 </div>
+
+                {bookId && Boolean(userId) && metaReady && (
+                    <PromptEditorItem
+                        key={scope}
+                        stored={
+                            typeof personalityPrompt === "string" &&
+                            personalityPrompt.trim()
+                                ? personalityPrompt
+                                : defaultZenPersonality
+                        }
+                        defaultValue={defaultZenPersonality}
+                        description={t("zen-personality-prompt-description")}
+                        resetLabel={t("voice-custom-prompt-reset")}
+                        onSave={async (text, reset) => {
+                            if (assistantScope() !== scope)
+                                throw new Error("Ledger or account changed");
+                            const trimmed = text.trim();
+                            await useLedgerStore
+                                .getState()
+                                .updatePersonalMeta((prev) => {
+                                    const settings = { ...prev.zen };
+                                    if (
+                                        reset ||
+                                        !trimmed ||
+                                        trimmed === defaultZenPersonality
+                                    )
+                                        delete settings.personalityPrompt;
+                                    else settings.personalityPrompt = text;
+                                    return { ...prev, zen: settings };
+                                });
+                        }}
+                    />
+                )}
 
                 <div className="w-full min-h-10 flex-shrink-0 flex py-2 justify-between items-center px-4 gap-2">
                     <div className="text-sm min-w-0 flex-1">

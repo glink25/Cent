@@ -38,6 +38,7 @@ import type {
     ZenSessionState,
     ZenUIStep,
 } from "./types";
+import zenPersonality from "./zen-personality.txt?raw";
 
 const ShowZenStepTool = createTool({
     name: "showZenStep",
@@ -77,6 +78,8 @@ function createDecideZenFocusTool(
         },
     });
 }
+
+export const defaultZenPersonality = zenPersonality.trim();
 
 // ./zen-director.md closure
 const zenSystemPromptLoaded = (async () => {
@@ -136,7 +139,6 @@ function compactSessionState(session: ZenSessionState) {
         selectedTheme: session.selectedTheme,
         focusDecision: session.focusDecision,
         status: session.status,
-        journeyPlan: session.journeyPlan,
         exploration: session.exploration,
         extractedInsights: session.extractedInsights,
         currentStepId: session.currentStep?.stepId,
@@ -204,6 +206,7 @@ function createReadZenHistoryTool(listPosts: ZenRuntimeHost["listZenPosts"]) {
 function normalizeStepProgress(
     step: ZenUIStep,
     session: ZenSessionState,
+    directorMode: ZenDirectorMode,
 ): ZenUIStep {
     const current = Math.max(1, session.steps.length + 1);
     return {
@@ -213,7 +216,11 @@ function normalizeStepProgress(
             current,
             max: session.journeyPlan.hardMaxSteps,
             shouldEndSoon:
-                current >= session.journeyPlan.earliestEpilogueStep - 1,
+                current >=
+                (directorMode === "local"
+                    ? session.journeyPlan.earliestEpilogueStep
+                    : session.journeyPlan.hardMaxSteps) -
+                    1,
         },
     };
 }
@@ -228,36 +235,28 @@ async function createFallbackResult(
         current >= session.journeyPlan.hardMaxSteps
             ? createFallbackEpilogueStep(session, context, locale)
             : await getFallbackStep(session, context, locale);
-    const guardedFallback = invalidStepReason(fallback, session, context)
-        ? createFallbackReflectionStep({ session, context, locale })
-        : fallback;
+    const guardedFallback =
+        fallback.mode === "completion" &&
+        !canShowEpilogue(
+            {
+                ...session,
+                exploration: mergeDirectorState(session.exploration, fallback),
+            },
+            context,
+            current,
+        )
+            ? createFallbackReflectionStep({ session, context, locale })
+            : fallback;
     return {
-        step: normalizeStepProgress(guardedFallback, session),
+        step: normalizeStepProgress(guardedFallback, session, "local"),
         history: stripSystemMessages(session.history ?? []),
         usedFallback: true,
         focusDecision: undefined,
     };
 }
 
-function invalidStepReason(
-    step: ZenUIStep,
-    session: ZenSessionState,
-    context: ZenContext,
-) {
+function invalidStepReason(step: ZenUIStep, session: ZenSessionState) {
     const current = session.steps.length + 1;
-    if (
-        step.mode === "completion" &&
-        !canShowEpilogue(
-            {
-                ...session,
-                exploration: mergeDirectorState(session.exploration, step),
-            },
-            context,
-            current,
-        )
-    ) {
-        return "结语出现得太早：继续承接用户回答，并探索尚未覆盖的维度。";
-    }
     if (
         current >= session.journeyPlan.hardMaxSteps &&
         step.mode !== "completion"
@@ -277,6 +276,7 @@ export async function requestNextZenStep({
     resources = new Map<string, unknown>(),
     configId,
     directorMode,
+    personalityPrompt,
     locale = "zh",
     lastUserInput,
     signal,
@@ -290,6 +290,7 @@ export async function requestNextZenStep({
     resources?: Map<string, unknown>;
     configId?: string;
     directorMode: ZenDirectorMode;
+    personalityPrompt?: string;
     locale?: ZenLocale;
     lastUserInput?: unknown;
     signal?: AbortSignal;
@@ -313,7 +314,9 @@ export async function requestNextZenStep({
         latestFocusDecision = decision;
     });
     const firstTurn = !session.history?.length;
+    const personality = personalityPrompt?.trim() || defaultZenPersonality;
     const payload = {
+        personalityPrompt: personality,
         ...(firstTurn
             ? {
                   zenContext: {
@@ -330,14 +333,8 @@ export async function requestNextZenStep({
         sessionState: compactSessionState(session),
         lastUserInput,
         constraints: {
-            targetSteps: session.journeyPlan.targetSteps,
-            earliestEpilogueStep: session.journeyPlan.earliestEpilogueStep,
             hardMaxSteps: session.journeyPlan.hardMaxSteps,
             currentStep: Math.max(1, session.steps.length + 1),
-            minimumExploration: {
-                requiredCoveredDimensions: 2,
-                requiredMeaningfulResponses: 2,
-            },
             extensionUsed: session.journeyPlan.extensionUsed,
             avoidFieldTypes: previousFieldTypes,
         },
@@ -366,7 +363,9 @@ export async function requestNextZenStep({
         });
         signal?.throwIfAborted();
         const pending = next({
-            message: JSON.stringify(correction ? { correction } : payload),
+            message: JSON.stringify(
+                correction ? { ...payload, correction } : payload,
+            ),
             resources,
         });
         const cancel = () => pending.abort();
@@ -396,7 +395,7 @@ export async function requestNextZenStep({
     };
 
     let result = await runDirector();
-    const firstInvalidReason = invalidStepReason(result.step, session, context);
+    const firstInvalidReason = invalidStepReason(result.step, session);
     if (firstInvalidReason) {
         result = await runDirector(
             stripSystemMessages(result.history),
@@ -404,10 +403,10 @@ export async function requestNextZenStep({
             firstInvalidReason,
         );
     }
-    const finalInvalidReason = invalidStepReason(result.step, session, context);
+    const finalInvalidReason = invalidStepReason(result.step, session);
     if (finalInvalidReason) throw new Error(finalInvalidReason);
     return {
-        step: normalizeStepProgress(result.step, session),
+        step: normalizeStepProgress(result.step, session, "ai"),
         history: stripSystemMessages(result.history),
         contextState: result.contextState,
         usedFallback: false,

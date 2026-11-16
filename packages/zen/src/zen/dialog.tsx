@@ -770,13 +770,11 @@ function FormFieldView({
 
 function FormStep({
     step,
-    isAI,
     context,
     pending,
     onSubmit,
 }: {
     step: Extract<ZenUIStep, { mode: "interaction" }>;
-    isAI: boolean;
     context: ZenContext;
     pending: boolean;
     onSubmit: (submission: ZenFormSubmission) => void;
@@ -809,11 +807,7 @@ function FormStep({
                             {pending && (
                                 <span className="mb-2 flex items-center gap-2">
                                     <Loading className="[&_i]:size-4" />
-                                    {t(
-                                        isAI
-                                            ? "zen-loading-ai-next"
-                                            : "zen-loading-next",
-                                    )}
+                                    {t("zen-loading-period-desc-1")}
                                 </span>
                             )}
                         </output>
@@ -1193,6 +1187,7 @@ export function ZenExperience({
                     resources,
                     configId: runtimeInit.defaultConfigId,
                     directorMode: runtimeInit.directorMode,
+                    personalityPrompt: runtimeInit.personalityPrompt,
                     locale: runtimeInit.locale,
                     lastUserInput,
                     signal: controller.signal,
@@ -1484,12 +1479,14 @@ export function ZenExperience({
                 <CardShell>
                     <output className="zen-scroll flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-y-auto p-4 text-center zen-text-muted">
                         <Loading className="[&_i]:size-6" />
-                        <span className="text-lg font-medium">
-                            {t(
-                                runtimeInit.directorMode === "ai"
-                                    ? "zen-loading-ai-first"
-                                    : "zen-loading-period",
+                        {state.session.steps.length === 0 &&
+                            !state.session.journeyPlan.extensionUsed && (
+                                <span className="text-lg font-medium">
+                                    {t("zen-loading-period")}
+                                </span>
                             )}
+                        <span className="text-sm">
+                            {t("zen-loading-period-desc-1")}
                         </span>
                     </output>
                 </CardShell>
@@ -1498,7 +1495,6 @@ export function ZenExperience({
                 <FormStep
                     key={`${activeStep.stepId}-${activeStep.progress.current}`}
                     step={activeStep}
-                    isAI={runtimeInit.directorMode === "ai"}
                     context={activeContext}
                     pending={pending}
                     onSubmit={submitInteraction}

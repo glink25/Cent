@@ -31,6 +31,7 @@ export type ZenInitPayload = {
     userId: string;
     bookId: string;
     scheduledTime?: string;
+    personalityPrompt?: string;
     configs: Array<{ id: string; name: string }>;
     defaultConfigId?: string;
     directorMode: ZenDirectorMode;

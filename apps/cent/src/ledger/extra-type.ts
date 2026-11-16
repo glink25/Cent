@@ -129,6 +129,7 @@ export type PersonalMeta = {
         /** undefined 跟随默认，null 不使用模型，string 使用指定配置。 */
         aiConfigId?: string | null;
         scheduledTime?: string;
+        personalityPrompt?: string;
     };
     reverseIncomeExpenseColors?: boolean;
     homeWidgets?: string[]; // 首页展示的widget列表，元素为widget id

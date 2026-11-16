@@ -19,4 +19,5 @@ export type {
     ZenThemeMode,
 } from "./runtime/types";
 export * from "./zen/date";
+export { defaultZenPersonality } from "./zen/director";
 export type * from "./zen/types";

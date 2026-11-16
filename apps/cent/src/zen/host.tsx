@@ -57,10 +57,15 @@ export function createCentZenHost(): ZenRuntimeHost {
                     : toTokenUsageApiType(selected.apiType),
             );
             const theme = localStorage.getItem("theme");
+            const personalityPrompt = personal?.zen?.personalityPrompt;
             return {
                 userId,
                 bookId,
                 scheduledTime: personal?.zen?.scheduledTime ?? "21:00",
+                personalityPrompt:
+                    typeof personalityPrompt === "string"
+                        ? personalityPrompt
+                        : undefined,
                 configs: configs.map(({ id, name }) => ({ id, name })),
                 defaultConfigId,
                 directorMode,

@@ -812,6 +812,7 @@
   "zen-select-book-first": "请先选择一个账本",
   "zen-saved-toast": "今日 Zen 已保存",
   "zen-header-label": "cent zen",
+  "zen-personality-prompt-description": "调整 Zen 导师的语气和表达方式。",
   "zen-loading-open": "正在打开今日 Zen",
   "zen-error-title": "Zen 暂时无法打开",
   "zen-loading-period": "正在进入 Zen 模式...",
