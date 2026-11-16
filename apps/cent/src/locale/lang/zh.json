@@ -868,5 +868,16 @@
   "zen-settings-desc": "回顾，放松，以适合自己的方式理解收支",
   "ai-context-window": "模型上下文容量（tokens）",
   "ai-context-window-description": "留空按 131072 估算；请填写服务商声明的总容量。系统会预留输出空间，并自动整理较早对话。",
-  "ai-context-window-invalid": "上下文容量必须是至少 4096 的整数"
+  "ai-context-window-invalid": "上下文容量必须是至少 4096 的整数",
+  "attachment-viewer-title": "附件大图",
+  "attachment-open": "查看附件 {index}",
+  "attachment-close": "关闭大图",
+  "attachment-previous": "上一张",
+  "attachment-next": "下一张",
+  "attachment-zoom-in": "放大",
+  "attachment-zoom-out": "缩小",
+  "attachment-download": "下载附件",
+  "attachment-load-failed": "附件加载失败",
+  "attachment-download-failed": "附件下载失败，请重试",
+  "attachment-retry": "重试"
 }

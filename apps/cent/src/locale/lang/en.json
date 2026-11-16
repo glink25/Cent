@@ -857,5 +857,16 @@
   "zen-settings-desc": "Review, relax, and understand your finances in the way that suits you",
   "ai-context-window": "Model context capacity (tokens)",
   "ai-context-window-description": "Defaults to 131072. Enter the provider’s total context capacity. Output space is reserved and earlier conversation is summarized automatically.",
-  "ai-context-window-invalid": "Context capacity must be an integer of at least 4096"
+  "ai-context-window-invalid": "Context capacity must be an integer of at least 4096",
+  "attachment-viewer-title": "Attachment viewer",
+  "attachment-open": "View attachment {index}",
+  "attachment-close": "Close viewer",
+  "attachment-previous": "Previous attachment",
+  "attachment-next": "Next attachment",
+  "attachment-zoom-in": "Zoom in",
+  "attachment-zoom-out": "Zoom out",
+  "attachment-download": "Download attachment",
+  "attachment-load-failed": "Unable to load attachment",
+  "attachment-download-failed": "Unable to download attachment. Please retry.",
+  "attachment-retry": "Retry"
 }

@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { Outlet } from "react-router";
 import Assistant from "@/components/assistant";
 import { usePageEnv } from "@/components/assistant/tools/env";
+import { AttachmentViewerProvider } from "@/components/attachment-viewer";
 import { BillEditorProvider } from "@/components/bill-editor";
 import { BillInfoProvider } from "@/components/bill-info";
 import { TagListProvider } from "@/components/bill-tag";
@@ -93,6 +94,7 @@ export default function MainLayout() {
                 </div>
                 <BillEditorProvider />
                 <BillInfoProvider />
+                <AttachmentViewerProvider />
                 <SortableListProvider />
                 <SortableListWithEnableProvider />
                 <SortableGroupProvider />

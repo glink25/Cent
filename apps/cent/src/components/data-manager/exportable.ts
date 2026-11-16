@@ -1,8 +1,7 @@
 import { strFromU8, strToU8, unzip, zip } from "fflate";
 import { StorageAPI } from "@/api/storage";
 import type { Bill, ExportedJSON } from "@/ledger/type";
-import { cacheInDB } from "@/utils/cache";
-import { GetOnlineAssetsCacheKey } from "@/utils/constant";
+import { resolveAttachment } from "@/utils/attachment";
 import { base64ToFile } from "@/utils/file";
 
 const BACKUP_JSON_FILE = "backup.json";
@@ -164,11 +163,8 @@ const resolveImageFile = async (image: string | File, bookId: string) => {
         return await base64ToFile(image);
     }
 
-    const getOnlineAsset = StorageAPI.getOnlineAsset
-        ? cacheInDB(StorageAPI.getOnlineAsset, GetOnlineAssetsCacheKey)
-        : undefined;
-    const blob = await getOnlineAsset?.(image, bookId);
-    if (!blob) {
+    const blob = await resolveAttachment(image, bookId);
+    if (typeof blob === "string") {
         throw new Error(`Unable to load asset for export: ${image}`);
     }
     return new File([blob], getUrlFileName(image), {

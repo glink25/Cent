@@ -1,0 +1,107 @@
+.cent-attachment-viewer.PhotoView-Portal {
+	z-index: 1;
+}
+
+.cent-attachment-stage {
+	touch-action: none;
+	overscroll-behavior: contain;
+}
+
+.cent-attachment-download > svg {
+	width: 20px;
+	height: 20px;
+	stroke-width: 1.75;
+}
+
+.cent-attachment-controls {
+	position: absolute;
+	inset: 0;
+	z-index: 2;
+	pointer-events: none;
+}
+
+.cent-attachment-controls::before {
+	content: "";
+	position: absolute;
+	inset: auto 0 0;
+	height: calc(112px + var(--safe-area-inset-bottom));
+	background: linear-gradient(transparent, #0005);
+}
+
+.cent-attachment-navigation,
+.cent-attachment-download,
+.cent-attachment-close {
+	border: 1px solid #ffffff1f;
+	background: #202024b8;
+	box-shadow:
+		0 4px 20px #0003,
+		inset 0 1px 0 #ffffff08;
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+}
+
+.cent-attachment-navigation {
+	position: absolute;
+	left: 50%;
+	bottom: calc(20px + var(--safe-area-inset-bottom));
+	transform: translateX(-50%);
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 3px;
+	border-radius: 999px;
+	pointer-events: auto;
+}
+
+.cent-attachment-button {
+	width: 40px;
+	height: 40px;
+	border-radius: 999px;
+	color: #ffffffe6;
+	pointer-events: auto;
+	transition:
+		background-color 160ms ease,
+		color 160ms ease;
+}
+
+.cent-attachment-button:hover {
+	background-color: #ffffff1f;
+	color: white;
+}
+
+.cent-attachment-button:disabled {
+	opacity: 0.3;
+}
+
+.cent-attachment-close,
+.cent-attachment-download {
+	width: 44px;
+	height: 44px;
+}
+
+.cent-attachment-download {
+	position: absolute;
+	right: calc(20px + var(--safe-area-inset-right));
+	bottom: calc(20px + var(--safe-area-inset-bottom));
+}
+
+.cent-attachment-count {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	min-width: 48px;
+	color: #fffffff2;
+	font-size: 13px;
+	font-weight: 500;
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+.cent-attachment-count-divider {
+	color: #ffffff40;
+}
+
+.cent-attachment-count-total {
+	color: #ffffff80;
+}
