@@ -16,16 +16,6 @@ Cent 是一个 **完全免费、开源的多人协作记账 Web App**，
 💾 **开源仓库**：[https://github.com/glink25/Cent](https://github.com/glink25/Cent)  
 📖 **博客**：[https://glink25.github.io/tag/Cent/](https://glink25.github.io/tag/Cent/)  
 
-📱 **App 下载**：
-
-<a href="https://apps.apple.com/us/app/cent-%E9%87%8D%E6%96%B0%E5%AE%9A%E4%B9%89%E8%AE%B0%E8%B4%A6/id6764264950">
-  <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on the App Store" height="32">
-</a>
-
-[Android 版 · Google Play](https://play.google.com/store/apps/details?id=com.glink25.dailycent)
-
-> [Cent 原生 App 正式上线 🎉](https://glink25.github.io/post/Cent-%E5%8E%9F%E7%94%9FApp%E6%AD%A3%E5%BC%8F%E4%B8%8A%E7%BA%BF/)
-
 ---
 
 ## 📈 功能预览
@@ -58,7 +48,7 @@ Cent 是一个 **完全免费、开源的多人协作记账 Web App**，
 
 Web 地图设置可同时保存高德和 Google 配置，并选择默认地图。使用 Google Maps 时，请在 Google Cloud 项目中启用计费和 Maps JavaScript API，创建按站点来源和 API 限制的浏览器 Key，再创建 JavaScript Map ID。将两项填入 Cent 的地图设置后，选择 Google Maps 并保存。 [API Key 指南](https://developers.google.com/maps/documentation/javascript/get-api-key) · [Map ID 指南](https://developers.google.com/maps/documentation/javascript/advanced-markers/start)
 
-升级会保留历史账单的坐标。部分旧版高德手动选点可能出现偏移，可在新版编辑账单并重新选点。使用同一个同步账本时，旧版 Android 保存或清除高德设置可能覆盖 Web 的 Google 配置和默认地图选择。 [地图设计与兼容约定](docs/contributing/map.md)
+升级会保留历史账单的坐标。部分旧版高德手动选点可能出现偏移，可在新版编辑账单并重新选点。[地图设计与兼容约定](docs/contributing/map.md)
 
 ### 🧩 小组件 API 2.0
 Cent Web 支持用 JavaScript 编写带按钮、表单和弹窗的**交互式小组件**。「账户与转账」可根据账单展示账户余额和流水，支持期初余额、跨币种转账与手续费。
@@ -68,7 +58,7 @@ Cent Web 支持用 JavaScript 编写带按钮、表单和弹窗的**交互式小
 小组件可在账本内共享配置，动态生成分类、标签和统计视图。已有 1.x 脚本需要升级至 2.0 才能运行。 [API 文档](./apps/cent/src/components/widget/core/WIDGET_V2_API.md) · [示例源码](./apps/cent/src/components/widget/examples/accounts.js)
 
 ### 🛠️ 更多功能
-- 📱 **PWA 支持**：可安装到桌面，像原生 App 一样使用
+- 📱 **PWA 支持**：可安装到桌面
 - 📥 **智能导入**：支持微信/支付宝账单，可用 AI 创建自定义导入方案
 - 🏷️ **二级分类 & 标签**：自定义分类、标签分组、单选/多选、偏好币种
 - 📋 **快捷操作**：iOS 快捷指令、剪贴板记账、批量编辑、自然语言识别
@@ -236,3 +226,7 @@ Thank you to all donors who support the Cent project! Your support is the drivin
 </div>
 
 ---
+
+## 测试与更新
+
+本地执行 `pnpm build`。将修改合入 `pre`，运行 `git push origin pre`，在预览环境验证。测试通过后，将同一批修改合入 `main`，运行 `git push origin main`，检查正式站点。

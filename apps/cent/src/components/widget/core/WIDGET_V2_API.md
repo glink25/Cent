@@ -150,7 +150,7 @@ node --test apps/cent/scripts/widget-runtime.test.mjs
 pnpm --filter cent lint
 ```
 
-浏览器宿主已实现以上交互。其他原生宿主需要实现相同 DSL 事件、表单、弹窗及能力桥接；本仓库不包含原生端实现。
+Web 版支持上述 DSL 事件、表单与弹窗。
 
 ### 组合布局与原生控件
 

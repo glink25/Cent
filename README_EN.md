@@ -16,16 +16,6 @@ with cross-platform sync via **GitHub/Gitee, WebDAV, or S3-compatible storage** 
 💾 **Open Source Repository**: [https://github.com/glink25/Cent](https://github.com/glink25/Cent)  
 📖 **Blog**: [https://glink25.github.io/tag/Cent/](https://glink25.github.io/tag/Cent/)  
 
-📱 **App Downloads**:
-
-<a href="https://apps.apple.com/us/app/cent-%E9%87%8D%E6%96%B0%E5%AE%9A%E4%B9%89%E8%AE%B0%E8%B4%A6/id6764264950">
-  <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on the App Store" height="32">
-</a>
-
-[Download for Android on Google Play](https://play.google.com/store/apps/details?id=com.glink25.dailycent)
-
-> [Cent Native Apps Are Now Available 🎉](https://glink25.github.io/post/Cent-%E5%8E%9F%E7%94%9FApp%E6%AD%A3%E5%BC%8F%E4%B8%8A%E7%BA%BF/)
-
 ---
 
 ## 📈 Feature Preview
@@ -58,7 +48,7 @@ Multi-dimensional filtering and trend analysis, custom analysis views, budget ma
 
 Web map settings can store both providers and let you choose the default. For Google Maps, enable billing and the Maps JavaScript API in Google Cloud, create a browser API key with website and API restrictions, and create a JavaScript map ID. Enter both values in Cent, select Google Maps, and save. [API key guide](https://developers.google.com/maps/documentation/javascript/get-api-key) · [Map ID guide](https://developers.google.com/maps/documentation/javascript/advanced-markers/start)
 
-The upgrade preserves existing bill coordinates. Some older locations picked on AMap may appear offset. Open the bill and pick the location again to correct it. When sharing a synced ledger, saving or clearing AMap settings on an older Android client may overwrite the Google configuration and default map choice.
+The upgrade preserves existing bill coordinates. Some older locations picked on AMap may appear offset. Open the bill and pick the location again to correct it.
 
 ### 🧩 Widget API 2.0
 Cent Web supports **interactive JavaScript widgets** with buttons, forms, and dialogs. Accounts and Transfers calculates balances and shows activity based on your ledger, with support for opening balances, cross-currency transfers, and fees.
@@ -68,7 +58,7 @@ Browse examples and usage guides in [Widget Showcase](https://github.com/glink25
 Widgets can share settings across a ledger and generate categories, tags, and statistics views dynamically. Existing 1.x scripts must be upgraded to 2.0 to run. [API documentation](./apps/cent/src/components/widget/core/WIDGET_V2_API.md) · [Example source](./apps/cent/src/components/widget/examples/accounts.js)
 
 ### 🛠️ More Features
-- 📱 **PWA Support**: Install to desktop and use like a native app
+- 📱 **PWA Support**: Install to desktop
 - 📥 **Smart Import**: WeChat/Alipay bills, create custom import schemes with AI
 - 🏷️ **Categories & Tags**: Custom categories, tag groups, single/multi-select, preferred currencies
 - 📋 **Quick Actions**: iOS Shortcuts, clipboard entry, batch editing, natural language recognition
@@ -210,3 +200,7 @@ Thank you for your support! Cent is currently maintained by a single developer, 
 
 ---
 </details>
+
+## Testing and deployment
+
+Run `pnpm build` locally. Merge changes into `pre`, run `git push origin pre`, and verify them in the preview environment. After testing, merge the same changes into `main`, run `git push origin main`, and check the production site.

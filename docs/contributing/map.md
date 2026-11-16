@@ -1,6 +1,6 @@
 # Cent v3 地图与账单位置
 
-本文记录 v3 Web 地图的交付行为、账单位置协议和 provider 扩展约定。Web 支持浏览器定位，以及高德和 Google Maps 的手动选点与账单地图。iOS 和 Android 接入同一协议时应遵循下文的数据与兼容原则。
+本文记录 v3 Web 地图的交付行为、账单位置协议和 provider 扩展约定。Web 支持浏览器定位，以及高德和 Google Maps 的手动选点与账单地图。
 
 ## 产品行为
 
@@ -27,7 +27,7 @@
 
 Google 需要启用 Maps JavaScript API 和计费，使用按站点来源和 API 限制的浏览器 Key，以及正式的 JavaScript Map ID。Base64 是存储编码，Key 的使用范围由 Google Cloud 配置限制。 [Google API Key 指南](https://developers.google.com/maps/documentation/javascript/get-api-key) · [Advanced Markers 指南](https://developers.google.com/maps/documentation/javascript/advanced-markers/start)
 
-旧 Web 仍能读取原高德字段。旧 Android 保存或清除高德配置时可能整体覆盖 `map`，从而丢失 Google 配置和默认选择。原生端跟进时应只更新自己管理的字段，保留其他 provider 配置和未知字段。
+旧版 Web 仍能读取原高德字段。写入地图配置时，只更新当前操作涉及的字段，并保留其他地图服务的配置和未知字段。
 
 ## Provider 扩展约定
 
