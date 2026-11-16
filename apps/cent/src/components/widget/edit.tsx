@@ -155,7 +155,7 @@ export default function WidgetEdit({
             <div className="flex flex-col h-full overflow-hidden">
                 <div className="flex-1 flex flex-col overflow-y-auto">
                     <div className="flex flex-col">
-                        <div className="px-4 py-2 flex items-center gap-2 border-b">
+                        <div className="px-4 py-2 flex flex-wrap items-center gap-2 border-b">
                             <div className="text-sm font-medium">
                                 {t("widget-permissions")}
                             </div>

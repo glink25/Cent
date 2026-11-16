@@ -98,6 +98,11 @@ function styleToCSS(style: DSLNode["style"]): CSSProperties {
         minHeight: style.minHeight,
         paddingInline: style.paddingX,
         paddingBlock: style.paddingY,
+        marginBlockStart:
+            typeof style.marginBlockStart === "number" &&
+            Number.isFinite(style.marginBlockStart)
+                ? style.marginBlockStart
+                : undefined,
         borderWidth: style.borderWidth,
         borderStyle: style.borderWidth === undefined ? undefined : "solid",
         borderColor: themeColor(style.borderColor),

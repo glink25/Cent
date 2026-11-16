@@ -5,7 +5,7 @@
  */
 const baseCurrency = (ctx) => ctx.data.currencies?.base ?? "CNY";
 const accountCurrency = (ctx, account) =>
-    account?.currency ?? baseCurrency(ctx);
+    account?.currency || baseCurrency(ctx);
 const ledger = (ctx) => ctx.data.billing ?? [];
 const quickCurrencies = (ctx) => [
     ...new Set([baseCurrency(ctx), ...(ctx.data.currencies?.quick ?? [])]),
@@ -84,14 +84,17 @@ export function computed(ctx) {
 }
 
 const scale = 10000;
-const money = (amount, currency) =>
-    `${(amount / scale).toLocaleString("zh-CN", {
+const formatAmount = (amount) =>
+    (amount / scale).toLocaleString("zh-CN", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 4,
-    })} ${currency}`;
+    });
+const money = (amount, currency) => `${formatAmount(amount)} ${currency}`;
 const date = (time) =>
     new Date(time).toLocaleString("zh-CN", { hour12: false });
 const validRate = (rate) => Number.isFinite(rate) && rate > 0;
+const recordable = (original, converted) =>
+    Number.isSafeInteger(converted) && (original === 0 || converted > 0);
 const configuredRate = (ctx, currency) =>
     currency === baseCurrency(ctx)
         ? 1
@@ -188,7 +191,7 @@ function makeBill(
     },
 ) {
     const amount = Math.round(original * rate);
-    if (!Number.isSafeInteger(amount) || (original > 0 && amount === 0))
+    if (!recordable(original, amount))
         throw new Error("折算后的金额超出可记账范围，请检查金额和汇率");
     return {
         type,
@@ -217,34 +220,73 @@ function makeBill(
 }
 
 const outline = {
-    paddingX: 12,
-    paddingY: 10,
+    paddingX: 14,
+    paddingY: 12,
     minHeight: 44,
     borderWidth: 1,
     borderColor: "theme:border",
     borderRadius: 12,
 };
-const surface = { ...outline, background: "theme:surface" };
+const surface = { ...outline, background: "theme:surface", borderRadius: 16 };
 const muted = (label) => Text(label).fontSize(13).color("theme:muted");
 const strong = (label) => Text(label).style({ fontWeight: "semibold" });
 const errorText = (message, key) =>
     message && Text(message).key(key).fontSize(13).color("theme:danger");
 
-function action(label, key, onTap, { primary = false, disabled = false } = {}) {
-    return Button({ disabled }, strong(label))
+function action(
+    label,
+    key,
+    onTap,
+    { primary = false, danger = false, disabled = false } = {},
+) {
+    return Button({ disabled }, strong(label).fontSize(13))
         .key(key)
-        .style(
-            primary
-                ? {
-                      ...outline,
-                      background: "theme:accent",
-                      color: "theme:onAccent",
-                      textAlign: "center",
-                  }
-                : outline,
-        )
+        .style({
+            ...outline,
+            textAlign: "center",
+            ...(primary && {
+                background: "theme:accent",
+                color: "theme:onAccent",
+            }),
+            ...(danger && {
+                borderColor: "theme:danger",
+                color: "theme:danger",
+            }),
+        })
         .onTap(onTap);
 }
+
+function panel(...children) {
+    return Column(...children).style({ gap: 16, padding: 16 });
+}
+
+function section(title, ...children) {
+    return Column(strong(title).fontSize(14), ...children).style({
+        ...surface,
+        gap: 10,
+    });
+}
+
+const emptyState = (title, message) =>
+    Column(strong(title), muted(message)).style({ ...surface, gap: 6 });
+
+function readAccessNotice(ctx) {
+    if (ctx.data.billing && ctx.data.currencies) return null;
+    const missing = [
+        !ctx.data.billing && "读取账单",
+        !ctx.data.currencies && "读取币种",
+    ].filter(Boolean);
+    return panel(
+        emptyState(
+            "需要读取权限",
+            `在小组件设置中编辑「账户与转账」，勾选${missing.join("和")}权限并保存。`,
+        ),
+    );
+}
+
+// Allow a long account name pasted as one word to wrap on a narrow card.
+const displayName = (name) =>
+    name.replace(/[^\s\u200b]{16}(?=[^\s\u200b])/gu, "$&\u200b");
 
 function balanceNotes(entry) {
     return [
@@ -258,77 +300,180 @@ function balanceNotes(entry) {
 
 function accountSummary(ctx, entry, size = 20) {
     const notes = balanceNotes(entry);
-    return Row(
-        Container().style({
-            width: 10,
-            height: 10,
+    const currency = accountCurrency(ctx, entry.account);
+    return Column(
+        Row(
+            Container().style({
+                width: 9,
+                height: 9,
+                shrink: 0,
+                borderRadius: 5,
+                background: entry.account.color ?? "#94a3b8",
+                borderWidth: 1,
+                borderColor: "theme:border",
+            }),
+            strong(displayName(entry.account.name))
+                .fontSize(13)
+                .style({ minWidth: 0, grow: 1 }),
+        ).style({ gap: 6, align: "center" }),
+        Row(
+            strong(formatAmount(entry.amount)).fontSize(size),
+            muted(currency),
+        ).style({ gap: 5, align: "baseline", wrap: true }),
+        notes && muted(notes),
+    ).style({ gap: 5, minWidth: 0 });
+}
+
+function compactName(name) {
+    const characters = [...name];
+    return characters.length > 12
+        ? characters.slice(0, 11).join("") + "…"
+        : name;
+}
+
+function balanceStatus(entry) {
+    if (entry.missing || entry.ambiguous) return muted("待核对").fontSize(11);
+    return entry.estimated && muted("含估算").fontSize(11);
+}
+
+function cardBackground(ctx, account, tint) {
+    const color = /^#[\da-f]{6}$/i.test(account.color)
+        ? account.color
+        : "#dbeafe";
+    const weight = ctx.env.theme === "dark" ? tint * 0.3 : tint;
+    return `color-mix(in srgb, ${color} ${weight}%, var(--card))`;
+}
+
+function iconAction(
+    symbol,
+    label,
+    onTap,
+    { primary = false, disabled = false } = {},
+) {
+    return Button({ label, disabled }, strong(symbol).fontSize(18))
+        .key(label)
+        .style({
+            width: 36,
+            height: 36,
             shrink: 0,
-            borderRadius: 5,
-            background: entry.account.color ?? "#94a3b8",
             borderWidth: 1,
             borderColor: "theme:border",
-        }),
-        Column(
-            strong(entry.account.name),
-            strong(
-                money(entry.amount, accountCurrency(ctx, entry.account)),
-            ).fontSize(size),
-            notes && muted(notes),
-        )
-            .gap(3)
-            .style({ minWidth: 0, grow: 1 }),
-    ).style({ gap: 10, align: "center" });
+            borderRadius: 11,
+            textAlign: "center",
+            ...(primary && {
+                background: "theme:accent",
+                color: "theme:onAccent",
+            }),
+        })
+        .onTap(onTap);
 }
 
 export default function Main(ctx) {
+    const notice = readAccessNotice(ctx);
+    if (notice) return notice;
+
     const available = accounts(ctx);
+    const [front, ...behind] = available.slice(0, 3);
+    if (!front)
+        return Row(
+            Column(
+                strong("你的账户").fontSize(14),
+                muted("关联账单，查看余额。"),
+            ).style({ grow: 1, gap: 3 }),
+            action(
+                "添加第一个账户",
+                "create-first",
+                () => ctx.openModal(AccountForm, {}, { title: "账户" }),
+                { primary: true },
+            ),
+        ).style({ align: "center", wrap: true, gap: 8, padding: 10 });
+
     const balances = accountBalances(ctx);
-    const openManage = () =>
-        ctx.openModal(Management, {}, { title: "管理账户" });
+    const entry = balances.get(ctx.id(front.id));
+    const openAccount = (account) =>
+        ctx.openModal(
+            AccountDetail,
+            { accountId: account.id },
+            { title: "账户详情" },
+        );
+
     return Column(
+        ...behind.reverse().map((account, index) => {
+            const balance = balances.get(ctx.id(account.id));
+            return Button(
+                { label: `查看${account.name}流水` },
+                Row(
+                    Row(
+                        strong(compactName(account.name)).fontSize(12),
+                        balanceStatus(balance),
+                    ).style({ align: "baseline", gap: 5 }),
+                    muted(money(balance.amount, accountCurrency(ctx, account))),
+                ).style({
+                    justify: "space-between",
+                    align: "baseline",
+                    gap: 6,
+                }),
+            )
+                .key(account.id)
+                .style({
+                    ...outline,
+                    background: cardBackground(
+                        ctx,
+                        account,
+                        index === 0 && behind.length > 1 ? 38 : 60,
+                    ),
+                    width: index === 0 && behind.length > 1 ? "88%" : "94%",
+                    paddingX: 12,
+                    paddingY: 3,
+                    minHeight: 30,
+                    marginBlockStart: index === 0 ? 0 : -6,
+                })
+                .onTap(() => openAccount(account));
+        }),
         Row(
-            strong("账户").fontSize(20).style({ grow: 1 }),
-            available.length > 0 && action("管理", "manage", openManage),
-            available.length > 0 &&
-                action(
-                    "转账",
-                    "transfer",
-                    () => ctx.openModal(Transfer, {}, { title: "转账" }),
-                    { primary: true, disabled: available.length < 2 },
+            Button(
+                { label: `查看${front.name}流水` },
+                Column(
+                    Row(
+                        strong(compactName(front.name)).fontSize(12),
+                        balanceStatus(entry),
+                    ).style({ align: "baseline", gap: 5 }),
+                    Row(
+                        strong(formatAmount(entry.amount)).fontSize(20),
+                        muted(accountCurrency(ctx, front)),
+                    ).style({ align: "baseline", gap: 5, wrap: true }),
                 ),
-        ).style({ wrap: true, gap: 8, align: "center" }),
-        available.length === 0
-            ? Column(
-                  strong("从第一个账户开始"),
-                  muted("为日常账单选中账户标签，即可在这里查看余额与流水。"),
-                  action(
-                      "添加第一个账户",
-                      "create-first",
-                      () => ctx.openModal(AccountForm, {}, { title: "账户" }),
-                      { primary: true },
-                  ),
-              ).style({ ...surface, gap: 10 })
-            : Row(
-                  ...available.map((account) =>
-                      Button(
-                          {},
-                          accountSummary(ctx, balances.get(ctx.id(account.id))),
-                      )
-                          .key(account.id)
-                          .style({ ...surface, minWidth: 145, grow: 1 })
-                          .onTap(() =>
-                              ctx.openModal(
-                                  AccountDetail,
-                                  { accountId: account.id },
-                                  { title: account.name },
-                              ),
-                          ),
-                  ),
-              ).style({ wrap: true, gap: 8 }),
-        available.length === 1 && muted("再创建一个账户即可转账。"),
-        !ledger(ctx).length &&
-            muted("统计或预算可排除「不计收支」，保留真实消费和手续费。"),
-    ).style({ gap: 12, padding: 12 });
+            )
+                .key(front.id)
+                .style({ grow: 1, minWidth: 0 })
+                .onTap(() => openAccount(front)),
+            Row(
+                iconAction(
+                    "⇄",
+                    "转账",
+                    () => ctx.openModal(Transfer, {}, { title: "转账" }),
+                    {
+                        primary: true,
+                        disabled: available.length < 2,
+                    },
+                ),
+                iconAction("⋯", "管理账户", () =>
+                    ctx.openModal(Management, {}, { title: "管理账户" }),
+                ),
+            ).style({ align: "center", gap: 6, shrink: 0 }),
+        )
+            .key("front-card")
+            .style({
+                ...surface,
+                background: cardBackground(ctx, front, 24),
+                align: "center",
+                gap: 8,
+                width: "100%",
+                minHeight: 62,
+                paddingY: 6,
+                marginBlockStart: behind.length ? -6 : 0,
+            }),
+    ).style({ align: "center", padding: 5 });
 }
 export { Main };
 
@@ -384,11 +529,12 @@ function ledgerRow(ctx, account, row) {
         : entryAmount(ctx, bill);
     const content = Row(
         Column(
-            strong(summary),
+            strong(displayName(summary)).fontSize(14),
             muted(date(bill.time)),
-            bill.comment && muted(bill.comment),
+            bill.comment && muted(displayName(bill.comment)),
         ).style({ grow: 1, minWidth: 105, gap: 3 }),
-        strong(label).style({ textAlign: "end" }),
+        strong(label).fontSize(14).style({ textAlign: "end" }),
+        group && muted("›"),
     ).style({ align: "center", wrap: true, gap: 8 });
     if (!group) return Container(content).key(row.key).style(outline);
     return Button({}, content)
@@ -404,16 +550,19 @@ function ledgerRow(ctx, account, row) {
 }
 
 export function AccountDetail(ctx) {
+    const notice = readAccessNotice(ctx);
+    if (notice) return notice;
     const account = findAccount(ctx, ctx.params.accountId);
-    if (!account) return Text("账户已删除");
+    if (!account)
+        return panel(emptyState("账户已删除", "返回账户列表查看其他账户。"));
     const entry = accountBalances(ctx).get(ctx.id(account.id));
     const [requestedPage, setPage] = ctx.state("page", 0);
     const rows = accountRows(ctx, account);
     const last = Math.max(0, Math.ceil(rows.length / 10) - 1);
     const page = Math.min(requestedPage, last);
     const hasOpening = Boolean(openingBill(ctx, account));
-    return Column(
-        Container(accountSummary(ctx, entry, 28)).style(surface),
+    return panel(
+        section("当前余额", accountSummary(ctx, entry, 28)),
         Row(
             action(
                 "从此账户转账",
@@ -437,11 +586,22 @@ export function AccountDetail(ctx) {
                     ),
             ),
         ).style({ wrap: true, gap: 8 }),
-        strong("账户流水"),
-        !rows.length && muted("暂无流水。日常记账时选中这个账户标签。"),
-        ...rows
-            .slice(page * 10, page * 10 + 10)
-            .map((row) => ledgerRow(ctx, account, row)),
+        Column(
+            Row(strong("账户流水"), muted(`共 ${rows.length} 条`)).style({
+                justify: "space-between",
+                align: "center",
+            }),
+            !rows.length &&
+                emptyState(
+                    "暂无流水",
+                    "日常记账时选中这个账户标签，账单会出现在这里。",
+                ),
+            ...rows
+                .slice(page * 10, page * 10 + 10)
+                .map((row) => ledgerRow(ctx, account, row)),
+        )
+            .key("ledger")
+            .gap(8),
         last > 0 &&
             Row(
                 action("上一页", "prev", () => setPage(page - 1), {
@@ -451,15 +611,23 @@ export function AccountDetail(ctx) {
                 action("下一页", "next", () => setPage(page + 1), {
                     disabled: page === last,
                 }),
-            ).style({ align: "center", gap: 8 }),
-    ).gap(12);
+            ).style({
+                align: "center",
+                justify: "space-between",
+                gap: 8,
+                wrap: true,
+            }),
+    );
 }
 
 export function TransferDetail(ctx) {
-    if (typeof ctx.params.transferId !== "string") return Text("转账已不存在");
+    const notice = readAccessNotice(ctx);
+    if (notice) return notice;
+    if (typeof ctx.params.transferId !== "string")
+        return panel(Text("转账已不存在"));
     const bills = transferEntries(ctx, ctx.params.transferId);
     const [deleting, setDeleting] = ctx.state("deleting", false);
-    if (!bills.length) return Text("转账已不存在");
+    if (!bills.length) return panel(Text("转账已不存在"));
     const titles = { out: "转出本金", in: "实际到账", fee: "手续费" };
     const sorted = ["out", "in", "fee"].flatMap((kind) =>
         bills.filter((bill) => role(ctx, bill) === kind),
@@ -477,14 +645,16 @@ export function TransferDetail(ctx) {
                 }),
         ),
     );
-    return Column(
+    return panel(
         ...sorted.map((bill) =>
             Row(
                 Column(
                     strong(titles[role(ctx, bill)]),
                     muted(
-                        findAccount(ctx, details(ctx, bill)?.accountId)?.name ??
-                            "账户不可用",
+                        displayName(
+                            findAccount(ctx, details(ctx, bill)?.accountId)
+                                ?.name ?? "账户不可用",
+                        ),
                     ),
                     muted(date(bill.time)),
                 ).style({ grow: 1, gap: 4 }),
@@ -493,29 +663,34 @@ export function TransferDetail(ctx) {
                 .key(bill.id)
                 .style({ ...surface, wrap: true, gap: 8, align: "center" }),
         ),
-        memo && Column(strong("备注"), Text(memo)).gap(4),
+        memo && section("备注", Text(displayName(memo))),
         receipts.length > 0 &&
-            Column(
-                strong("凭证"),
-                Row(...receipts).style({ wrap: true, gap: 8 }),
-            ).gap(6),
+            section("凭证", Row(...receipts).style({ wrap: true, gap: 8 })),
         deleting
-            ? Column(
+            ? section(
+                  "删除整笔转账",
                   Text(
-                      `将删除 ${sorted.length} 笔账单 · ${sorted.map((bill) => `${titles[role(ctx, bill)]} ${entryAmount(ctx, bill)}`).join("、")}`,
+                      `将删除 ${sorted.length} 笔关联账单（${sorted.map((bill) => titles[role(ctx, bill)]).join("、")}），并更新账户余额。`,
                   ).color("theme:danger"),
                   Row(
                       action("取消", "cancel", () => setDeleting(false)),
-                      action("确认删除", "confirm-delete", async () => {
-                          await ctx.api.edit({
-                              delete: sorted.map((bill) => bill.id),
-                          });
-                          await ctx.closeModal();
-                      }),
-                  ).gap(8),
-              ).gap(8)
-            : action("删除整笔转账", "delete", () => setDeleting(true)),
-    ).gap(12);
+                      action(
+                          "确认删除",
+                          "confirm-delete",
+                          async () => {
+                              await ctx.api.edit({
+                                  delete: sorted.map((bill) => bill.id),
+                              });
+                              await ctx.closeModal();
+                          },
+                          { danger: true },
+                      ),
+                  ).style({ wrap: true, gap: 8 }),
+              )
+            : action("删除整笔转账", "delete", () => setDeleting(true), {
+                  danger: true,
+              }),
+    );
 }
 
 function moneyField(form, field, label, currency, error) {
@@ -566,7 +741,6 @@ function accountPicker(
     label,
     picker,
     setPicker,
-    clearErrors,
 ) {
     const account = available.find((item) => item.id === form.values[field]);
     const expanded = picker === field;
@@ -575,7 +749,7 @@ function accountPicker(
             { expanded, label: `${label}：${account?.name ?? "请选择"}` },
             Column(
                 muted(label),
-                strong(account?.name ?? "选择账户"),
+                strong(account ? displayName(account.name) : "选择账户"),
                 account && muted(accountCurrency(ctx, account)),
             ).gap(3),
         )
@@ -592,7 +766,10 @@ function accountPicker(
                         form.field(
                             field === "from" ? "outRate" : "inRate",
                         ).onChange("");
-                        clearErrors({});
+                        form.field(
+                            field === "from" ? "outCurrency" : "inCurrency",
+                        ).onChange("");
+                        setPicker("");
                     },
                 },
                 ...available.map((option) =>
@@ -623,6 +800,8 @@ function accountPicker(
 }
 
 export function Transfer(ctx) {
+    const notice = readAccessNotice(ctx);
+    if (notice) return notice;
     const form = ctx.form("transfer", {
         from: ctx.params.from ?? "",
         to: "",
@@ -640,8 +819,11 @@ export function Transfer(ctx) {
         images: [],
     });
     const [picker, setPicker] = ctx.state("picker", "");
-    const [errors, setErrors] = ctx.state("errors", {});
-    const [showNotes, setShowNotes] = ctx.state("show-notes", false);
+    const [submitted, setSubmitted] = ctx.state("submitted", false);
+    const [showOptions, setShowOptions] = ctx.state(
+        "show-transfer-options",
+        false,
+    );
     const [transferId] = ctx.state(
         "transfer-id",
         `${ctx.now}-${Math.random().toString(36).slice(2)}`,
@@ -663,29 +845,47 @@ export function Transfer(ctx) {
         : outRate;
     const arrival = f.separateDates ? f.arrival : f.time;
 
+    const problems = {};
+    if (!from || !to || from.id === to.id)
+        problems.accounts = "请选择不同的转出和转入账户";
+    if (!(original > 0)) problems.amount = "请输入大于零的金额，最多四位小数";
+    if (crossCurrency && !(received > 0))
+        problems.received = "请输入大于零的到账金额";
+    if (!(fee >= 0) || (original > 0 && !Number.isSafeInteger(original + fee)))
+        problems.fee = "请输入有效的手续费金额";
+    if (
+        fee > 0 &&
+        validRate(outRate) &&
+        !recordable(fee, Math.round(fee * outRate))
+    )
+        problems.fee = "折算后的手续费超出可记账范围，请检查金额和汇率";
+    if (!validRate(outRate)) problems.outRate = "请输入大于零的折算汇率";
+    if (crossCurrency && !validRate(inRate))
+        problems.inRate = "请输入大于零的折算汇率";
+    if (
+        !Number.isFinite(f.time) ||
+        !Number.isFinite(arrival) ||
+        arrival < f.time
+    )
+        problems.date = "到账时间不得早于转出时间";
+    if (
+        original > 0 &&
+        validRate(outRate) &&
+        !recordable(original, Math.round(original * outRate))
+    )
+        problems.amount = "折算后的转出金额超出可记账范围";
+    if (
+        crossCurrency &&
+        received > 0 &&
+        validRate(inRate) &&
+        !recordable(received, Math.round(received * inRate))
+    )
+        problems.received = "折算后的到账金额超出可记账范围";
+    const errors = submitted ? problems : {};
+
     const save = async () => {
-        const problems = {};
-        if (!from || !to || from.id === to.id)
-            problems.accounts = "请选择不同的转出和转入账户";
-        if (!(original > 0))
-            problems.amount = "请输入大于零的金额，最多四位小数";
-        if (crossCurrency && !(received > 0))
-            problems.received = "请输入大于零的到账金额";
-        if (
-            !(fee >= 0) ||
-            (original > 0 && !Number.isSafeInteger(original + fee))
-        )
-            problems.fee = "请输入有效的手续费金额";
-        if (!validRate(outRate)) problems.outRate = "请输入大于零的折算汇率";
-        if (crossCurrency && !validRate(inRate))
-            problems.inRate = "请输入大于零的折算汇率";
-        if (
-            !Number.isFinite(f.time) ||
-            !Number.isFinite(arrival) ||
-            arrival < f.time
-        )
-            problems.date = "到账时间不得早于转出时间";
-        setErrors(problems);
+        setSubmitted(true);
+        if (problems.fee || problems.date) setShowOptions(true);
         if (Object.keys(problems).length) return;
 
         if (transferEntries(ctx, transferId).length) {
@@ -735,7 +935,8 @@ export function Transfer(ctx) {
         await ctx.closeModal();
     };
 
-    return Column(
+    const debit = original + fee;
+    return panel(
         Row(
             accountPicker(
                 ctx,
@@ -747,7 +948,6 @@ export function Transfer(ctx) {
                 "转出账户",
                 picker,
                 setPicker,
-                setErrors,
             ),
             Text("→").fontSize(18).color("theme:muted").style({ shrink: 0 }),
             accountPicker(
@@ -760,38 +960,11 @@ export function Transfer(ctx) {
                 "转入账户",
                 picker,
                 setPicker,
-                setErrors,
             ),
         )
             .key("accounts")
             .style({ wrap: true, align: "start", gap: 8 }),
         errorText(errors.accounts, "accounts-error"),
-        Row(
-            Select({
-                label: "转出币种",
-                options: [...new Set([outCurrency, ...quickCurrencies(ctx)])],
-                value: outCurrency,
-                onChange: (value) => {
-                    form.field("outCurrency").onChange(value);
-                    form.field("outRate").onChange("");
-                },
-            })
-                .key("out-currency")
-                .style({ grow: 1, minWidth: 120 }),
-            Select({
-                label: "到账币种",
-                options: [...new Set([inCurrency, ...quickCurrencies(ctx)])],
-                value: inCurrency,
-                onChange: (value) => {
-                    form.field("inCurrency").onChange(value);
-                    form.field("inRate").onChange("");
-                },
-            })
-                .key("in-currency")
-                .style({ grow: 1, minWidth: 120 }),
-        )
-            .key("currencies")
-            .style({ wrap: true, gap: 8 }),
         Row(
             moneyField(
                 form,
@@ -811,7 +984,8 @@ export function Transfer(ctx) {
         )
             .key("amounts")
             .style({ wrap: true, gap: 8 }),
-        outCurrency !== baseCurrency(ctx) &&
+        from &&
+            outCurrency !== baseCurrency(ctx) &&
             rateField(
                 ctx,
                 form,
@@ -830,35 +1004,78 @@ export function Transfer(ctx) {
                 inCurrency,
                 errors.inRate,
             ),
-        moneyField(form, "fee", "手续费（选填）", outCurrency, errors.fee),
-        DateTimePicker({
-            label: f.separateDates ? "转出时间" : "转账时间",
-            ...form.field("time"),
-        }).key("time"),
-        Switch({
-            label: "分别设置转出与到账时间",
-            ...form.field("separateDates"),
-            onChange: (value) => {
-                if (value) form.field("arrival").onChange(f.time);
-                form.field("separateDates").onChange(value);
-            },
-        }).key("separate"),
-        f.separateDates &&
-            DateTimePicker({ label: "到账时间", ...form.field("arrival") }).key(
-                "arrival",
-            ),
-        errorText(errors.date, "date-error"),
         Button(
-            { expanded: showNotes, label: "备注与凭证" },
-            Row(strong("备注与凭证"), muted(showNotes ? "收起" : "展开")).style(
-                { justify: "space-between", gap: 8 },
-            ),
+            { expanded: showOptions },
+            Row(
+                Column(
+                    strong("更多选项").fontSize(14),
+                    muted("手续费、币种、时间、备注和凭证"),
+                ).gap(3),
+                muted(showOptions ? "收起" : "展开"),
+            ).style({ justify: "space-between", align: "center", gap: 8 }),
         )
-            .key("notes")
+            .key("options")
             .style(outline)
-            .onTap(() => setShowNotes(!showNotes)),
-        showNotes &&
+            .onTap(() => setShowOptions(!showOptions)),
+        showOptions &&
             Column(
+                moneyField(
+                    form,
+                    "fee",
+                    "手续费（选填）",
+                    outCurrency,
+                    errors.fee,
+                ),
+                Row(
+                    Select({
+                        label: "转出币种",
+                        options: [
+                            ...new Set([outCurrency, ...quickCurrencies(ctx)]),
+                        ],
+                        value: outCurrency,
+                        disabled: !from,
+                        onChange: (value) => {
+                            form.field("outCurrency").onChange(value);
+                            form.field("outRate").onChange("");
+                        },
+                    })
+                        .key("out-currency")
+                        .style({ grow: 1, minWidth: 120 }),
+                    Select({
+                        label: "到账币种",
+                        options: [
+                            ...new Set([inCurrency, ...quickCurrencies(ctx)]),
+                        ],
+                        value: inCurrency,
+                        disabled: !to,
+                        onChange: (value) => {
+                            form.field("inCurrency").onChange(value);
+                            form.field("inRate").onChange("");
+                        },
+                    })
+                        .key("in-currency")
+                        .style({ grow: 1, minWidth: 120 }),
+                )
+                    .key("currencies")
+                    .style({ wrap: true, gap: 8 }),
+                DateTimePicker({
+                    label: f.separateDates ? "转出时间" : "转账时间",
+                    ...form.field("time"),
+                }).key("time"),
+                Switch({
+                    label: "分别设置转出与到账时间",
+                    ...form.field("separateDates"),
+                    onChange: (value) => {
+                        if (value) form.field("arrival").onChange(f.time);
+                        form.field("separateDates").onChange(value);
+                    },
+                }).key("separate"),
+                f.separateDates &&
+                    DateTimePicker({
+                        label: "到账时间",
+                        ...form.field("arrival"),
+                    }).key("arrival"),
+                errorText(errors.date, "date-error"),
                 Input({
                     label: "备注",
                     placeholder: "选填",
@@ -870,31 +1087,47 @@ export function Transfer(ctx) {
                     ...form.field("images"),
                 }).key("images"),
             )
-                .key("note-fields")
-                .gap(8),
-        Column(
-            strong("转账预览"),
-            Text(
-                `实际扣款 · ${original > 0 && fee >= 0 && Number.isSafeInteger(original + fee) ? money(original + fee, outCurrency) : "待填写"}`,
-            ),
+                .key("option-fields")
+                .style({ ...outline, gap: 12 }),
+        section(
+            "转账预览",
+            Row(
+                Column(
+                    muted("实际扣款"),
+                    strong(
+                        original > 0 && fee >= 0 && Number.isSafeInteger(debit)
+                            ? money(debit, outCurrency)
+                            : "待填写",
+                    ).fontSize(17),
+                ).style({ gap: 4, grow: 1, minWidth: 100 }),
+                Column(
+                    muted("实际到账"),
+                    strong(
+                        received > 0 ? money(received, inCurrency) : "待填写",
+                    ).fontSize(17),
+                ).style({ gap: 4, grow: 1, minWidth: 100 }),
+            ).style({ wrap: true, gap: 8 }),
             fee > 0 &&
                 original > 0 &&
                 muted(
                     `本金 ${money(original, outCurrency)} + 手续费 ${money(fee, outCurrency)}`,
                 ),
-            Text(
-                `实际到账 · ${received > 0 ? money(received, inCurrency) : "待填写"}`,
+            muted(
+                f.separateDates
+                    ? `转出 ${date(f.time)} · 到账 ${date(arrival)}`
+                    : `转账时间 ${date(f.time)}`,
             ),
-        )
-            .key("summary")
-            .style({ ...surface, gap: 5 }),
+        ).key("summary"),
         action("确认转账", "confirm", save, { primary: true }),
-    ).gap(12);
+    );
 }
 
 export function OpeningBalance(ctx) {
+    const notice = readAccessNotice(ctx);
+    if (notice) return notice;
     const account = findAccount(ctx, ctx.params.accountId);
-    if (!account) return Text("账户已删除");
+    if (!account)
+        return panel(emptyState("账户已删除", "返回账户列表查看其他账户。"));
     const previous = openingBill(ctx, account);
     const currency = accountCurrency(ctx, account);
     const previousOriginal =
@@ -914,9 +1147,12 @@ export function OpeningBalance(ctx) {
         rate: previousRate,
     });
     const [error, setError] = ctx.state("opening-error", "");
-    return Column(
-        muted(
-            "输入开始追踪这个账户时的余额。欠款可输入负数，期初余额不计入实际收支。",
+    return panel(
+        section(
+            displayName(account.name),
+            muted(
+                "输入开始追踪账户时的余额。欠款可填负数，期初余额不计入实际收支。",
+            ),
         ),
         moneyField(form, "amount", "期初余额", currency),
         DateTimePicker({ label: "期初日期", ...form.field("time") }).key(
@@ -960,34 +1196,53 @@ export function OpeningBalance(ctx) {
             },
             { primary: true },
         ),
-    ).gap(12);
+    );
 }
 
 export function Management(ctx) {
+    const notice = readAccessNotice(ctx);
+    if (notice) return notice;
     const balances = accountBalances(ctx);
-    return Column(
-        action(
-            "新建账户",
-            "add",
-            () => ctx.openModal(AccountForm, {}, { title: "账户" }),
-            { primary: true },
-        ),
-        ...accounts(ctx).map((account) =>
-            Button(
-                {},
-                accountSummary(ctx, balances.get(ctx.id(account.id)), 15),
-            )
-                .key(account.id)
-                .style(outline)
-                .onTap(() =>
+    const available = accounts(ctx);
+    return panel(
+        Row(
+            strong(`账户 · ${available.length}`).style({ grow: 1 }),
+            action(
+                "新建账户",
+                "add",
+                () => ctx.openModal(AccountForm, {}, { title: "新建账户" }),
+                { primary: true },
+            ),
+        ).style({ wrap: true, align: "center", gap: 8 }),
+        !available.length &&
+            emptyState("暂无账户", "可以先添加日常使用的银行卡或钱包。"),
+        ...available.map((account) =>
+            Row(
+                Button(
+                    { label: `查看${account.name}流水` },
+                    accountSummary(ctx, balances.get(ctx.id(account.id)), 15),
+                )
+                    .key("details")
+                    .style({ grow: 1, minWidth: 0 })
+                    .onTap(() =>
+                        ctx.openModal(
+                            AccountDetail,
+                            { accountId: account.id },
+                            { title: "账户详情" },
+                        ),
+                    ),
+                action("编辑", "edit", () =>
                     ctx.openModal(
                         AccountForm,
                         { accountId: account.id },
                         { title: "编辑账户" },
                     ),
-                ),
+                ).style({ shrink: 0 }),
+            )
+                .key(account.id)
+                .style({ ...outline, gap: 8, align: "center" }),
         ),
-    ).gap(10);
+    );
 }
 
 const colors = [
@@ -998,13 +1253,16 @@ const colors = [
 ];
 
 export function AccountForm(ctx) {
+    const notice = readAccessNotice(ctx);
+    if (notice) return notice;
     const [createdId, setCreatedId] = ctx.state("created-account", "");
     if (createdId)
         return AccountDetail({ ...ctx, params: { accountId: createdId } }).key(
             "created-detail",
         );
     const account = findAccount(ctx, ctx.params.accountId);
-    if (ctx.params.accountId && !account) return Text("账户已删除");
+    if (ctx.params.accountId && !account)
+        return panel(emptyState("账户已删除", "返回账户列表查看其他账户。"));
     const form = ctx.form("account", {
         name: account?.name ?? "",
         color: account?.color ?? colors[0].value,
@@ -1017,7 +1275,7 @@ export function AccountForm(ctx) {
         ...new Set([form.values.currency, ...quickCurrencies(ctx)]),
     ];
 
-    return Column(
+    return panel(
         Input({
             label: "账户名称",
             placeholder: "例如 工资卡",
@@ -1055,9 +1313,10 @@ export function AccountForm(ctx) {
                     ...account,
                     ...form.values,
                     name,
+                    color: form.values.color || colors[0].value,
                     currency: hasBills
                         ? accountCurrency(ctx, account)
-                        : form.values.currency,
+                        : form.values.currency || baseCurrency(ctx),
                     id:
                         account?.id ??
                         `account-${ctx.now}-${Math.random().toString(36).slice(2)}`,
@@ -1078,18 +1337,29 @@ export function AccountForm(ctx) {
         account &&
             !hasBills &&
             (deleting
-                ? Row(
-                      action("取消", "cancel", () => setDeleting(false)),
-                      action("确认删除账户", "confirm-delete", async () => {
-                          await ctx.api.setStorage({
-                              ...ctx.storage,
-                              accounts: allAccounts(ctx).filter(
-                                  (item) => item.id !== account.id,
-                              ),
-                          });
-                          await ctx.closeModal();
-                      }),
-                  ).gap(8)
-                : action("删除空账户", "delete", () => setDeleting(true))),
-    ).gap(12);
+                ? section(
+                      "删除空账户",
+                      muted("账户及其自动生成的标签和统计视图将被移除。"),
+                      Row(
+                          action("取消", "cancel", () => setDeleting(false)),
+                          action(
+                              "确认删除账户",
+                              "confirm-delete",
+                              async () => {
+                                  await ctx.api.setStorage({
+                                      ...ctx.storage,
+                                      accounts: allAccounts(ctx).filter(
+                                          (item) => item.id !== account.id,
+                                      ),
+                                  });
+                                  await ctx.closeModal();
+                              },
+                              { danger: true },
+                          ),
+                      ).style({ wrap: true, gap: 8 }),
+                  )
+                : action("删除空账户", "delete", () => setDeleting(true), {
+                      danger: true,
+                  })),
+    );
 }

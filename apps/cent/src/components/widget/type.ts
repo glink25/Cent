@@ -56,6 +56,7 @@ export type DSLStyle = {
     minHeight?: number;
     paddingX?: number;
     paddingY?: number;
+    marginBlockStart?: number;
     borderWidth?: number;
     borderColor?: string;
     fontWeight?: "normal" | "medium" | "semibold" | "bold";

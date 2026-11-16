@@ -160,6 +160,7 @@ pnpm --filter cent lint
 - `ChoiceGroup({ label, value, onChange, disabled? }, ...choices)` 管理单选。每个 `Choice({ value, label?, disabled?, selectedStyle? }, ...children)` 使用不同的非空字符串 value。作者控制选项布局和选中外观，宿主提供焦点、键盘操作和选中语义。
 - Button 和 Choice 内部可放 Flex、Container、Text、Image、Line 等展示节点。其它按钮或输入控件应作为同级节点。
 - Input、Select、Switch、DateTimePicker 的 style 设置外层布局。默认 label 由宿主显示，也可以用自己的 Text 布局并通过 accessibleLabel 为控件提供可访问名称。
+- Web 宿主支持 `marginBlockStart`（单位为像素），可用负值向块起点偏移，叠放相邻卡片。留出可见的点击区，未实现该属性的宿主仍可按普通列表显示。
 
 ```js
 const form = ctx.form("transfer", { from: "" });

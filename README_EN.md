@@ -10,20 +10,21 @@
 [![GitHub Repo](https://img.shields.io/badge/data-storage_on_GitHub-black?logo=github)]()
 
 Cent is a **completely free, open-source, collaborative accounting Web App**,  
-which uses a **GitHub Repository** for data synchronization and version control, enabling real-time cross-platform sync without a server.
+with cross-platform sync via **GitHub/Gitee, WebDAV, or S3-compatible storage** and support for local offline ledgers.
 
 🔗 **Live Demo**: [https://cent.linkai.work](https://cent.linkai.work)  
 💾 **Open Source Repository**: [https://github.com/glink25/Cent](https://github.com/glink25/Cent)  
 📖 **Blog**: [https://glink25.github.io/tag/Cent/](https://glink25.github.io/tag/Cent/)  
 
-📱 **Download for iOS**:
+📱 **App Downloads**:
 
 <a href="https://apps.apple.com/us/app/cent-%E9%87%8D%E6%96%B0%E5%AE%9A%E4%B9%89%E8%AE%B0%E8%B4%A6/id6764264950">
   <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on the App Store" height="32">
 </a>
 
+[Download for Android on Google Play](https://play.google.com/store/apps/details?id=com.glink25.dailycent)
 
-> [Cent iOS Version Is Now Available 🎉](https://glink25.github.io/post/Cent-iOS%E7%89%88%E7%8E%B0%E5%B7%B2%E6%8E%A8%E5%87%BA/)
+> [Cent Native Apps Are Now Available 🎉](https://glink25.github.io/post/Cent-%E5%8E%9F%E7%94%9FApp%E6%AD%A3%E5%BC%8F%E4%B8%8A%E7%BA%BF/)
 
 ---
 
@@ -37,14 +38,14 @@ which uses a **GitHub Repository** for data synchronization and version control,
 | Budget Management | ![Budget View](https://glink25.github.io/post-assets/mgucw884-cent-budget.jpg) |
 | GitHub Collaboration | ![Collaboration Feature](https://glink25.github.io/post-assets/mgucw884-github-collaborator.jpg) |
 
->  **Latest Update**: Cent now supports AI Assistant, Voice Recording, Multi-Currency Management, Map Visualization, Scheduled Billing, and many more features! See [Cent 1.1 Update Notes](https://glink25.github.io/post/Cent-%E5%B7%B2%E6%94%AF%E6%8C%81%E5%A4%9A%E5%B8%81%E7%A7%8D%E8%87%AA%E5%8A%A8%E8%AE%B0%E8%B4%A6/) for details.
+>  **Latest Update**: Cent Web 3.0 brings **interactive widgets**, an updated AI Assistant and Zen mode, Google Maps support, and image previews for bill attachments.
 
 ---
 
 ## ✨ Features
 
 ### 💾 Fully Self-Contained Data
-Ledger data is stored in your private GitHub/Gitee repository or Web DAV, without any third-party servers. **Multi-user collaboration** via GitHub Collaborator feature, with **incremental sync** mechanism that only uploads/downloads changed data, significantly reducing sync time.
+Keep your ledger data in a private GitHub/Gitee repository, on WebDAV or S3-compatible storage, or entirely on your device. Use GitHub Collaborators for **multi-user collaboration**. **Incremental sync** transfers only changed data to reduce sync time.
 
 ### 🤖 AI-Powered Experience
 Long press the recording button for **Voice Recording**, where AI automatically parses amounts, categories, and notes. Configure OpenAI-compatible APIs for intelligent bill analysis, budget suggestions, annual summaries, and **smart predictions** based on historical data.
@@ -59,12 +60,19 @@ Web map settings can store both providers and let you choose the default. For Go
 
 The upgrade preserves existing bill coordinates. Some older locations picked on AMap may appear offset. Open the bill and pick the location again to correct it. When sharing a synced ledger, saving or clearing AMap settings on an older Android client may overwrite the Google configuration and default map choice.
 
+### 🧩 Widget API 2.0
+Cent Web supports **interactive JavaScript widgets** with buttons, forms, and dialogs. Accounts and Transfers calculates balances and shows activity based on your ledger, with support for opening balances, cross-currency transfers, and fees.
+
+Browse examples and usage guides in [Widget Showcase](https://github.com/glink25/Cent/discussions/categories/widget-showcase). To install a widget, copy its source, go to Settings → Book Settings → Widget Settings, and choose Add Widget. Paste the code, review the permissions, save, and turn on Show in Home. To share your own widget, post its source, use case, installation steps, and screenshots in the showcase.
+
+Widgets can share settings across a ledger and generate categories, tags, and statistics views dynamically. Existing 1.x scripts must be upgraded to 2.0 to run. [API documentation](./apps/cent/src/components/widget/core/WIDGET_V2_API.md) · [Example source](./apps/cent/src/components/widget/examples/accounts.js)
+
 ### 🛠️ More Features
 - 📱 **PWA Support**: Install to desktop and use like a native app
 - 📥 **Smart Import**: WeChat/Alipay bills, create custom import schemes with AI
 - 🏷️ **Categories & Tags**: Custom categories, tag groups, single/multi-select, preferred currencies
 - 📋 **Quick Actions**: iOS Shortcuts, clipboard entry, batch editing, natural language recognition
-- 🎨 **Customization**: Dark mode, custom CSS, keyboard customization
+- 🎨 **Customization**: Dark mode, reverse income and expense colors, keyboard customization
 
 *...and many more features waiting to be discovered ✨*
 
@@ -79,9 +87,9 @@ Learn more: [Using GitHub as a Database](https://glink25.github.io/post/%E7%8E%B
 
 ### 🗂 Data Structure
 
-- Each ledger (Book) corresponds to a GitHub/Gitee repository.
+- With GitHub/Gitee sync, each ledger (Book) corresponds to a repository.
 - Data is stored in JSON format within the repository, supporting historical version rollback.
-- Multi-ledger management is achieved by identifying ledgers via repository names.
+- With GitHub/Gitee sync, repository names identify individual ledgers.
 
 ### 🔁 Incremental Sync Mechanism
 
@@ -94,10 +102,7 @@ This mechanism significantly improves sync efficiency, leading to a smooth and n
 
 ### 🧩 Extensible Sync Endpoints
 
-The synchronization logic has been abstracted and encapsulated, with future support planned for:  
-- Self-hosted Servers  
-- Cloud Drives (e.g., Dropbox, OneDrive)  
-- Local Offline Ledgers  
+The web app supports GitHub, Gitee, WebDAV, and S3-compatible storage for sync. You can also create a local offline ledger.
 
 ---
 
@@ -134,7 +139,7 @@ Cent uses Cloudflare Workers to deploy an online authentication service, which o
 - ✅ Scheduled billing
 - ✅ Smart import (Alipay/WeChat bills)
 - ✅ Tag system upgrade
-- ✅ Web DAV sync support
+- ✅ WebDAV and S3-compatible storage sync
 - ✅ Shortcuts integration
 - ✅ Batch editing
 
@@ -150,7 +155,7 @@ Cent uses Cloudflare Workers to deploy an online authentication service, which o
 
 ## 💬 Contribution and Feedback
 
-Cent welcomes all developers and users to contribute. Please refer to the [Contribution Guide](docs/contributing/en.md) before submitting code:
+Cent welcomes all developers and users to contribute. Please refer to the [Contribution Guide (Chinese)](docs/contributing/zh.md) before submitting code:
 
 > QQ Group: 861180883
 
