@@ -1,5 +1,5 @@
 import { Collapsible } from "radix-ui";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type {
     ChangeProposal,
     ChangeReceipt,
@@ -10,10 +10,10 @@ import type {
     Tool,
 } from "../../assistant";
 import { ChangeCard, TurnChanges } from "./change-card";
-import { Peek, Thought, ToolGroup } from "./flow";
+import { Peek, PreviewAnswer, PreviewStatus, Thought, ToolGroup } from "./flow";
 import { useI18n } from "./i18n";
 import { MessageBubble } from "./message";
-import { projectFlow, turnReceipts } from "./turn-model";
+import { projectFlow, turnPreview, turnReceipts } from "./turn-model";
 
 type PendingApproval = {
     proposal: ChangeProposal;
@@ -59,213 +59,301 @@ function ContextMarker({ event }: { event: ContextEvent }) {
         </output>
     );
 }
-function Turn({
-    messages,
+const Turn = memo(
+    function Turn({
+        messages,
+        active,
+        activeTool,
+        contextEvents,
+        approval,
+        undo,
+        undoDisabled,
+        activity: liveActivity,
+        tools = [],
+        startedAt,
+        contextStatus,
+    }: {
+        messages: Message[];
+        activity?: RunActivity;
+        tools?: Tool[];
+        startedAt?: number;
+        contextStatus?: string;
+        approval?: PendingApproval;
+        undo?: (receipt: ChangeReceipt) => Promise<void>;
+        undoDisabled?: boolean;
+        contextEvents: ContextEvent[];
+        active: boolean;
+        activeTool?: string;
+    }) {
+        const { t } = useI18n();
+        const [open, setOpen] = useState(false);
+        const user = messages[0]?.role === "user" ? messages[0] : undefined;
+        const last = messages.at(-1);
+        const final =
+            last?.role === "assistant" &&
+            !last.formatted.tools?.length &&
+            (active
+                ? last.formatted.answer?.trim() &&
+                  (!liveActivity ||
+                      (liveActivity.phase === "answering" &&
+                          liveActivity.messageId === last.id))
+                : (last.formatted.answer ?? last.raw).trim())
+                ? last
+                : undefined;
+        const processRef = useRef<HTMLDivElement>(null);
+        const followProcess = useRef(true);
+        useLayoutEffect(() => {
+            if (
+                !open ||
+                !messages.length ||
+                !followProcess.current ||
+                !processRef.current
+            )
+                return;
+            const frame = requestAnimationFrame(() => {
+                if (followProcess.current && processRef.current) {
+                    processRef.current.scrollTop =
+                        processRef.current.scrollHeight;
+                }
+            });
+            return () => cancelAnimationFrame(frame);
+        }, [open, messages]);
+        const process = open
+            ? messages.filter((m) => m !== user && m !== final)
+            : [];
+        const flow = projectFlow(process, contextEvents).filter(
+            (item) =>
+                !(
+                    active &&
+                    liveActivity?.phase === "thinking" &&
+                    item.kind === "thought" &&
+                    item.id === `${liveActivity.messageId}-thought`
+                ),
+        );
+        if (open && final?.role === "assistant" && final.formatted.thought) {
+            flow.push({
+                kind: "thought",
+                id: `${final.id ?? "final"}-thought`,
+                text: final.formatted.thought,
+            });
+        }
+        const markersAfter = (message?: Message) =>
+            message?.id
+                ? contextEvents
+                      .filter((event) => event.anchorId === message.id)
+                      .map((event) => (
+                          <ContextMarker key={event.id} event={event} />
+                      ))
+                : null;
+        const hasDuration = active || user?.elapsedMs !== undefined;
+        const hasProcess =
+            contextEvents.length > 0 ||
+            messages.some(
+                (message) =>
+                    message !== user &&
+                    message !== final &&
+                    (message.role === "tool" ||
+                        (message.role === "assistant" &&
+                            (message.formatted.answer ||
+                                message.formatted.thought ||
+                                message.formatted.tools?.length))),
+            ) ||
+            (final?.role === "assistant" && !!final.formatted.thought);
+        const fallbackStatus =
+            contextStatus === "compacting"
+                ? "contextCompacting"
+                : activeTool === "retrying_model_request"
+                  ? "agentRetrying"
+                  : activeTool === "recovering_tool_call"
+                    ? "agentRecovering"
+                    : undefined;
+        const preview =
+            active && !open
+                ? turnPreview(
+                      messages,
+                      liveActivity,
+                      tools,
+                      approval ? "flowApproval" : fallbackStatus,
+                  )
+                : undefined;
+        const outerAnswer = final ?? preview?.answer;
+        const receipts = turnReceipts(messages);
+        return (
+            <section className="mx-auto w-full max-w-3xl shrink-0 space-y-4 py-4">
+                {user && <MessageBubble message={user} />}
+                {markersAfter(user)}
+                {(hasProcess || hasDuration) && (
+                    <Collapsible.Root open={open} onOpenChange={setOpen}>
+                        <Collapsible.Trigger asChild>
+                            <button
+                                type="button"
+                                aria-expanded={open}
+                                disabled={!hasProcess && !active}
+                                className="flex items-center gap-1.5 py-1 text-sm text-muted-foreground hover:text-foreground"
+                            >
+                                <TurnDuration
+                                    active={active}
+                                    startedAt={startedAt ?? user?.sentAt}
+                                    elapsedMs={user?.elapsedMs}
+                                />
+                                {user?.turnStatus === "cancelled" && (
+                                    <span>· {t("flowStopped")}</span>
+                                )}
+                                {user?.turnStatus === "failed" && (
+                                    <span>· {t("flowInterrupted")}</span>
+                                )}
+                                <i
+                                    className={`icon-[mdi--chevron-right] size-4 transition-transform ${open ? "rotate-90" : ""}`}
+                                />
+                            </button>
+                        </Collapsible.Trigger>
+                        {/* Skip the exit animation when the answer moves outside the timeline. */}
+                        <Collapsible.Content
+                            className={
+                                preview?.answer
+                                    ? "overflow-hidden"
+                                    : "flow-process overflow-hidden"
+                            }
+                        >
+                            <div
+                                ref={processRef}
+                                onScroll={(event) => {
+                                    const element = event.currentTarget;
+                                    followProcess.current =
+                                        element.scrollHeight -
+                                            element.scrollTop -
+                                            element.clientHeight <
+                                        60;
+                                }}
+                                className="mt-3 max-h-[min(50dvh,420px)] overflow-y-auto overscroll-contain space-y-5 pr-1 border-t pt-4"
+                            >
+                                {flow.map((item) =>
+                                    item.kind === "answer" ? (
+                                        <MessageBubble
+                                            key={item.id}
+                                            message={item.message}
+                                            hideThought
+                                        />
+                                    ) : item.kind === "thought" ? (
+                                        <Thought
+                                            key={item.id}
+                                            text={item.text}
+                                        />
+                                    ) : item.kind === "context" ? (
+                                        <ContextMarker
+                                            key={item.id}
+                                            event={item.event}
+                                        />
+                                    ) : (
+                                        <ToolGroup
+                                            key={item.id}
+                                            messages={item.tools}
+                                            tools={tools}
+                                        />
+                                    ),
+                                )}
+                                {active && open && !final && (
+                                    <Peek
+                                        activity={liveActivity}
+                                        history={messages}
+                                        tools={tools}
+                                        fallback={
+                                            fallbackStatus && t(fallbackStatus)
+                                        }
+                                        approval={!!approval}
+                                    />
+                                )}
+                            </div>
+                        </Collapsible.Content>
+                    </Collapsible.Root>
+                )}
+                {active && (
+                    <PreviewStatus
+                        preview={preview}
+                        thoughtId={liveActivity?.messageId}
+                    />
+                )}
+                {approval && (
+                    <div>
+                        <ChangeCard
+                            key={approval.proposal.id}
+                            proposal={approval.proposal}
+                            decide={approval.decide}
+                        />
+                    </div>
+                )}
+                <PreviewAnswer
+                    message={outerAnswer}
+                    active={active}
+                    collapsed={!open}
+                />
+                {markersAfter(final)}
+                {!!receipts.length && (
+                    <TurnChanges
+                        receipts={receipts}
+                        undo={undo}
+                        undoDisabled={undoDisabled}
+                    />
+                )}
+            </section>
+        );
+    },
+    (previous, next) => {
+        const {
+            messages: oldMessages,
+            contextEvents: oldEvents,
+            ...oldProps
+        } = previous;
+        const { messages, contextEvents, ...props } = next;
+        return (
+            oldMessages.length === messages.length &&
+            oldMessages.every(
+                (message, index) => message === messages[index],
+            ) &&
+            oldEvents.length === contextEvents.length &&
+            oldEvents.every((event, index) => event === contextEvents[index]) &&
+            (Object.keys(props) as (keyof typeof props)[]).every(
+                (key) => props[key] === oldProps[key],
+            )
+        );
+    },
+);
+
+function TurnDuration({
     active,
-    activeTool,
-    contextEvents,
-    approval,
-    undo,
-    undoDisabled,
-    activity: liveActivity,
-    tools = [],
     startedAt,
-    contextStatus,
+    elapsedMs,
 }: {
-    messages: Message[];
-    activity?: RunActivity;
-    tools?: Tool[];
-    startedAt?: number;
-    contextStatus?: string;
-    approval?: PendingApproval;
-    undo?: (receipt: ChangeReceipt) => Promise<void>;
-    undoDisabled?: boolean;
-    contextEvents: ContextEvent[];
     active: boolean;
-    activeTool?: string;
+    startedAt?: number;
+    elapsedMs?: number;
 }) {
     const { t } = useI18n();
-    const [open, setOpen] = useState(false);
     const [now, setNow] = useState(Date.now());
     useEffect(() => {
         if (!active) return;
+        setNow(Date.now());
         const timer = setInterval(() => setNow(Date.now()), 1000);
         return () => clearInterval(timer);
     }, [active]);
-    const user = messages[0]?.role === "user" ? messages[0] : undefined;
-    const last = messages.at(-1);
-    const final =
-        last?.role === "assistant" &&
-        !last.formatted.tools?.length &&
-        (!active ||
-            (last.formatted.answer &&
-                (!liveActivity ||
-                    (liveActivity.phase === "answering" &&
-                        liveActivity.messageId === last.id))))
-            ? last
-            : undefined;
-    const processRef = useRef<HTMLDivElement>(null);
-    const followProcess = useRef(true);
-    useLayoutEffect(() => {
-        if (
-            active &&
-            messages.length &&
-            followProcess.current &&
-            processRef.current
-        ) {
-            processRef.current.scrollTop = processRef.current.scrollHeight;
-        }
-    }, [active, messages]);
-    const process = messages.filter((m) => m !== user && m !== final);
-    const flow = projectFlow(process, contextEvents).filter(
-        (item) =>
-            !(
-                active &&
-                liveActivity?.phase === "thinking" &&
-                item.kind === "thought" &&
-                item.id === `${liveActivity.messageId}-thought`
-            ),
+    if (!active && elapsedMs === undefined) return <>{t("agentActivity")}</>;
+    const seconds = Math.max(
+        0,
+        Math.floor(
+            (active ? now - (startedAt ?? now) : (elapsedMs ?? 0)) / 1000,
+        ),
     );
-    if (final?.role === "assistant" && final.formatted.thought) {
-        flow.push({
-            kind: "thought",
-            id: `${final.id ?? "final"}-thought`,
-            text: final.formatted.thought,
-        });
-    }
-    const markersAfter = (message?: Message) =>
-        message?.id
-            ? contextEvents
-                  .filter((event) => event.anchorId === message.id)
-                  .map((event) => (
-                      <ContextMarker key={event.id} event={event} />
-                  ))
-            : null;
-    const duration = active
-        ? now - (startedAt ?? user?.sentAt ?? now)
-        : user?.elapsedMs;
-    const seconds = Math.max(0, Math.floor((duration ?? 0) / 1000));
     const time =
         seconds < 60
             ? `${seconds}${t("agentSeconds")}`
             : `${Math.floor(seconds / 60)}${t("flowMinutes")} ${seconds % 60}${t("agentSeconds")}`;
-    const fallback =
-        contextStatus === "compacting"
-            ? t("contextCompacting")
-            : activeTool === "retrying_model_request"
-              ? t("agentRetrying")
-              : activeTool === "recovering_tool_call"
-                ? t("agentRecovering")
-                : undefined;
-    const receipts = turnReceipts(messages);
     return (
-        <section className="mx-auto w-full max-w-3xl shrink-0 space-y-5 py-4">
-            {user && <MessageBubble message={user} />}
-            {markersAfter(user)}
-            {(flow.length > 0 || active || duration !== undefined) && (
-                <Collapsible.Root open={open} onOpenChange={setOpen}>
-                    <Collapsible.Trigger asChild>
-                        <button
-                            type="button"
-                            aria-expanded={open}
-                            disabled={!flow.length && !active}
-                            className="flex items-center gap-1.5 py-1 text-sm text-muted-foreground hover:text-foreground"
-                        >
-                            {duration !== undefined
-                                ? `${t(active ? "flowElapsed" : "agentDuration")} ${time}`
-                                : t("agentActivity")}
-                            {user?.turnStatus === "cancelled" && (
-                                <span>· {t("flowStopped")}</span>
-                            )}
-                            {user?.turnStatus === "failed" && (
-                                <span>· {t("flowInterrupted")}</span>
-                            )}
-                            <i
-                                className={`icon-[mdi--chevron-right] size-4 transition-transform ${open ? "rotate-90" : ""}`}
-                            />
-                        </button>
-                    </Collapsible.Trigger>
-                    <Collapsible.Content className="flow-process overflow-hidden">
-                        <div
-                            ref={processRef}
-                            onScroll={(event) => {
-                                const element = event.currentTarget;
-                                followProcess.current =
-                                    element.scrollHeight -
-                                        element.scrollTop -
-                                        element.clientHeight <
-                                    60;
-                            }}
-                            className="mt-3 max-h-[min(50dvh,420px)] overflow-y-auto overscroll-contain space-y-5 pr-1 border-t pt-4"
-                        >
-                            {flow.map((item) =>
-                                item.kind === "answer" ? (
-                                    <MessageBubble
-                                        key={item.id}
-                                        message={item.message}
-                                        hideThought
-                                    />
-                                ) : item.kind === "thought" ? (
-                                    <Thought key={item.id} text={item.text} />
-                                ) : item.kind === "context" ? (
-                                    <ContextMarker
-                                        key={item.id}
-                                        event={item.event}
-                                    />
-                                ) : (
-                                    <ToolGroup
-                                        key={item.id}
-                                        messages={item.tools}
-                                        tools={tools}
-                                    />
-                                ),
-                            )}
-                            {active && open && !final && (
-                                <Peek
-                                    activity={liveActivity}
-                                    history={messages}
-                                    tools={tools}
-                                    fallback={fallback}
-                                    approval={!!approval}
-                                />
-                            )}
-                        </div>
-                    </Collapsible.Content>
-                </Collapsible.Root>
-            )}
-            {final && (
-                <MessageBubble key={final.id} message={final} hideThought />
-            )}
-            {active && !open && !final && (
-                <Peek
-                    activity={liveActivity}
-                    history={messages}
-                    tools={tools}
-                    fallback={fallback}
-                    approval={!!approval}
-                    summaryOnly
-                />
-            )}
-            {markersAfter(final)}
-            {approval && (
-                <div>
-                    <ChangeCard
-                        key={approval.proposal.id}
-                        proposal={approval.proposal}
-                        decide={approval.decide}
-                    />
-                </div>
-            )}
-            {!!receipts.length && (
-                <TurnChanges
-                    receipts={receipts}
-                    undo={undo}
-                    undoDisabled={undoDisabled}
-                />
-            )}
-        </section>
+        <>
+            {t(active ? "flowElapsed" : "agentDuration")} {time}
+        </>
     );
 }
+
 export function ConversationTurns({
     history,
     pending,
@@ -321,8 +409,12 @@ export function ConversationTurns({
                         index === turns.length - 1 ? liveActivity : undefined
                     }
                     tools={tools}
-                    startedAt={startedAt}
-                    contextStatus={contextStatus}
+                    startedAt={
+                        index === turns.length - 1 ? startedAt : undefined
+                    }
+                    contextStatus={
+                        index === turns.length - 1 ? contextStatus : undefined
+                    }
                     undo={undo}
                     undoDisabled={undoDisabled}
                     active={pending && index === turns.length - 1}

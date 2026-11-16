@@ -159,12 +159,6 @@ export type ProviderToolCall = {
     thoughtSignature?: string;
 };
 
-export type ToolDisplay = {
-    label?: string;
-    icon?: string;
-    summarize?: (params: unknown) => string;
-};
-
 export type RunActivity = {
     phase: "thinking" | "answering" | "preparing" | "executing";
     messageId?: string;
@@ -248,7 +242,8 @@ export type ToolContext = {
 };
 
 export type Tool<Args = unknown, Returns = unknown> = {
-    display?: ToolDisplay;
+    /** Plain user-facing name, independent of Chaty locale and rendering. */
+    label?: string;
     exposure?: ToolExposure;
     effect?: "read" | "write" | "ui";
     endsTurn?: boolean;
@@ -266,7 +261,8 @@ export type CreateToolInput<
     ArgsSchema extends ZodLikeSchema | undefined,
     ReturnSchema extends ZodLikeSchema,
 > = {
-    display?: ToolDisplay;
+    /** Plain user-facing name, independent of Chaty locale and rendering. */
+    label?: string;
     exposure?: ToolExposure;
     effect?: "read" | "write" | "ui";
     endsTurn?: boolean;

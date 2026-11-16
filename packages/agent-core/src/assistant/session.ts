@@ -24,6 +24,7 @@ import {
 } from "./recovery";
 import { referenceTool } from "./references";
 import { cloneHistory, createUserMessage } from "./shared";
+import { recordStreamTiming } from "./stream-scheduling";
 import { retainToolImage } from "./tool-images";
 import {
     createListSkillsTool,
@@ -196,6 +197,7 @@ export function createSession({
     const next = (({ message, assets, references, resources }: NextInput) => {
         const controller = new AbortController();
         let pending: ReturnType<Provider["request"]> | undefined;
+        let receivedChunk: ProviderRequestChunk | undefined;
         const working: History = [
             ...persistedHistory,
             ...ensureMessageIds([
@@ -325,6 +327,7 @@ export function createSession({
                             maxTokens: requestedOutput,
                         });
                         for await (const chunk of await pending) {
+                            receivedChunk = chunk;
                             controller.signal.throwIfAborted();
                             if (chunk.usage) usage = chunk.usage;
                             if (chunk.protocolError)
@@ -629,7 +632,7 @@ export function createSession({
             for await (const result of run()) {
                 for (const message of result.history)
                     message.id ??= createAgentId();
-                yield {
+                const update = {
                     ...result,
                     history: result.history.map((message) =>
                         message.id === systemMessage.id
@@ -641,6 +644,19 @@ export function createSession({
                     contextStatus,
                     contextMetrics: metrics,
                 };
+                const message = update.history.findLast(
+                    (item) => item.role === "assistant",
+                );
+                const length =
+                    message?.role === "assistant"
+                        ? (message.formatted.answer?.length ?? 0) +
+                          (message.formatted.thought?.length ?? 0)
+                        : 0;
+                recordStreamTiming("session", length, {
+                    source: receivedChunk,
+                    target: update,
+                });
+                yield update;
             }
         }
         const promise = Object.assign(Promise.resolve(stream()), {

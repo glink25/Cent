@@ -85,6 +85,48 @@ type ProviderRequestChunk = {
 };
 ```
 
+## Tool names and presentation
+
+`name` is the stable identifier used for tool calls. `describe` explains the
+capability to the model. Optional `label` is a single plain-text name for users;
+Chaty displays it unchanged in every UI language, falling back to `name` when
+it is missing or whitespace-only. Labels are not sent in model tool definitions.
+
+Direct registration:
+
+```ts
+const aggregate = createTool({
+  name: "aggregate",
+  label: "统计账单",
+  describe: "Summarize transactions by month or category.",
+  argSchema: z.object({ groupBy: z.enum(["month", "category"]) }),
+  returnSchema: z.unknown(),
+  handler: async (params) => summarizeTransactions(params),
+});
+```
+
+Web and native hosts use the same metadata in `getInit().tools`:
+
+```ts
+{
+  name: "aggregate",
+  label: "统计账单",
+  describe: "Summarize transactions by month or category.",
+  argJsonSchema: {
+    type: "object",
+    properties: { groupBy: { type: "string", enum: ["month", "category"] } },
+    required: ["groupBy"],
+  },
+  returnJsonSchema: {},
+}
+```
+
+The host supplies capability metadata, schemas and execution. Chaty owns phase
+translations, generic tool icons, layout and transitions. Registration accepts no
+locale dictionaries, icon classes or parameter-summary callbacks. Tool parameters
+and results remain available in the expanded details. Existing hosts may omit
+`label`; the bridge version and conversation storage format are unchanged.
+
 ## Run
 
 ```bash

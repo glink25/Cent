@@ -182,6 +182,7 @@ const widgetInput = z.discriminatedUnion("action", [
 export const mutationTools = [
     createTool({
         name: "importBills",
+        label: "添加账单",
         effect: "write",
         exposure: writable,
         describe:
@@ -245,6 +246,7 @@ export const mutationTools = [
     }),
     createTool({
         name: "modifyBills",
+        label: "修改账单",
         effect: "write",
         exposure: writable,
         describe:
@@ -295,6 +297,7 @@ export const mutationTools = [
     }),
     createTool({
         name: "modifyWidget",
+        label: "修改小组件",
         effect: "write",
         exposure: writable,
         describe:
@@ -400,6 +403,7 @@ export const mutationTools = [
     }),
     createTool({
         name: "editLedgerMetadata",
+        label: "修改账本配置",
         effect: "write",
         exposure: writable,
         describe:
@@ -525,6 +529,7 @@ export const mutationTools = [
     }),
     createTool({
         name: "getChangeStatus",
+        label: "查询变更状态",
         exposure: native,
         describe:
             "Read the result of a WebMCP change by ID. A pending result requires the user to approve in Cent.",

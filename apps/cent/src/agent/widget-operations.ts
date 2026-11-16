@@ -13,6 +13,7 @@ const exposure = { code: true, native: false };
 export const widgetOperations = [
     createTool({
         name: "widgets",
+        label: "读取小组件",
         exposure,
         describe:
             "Read installed widget source and configuration. Optional id selects one widget.",
@@ -36,6 +37,7 @@ export const widgetOperations = [
     }),
     createTool({
         name: "validateWidget",
+        label: "预览小组件",
         exposure,
         describe:
             "Execute a widget's render and computed functions in preview with real read data, without writes. Returns runtime diagnostics. Does not validate every possible interaction.",

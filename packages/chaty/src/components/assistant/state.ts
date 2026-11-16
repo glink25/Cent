@@ -10,6 +10,7 @@ import type {
     History,
     TurnResult,
 } from "../../assistant";
+import { checkpointStorage } from "./checkpoint-storage";
 
 export type Chat = {
     id: string;
@@ -46,33 +47,96 @@ type Persist<S, U = S> = (
     options: PersistOptions<S, U>,
 ) => StateCreator<S>;
 
+const checkpoints = checkpointStorage(
+    createIndexedDBStorage<PersistedAssistantChatState>(
+        "assistant-v4",
+        "chat-store",
+    ),
+);
+export const flushChatCheckpoints = checkpoints.flush;
+
+let previousSnapshot: PersistedAssistantChatState = { chats: [] };
+function persistedSnapshot(
+    state: AssistantChatState,
+): PersistedAssistantChatState {
+    const previous = new Map(
+        previousSnapshot.chats.map((chat) => [chat.id, chat]),
+    );
+    const chats = state.chats.map(
+        ({ id, scope, history, contextState, contextEvents }) => {
+            const old = previous.get(id);
+            if (
+                old &&
+                old.scope === scope &&
+                old.history === history &&
+                old.contextState === contextState &&
+                old.contextEvents === contextEvents
+            )
+                return old;
+            return { id, scope, history, contextState, contextEvents };
+        },
+    );
+    if (
+        chats.length === previousSnapshot.chats.length &&
+        chats.every((chat, index) => chat === previousSnapshot.chats[index])
+    )
+        return previousSnapshot;
+    previousSnapshot = { chats };
+    return previousSnapshot;
+}
+
+if (typeof document !== "undefined") {
+    const onVisibilityChange = () => {
+        if (document.visibilityState === "hidden") void flushChatCheckpoints();
+    };
+    const onPageHide = () => void flushChatCheckpoints();
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("pagehide", onPageHide);
+    import.meta.hot?.dispose(() => {
+        document.removeEventListener("visibilitychange", onVisibilityChange);
+        window.removeEventListener("pagehide", onPageHide);
+        void flushChatCheckpoints();
+    });
+}
+
 export const useAssistantChatStore = create<AssistantChatState>()(
     (persist as Persist<AssistantChatState, PersistedAssistantChatState>)(
         (set) => ({
             chats: [],
-            setChats: (updater) =>
-                set((state) => ({
-                    chats:
+            setChats: (updater) => {
+                let checkpoint = false;
+                set((state) => {
+                    const chats =
                         typeof updater === "function"
-                            ? (updater as (prev: Chat[]) => Chat[])(state.chats)
-                            : updater,
-                })),
+                            ? updater(state.chats)
+                            : updater;
+                    const previous = new Map(
+                        state.chats.map((chat) => [chat.id, chat]),
+                    );
+                    checkpoint =
+                        chats.length !== state.chats.length ||
+                        chats.some((chat) => {
+                            const old = previous.get(chat.id);
+                            return (
+                                !old ||
+                                (!chat.pending &&
+                                    (old.history !== chat.history ||
+                                        old.contextState !==
+                                            chat.contextState ||
+                                        old.contextEvents !==
+                                            chat.contextEvents))
+                            );
+                        });
+                    return { chats };
+                });
+                if (checkpoint) void flushChatCheckpoints();
+            },
         }),
         {
             name: "assistant-v4-chat-store",
             version: 1,
-            storage: createIndexedDBStorage("assistant-v4", "chat-store"),
-            partialize: (state): PersistedAssistantChatState => ({
-                chats: state.chats.map(
-                    ({ id, scope, history, contextState, contextEvents }) => ({
-                        id,
-                        scope,
-                        history,
-                        contextState,
-                        contextEvents,
-                    }),
-                ),
-            }),
+            storage: checkpoints.storage,
+            partialize: persistedSnapshot,
         },
     ),
 );

@@ -1,8 +1,14 @@
-import { useEffect, useRef, useState } from "react";
-import type { History, RunActivity, Tool, ToolMessage } from "../../assistant";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import type {
+    History,
+    Message,
+    RunActivity,
+    Tool,
+    ToolMessage,
+} from "../../assistant";
 import { useI18n } from "./i18n";
 import { MessageBubble } from "./message";
-import { actionSummary, thoughtTail } from "./turn-model";
+import { thoughtTail, toolLabel, type turnPreview } from "./turn-model";
 
 export function Thought({ text }: { text: string }) {
     const { t } = useI18n();
@@ -29,18 +35,13 @@ export function ToolGroup({
 }) {
     const { t } = useI18n();
     const latest = messages.at(-1)!;
-    const description = actionSummary(
-        latest.formatted.name,
-        latest.formatted.params,
-        tools,
-    );
+    const label = toolLabel(latest.formatted.name, tools);
     return (
         <details className="group/toolgroup min-w-0 text-muted-foreground text-sm">
             <summary className="flex min-w-0 cursor-pointer list-none items-center gap-2 hover:text-foreground [&::-webkit-details-marker]:hidden">
-                <i className={`${description.icon} size-4 shrink-0`} />
+                <i className="icon-[mdi--console] size-4 shrink-0" />
                 <span className="truncate">
-                    {t("flowDone")} {description.label}
-                    {description.summary ? ` · ${description.summary}` : ""}
+                    {t("flowDone")} {label}
                 </span>
                 <span className="shrink-0 tabular-nums text-xs">
                     {messages.length}
@@ -66,14 +67,12 @@ export function Peek({
     tools,
     fallback,
     approval,
-    summaryOnly,
 }: {
     activity?: RunActivity;
     history: History;
     tools: Tool[];
     fallback?: string;
     approval?: boolean;
-    summaryOnly?: boolean;
 }) {
     const { t } = useI18n();
     const [display, setDisplay] = useState("");
@@ -83,9 +82,7 @@ export function Peek({
     );
     const thought =
         message?.role === "assistant" ? (message.formatted.thought ?? "") : "";
-    const action = activity?.name
-        ? actionSummary(activity.name, activity.params, tools)
-        : undefined;
+    const action = activity?.name ? toolLabel(activity.name, tools) : undefined;
     const phase = approval
         ? "approval"
         : fallback
@@ -95,8 +92,8 @@ export function Peek({
         ? t("flowApproval")
         : fallback ||
           (action
-              ? `${t(phase === "preparing" ? "flowPreparing" : "flowExecuting")} ${action.label}${!summaryOnly && action.summary ? ` · ${action.summary}` : ""}`
-              : (!summaryOnly && thoughtTail(thought)) || t("flowThinking"));
+              ? `${t(phase === "preparing" ? "flowPreparing" : "flowExecuting")} ${action}`
+              : thoughtTail(thought) || t("flowThinking"));
     useEffect(() => {
         const update = () => {
             lastUpdate.current = Date.now();
@@ -110,8 +107,6 @@ export function Peek({
         }
     }, [text]);
     if (phase === "answering") return null;
-    if (summaryOnly)
-        return <p className="text-sm text-muted-foreground">{text}</p>;
     return (
         <details
             key={`${phase}-${activity?.callId ?? activity?.messageId ?? ""}`}
@@ -119,7 +114,7 @@ export function Peek({
         >
             <summary className="flex cursor-pointer list-none items-start gap-2 [&::-webkit-details-marker]:hidden">
                 <i
-                    className={`${action?.icon ?? "icon-[mdi--thought-bubble-outline]"} mt-0.5 size-4 shrink-0`}
+                    className={`${action ? "icon-[mdi--console]" : "icon-[mdi--thought-bubble-outline]"} mt-0.5 size-4 shrink-0`}
                 />
                 <span className="line-clamp-2 min-w-0 flow-peek">
                     {display || text}
@@ -135,4 +130,170 @@ export function Peek({
             </div>
         </details>
     );
+}
+
+const THOUGHT_UPDATE_MS = 400;
+
+function PreviewThought({ text }: { text: string }) {
+    const [display, setDisplay] = useState(text);
+    const lastUpdate = useRef<number | undefined>(undefined);
+
+    useEffect(() => {
+        lastUpdate.current ??= performance.now();
+        if (display === text) return;
+        const delay = Math.max(
+            0,
+            THOUGHT_UPDATE_MS - (performance.now() - lastUpdate.current),
+        );
+        const timer = setTimeout(() => {
+            lastUpdate.current = performance.now();
+            setDisplay(text);
+        }, delay);
+        return () => clearTimeout(timer);
+    }, [display, text]);
+
+    return (
+        <span key={display} className="flow-peek">
+            {display}
+        </span>
+    );
+}
+
+export function PreviewStatus({
+    preview,
+    thoughtId,
+}: {
+    preview?: ReturnType<typeof turnPreview>;
+    thoughtId?: string;
+}) {
+    const { t } = useI18n();
+    const status = preview?.status ? t(preview.status) : "";
+    const thinking = preview?.status === "flowThinking";
+    const shimmering = thinking || preview?.status === "flowRunningTool";
+    const tool = preview?.tool;
+    const detail = preview?.completed
+        ? `${t("flowDone")} ${preview.completed}`
+        : tool;
+
+    return (
+        <div
+            className={
+                status
+                    ? "flex min-w-0 items-center gap-2 whitespace-nowrap text-sm text-muted-foreground"
+                    : "sr-only"
+            }
+        >
+            <output className="sr-only">
+                {tool ? `${status} ${tool}` : status}
+            </output>
+            {status && (
+                <>
+                    <span
+                        key={status}
+                        aria-hidden="true"
+                        className={`flow-peek shrink-0${shimmering ? " flow-status-shimmer" : ""}`}
+                    >
+                        {status}
+                    </span>
+                    {(preview?.thought || detail) && (
+                        <span
+                            className={`min-w-0 truncate ${thinking ? "opacity-80" : ""}`}
+                        >
+                            {preview?.thought ? (
+                                <PreviewThought
+                                    key={thoughtId}
+                                    text={preview.thought}
+                                />
+                            ) : (
+                                <span key={detail} className="flow-peek">
+                                    {detail}
+                                </span>
+                            )}
+                        </span>
+                    )}
+                </>
+            )}
+        </div>
+    );
+}
+
+type PreviewAnswerMessage = Extract<Message, { role: "assistant" }>;
+
+function answerText(message: PreviewAnswerMessage) {
+    return message.formatted.answer ?? message.raw;
+}
+
+export function PreviewAnswer({
+    message,
+    active,
+    collapsed,
+}: {
+    message?: Message;
+    active: boolean;
+    collapsed: boolean;
+}) {
+    const answer = message?.role === "assistant" ? message : undefined;
+    const previous = useRef<{ answer?: PreviewAnswerMessage; active: boolean }>(
+        { active: false },
+    );
+    const [fade, setFade] = useState<{
+        id?: string;
+        revision: number;
+        outgoing?: PreviewAnswerMessage;
+    }>();
+
+    useLayoutEffect(() => {
+        const prior = previous.current;
+        previous.current = { answer, active: active && collapsed };
+        if (!answer || !collapsed) {
+            setFade(undefined);
+            return;
+        }
+        // The final answer can arrive in the same render that clears pending.
+        if (
+            (active || prior.active) &&
+            (!prior.answer ||
+                prior.answer.id !== answer.id ||
+                !answerText(answer).startsWith(answerText(prior.answer)))
+        ) {
+            if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+                setFade(undefined);
+                return;
+            }
+            setFade((current) => ({
+                id: answer.id,
+                revision: (current?.revision ?? 0) + 1,
+                outgoing: prior.answer,
+            }));
+        }
+    }, [active, answer, collapsed]);
+
+    const transition = collapsed && fade?.id === answer?.id ? fade : undefined;
+    return answer ? (
+        <div className="relative">
+            {transition?.outgoing && (
+                <div
+                    key={transition.revision}
+                    aria-hidden="true"
+                    inert
+                    className="flow-answer-out absolute inset-0 overflow-hidden"
+                    onAnimationEnd={() =>
+                        setFade((current) =>
+                            current === transition
+                                ? { ...current, outgoing: undefined }
+                                : current,
+                        )
+                    }
+                >
+                    <MessageBubble message={transition.outgoing} hideThought />
+                </div>
+            )}
+            <div
+                key={`${answer.id ?? ""}-${transition?.revision ?? 0}`}
+                className={transition ? "flow-answer-in" : undefined}
+            >
+                <MessageBubble message={answer} hideThought />
+            </div>
+        </div>
+    ) : null;
 }

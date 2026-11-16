@@ -1,4 +1,8 @@
 import type { ProviderRequestChunk, ProviderToolCall } from "../assistant";
+import {
+    recordStreamTiming,
+    streamBudget,
+} from "../assistant/stream-scheduling";
 import { toGeminiSchema } from "./schema";
 import { ProviderStreamError } from "./stream-error";
 import type {
@@ -95,9 +99,14 @@ async function* parseStream(
     let finishReason: string | undefined;
     let usage: ProviderRequestChunk["usage"];
 
+    const yieldIfBusy = streamBudget();
     try {
         while (true) {
             const { done, value } = await reader.read();
+            if (value)
+                recordStreamTiming("network", value.byteLength, {
+                    target: value,
+                });
             buffer += done
                 ? decoder.decode() + "\n"
                 : decoder.decode(value, { stream: true });
@@ -105,6 +114,8 @@ async function* parseStream(
             buffer = lines.pop() || "";
 
             for (const line of lines) {
+                const pause = yieldIfBusy();
+                if (pause) await pause;
                 const trimmedLine = line.trim();
                 if (!trimmedLine || !trimmedLine.startsWith("data: ")) continue;
 
@@ -158,7 +169,7 @@ async function* parseStream(
                         )
                     ) {
                         const current = toolCalls.at(-1);
-                        yield {
+                        const chunk = {
                             thought: fullThought,
                             answer: fullAnswer,
                             ...(current
@@ -170,6 +181,12 @@ async function* parseStream(
                                   }
                                 : {}),
                         };
+                        recordStreamTiming(
+                            "parsed",
+                            fullAnswer.length + fullThought.length,
+                            { source: value, target: chunk },
+                        );
+                        yield chunk;
                     }
                 } catch (error) {
                     if (error instanceof ProviderStreamError) throw error;

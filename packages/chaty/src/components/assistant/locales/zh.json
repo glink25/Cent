@@ -11,6 +11,8 @@
 	"flowPreparing": "正在准备",
 	"flowExecuting": "正在执行",
 	"flowThinking": "正在思考",
+	"flowPreparingTool": "正在准备工具",
+	"flowRunningTool": "正在运行工具",
 	"flowApproval": "等待确认",
 	"flowElapsed": "已处理",
 	"flowMinutes": "分",

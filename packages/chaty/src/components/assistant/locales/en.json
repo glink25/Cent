@@ -11,6 +11,8 @@
 	"flowPreparing": "Preparing",
 	"flowExecuting": "Running",
 	"flowThinking": "Thinking",
+	"flowPreparingTool": "Preparing tool",
+	"flowRunningTool": "Running tool",
 	"flowApproval": "Waiting for approval",
 	"flowElapsed": "Elapsed",
 	"flowMinutes": "m",

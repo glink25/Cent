@@ -55,6 +55,7 @@ const exposure = { code: true, native: true };
 export const ledgerToolContracts = {
     query: {
         name: "query",
+        label: "查询账单",
         exposure,
         describe:
             "Read bills. Amounts are integers in 1/10000 base-currency units. Time interval is [start,end). Stable ascending time/id order. Statistics cover ALL matches. offset/limit page only items. Read all pages before custom analysis; use aggregate for complete totals.",
@@ -76,6 +77,7 @@ export const ledgerToolContracts = {
     },
     aggregate: {
         name: "aggregate",
+        label: "统计账单",
         exposure,
         describe:
             "Aggregate ALL matching bills in base currency, integer units 10000:1. Group by month/category/type/creator; specify IANA timeZone for monthly buckets. opaque tags do not change totals. No top-N truncation.",
@@ -95,6 +97,7 @@ export const ledgerToolContracts = {
     },
     metadata: {
         name: "metadata",
+        label: "读取账本配置",
         exposure,
         describe:
             "Read the current viewer and ledger members, plus effective categories, tags, currencies and computed metadata. Entries with widgetId are computed and read-only.",
@@ -108,6 +111,7 @@ export const ledgerToolContracts = {
     },
     listLedgerObjects: {
         name: "listLedgerObjects",
+        label: "查看账本对象",
         exposure,
         describe:
             "Read budgets, your scheduled bills, saved filters, and visible widget configuration.",
@@ -125,6 +129,7 @@ export const ledgerToolContracts = {
     },
     readBillAttachment: {
         name: "readBillAttachment",
+        label: "读取账单附件",
         exposure: { native: true, code: false },
         describe:
             "Read one image attachment by bill ID and attachment ID from query.",
@@ -139,6 +144,7 @@ export const ledgerToolContracts = {
 export const ledgerToolDefinitions = Object.values(ledgerToolContracts).map(
     (tool) => ({
         name: tool.name,
+        label: tool.label,
         describe: tool.describe,
         exposure: tool.exposure,
         effect: "read",

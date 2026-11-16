@@ -92,6 +92,7 @@ export function createListSkillsTool(
 ): Tool<undefined, SkillMeta[]> {
     return createTool({
         name: "listSkills",
+        label: "查看技能",
         exposure: { native: true, code: true },
         describe:
             "List available skills (metadata only). Use loadSkill to read full content.",
@@ -115,6 +116,7 @@ export function createLoadSkillTool(
 > {
     return createTool({
         name: "loadSkill",
+        label: "读取技能",
         exposure: { native: true, code: true },
         describe: "Load a skill full markdown content by id.",
         argSchema: loadSkillArgsSchema,
@@ -192,7 +194,7 @@ export function createTool<
     return {
         exposure: input.exposure ?? { code: false, native: false },
         effect: input.effect ?? "read",
-        display: input.display,
+        label: input.label,
         endsTurn: input.endsTurn,
         name,
         describe,

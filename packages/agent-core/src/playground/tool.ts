@@ -29,6 +29,7 @@ export function createPlaygroundTool(
 ): Tool {
     return createTool({
         name: "playground",
+        label: "运行代码",
         exposure: { native: true, code: false },
         effect: "write",
         describe:

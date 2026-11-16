@@ -2,6 +2,8 @@ import type {
     ChangeReceipt,
     ContextEvent,
     Message,
+    RunActivity,
+    Tool,
     ToolMessage,
 } from "../../assistant";
 
@@ -34,19 +36,6 @@ export function turnActivity(
     }
     return result;
 }
-export function toolLabel(message: ToolMessage): string {
-    const params = message.formatted.params;
-    if (
-        params &&
-        typeof params === "object" &&
-        "code" in params &&
-        typeof params.code === "string"
-    ) {
-        return `${message.formatted.name} · ${params.code.replace(/\s+/g, " ").slice(0, 100)}`;
-    }
-    return message.formatted.name;
-}
-
 export function changeReceiptFrom(value: unknown): ChangeReceipt | undefined {
     const returned = value as
         | (ChangeReceipt & { change?: ChangeReceipt })
@@ -73,43 +62,90 @@ export function turnReceipts(messages: Message[]) {
     return [...receipts.values()];
 }
 
-/** Text previews are bounded display values. Original tool inputs stay intact. */
-export function actionSummary(
-    name: string,
-    params: unknown,
-    tools: import("../../assistant").Tool[] = [],
-) {
-    const display = tools.find((tool) => tool.name === name)?.display;
-    let summary = "";
-    try {
-        summary = display?.summarize?.(params) ?? "";
-    } catch {
-        /* Optional host presentation. */
-    }
-    if (!summary && params && typeof params === "object") {
-        const values = params as Record<string, unknown>;
-        const value =
-            values.id ??
-            values.resource ??
-            values.question ??
-            values.filter ??
-            values.code;
-        summary =
-            typeof value === "string"
-                ? value
-                : value
-                  ? JSON.stringify(value)
-                  : "";
-    }
-    return {
-        label: display?.label ?? name,
-        icon: display?.icon ?? "icon-[mdi--console]",
-        summary: summary.replace(/\s+/g, " ").slice(0, 160),
-    };
+/** Host labels are plain text; Chaty owns presentation and phase translations. */
+export function toolLabel(name: string, tools: Tool[] = []): string {
+    const label = tools.find((tool) => tool.name === name)?.label;
+    return label?.trim() ? label : name;
 }
 
 export function thoughtTail(text: string) {
     return text.trim().split(/\n+/).filter(Boolean).at(-1)?.slice(-180) ?? "";
+}
+
+function thoughtPreview(text: string) {
+    const line = text.trim().replace(/\s+/g, " ");
+    const sentence = line
+        .match(/[^.!?。！？…]+(?:[.!?。！？…]+|$)/g)
+        ?.findLast((part) => /[.!?。！？…]$/.test(part));
+    return (sentence?.trim() || line).slice(-180);
+}
+
+type PreviewOverride =
+    | "flowApproval"
+    | "contextCompacting"
+    | "agentRetrying"
+    | "agentRecovering";
+
+export function turnPreview(
+    messages: Message[],
+    activity: RunActivity | undefined,
+    tools: Tool[],
+    override?: PreviewOverride,
+) {
+    const answer = messages.findLast(
+        (message) =>
+            message.role === "assistant" && message.formatted.answer?.trim(),
+    );
+    if (override) return { answer, status: override };
+
+    const current = activity?.messageId
+        ? messages.find((message) => message.id === activity.messageId)
+        : undefined;
+    // The last provider chunk can already include parsed calls before execution starts.
+    const parsedCall =
+        activity?.phase === "answering" && current?.role === "assistant"
+            ? current.formatted.tools?.[0]
+            : undefined;
+    const phase = parsedCall ? "preparing" : (activity?.phase ?? "thinking");
+    const tool = parsedCall?.name ?? activity?.name;
+    if (phase === "preparing" || phase === "executing") {
+        return {
+            answer,
+            status:
+                phase === "preparing"
+                    ? ("flowPreparingTool" as const)
+                    : ("flowRunningTool" as const),
+            tool: tool ? toolLabel(tool, tools) : undefined,
+        };
+    }
+    if (phase === "answering") return { answer, status: undefined };
+
+    const thought =
+        current?.role === "assistant"
+            ? thoughtPreview(current.formatted.thought ?? "")
+            : "";
+    const completed = thought
+        ? undefined
+        : messages.findLast((message) => {
+              if (
+                  message.role !== "tool" ||
+                  message.internal ||
+                  message.formatted.errors !== undefined
+              ) {
+                  return false;
+              }
+              const receipt = changeReceiptFrom(message.formatted.returns);
+              return !receipt || receipt.status === "applied";
+          });
+    return {
+        answer,
+        status: "flowThinking" as const,
+        thought: thought || undefined,
+        completed:
+            completed?.role === "tool"
+                ? toolLabel(completed.formatted.name, tools)
+                : undefined,
+    };
 }
 
 export type FlowItem =

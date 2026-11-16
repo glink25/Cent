@@ -11,7 +11,6 @@ import principles from "./cent-principles.md?raw";
 import { guardOperation } from "./guard";
 import { mutationTools } from "./mutation-tools";
 import { createDataOperations } from "./operations";
-import { withToolDisplay } from "./tool-display";
 import { readAgentSnapshot } from "./web-host";
 import { widgetOperations } from "./widget-operations";
 
@@ -27,14 +26,12 @@ const operations: Tool[] = [
 ];
 
 export const CentAgentConfig = {
-    tools: (
-        [
-            ...operations,
-            ...mutationTools,
-            DiscoverTools,
-            PlaygroundTool,
-        ] as Tool[]
-    ).map(withToolDisplay),
+    tools: [
+        ...operations,
+        ...mutationTools,
+        DiscoverTools,
+        PlaygroundTool,
+    ] as Tool[],
     skills: [
         parseSkillMetadata(principles),
         PlaygroundSkill,

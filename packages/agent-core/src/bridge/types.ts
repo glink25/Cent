@@ -21,6 +21,8 @@ export type {
 } from "./runtime";
 
 export type AIChatToolDefinition = {
+    /** Plain user-facing name; omitted from model tool definitions. */
+    label?: string;
     exposure?: { native: boolean; code: boolean };
     effect?: "read" | "write" | "ui";
     endsTurn?: boolean;

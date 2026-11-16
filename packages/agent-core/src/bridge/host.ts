@@ -32,7 +32,10 @@ const hostToolDefinitions = new WeakMap<Tool, AIChatToolDefinition>();
 
 function serializeTool(tool: Tool): AIChatToolDefinition {
     const hostDef = hostToolDefinitions.get(tool);
-    if (hostDef) return hostDef;
+    if (hostDef) {
+        const { label: _label, ...definition } = hostDef;
+        return definition;
+    }
     return {
         exposure: tool.exposure,
         effect: tool.effect,
@@ -51,6 +54,7 @@ function serializeTool(tool: Tool): AIChatToolDefinition {
 
 export const DiscoverTools = createTool({
     name: "discover",
+    label: "查找可用工具",
     effect: "read",
     exposure: { native: true, code: true },
     describe:
@@ -84,6 +88,7 @@ function useSharedLedgerContract(
         ? {
               ...tool,
               ...contract,
+              label: tool.label,
               effect: "read",
               exposure: {
                   native:
@@ -212,6 +217,7 @@ export function createHostTool(
         effect: tool.effect ?? "write",
         endsTurn: tool.endsTurn,
         name: tool.name,
+        label: tool.label,
         describe: tool.describe,
         argSchema: contract?.argSchema ?? z.unknown().describe(argDescription),
         returnSchema:

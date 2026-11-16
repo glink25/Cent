@@ -1,13 +1,37 @@
 /** biome-ignore-all lint/security/noDangerouslySetInnerHtml: Markdown is rendered from local chat text in this UI shell. */
+import { recordStreamTiming } from "@glink25/agent-core/assistant/stream-scheduling";
 import DOMPurify from "dompurify";
 import { marked } from "marked";
 import { Collapsible } from "radix-ui";
-import { useId, useLayoutEffect, useRef, useState } from "react";
+import { memo, useId, useLayoutEffect, useRef, useState } from "react";
 import "./prose.css";
 import type { Message, Tool } from "@glink25/agent-core";
 import { toast } from "sonner";
 import { useI18n } from "./i18n";
-import { actionSummary } from "./turn-model";
+import { toolLabel } from "./turn-model";
+
+const markdownCache = new Map<string, string>();
+let cachedCharacters = 0;
+function renderMarkdown(text: string) {
+    const cached = markdownCache.get(text);
+    if (cached !== undefined) return cached;
+    const started = performance.now();
+    const html = DOMPurify.sanitize(marked.parse(text, { async: false }));
+    recordStreamTiming("markdown", text.length, {
+        duration: performance.now() - started,
+    });
+    const size = text.length + html.length;
+    if (size > 1_000_000) return html;
+    while (markdownCache.size >= 64 || cachedCharacters + size > 1_000_000) {
+        const oldest = markdownCache.entries().next().value;
+        if (!oldest) break;
+        markdownCache.delete(oldest[0]);
+        cachedCharacters -= oldest[0].length + oldest[1].length;
+    }
+    markdownCache.set(text, html);
+    cachedCharacters += size;
+    return html;
+}
 
 const USER_MESSAGE_MAX_HEIGHT = 240;
 
@@ -70,7 +94,7 @@ function UserMessageBody({ text }: { text: string }) {
     );
 }
 
-export function MessageBubble({
+export const MessageBubble = memo(function MessageBubble({
     message,
     onRerunToolCall,
     hideThought,
@@ -172,11 +196,8 @@ export function MessageBubble({
                         <div
                             className="prose max-w-none select-text text-[15px] leading-7"
                             dangerouslySetInnerHTML={{
-                                __html: DOMPurify.sanitize(
-                                    marked.parse(
-                                        message.formatted.answer ?? message.raw,
-                                        { async: false },
-                                    ),
+                                __html: renderMarkdown(
+                                    message.formatted.answer ?? message.raw,
                                 ),
                             }}
                         />
@@ -186,18 +207,17 @@ export function MessageBubble({
 
         case "tool": {
             const { name } = message.formatted;
-            const action = actionSummary(name, message.formatted.params, tools);
+            const label = toolLabel(name, tools);
             return (
                 <Collapsible.Root className="min-w-0 text-sm text-muted-foreground">
                     <div className="flex items-center justify-between w-full gap-1">
                         <Collapsible.Trigger className="group/call flex items-center gap-2 flex-1 cursor-pointer hover:text-foreground py-1 rounded min-w-0">
-                            <i className={`${action.icon} size-4 shrink-0`}></i>
+                            <i className="icon-[mdi--console] size-4 shrink-0"></i>
                             <span className="font-medium truncate">
                                 {message.formatted.errors !== undefined
                                     ? t("error")
                                     : t("flowDone")}{" "}
-                                {action.label}
-                                {action.summary ? ` · ${action.summary}` : ""}
+                                {label}
                             </span>
                             {message.formatted.runningTime !== undefined && (
                                 <span className="opacity-60 text-[10px] shrink-0">
@@ -268,4 +288,4 @@ export function MessageBubble({
         default:
             return null;
     }
-}
+});

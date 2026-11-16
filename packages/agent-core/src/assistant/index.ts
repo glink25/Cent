@@ -49,7 +49,6 @@ export type {
     SystemMessage,
     Tool,
     ToolContext,
-    ToolDisplay,
     ToolExposure,
     ToolJsonSchema,
     ToolMessage,
