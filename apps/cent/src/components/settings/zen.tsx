@@ -126,9 +126,26 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                     </Select>
                 </div>
 
+                <div className="w-full min-h-10 flex-shrink-0 flex py-2 justify-between items-center px-4 gap-2">
+                    <div className="text-sm min-w-0 flex-1">
+                        <div>{t("zen-scheduled-time")}</div>
+                    </div>
+                    <Input
+                        type="time"
+                        value={scheduledTime}
+                        className="w-32"
+                        onChange={(event) => {
+                            void updateSettings({
+                                scheduledTime: event.currentTarget.value,
+                            });
+                        }}
+                    />
+                </div>
+
                 {bookId && Boolean(userId) && metaReady && (
                     <PromptEditorItem
                         key={scope}
+                        triggerClassName="font-normal"
                         stored={
                             typeof personalityPrompt === "string" &&
                             personalityPrompt.trim()
@@ -158,22 +175,6 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                         }}
                     />
                 )}
-
-                <div className="w-full min-h-10 flex-shrink-0 flex py-2 justify-between items-center px-4 gap-2">
-                    <div className="text-sm min-w-0 flex-1">
-                        <div>{t("zen-scheduled-time")}</div>
-                    </div>
-                    <Input
-                        type="time"
-                        value={scheduledTime}
-                        className="w-32"
-                        onChange={(event) => {
-                            void updateSettings({
-                                scheduledTime: event.currentTarget.value,
-                            });
-                        }}
-                    />
-                </div>
             </div>
         </PopupLayout>
     );

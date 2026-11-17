@@ -1,6 +1,7 @@
 import { type ReactNode, useId, useRef, useState } from "react";
 import PopupLayout from "@/layouts/popup-layout";
 import { useIntl } from "@/locale";
+import { cn } from "@/utils";
 import { Button } from "../ui/button";
 import {
     Dialog,
@@ -15,6 +16,7 @@ export function PromptEditorItem({
     defaultValue = "",
     description,
     resetLabel,
+    triggerClassName,
     onSave,
     children,
 }: {
@@ -22,6 +24,7 @@ export function PromptEditorItem({
     defaultValue?: string;
     description: string;
     resetLabel: string;
+    triggerClassName?: string;
     onSave: (value: string, reset: boolean) => void | Promise<void>;
     children?: ReactNode;
 }) {
@@ -66,7 +69,10 @@ export function PromptEditorItem({
             <DialogTrigger asChild>
                 <Button
                     variant="ghost"
-                    className="w-full justify-between rounded-none px-4"
+                    className={cn(
+                        "w-full justify-between rounded-none px-4",
+                        triggerClassName,
+                    )}
                 >
                     {title}
                     <i className="icon-[mdi--chevron-right] size-5" />

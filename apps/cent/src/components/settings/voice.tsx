@@ -177,6 +177,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                 {voiceEnabled && hasAIConfig && (
                     <PromptEditorItem
                         key={scope}
+                        triggerClassName="font-normal"
                         stored={
                             voicePromptTemplate ?? DEFAULT_VOICE_PROMPT_TEMPLATE
                         }
