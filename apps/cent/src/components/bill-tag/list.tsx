@@ -1,6 +1,7 @@
 import { AnimatePresence, motion, type Transition } from "motion/react";
 import { useState } from "react";
 import { v4 } from "uuid";
+import { isComputedEntry } from "@/components/widget/core/computed";
 import { useTag } from "@/hooks/use-tag";
 import PopupLayout from "@/layouts/popup-layout";
 import type { BillTagGroup } from "@/ledger/type";
@@ -30,6 +31,7 @@ export default function TagList({
     const { updateTag, grouped, updateGroup, topUpGroup } = useTag();
 
     const toUpdateTagGroup = async (group?: BillTagGroup) => {
+        if (isComputedEntry(group)) return;
         const newGroup = await showEditTagGroup(group);
         if (newGroup === "delete") {
             if (group?.id) {
@@ -41,6 +43,7 @@ export default function TagList({
     };
 
     const toUpdateTag = async (tag?: EditTag) => {
+        if (isComputedEntry(tag)) return;
         const newTag = await showEditTag(tag);
         if (newTag === "delete") {
             if (tag?.id) {
@@ -99,34 +102,39 @@ export default function TagList({
                                             : group.name}
                                     </div>
                                     <div className="flex items-center gap-1 text-white">
-                                        {group.id !== "un-group" && (
-                                            <>
-                                                {index !== 0 && (
+                                        {group.id !== "un-group" &&
+                                            !isComputedEntry(group) && (
+                                                <>
+                                                    {index !== 0 && (
+                                                        <Button
+                                                            size={"sm"}
+                                                            variant="ghost"
+                                                            onClick={async () => {
+                                                                setAnimate(
+                                                                    true,
+                                                                );
+                                                                await Promise.resolve();
+                                                                topUpGroup(
+                                                                    group.id,
+                                                                );
+                                                            }}
+                                                        >
+                                                            <i className="icon-[mdi--arrow-collapse-up]"></i>
+                                                        </Button>
+                                                    )}
                                                     <Button
-                                                        size={"sm"}
                                                         variant="ghost"
-                                                        onClick={async () => {
-                                                            setAnimate(true);
-                                                            await Promise.resolve();
-                                                            topUpGroup(
-                                                                group.id,
-                                                            );
-                                                        }}
+                                                        size={"sm"}
+                                                        onClick={() =>
+                                                            toUpdateTagGroup(
+                                                                group,
+                                                            )
+                                                        }
                                                     >
-                                                        <i className="icon-[mdi--arrow-collapse-up]"></i>
+                                                        <i className="icon-[mdi--settings]"></i>
                                                     </Button>
-                                                )}
-                                                <Button
-                                                    variant="ghost"
-                                                    size={"sm"}
-                                                    onClick={() =>
-                                                        toUpdateTagGroup(group)
-                                                    }
-                                                >
-                                                    <i className="icon-[mdi--settings]"></i>
-                                                </Button>
-                                            </>
-                                        )}
+                                                </>
+                                            )}
                                     </div>
                                 </div>
                                 <div className="flex flex-wrap items-center p-2 gap-2">

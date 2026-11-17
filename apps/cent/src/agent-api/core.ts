@@ -1,50 +1,60 @@
-import { CentAIConfig } from "@/components/assistant/tools";
+import { z } from "zod";
+import { CentAgentConfig } from "@/agent/runtime";
+import { createTool, executeToolCall, type Tool } from "@/assistant";
 import { buildSkillMarkdown, buildToolList, type SkillContext } from "./skill";
-
-/**
- * Platform-agnostic core dispatch for the agent-api feature.
- *
- * These helpers expose the same tools/skills the built-in assistant uses
- * (`CentAIConfig`) to external AI agents. They know nothing about the
- * transport (local HTTP server, Web MCP, …) — that lives in the adapters.
- */
 
 export type { SkillContext } from "./skill";
 
-/** Machine-readable list of available tools and skills (with JSON Schema). */
+const readDocs = createTool({
+    name: "readDocs",
+    exposure: { native: true, code: true },
+    describe:
+        "Read Cent operation documentation. Omit id to list available manuals; widget documents the interactive v2 API.",
+    argSchema: z.object({ id: z.string().optional() }),
+    returnSchema: z.unknown(),
+    handler: ({ id }) => {
+        if (!id)
+            return CentAgentConfig.skills.map(({ id, name, description }) => ({
+                id,
+                name,
+                description,
+            }));
+        const skill = CentAgentConfig.skills.find((s) => s.id === id);
+        if (!skill) throw new Error("Unknown document");
+        return skill;
+    },
+});
+const tools = [...CentAgentConfig.tools, readDocs] as Tool[];
 export function getToolList() {
-    return buildToolList(CentAIConfig.tools, CentAIConfig.skills as never);
-}
-
-/** Human-readable skill manual describing how to use the exposed tools. */
-export function getSkillMarkdown(ctx: SkillContext): string {
-    return buildSkillMarkdown(
-        CentAIConfig.tools,
-        ctx,
-        CentAIConfig.skills as never,
+    return buildToolList(
+        tools.filter((t) => t.exposure?.native),
+        CentAgentConfig.skills,
     );
 }
-
-/**
- * Validate args against the tool's schema and invoke its handler.
- * Throws on unknown tool name or invalid arguments.
- */
-export async function callTool(name: string, args: unknown): Promise<unknown> {
-    const tool = CentAIConfig.tools.find((t) => t.name === name);
-    if (!tool) {
-        throw new Error(`Tool not found: ${name}`);
-    }
-    let parsed: unknown = args;
-    if (tool.argSchema) {
-        const r = tool.argSchema.safeParse(args ?? {});
-        if (!r.success) {
-            throw new Error(`Invalid args: ${JSON.stringify(r.error)}`);
-        }
-        parsed = r.data;
-    }
-    const out = await tool.handler(parsed as never, {
-        history: [],
-        tools: CentAIConfig.tools,
-    });
-    return out ?? null;
+export function getSkillMarkdown(ctx: SkillContext): string {
+    return buildSkillMarkdown(
+        tools.filter((t) => t.exposure?.native),
+        ctx,
+        CentAgentConfig.skills,
+    );
+}
+export async function callTool(
+    name: string,
+    args: unknown,
+    signal?: AbortSignal,
+): Promise<unknown> {
+    const result = await executeToolCall(
+        new Map(tools.map((t) => [t.name, t])),
+        { name, params: args },
+        {
+            history: [],
+            tools,
+            signal,
+            surface: "native",
+            source: "webmcp",
+        },
+    );
+    if (result.formatted.errors !== undefined)
+        throw new Error(JSON.stringify(result.formatted.errors));
+    return result.formatted.returns ?? null;
 }

@@ -1,4 +1,4 @@
-import type { History } from "@glink25/chaty";
+import type { ContextState, History } from "@glink25/agent-core";
 
 export type ZenDayId = string;
 
@@ -278,8 +278,7 @@ export type ZenSessionState = {
     status: "active" | "completed" | "cancelled";
     currentStep?: ZenUIStep;
     history?: History;
-    /** 上一次已发给模型的周期类 zenContext 签名，用于只在 period 变化时重发。 */
-    sentContextSignature?: string;
+    contextState?: ContextState;
     /** 本地 Director 的会话随机种子；重开时更新，同一轮内保持稳定。 */
     localSeed?: string;
     createdAt: number;
@@ -361,7 +360,8 @@ export type ZenContext = {
     recentZenPosts: ZenPost[];
     calendarPosition: ZenCalendarPosition;
     suggestedPeriods: ZenSuggestedPeriod[];
-    lastZenPost?: ZenPost;
+    lastZenPost?: Pick<ZenPost, "completedAt">;
+    dataStatus?: "unread";
     summary: {
         expenseTotal: number;
         incomeTotal: number;

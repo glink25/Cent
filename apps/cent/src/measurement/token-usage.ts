@@ -248,6 +248,7 @@ export function createAssistantTokenUsageProvider(
 
     const turns = new WeakMap<object, UsageAggregate>();
     return {
+        getContextPolicy: provider.getContextPolicy?.bind(provider),
         request(request) {
             const userMessage = findLastUserMessage(request.history) ?? {};
             let aggregate = turns.get(userMessage);
@@ -318,6 +319,7 @@ export function createZenTokenUsageProvider(
 ): Provider {
     if (!isMeasurementEnabled()) return provider;
     return {
+        getContextPolicy: provider.getContextPolicy?.bind(provider),
         request(request) {
             if (!zenUsage) {
                 let apiType: TokenUsageApiType = "open_ai_compatible";

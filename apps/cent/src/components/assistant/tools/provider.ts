@@ -1,5 +1,5 @@
-import type { Provider } from "@glink25/chaty";
-import { createAIProvider } from "@glink25/chaty/providers";
+import type { Provider } from "@glink25/agent-core";
+import { createAIProvider } from "@glink25/agent-core/providers";
 import { decodeApiKey } from "@/utils/api-key";
 import { getAIConfig } from "../request";
 
@@ -24,8 +24,8 @@ export function createCentAIProvider(
     getConfigId?: () => string | undefined,
 ): Provider {
     return createAIProvider(
-        () => {
-            const config = getAIConfig(getConfigId?.());
+        (configId) => {
+            const config = getAIConfig(configId ?? getConfigId?.());
             return { ...config, apiKey: decodeApiKey(config.apiKey) };
         },
         { formatUserAssets },

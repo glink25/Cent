@@ -13,7 +13,7 @@ export const ZEN_ABSOLUTE_MAX_STEPS = 12;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export function daysSinceLastZen(
-    lastZenPost: ZenPost | undefined,
+    lastZenPost: Pick<ZenPost, "completedAt"> | undefined,
     now = Date.now(),
 ) {
     if (!lastZenPost) return undefined;
@@ -29,7 +29,7 @@ export function targetStepsForInterval(days: number | undefined) {
 }
 
 export function createZenJourneyPlan(
-    lastZenPost?: ZenPost,
+    lastZenPost?: Pick<ZenPost, "completedAt">,
     now = Date.now(),
 ): ZenJourneyPlan {
     const days = daysSinceLastZen(lastZenPost, now);
@@ -37,7 +37,7 @@ export function createZenJourneyPlan(
     return {
         daysSinceLastZen: days,
         targetSteps,
-        earliestEpilogueStep: targetSteps,
+        earliestEpilogueStep: Math.min(3, targetSteps),
         hardMaxSteps: targetSteps,
         extensionUsed: false,
     };
@@ -54,7 +54,7 @@ export function createZenExplorationState(): ZenExplorationState {
 
 export function hydrateZenSession(
     session: ZenSessionState,
-    lastZenPost?: ZenPost,
+    lastZenPost?: Pick<ZenPost, "completedAt">,
     now = Date.now(),
 ): ZenSessionState {
     return {
@@ -119,7 +119,7 @@ export function hasEarlyExitReason(
 ) {
     return (
         session.exploration.consecutiveSkips >= 2 ||
-        context.summary.billCount === 0
+        (context.dataStatus !== "unread" && context.summary.billCount === 0)
     );
 }
 
@@ -138,22 +138,32 @@ export function canShowEpilogue(
     currentStep: number,
 ) {
     if (currentStep >= session.journeyPlan.hardMaxSteps) return true;
-    if (hasEarlyExitReason(session, context)) return true;
+    if (
+        !session.journeyPlan.extensionUsed &&
+        hasEarlyExitReason(session, context)
+    )
+        return true;
     return (
         currentStep >= session.journeyPlan.earliestEpilogueStep &&
         hasMinimumExploration(session)
     );
 }
 
-export function extendZenJourney(plan: ZenJourneyPlan): ZenJourneyPlan {
+export function extendZenJourney(
+    plan: ZenJourneyPlan,
+    completedAtStep = plan.hardMaxSteps,
+): ZenJourneyPlan {
     if (plan.extensionUsed) return plan;
     return {
         ...plan,
         extensionUsed: true,
         earliestEpilogueStep: Math.min(
             ZEN_ABSOLUTE_MAX_STEPS,
-            plan.hardMaxSteps + 1,
+            completedAtStep + 1,
         ),
-        hardMaxSteps: Math.min(ZEN_ABSOLUTE_MAX_STEPS, plan.hardMaxSteps + 2),
+        hardMaxSteps: Math.min(
+            ZEN_ABSOLUTE_MAX_STEPS,
+            Math.max(plan.hardMaxSteps, completedAtStep + 2),
+        ),
     };
 }

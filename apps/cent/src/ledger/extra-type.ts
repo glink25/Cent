@@ -67,6 +67,7 @@ export type BillFilterViewModule =
     | "analysis" // AnalysisDetail 简易分析模块
     | "top-expense" // 最高支出模块
     | "top-income" // 最高收入模块
+    | `widget-view:${string}`
     | `widget-${string}`; // Widget 组件
 
 export type BillFilterView = {
@@ -109,6 +110,9 @@ export type AIConfig = {
      * 设置过小会在思考未完成时就被 finish_reason="length" 截断。不填则使用默认值。
      */
     maxTokens?: number;
+    /** Total model context capacity; defaults conservatively to 32768. */
+    contextWindow?: number;
+    imageInput?: boolean;
     /** 浅合并到 API 请求体顶层；会话、工具和流式协议核心字段由系统保留。 */
     customParams?: JSONObject;
 };
@@ -125,10 +129,12 @@ export type PersonalMeta = {
         /** undefined 跟随默认，null 不使用模型，string 使用指定配置。 */
         aiConfigId?: string | null;
         scheduledTime?: string;
+        personalityPrompt?: string;
     };
-    customCSS?: string;
+    reverseIncomeExpenseColors?: boolean;
     homeWidgets?: string[]; // 首页展示的widget列表，元素为widget id
     assistant?: {
+        extraPrompt?: string;
         bigmodel?: {
             apiKey?: string;
         };

@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { loadStorageAPI } from "@/api/storage/dynamic";
 import { BillCategories } from "@/ledger/category";
+import { hasMapConfig } from "@/ledger/map-config";
 import type { Bill, GlobalMeta, PersonalMeta } from "@/ledger/type";
 import { isMeasurementReady, measure } from "@/measurement";
 import { useBookStore } from "@/store/book";
@@ -136,10 +137,6 @@ export function buildUsageSnapshotMetrics({
         result.push(metric("book_count", bookCount, bucketSmall));
     }
     result.push(
-        booleanMetric(
-            "custom_theme_enabled",
-            Boolean(personal.customCSS?.trim()),
-        ),
         metric("widget_count", meta.widgets?.length ?? 0, bucketSmall),
         metric(
             "home_widget_count",
@@ -169,10 +166,7 @@ export function buildUsageSnapshotMetrics({
             scheduleds.filter((scheduled) => scheduled.enabled).length,
             bucketSmall,
         ),
-        booleanMetric(
-            "map_enabled",
-            Boolean(meta.map?.amapKey && meta.map?.amapSecurityCode),
-        ),
+        booleanMetric("map_enabled", hasMapConfig(meta.map)),
         metric(
             "stat_filter_count",
             (meta.customFilters ?? []).filter(

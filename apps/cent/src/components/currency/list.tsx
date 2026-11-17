@@ -4,6 +4,7 @@
 import { type ReactNode, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { type Currency, DefaultCurrencies } from "@/api/currency/currencies";
+import { isComputedEntry } from "@/components/widget/core/computed";
 import { useCurrency } from "@/hooks/use-currency";
 import PopupLayout from "@/layouts/popup-layout";
 import type { CustomCurrency } from "@/ledger/type";
@@ -100,6 +101,7 @@ export default function CurrencyListForm({
     };
 
     const toUpdateCurrency = async (currency?: CustomCurrency) => {
+        if (isComputedEntry(currency)) return;
         const newCurrency = await showEditCurrency(currency);
         if (!newCurrency) {
             return;
@@ -245,8 +247,13 @@ export default function CurrencyListForm({
                                             name={currency.name}
                                             symbol={currency.symbol}
                                             rate={rate}
-                                            onClick={() =>
-                                                toUpdateCurrency(currency)
+                                            onClick={
+                                                isComputedEntry(currency)
+                                                    ? undefined
+                                                    : () =>
+                                                          toUpdateCurrency(
+                                                              currency,
+                                                          )
                                             }
                                         >
                                             {tail}
@@ -308,8 +315,11 @@ export default function CurrencyListForm({
                                         name={currency.name}
                                         symbol={currency.symbol}
                                         rate={rate}
-                                        onClick={() =>
-                                            toUpdateCurrency(currency)
+                                        onClick={
+                                            isComputedEntry(currency)
+                                                ? undefined
+                                                : () =>
+                                                      toUpdateCurrency(currency)
                                         }
                                     >
                                         {tail}

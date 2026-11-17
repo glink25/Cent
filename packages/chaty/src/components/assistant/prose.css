@@ -108,3 +108,85 @@
 .prose.prose-sm {
 	font-size: 0.875rem;
 }
+
+.flow-detail {
+    max-height: 280px;
+    overflow: auto;
+    overscroll-behavior: contain;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background: var(--muted);
+    padding: 0.75rem;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+}
+.flow-peek {
+    animation: flow-peek-in 160ms ease-out;
+}
+@keyframes flow-peek-in {
+    from { opacity: 0.5; }
+    to { opacity: 1; }
+}
+.flow-status-shimmer {
+    background-image: linear-gradient(
+        90deg,
+        var(--muted-foreground) 40%,
+        var(--foreground) 50%,
+        var(--muted-foreground) 60%
+    );
+    background-size: 300% 100%;
+    background-position: 100% 0;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: flow-peek-in 160ms ease-out, flow-status-shimmer 2.4s linear infinite;
+}
+@keyframes flow-status-shimmer {
+    from { background-position: 100% 0; }
+    to { background-position: 0% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .flow-peek { animation: none; }
+    .flow-status-shimmer {
+        background-image: none;
+        color: var(--muted-foreground);
+        animation: none;
+    }
+}
+
+.flow-answer-in {
+    animation: flow-answer-in 220ms ease-in-out both;
+}
+.flow-answer-out {
+    animation: flow-answer-out 220ms ease-in-out both;
+}
+@keyframes flow-answer-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+@keyframes flow-answer-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .flow-answer-in { animation: none; }
+    .flow-answer-out { display: none; }
+}
+
+.flow-process[data-state="open"] {
+    animation: flow-process-open 180ms ease-out;
+}
+.flow-process[data-state="closed"] {
+    animation: flow-process-close 160ms ease-in;
+}
+@keyframes flow-process-open {
+    from { height: 0; opacity: 0; }
+    to { height: var(--radix-collapsible-content-height); opacity: 1; }
+}
+@keyframes flow-process-close {
+    from { height: var(--radix-collapsible-content-height); opacity: 1; }
+    to { height: 0; opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .flow-process { animation: none !important; }
+}

@@ -5,6 +5,7 @@ import {
     DefaultCurrencies,
     DefaultCurrencyId,
 } from "@/api/currency/currencies";
+import { assertEditable } from "@/components/widget/core/computed";
 import type { CustomCurrency } from "@/ledger/type";
 import { t, useIntl } from "@/locale";
 import { measure } from "@/measurement";
@@ -12,17 +13,17 @@ import { useBookStore } from "@/store/book";
 import { type CConvert, useCurrencyStore } from "@/store/currency";
 import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
+import { getEffectiveCustomCurrencies, useWidgetMeta } from "./use-widget-meta";
 
 export const useCurrency = () => {
-    const [baseCurrencyId, customCurrencies = [], quickCurrencyIds = []] =
-        useLedgerStore(
-            useShallow((state) => [
-                state.infos?.meta.baseCurrency ?? DefaultCurrencyId,
-                state.infos?.meta.customCurrencies,
-                state.infos?.meta.quickCurrencies,
-            ]),
-        );
+    const [baseCurrencyId, quickCurrencyIds = []] = useLedgerStore(
+        useShallow((state) => [
+            state.infos?.meta.baseCurrency ?? DefaultCurrencyId,
+            state.infos?.meta.quickCurrencies,
+        ]),
+    );
 
+    const { customCurrencies } = useWidgetMeta();
     const t = useIntl();
     const allCurrencies = useMemo(
         () => [
@@ -128,6 +129,7 @@ export const useCurrency = () => {
 
     const updateCustomCurrency = useCallback(
         (currency: Omit<CustomCurrency, "id"> & { id?: string }) => {
+            if (currency.id) assertEditable(currency.id);
             const id = currency.id ?? v4();
             const exists = useLedgerStore
                 .getState()
@@ -160,6 +162,7 @@ export const useCurrency = () => {
     );
 
     const deleteCustomCurrency = useCallback((id: string) => {
+        assertEditable(id);
         const result = useLedgerStore.getState().updateGlobalMeta((meta) => {
             const customCurrencies = meta.customCurrencies ?? [];
             const index = customCurrencies.findIndex((c) => c.id === id);
@@ -210,8 +213,7 @@ export const useCurrency = () => {
 };
 
 export const getAllCurrencies = () => {
-    const customCurrencies =
-        useLedgerStore.getState().infos?.meta.customCurrencies ?? [];
+    const customCurrencies = getEffectiveCustomCurrencies();
     return [
         ...customCurrencies.map((c) => ({ ...c, label: c.name })),
         ...DefaultCurrencies.map((c) => ({ ...c, label: t(c.labelKey) })),

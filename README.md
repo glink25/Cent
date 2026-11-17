@@ -10,20 +10,11 @@
 [![GitHub Repo](https://img.shields.io/badge/data-storage_on_GitHub-black?logo=github)]()
 
 Cent 是一个 **完全免费、开源的多人协作记账 Web App**，  
-基于 **GitHub 仓库** 实现数据同步与版本控制，无需服务器，即可实现跨平台实时同步。
+可通过 **GitHub/Gitee、WebDAV 或 S3 兼容存储** 跨平台同步，也支持本地离线记账。
 
 🔗 **在线体验**：[https://cent.linkai.work](https://cent.linkai.work)  
 💾 **开源仓库**：[https://github.com/glink25/Cent](https://github.com/glink25/Cent)  
 📖 **博客**：[https://glink25.github.io/tag/Cent/](https://glink25.github.io/tag/Cent/)  
-
-📱 **iOS 版下载**：
-
-<a href="https://apps.apple.com/us/app/cent-%E9%87%8D%E6%96%B0%E5%AE%9A%E4%B9%89%E8%AE%B0%E8%B4%A6/id6764264950">
-  <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on the App Store" height="32">
-</a>
-
-
-> [Cent iOS版现已推出 🎉](https://glink25.github.io/post/Cent-iOS%E7%89%88%E7%8E%B0%E5%B7%B2%E6%8E%A8%E5%87%BA/)
 
 ---
 
@@ -37,14 +28,14 @@ Cent 是一个 **完全免费、开源的多人协作记账 Web App**，
 | 预算管理 | ![预算视图](https://glink25.github.io/post-assets/mgucw884-cent-budget.jpg) |
 | GitHub 协作 | ![协作功能](https://glink25.github.io/post-assets/mgucw884-github-collaborator.jpg) |
 
->  **最新更新**：Cent 现已支持 AI 助手、语音记账、多币种管理、地图可视化、周期记账等众多新功能！详见 [Cent 1.1 更新说明](https://glink25.github.io/post/Cent-%E5%B7%B2%E6%94%AF%E6%8C%81%E5%A4%9A%E5%B8%81%E7%A7%8D%E8%87%AA%E5%8A%A8%E8%AE%B0%E8%B4%A6/)。
+>  **最新更新**：Cent Web 3.0 带来**交互式小组件**，升级了 AI 助手和禅模式，新增 Google Maps 支持与账单图片预览。
 
 ---
 
 ## ✨ 特性
 
 ### 💾 数据完全自持
-账本数据保存在你的 GitHub/Gitee 私人仓库或 Web DAV 中，无需任何第三方服务器。通过 **GitHub Collaborator** 功能即可实现多人协作，**增量同步**机制只上传/下载变更数据，大幅缩短同步时间。
+账本数据可保存在你的 GitHub/Gitee 私有仓库、WebDAV 或 S3 兼容存储中，也可仅保存在本地。通过 **GitHub Collaborator** 功能即可实现多人协作，**增量同步**机制只上传/下载变更数据，大幅缩短同步时间。
 
 ### 🤖 AI 智能体验
 长按记账按钮即可**语音记账**，AI 自动解析金额、分类和备注。配置 OpenAI 兼容 API 后，可进行账单分析、预算建议、年度总结等智能对话，还能根据历史数据**智能预测**分类。
@@ -53,14 +44,25 @@ Cent 是一个 **完全免费、开源的多人协作记账 Web App**，
 支持 30+ 种国际货币及自定义币种，实时汇率自动转换，适合出国旅行和跨境消费。为订阅服务、自动续费等创建**周期记账**模板，自动生成账单。
 
 ### 📊 统计分析 & 可视化
-多维度筛选与趋势分析、自定义分析视图、预算管理与进度监控。在**地图上查看消费足迹**，支持高德地图。
+多维度筛选与趋势分析、自定义分析视图、预算管理与进度监控。在**地图上查看消费足迹**，Web 支持高德地图和 Google Maps。
+
+Web 地图设置可同时保存高德和 Google 配置，并选择默认地图。使用 Google Maps 时，请在 Google Cloud 项目中启用计费和 Maps JavaScript API，创建按站点来源和 API 限制的浏览器 Key，再创建 JavaScript Map ID。将两项填入 Cent 的地图设置后，选择 Google Maps 并保存。 [API Key 指南](https://developers.google.com/maps/documentation/javascript/get-api-key) · [Map ID 指南](https://developers.google.com/maps/documentation/javascript/advanced-markers/start)
+
+升级会保留历史账单的坐标。部分旧版高德手动选点可能出现偏移，可在新版编辑账单并重新选点。[地图设计与兼容约定](docs/contributing/map.md)
+
+### 🧩 小组件 API 2.0
+Cent Web 支持用 JavaScript 编写带按钮、表单和弹窗的**交互式小组件**。「账户与转账」可根据账单展示账户余额和流水，支持期初余额、跨币种转账与手续费。
+
+到 [Widget Showcase 小组件社区](https://github.com/glink25/Cent/discussions/categories/widget-showcase) 浏览示例和使用说明。复制喜欢的小组件源码，在「设置 → 账本设置 → Widget设置」中新增 Widget，粘贴代码、检查权限并保存，再开启「首页展示」。自己写了小组件，也欢迎在社区分享源码、适用场景、安装步骤和界面截图。
+
+小组件可在账本内共享配置，动态生成分类、标签和统计视图。已有 1.x 脚本需要升级至 2.0 才能运行。 [API 文档](./apps/cent/src/components/widget/core/WIDGET_V2_API.md) · [示例源码](./apps/cent/src/components/widget/examples/accounts.js)
 
 ### 🛠️ 更多功能
-- 📱 **PWA 支持**：可安装到桌面，像原生 App 一样使用
+- 📱 **PWA 支持**：可安装到桌面
 - 📥 **智能导入**：支持微信/支付宝账单，可用 AI 创建自定义导入方案
 - 🏷️ **二级分类 & 标签**：自定义分类、标签分组、单选/多选、偏好币种
 - 📋 **快捷操作**：iOS 快捷指令、剪贴板记账、批量编辑、自然语言识别
-- 🎨 **个性化**：深色模式、自定义 CSS、键盘定制
+- 🎨 **个性化**：深色模式、反转收支颜色、键盘定制
 
 *...以及更多功能等你探索 ✨*
 
@@ -73,9 +75,9 @@ Cent 是一个“纯前端”的 PWA 应用。
 
 ### 🗂 数据结构
 
-- 每个账本（Book）即为一个 GitHub/Gitee 仓库。
+- 使用 GitHub/Gitee 同步时，每个账本（Book）对应一个仓库。
 - 数据以 JSON 格式存储在仓库中，支持历史版本回滚。
-- 通过仓库名识别账本，实现多账本管理。
+- 使用 GitHub/Gitee 同步时，通过仓库名识别不同账本。
 
 ### 🔁 增量同步机制
 
@@ -88,10 +90,7 @@ Cent 内置一套自定义的增量同步策略，仅同步增量差异：
 
 ### 🧩 可扩展同步端点
 
-同步逻辑经过抽象封装，未来将支持：  
-- 自建服务器  
-- 网盘（如 Dropbox、OneDrive）  
-- 本地离线账本  
+同步逻辑经过抽象封装，Web 端已支持 GitHub、Gitee、WebDAV 和 S3 兼容存储，也可以创建本地离线账本。
 
 ---
 
@@ -125,11 +124,11 @@ Cent使用Cloudflare Workers部署了一个线上鉴权服务，该服务只针�
 - ✅ AI 助手功能
 - ✅ 语音记账
 - ✅ 多币种支持与汇率管理
-- ✅ 地图支出可视化（高德地图集成）
+- ✅ 地图支出可视化（Web 支持高德地图和 Google Maps）
 - ✅ 周期记账
 - ✅ 智能导入（支付宝/微信账单）
 - ✅ 标签系统升级
-- ✅ Web DAV 同步支持
+- ✅ WebDAV 和 S3 兼容存储同步
 - ✅ 快捷指令集成
 - ✅ 批量编辑功能
 
@@ -227,3 +226,7 @@ Thank you to all donors who support the Cent project! Your support is the drivin
 </div>
 
 ---
+
+## 测试与更新
+
+本地执行 `pnpm build`。将修改合入 `pre`，运行 `git push origin pre`，在预览环境验证。测试通过后，将同一批修改合入 `main`，运行 `git push origin main`，检查正式站点。

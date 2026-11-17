@@ -1,4 +1,4 @@
-// 转发 shim：共享工具函数统一来自 chaty 包。
+// 转发 shim：共享工具函数统一来自 agent-core 包。
 export {
     cloneHistory,
     cloneValue,
@@ -8,4 +8,4 @@ export {
     parseWithSchema,
     stringifyJson,
     withAbort,
-} from "@glink25/chaty";
+} from "@glink25/agent-core";

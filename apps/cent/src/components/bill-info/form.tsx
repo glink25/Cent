@@ -1,6 +1,8 @@
+import { addBillsToAssistant } from "../assistant/launcher";
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
 
 import { DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu";
+import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import useCategory from "@/hooks/use-category";
 import { useCreators } from "@/hooks/use-creator";
@@ -10,12 +12,15 @@ import { useTag } from "@/hooks/use-tag";
 import { amountToNumber } from "@/ledger/bill";
 import { useIntl } from "@/locale";
 import { measure } from "@/measurement";
+import { useBookStore } from "@/store/book";
 import { useGuideStore } from "@/store/guide";
 import { type EditBill, useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
 import { formatTime } from "@/utils/time";
+import { openAttachmentViewer } from "../attachment-viewer";
 import { showBillEditor } from "../bill-editor";
 import CategoryIcon from "../category/icon";
+import { isCancelError } from "../confirm/state";
 import SmartImage from "../image";
 import Money from "../money";
 import { Button } from "../ui/button";
@@ -37,6 +42,15 @@ export default function BillInfo({
     onCancel?: () => void;
 }) {
     const t = useIntl();
+    const viewerCancel = useRef<(() => void) | undefined>(undefined);
+    // biome-ignore lint/correctness/useExhaustiveDependencies: Close the viewer when the bill is replaced, as well as when details unmount.
+    useEffect(
+        () => () => {
+            viewerCancel.current?.();
+            viewerCancel.current = undefined;
+        },
+        [edit],
+    );
     const { id: curUserId } = useUserStore();
     const { categories } = useCategory();
     const { baseCurrency, allCurrencies } = useCurrency();
@@ -209,12 +223,35 @@ export default function BillInfo({
                     {edit.images && (
                         <div className="flex-1 py-2 flex gap-2 items-center justify-center max-w-full overflow-x-auto hidden-scrollbar">
                             {edit.images.map((img, i) => (
-                                <SmartImage
+                                <button
                                     key={i}
-                                    source={img}
-                                    alt=""
-                                    className="max-h-[200px] object-cover rounded min-w-24 min-h-24 data-[state=loading]:animate-pulse bg-primary/10"
-                                />
+                                    type="button"
+                                    className="shrink-0 cursor-zoom-in rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                    aria-label={t("attachment-open", {
+                                        index: i + 1,
+                                    })}
+                                    onClick={() => {
+                                        const viewer = openAttachmentViewer({
+                                            bookId: useBookStore.getState()
+                                                .currentBookId,
+                                            images: edit.images!,
+                                            index: i,
+                                        });
+                                        viewerCancel.current = viewer.cancel;
+                                        void viewer.promise.catch((error) => {
+                                            if (!isCancelError(error))
+                                                toast.error(
+                                                    t("attachment-load-failed"),
+                                                );
+                                        });
+                                    }}
+                                >
+                                    <SmartImage
+                                        source={img}
+                                        alt=""
+                                        className="max-h-[200px] object-cover rounded min-w-24 min-h-24 data-[state=loading]:animate-pulse bg-primary/10"
+                                    />
+                                </button>
                             ))}
                         </div>
                     )}
@@ -236,6 +273,24 @@ export default function BillInfo({
                                 onSplit={toSplit}
                             />
                         )}
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            disabled={!edit.id}
+                            aria-label={t("add-to-assistant")}
+                            title={t("add-to-assistant")}
+                            onClick={() => {
+                                if (edit.id) {
+                                    addBillsToAssistant([
+                                        { ...edit, id: edit.id },
+                                    ]);
+                                    toClose();
+                                }
+                            }}
+                        >
+                            <i className="icon-[mdi--shimmer-outline] size-4" />
+                        </Button>
                     </div>
                     <div className="flex">
                         <button

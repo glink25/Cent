@@ -1,9 +1,11 @@
 import dayjs from "dayjs";
+import { useLayoutEffect } from "react";
+import { useLocation } from "react-router";
 import { StorageAPI } from "@/api/storage";
 import type { ViewType } from "@/components/stat/date-slice";
 import type { FocusType } from "@/components/stat/focus-type";
 import { BillCategories } from "@/ledger/category";
-import type { BillFilterView } from "@/ledger/extra-type";
+import type { BillFilter, BillFilterView } from "@/ledger/extra-type";
 import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
@@ -15,10 +17,46 @@ export type EnvArg = {
     range: number[];
 };
 
-let currentEnv: EnvArg | undefined;
+type PageData =
+    | ({ type: "stat" } & EnvArg)
+    | { type: "home"; date: string; range: number[] }
+    | {
+          type: "search";
+          draft: BillFilter;
+          submitted?: BillFilter;
+          sort: string;
+          resultCount: number;
+      }
+    | { type: "custom"; name: string; data: Record<string, unknown> };
 
-export function setEnv(env: EnvArg) {
-    currentEnv = env;
+type PageEntry = { page: string; bookId: string | undefined; data?: PageData };
+let activePage: PageEntry | undefined;
+let pageData: PageEntry | undefined;
+
+export function usePageEnv(data?: PageData) {
+    const page = useLocation().pathname;
+    const bookId = useBookStore((state) => state.currentBookId);
+    useLayoutEffect(() => {
+        const entry = { page, bookId, data };
+        if (data) pageData = entry;
+        else activePage = entry;
+        return () => {
+            if (pageData === entry) pageData = undefined;
+            if (activePage === entry) activePage = undefined;
+        };
+    }, [page, bookId, data]);
+}
+
+export function getPageEnv() {
+    const page = activePage?.page;
+    const bookId = useBookStore.getState().currentBookId;
+    return {
+        page,
+        context:
+            pageData?.page === page && pageData?.bookId === bookId
+                ? pageData?.data
+                : undefined,
+    };
 }
 
 function transformEnvToPrompt(env?: EnvArg) {
@@ -222,5 +260,6 @@ function transformEnvToPrompt(env?: EnvArg) {
 }
 
 export function getEnvPrompt() {
-    return transformEnvToPrompt(currentEnv);
+    const { context } = getPageEnv();
+    return transformEnvToPrompt(context?.type === "stat" ? context : undefined);
 }

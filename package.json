@@ -1,7 +1,7 @@
 {
 	"name": "cent-monorepo",
 	"private": true,
-	"version": "2.0",
+	"version": "3.0",
 	"type": "module",
 	"packageManager": "pnpm@10.15.1",
 	"scripts": {
@@ -15,7 +15,8 @@
 		"build:zen": "pnpm --filter @glink25/zen build",
 		"lint": "pnpm -r lint",
 		"pre-commit": "pnpm -r lint",
-		"prepare": "husky"
+		"prepare": "husky",
+		"test:agent-core": "pnpm --filter @glink25/agent-core test"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.2.2",

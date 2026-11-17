@@ -1,5 +1,1 @@
-export type BillTag = {
-    id: string;
-    name: string;
-    preferCurrency?: string;
-};
+export type { BillTag } from "@/ledger/type";

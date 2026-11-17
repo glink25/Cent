@@ -1,14 +1,13 @@
-import { type ComponentProps, lazy, Suspense } from "react";
+import { lazy, Suspense } from "react";
 
 const AssistantButtonEntrance = lazy(
     () => import("@/components/assistant/entrance"),
 );
-type AssistantButtonProps = ComponentProps<typeof AssistantButtonEntrance>;
 
-const AssistantButton = (args: AssistantButtonProps) => {
+const AssistantButton = () => {
     return (
-        <Suspense fallback={<div className="w-10 h-8" />}>
-            <AssistantButtonEntrance {...args} />
+        <Suspense fallback={null}>
+            <AssistantButtonEntrance />
         </Suspense>
     );
 };

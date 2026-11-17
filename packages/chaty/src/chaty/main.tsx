@@ -13,11 +13,17 @@ if (!root) {
     throw new Error("Root element not found.");
 }
 
-loadHostRuntimeConfig(AiChatConfig).then((runtime) => {
-    createRoot(root).render(
-        <StrictMode>
-            <AiChat runtime={runtime} />
-            <Toaster />
-        </StrictMode>,
-    );
-});
+loadHostRuntimeConfig(AiChatConfig)
+    .then((runtime) => {
+        createRoot(root).render(
+            <StrictMode>
+                <AiChat runtime={runtime} />
+                <Toaster />
+            </StrictMode>,
+        );
+    })
+    .catch((error) => {
+        root.setAttribute("role", "alert");
+        root.textContent =
+            error instanceof Error ? error.message : String(error);
+    });

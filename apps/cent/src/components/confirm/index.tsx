@@ -26,6 +26,7 @@ export default function createConfirmProvider<Value, Returned = Value>(
         fade,
         swipe,
         initialFocus,
+        onExitComplete,
     }: {
         dialogTitle: string | ReactNode;
         dialogDescription?: string | ReactNode;
@@ -34,6 +35,7 @@ export default function createConfirmProvider<Value, Returned = Value>(
         fade?: boolean;
         swipe?: boolean;
         initialFocus?: string;
+        onExitComplete?: () => void;
     },
 ) {
     // 1. 为每个 Provider 实例生成一个唯一的 ID (在闭包中唯一)
@@ -106,7 +108,7 @@ export default function createConfirmProvider<Value, Returned = Value>(
                     if (!v) onCancel();
                 }}
             >
-                <DialogPortal>
+                <DialogPortal onExitComplete={onExitComplete}>
                     <DialogOverlay
                         className="fixed inset-0 bg-black/50"
                         style={layerStyle}

@@ -9,8 +9,6 @@ export { getHostBridge } from "./runtime/host";
 export { resolveZenDirectorConfig } from "./runtime/model";
 export { requestHostClose } from "./runtime/native-host";
 export type {
-    NativeBridgeMessage,
-    NativeCallback,
     ZenAIToolDefinition,
     ZenDirectorMode,
     ZenInitPayload,
@@ -21,4 +19,5 @@ export type {
     ZenThemeMode,
 } from "./runtime/types";
 export * from "./zen/date";
+export { defaultZenPersonality } from "./zen/director";
 export type * from "./zen/types";

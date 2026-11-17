@@ -1,8 +1,8 @@
-import type { ChatMessage } from "@glink25/chaty/providers";
+import type { ChatMessage } from "@glink25/agent-core/providers";
 import {
     createStreamingRequest,
     parseStream as parseProviderStream,
-} from "@glink25/chaty/providers";
+} from "@glink25/agent-core/providers";
 import type { AIConfig } from "@/ledger/extra-type";
 import { useLedgerStore } from "@/store/ledger";
 import { usePreferenceStore } from "@/store/preference";
@@ -38,18 +38,7 @@ function getAIConfig(configId?: string): AIConfig {
         }
     }
 
-    const oldApiKey = assistantData?.bigmodel?.apiKey;
-    if (oldApiKey) {
-        return {
-            id: "legacy-bigmodel",
-            name: "智谱GLM (Legacy)",
-            apiKey: oldApiKey,
-            apiUrl: "https://open.bigmodel.cn/api/paas/v4",
-            model: "glm-4-flash",
-            apiType: "open-ai-compatible",
-        };
-    }
-
+    if (assistantData?.configs?.[0]) return assistantData.configs[0];
     throw new Error("未找到 AI 配置，请先在设置中配置 AI API");
 }
 

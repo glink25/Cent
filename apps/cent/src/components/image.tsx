@@ -4,13 +4,10 @@ import {
     useCallback,
     useEffect,
     useLayoutEffect,
-    useRef,
     useState,
 } from "react";
-import { StorageAPI } from "@/api/storage";
 import { useBookStore } from "@/store/book";
-import { cacheInDB } from "@/utils/cache";
-import { GetOnlineAssetsCacheKey } from "@/utils/constant";
+import { resolveAttachment } from "@/utils/attachment";
 
 // 降低弹窗过渡动画时图片渲染时的抖动
 function Delayed({ children }: { children: ReactNode }) {
@@ -42,51 +39,35 @@ export function SmartImageCore({
     const [url, setUrl] = useState<string>(
         typeof source === "string" ? source : "",
     );
-    const objectUrlRef = useRef<string | null>(null);
+    const book = useBookStore((state) => state.currentBookId);
 
     useEffect(() => {
-        const book = useBookStore.getState().currentBookId;
-        if (!book) {
-            return;
-        }
-        if (!(source instanceof File)) {
-            // 普通字符串 url
-            if (StorageAPI.getOnlineAsset) {
-                cacheInDB(StorageAPI.getOnlineAsset, GetOnlineAssetsCacheKey)?.(
-                    source,
-                    book,
-                )
-                    .then((file) => {
-                        if (file === undefined) {
-                            setUrl(source);
-                            return;
-                        }
-                        const objectUrl = URL.createObjectURL(file);
-                        objectUrlRef.current = objectUrl;
-                        setUrl(objectUrl);
-                    })
-                    .catch((error) => {
-                        console.error(error);
-                        setStatus("error");
-                    });
-                return;
-            }
-            setUrl(source);
-            return () => {};
-        }
-        // 如果传入的是 File，创建 blob url
-        const objectUrl = URL.createObjectURL(source);
-        objectUrlRef.current = objectUrl;
-        setUrl(objectUrl);
-
-        // 组件卸载或 source 改变时清理
-        return () => {
-            if (objectUrlRef.current) {
-                URL.revokeObjectURL(objectUrlRef.current);
-                objectUrlRef.current = null;
-            }
+        let active = true;
+        let objectUrl: string | undefined;
+        const showFile = (file: Blob) => {
+            objectUrl = URL.createObjectURL(file);
+            setUrl(objectUrl);
         };
-    }, [source]);
+
+        setStatus("loading");
+        setUrl("");
+        resolveAttachment(source, book)
+            .then((file) => {
+                if (!active) return;
+                if (typeof file === "string") setUrl(file);
+                else showFile(file);
+            })
+            .catch((error) => {
+                if (!active) return;
+                console.error(error);
+                setStatus("error");
+            });
+
+        return () => {
+            active = false;
+            if (objectUrl) URL.revokeObjectURL(objectUrl);
+        };
+    }, [book, source]);
 
     const onLoad = useCallback(() => {
         setStatus("loaded");

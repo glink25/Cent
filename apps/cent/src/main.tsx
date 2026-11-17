@@ -6,6 +6,7 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 
 import Login from "./components/login";
+import { MapConfigFormProvider } from "./components/settings/map-settings";
 import { initIntl, LocaleProvider } from "./locale/index";
 import { measure } from "./measurement";
 import { usePreferenceStore } from "./store/preference";
@@ -28,6 +29,7 @@ initIntl(lang).then(() => {
                     <Rooot />
                 </Suspense>
                 <Login />
+                <MapConfigFormProvider />
             </LocaleProvider>
         </StrictMode>,
     );

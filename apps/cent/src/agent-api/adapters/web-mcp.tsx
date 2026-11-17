@@ -21,7 +21,10 @@ import type { AgentApiAdapter, AgentApiStatus } from "../types";
 // --- Web MCP typings (subset of the proposal we rely on) -------------------
 
 type McpToolResult = {
-    content: Array<{ type: "text"; text: string }>;
+    content: Array<
+        | { type: "text"; text: string }
+        | { type: "image"; mimeType: string; data: string }
+    >;
     structuredContent?: unknown;
     isError?: boolean;
 };
@@ -88,49 +91,77 @@ async function register(): Promise<boolean> {
     const { signal } = abort;
 
     const { tools } = getToolList();
-    for (const tool of tools) {
-        const inputSchema =
-            (tool.argSchema as Record<string, unknown> | null) ??
-            EMPTY_INPUT_SCHEMA;
-        mc.registerTool(
-            {
-                name: tool.name,
-                description: tool.describe || tool.name,
-                inputSchema,
-                async execute(args) {
-                    try {
-                        const data = await callTool(tool.name, args);
-                        const text =
-                            typeof data === "string"
-                                ? data
-                                : JSON.stringify(data ?? null);
-                        return {
-                            content: [{ type: "text", text }],
-                            structuredContent:
-                                data && typeof data === "object"
+    try {
+        for (const tool of tools) {
+            const inputSchema =
+                (tool.argSchema as Record<string, unknown> | null) ??
+                EMPTY_INPUT_SCHEMA;
+            await mc.registerTool(
+                {
+                    name: tool.name,
+                    description: tool.describe || tool.name,
+                    inputSchema,
+                    async execute(args) {
+                        try {
+                            const data = await callTool(
+                                tool.name,
+                                args,
+                                signal,
+                            );
+                            if (
+                                tool.name === "readBillAttachment" &&
+                                data &&
+                                typeof data === "object" &&
+                                "mimeType" in data &&
+                                typeof data.mimeType === "string" &&
+                                "data" in data &&
+                                typeof data.data === "string"
+                            ) {
+                                return {
+                                    content: [
+                                        {
+                                            type: "image",
+                                            mimeType: data.mimeType,
+                                            data: data.data,
+                                        },
+                                    ],
+                                };
+                            }
+                            const text =
+                                typeof data === "string"
                                     ? data
-                                    : undefined,
-                        };
-                    } catch (e) {
-                        return {
-                            content: [
-                                {
-                                    type: "text",
-                                    text:
-                                        e instanceof Error
-                                            ? e.message
-                                            : String(e),
-                                },
-                            ],
-                            isError: true,
-                        };
-                    }
+                                    : JSON.stringify(data ?? null);
+                            return {
+                                content: [{ type: "text", text }],
+                                structuredContent:
+                                    data && typeof data === "object"
+                                        ? data
+                                        : undefined,
+                            };
+                        } catch (e) {
+                            return {
+                                content: [
+                                    {
+                                        type: "text",
+                                        text:
+                                            e instanceof Error
+                                                ? e.message
+                                                : String(e),
+                                    },
+                                ],
+                                isError: true,
+                            };
+                        }
+                    },
                 },
-            },
-            { signal },
-        );
+                { signal },
+            );
+        }
+        return true;
+    } catch (error) {
+        unregister();
+        throw error;
     }
-    return true;
 }
 
 function unregister(): void {
@@ -143,10 +174,16 @@ function unregister(): void {
 export function buildWebMcpPrompt(): string {
     const { tools } = getToolList();
     const lines = [
-        "我在浏览器中打开了一款叫 Cent 的记账应用，它已通过 WebMCP（`document.modelContext`）在当前网页注册了一组工具，你可以直接调用它们来帮我查询和分析账单。",
+        "请通过浏览器工具接入当前打开的 Cent 记账页面，并使用页面提供的 WebMCP 能力。",
+        `页面地址：${location.origin}${location.pathname}`,
         "",
         "请使用你的浏览器 / WebMCP 工具调用能力直接调用这些工具，无需任何服务地址或 Token。",
         "",
+        "先选择该页面，使用浏览器提供的 WebMCP 工具发现功能，读取实际可用工具后再调用。Codex computer use 若提供 webmcp capability，可 fetchTools() 后通过返回的工具句柄调用；以当前浏览器工具文档为准。",
+        "先用 discover 了解操作，用 readDocs 阅读 Cent 理念及 widget 文档，再使用 playground 编写 export default async function，通过 tools.NAME(args) 编排。不要用页面 JS 注入、读取本地数据库或索取 API Key 代替 WebMCP 接入。",
+        "若工具不可用，请检查 Cent 的接入开关、当前浏览器支持和页面是否仍打开；不要宣称已经接入。接入后等待我的具体任务，不自行修改账本。",
+        "查询和统计优先在 playground 内筛选、聚合，再返回必要结果；不要将全部账单或长源码直接输出给模型。工具结果可能被截断，遇到 truncated 或分页说明时按返回的读取指引继续，不将不完整预览当作完整数据。",
+        "需要写入时使用页面提供的写入工具；playground 可编排多项写入，由 Cent 统一生成批次审批。待审批并不代表写入完成，请等待用户在 Cent 弹窗中决定，再按实际发现的状态查询工具及 changeId 确认结果，避免重复提交。撤回通过宿主提供的能力处理。",
         "可用工具：",
         "",
         ...tools.map((t) => `- \`${t.name}\`：${t.describe || "（无描述）"}`),
@@ -253,7 +290,7 @@ function SettingsView({ onCancel }: { onCancel?: () => void }) {
 }
 
 // 暂时关闭Web MCP agent api，等待后续正式协议确定
-const DISABLE_WEB_AGENT = true;
+const DISABLE_WEB_AGENT = false;
 
 export const webMcpAdapter: AgentApiAdapter = {
     id: "web-mcp",

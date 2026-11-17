@@ -3,6 +3,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import useCategory from "@/hooks/use-category";
 import { useCreators } from "@/hooks/use-creator";
 import { useCurrency } from "@/hooks/use-currency";
+import { useIncomeExpenseChartColors } from "@/hooks/use-income-expense-colors";
 import type { BillFilter } from "@/ledger/extra-type";
 import type { Bill } from "@/ledger/type";
 import { useIntl } from "@/locale";
@@ -37,6 +38,7 @@ export function useChartPart({
     displayCurrency?: string;
 }) {
     const t = useIntl();
+    const chartColors = useIncomeExpenseChartColors();
 
     const { convert, baseCurrency } = useCurrency();
     const rateToDisplayCurrency = useMemo(() => {
@@ -101,12 +103,14 @@ export function useChartPart({
     );
     const charts = useMemo(() => {
         if (dimension === "category") {
+            const [incomeColor, expenseColor] = chartColors.split("|");
             const incomeName = dataSources.overallTrend.source?.[0]?.[1];
             const expenseName = dataSources.overallTrend.source?.[0]?.[2];
             const balanceName = dataSources.overallTrend.source?.[0]?.[3];
 
             return [
                 overallTrendOption(dataSources.overallTrend, {
+                    series: [{ color: incomeColor }, { color: expenseColor }],
                     title: {
                         text: t("overall-trend"),
                     },
@@ -156,6 +160,7 @@ export function useChartPart({
                     }),
         ];
     }, [
+        chartColors,
         dimension,
         focusType,
         dataSources.overallTrend,

@@ -20,39 +20,45 @@ export default function WidgetList({ onCancel }: { onCancel?: () => void }) {
             className="h-full overflow-hidden"
         >
             <div className="flex-1 flex flex-col overflow-hidden">
-                <div className="flex items-center justify-between px-2">
-                    <div className="px-2 text-xs text-foreground/80">
-                        {t("widget-description")}
-                    </div>
-                    {widgets.length > 0 && (
+                <div className="w-full flex-1 overflow-y-auto flex flex-col gap-2 p-2">
+                    <div className="flex flex-wrap items-center gap-2">
                         <Button
-                            variant="ghost"
-                            className="p-1 h-fit"
+                            className="flex-1"
+                            variant="outline"
                             onClick={async () => {
-                                const ordered = await showSortableList(
-                                    widgets.map((w) => ({
-                                        id: w.id,
-                                        name: w.name,
-                                    })),
-                                );
-                                await reorder(ordered.map((o) => o.id));
+                                await showWidgetEdit();
                             }}
                         >
-                            <i className="icon-[mdi--reorder-horizontal]"></i>
+                            <i className="icon-[mdi--add]" />
+                            {t("add-widget")}
                         </Button>
-                    )}
-                </div>
-
-                <div className="w-full flex-1 overflow-y-auto flex flex-col gap-2 p-2">
-                    <Button
-                        variant="outline"
-                        onClick={async () => {
-                            await showWidgetEdit();
-                        }}
-                    >
-                        <i className="icon-[mdi--add]" />
-                        {t("add-widget")}
-                    </Button>
+                        <Button asChild variant="link">
+                            <a
+                                href="https://github.com/glink25/Cent/discussions/categories/widget-showcase?discussions_q=is%3Aopen+category%3A%22Widget+Showcase%22"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                {t("widget-showcase")}
+                            </a>
+                        </Button>
+                        {widgets.length > 0 && (
+                            <Button
+                                variant="ghost"
+                                className="p-1 h-fit"
+                                onClick={async () => {
+                                    const ordered = await showSortableList(
+                                        widgets.map((w) => ({
+                                            id: w.id,
+                                            name: w.name,
+                                        })),
+                                    );
+                                    await reorder(ordered.map((o) => o.id));
+                                }}
+                            >
+                                <i className="icon-[mdi--reorder-horizontal]"></i>
+                            </Button>
+                        )}
+                    </div>
                     {widgets.map((widget) => (
                         <div
                             key={widget.id}
@@ -90,7 +96,7 @@ export default function WidgetList({ onCancel }: { onCancel?: () => void }) {
                                     </Button>
                                 </div>
                             </div>
-                            <div className="h-[120px] w-full bg-card rounded-lg shadow overflow-hidden border py-2">
+                            <div className="h-[120px] w-full bg-card rounded-lg shadow overflow-hidden border">
                                 <WidgetPreview widget={widget} />
                             </div>
                             <div className="flex items-center justify-end gap-2">
@@ -108,16 +114,6 @@ export default function WidgetList({ onCancel }: { onCancel?: () => void }) {
                             </div>
                         </div>
                     ))}
-                    <div className="flex justify-center items-center">
-                        <a
-                            className="text-xs text-blue-500 hover:text-blue-600 underline"
-                            target="_blank"
-                            href="https://glink25.github.io/post/%E7%BC%96%E5%86%99%E5%B1%9E%E4%BA%8E%E4%BD%A0%E8%87%AA%E5%B7%B1%E7%9A%84%E8%B4%A6%E5%8D%95%E5%B0%8F%E7%BB%84%E4%BB%B6/"
-                            rel="noopener"
-                        >
-                            {t("meet-widget-api")}
-                        </a>
-                    </div>
                 </div>
             </div>
         </PopupLayout>

@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { v4 } from "uuid";
+import { assertEditable } from "@/components/widget/core/computed";
 import type { BillFilterView } from "@/ledger/extra-type";
 import { measure } from "@/measurement";
 import { useBookStore } from "@/store/book";
@@ -37,6 +38,7 @@ export function useCustomFilters() {
 
     const updateFilter = useCallback(
         async (id: string, value?: Omit<BillFilterView, "id">) => {
+            assertEditable(id);
             const book = useBookStore.getState().currentBookId;
             if (!book) {
                 return;

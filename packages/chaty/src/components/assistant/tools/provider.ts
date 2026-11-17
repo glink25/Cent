@@ -1,10 +1,10 @@
+import { withAbort } from "@glink25/agent-core";
 import type {
     History,
     Provider,
     ProviderRequestChunk,
     ProviderToolCall,
 } from "../../../assistant";
-import { withAbort } from "../../../assistant/shared";
 
 const PLACEHOLDER_ANSWER = "AI provider is not configured in this UI shell.";
 

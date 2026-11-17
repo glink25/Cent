@@ -1,6 +1,7 @@
 import { Collapsible } from "radix-ui";
 import { useState } from "react";
 import { toast } from "sonner";
+import { isComputedEntry } from "@/components/widget/core/computed";
 import useCategory from "@/hooks/use-category";
 import PopupLayout from "@/layouts/popup-layout";
 import type { BillCategory, BillType } from "@/ledger/type";
@@ -36,10 +37,13 @@ export default function CategoryList({
         { label: "income" as BillType, value: incomes },
     ];
     const toAddChildCategory = (parentId: string) => {
+        if (parentId.startsWith("wc-")) return;
+        const parent = categories.find((c) => c.id === parentId);
+        if (!parent) return;
         showCategoryEdit({
             id: undefined,
             parent: parentId,
-            type: categories.find((c) => c.id === parentId)!.type,
+            type: parent.type,
         });
     };
 
@@ -51,6 +55,7 @@ export default function CategoryList({
     };
 
     const toEditCategory = async (cate: BillCategory) => {
+        if (isComputedEntry(cate)) return;
         await showCategoryEdit(cate);
     };
     const [tab, setTab] = useState<string>(edit ?? "expense");
@@ -116,7 +121,9 @@ export default function CategoryList({
                                 return;
                             }
                             const ordered = await showSortableList(
-                                curTab.value,
+                                curTab.value.filter(
+                                    (item) => !isComputedEntry(item),
+                                ),
                             );
                             reorder(ordered);
                         }}

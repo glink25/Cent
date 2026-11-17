@@ -1,32 +1,7 @@
-import {
-    type Provider,
-    type ProviderRequestChunk,
-    type Tool,
-    withAbort,
-} from "@glink25/chaty";
-import { z } from "zod";
-import { getAndroidNativeHost, getIosNativeHost } from "./native-host";
-import type { ZenAIToolDefinition, ZenRuntimeHost } from "./types";
-
-const hostToolDefinitions = new WeakMap<Tool, ZenAIToolDefinition>();
-const id = () =>
-    globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
-
-function serializeTool(tool: Tool): ZenAIToolDefinition {
-    const original = hostToolDefinitions.get(tool);
-    if (original) return original;
-    return {
-        name: tool.name,
-        describe: tool.describe,
-        argJsonSchema: tool.argSchema
-            ? (z.toJSONSchema(tool.argSchema) as Record<string, unknown>)
-            : undefined,
-        returnJsonSchema: z.toJSONSchema(tool.returnSchema) as Record<
-            string,
-            unknown
-        >,
-    };
-}
+import { withToolImages } from "@glink25/agent-core";
+import { createHostProvider, createHostTool } from "@glink25/agent-core/bridge";
+import { getNativeZenHost } from "./native-host";
+import type { ZenRuntimeHost, ZenSessionRuntime } from "./types";
 
 function sameOriginParentHost() {
     if (window.parent === window) return undefined;
@@ -38,132 +13,61 @@ function sameOriginParentHost() {
 }
 
 export function getHostBridge(): ZenRuntimeHost | undefined {
-    return (
-        window.ZenHost ??
-        sameOriginParentHost() ??
-        getAndroidNativeHost() ??
-        getIosNativeHost()
-    );
-}
-
-export function createHostProvider(host: ZenRuntimeHost): Provider {
-    return {
-        request: ({ history, configId, tools }) => {
-            let handle: { cancel(): void } | undefined;
-            let cancelled = false;
-            let done = false;
-            let failure: unknown;
-            const queue: ProviderRequestChunk[] = [];
-            let wake: (() => void) | undefined;
-            const notify = () => {
-                wake?.();
-                wake = undefined;
-            };
-            const run = async function* () {
-                const requestId = id();
-                Promise.resolve(
-                    host.requestAI({
-                        requestId,
-                        configId,
-                        history,
-                        tools: tools.map(serializeTool),
-                        onChunk: (chunk) => {
-                            queue.push(chunk);
-                            notify();
-                        },
-                        onDone: () => {
-                            done = true;
-                            notify();
-                        },
-                        onError: (error) => {
-                            failure = error;
-                            done = true;
-                            notify();
-                        },
-                    }),
-                )
-                    .then((value) => {
-                        handle = value;
-                        if (cancelled) handle.cancel();
-                    })
-                    .catch((error) => {
-                        failure = error;
-                        done = true;
-                        notify();
-                    });
-                while (!done || queue.length) {
-                    if (queue.length) {
-                        const chunk = queue.shift();
-                        if (chunk) yield chunk;
-                        continue;
-                    }
-                    await new Promise<void>((resolve) => {
-                        wake = resolve;
-                    });
-                }
-                if (failure) throw failure;
-            };
-            return withAbort(Promise.resolve(run()), () => {
-                cancelled = true;
-                done = true;
-                handle?.cancel();
-                notify();
-            });
-        },
-    };
-}
-
-export function createHostAITool(
-    host: ZenRuntimeHost,
-    definition: ZenAIToolDefinition,
-): Tool {
-    const tool: Tool = {
-        name: definition.name,
-        describe: definition.describe,
-        argSchema: z
-            .unknown()
-            .describe(JSON.stringify(definition.argJsonSchema ?? {})),
-        returnSchema: z
-            .unknown()
-            .describe(JSON.stringify(definition.returnJsonSchema)),
-        handler: (params, context) =>
-            host.callAITool({
-                callId: id(),
-                name: definition.name,
-                params,
-                history: context.history,
-            }),
-    };
-    hostToolDefinitions.set(tool, definition);
-    return tool;
+    return window.ZenHost ?? sameOriginParentHost() ?? getNativeZenHost();
 }
 
 export async function loadRuntime(host: ZenRuntimeHost) {
     const init = await host.getInit();
-    const reserved = new Set(["showZenStep", "decideZenFocus"]);
-    const conflict = init.aiTools.find((tool) => reserved.has(tool.name));
+    if (init.directorMode === "local") return { init };
+
+    let session: ZenSessionRuntime | undefined = host.getSessionRuntime?.(init);
+    if (!session) {
+        const requestAI = host.requestAI?.bind(host);
+        const callTool = host.callAITool?.bind(host);
+        if (!requestAI || !callTool)
+            throw new Error("Zen AI runtime is unavailable");
+        session = {
+            provider: createHostProvider({
+                requestAI: (request) =>
+                    requestAI({
+                        ...request,
+                        history:
+                            request.purpose === "summary"
+                                ? request.history
+                                : withToolImages(request.history),
+                    }),
+                getContextPolicy: host.getContextPolicy?.bind(host),
+            }),
+            tools: init.aiTools
+                .filter(
+                    (tool) =>
+                        tool.effect !== "write" || tool.name === "playground",
+                )
+                .map((tool) =>
+                    createHostTool(
+                        {
+                            callTool: ({ callId, name, params, history }) =>
+                                callTool({ callId, name, params, history }),
+                        },
+                        { ...tool, effect: tool.effect ?? "read" },
+                    ),
+                ),
+            skills: [],
+        };
+    }
+    const reserved = new Set([
+        "showZenStep",
+        "decideZenFocus",
+        "readZenHistory",
+    ]);
+    const conflict = session.tools.find((tool) => reserved.has(tool.name));
     if (conflict)
         throw new Error(`Host AI tool name is reserved: ${conflict.name}`);
-    return {
-        init,
-        provider: createHostProvider(host),
-        aiTools: init.aiTools.map((tool) => createHostAITool(host, tool)),
-    };
+    return { init, session };
 }
 
 declare global {
     interface Window {
         ZenHost?: ZenRuntimeHost;
-        __ZenNativeCallbacks?: Record<string, import("./types").NativeCallback>;
-        CentZenNative?: { postMessage(messageJson: string): void };
-        webkit?: {
-            messageHandlers?: {
-                CentZenNative?: {
-                    postMessage(
-                        message: import("./types").NativeBridgeMessage,
-                    ): void;
-                };
-            };
-        };
     }
 }

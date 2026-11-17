@@ -1,13 +1,14 @@
 import { z } from "zod";
 import { createTool } from "@/assistant";
 import { parseSkillMetadata } from "@/assistant/parser";
-import widgetApiDoc from "@/components/widget/core/WIDGET_API.md?raw";
-import { showWidgetEdit } from "@/components/widget/edit-form";
+import widgetApiDoc from "@/components/widget/core/WIDGET_V2_API.md?raw";
+import { openWidgetEdit } from "@/components/widget/edit-form";
 import type { Widget } from "@/components/widget/type";
 import widgetSkill from "./skill.md?raw";
 
 export const CreateWidgetTool = createTool({
     name: "createWidget",
+    effect: "write",
     describe:
         "创建一个新的 widget 预览。传入符合 widget DSL 规范的代码，弹出 widget 编辑器进行预览与保存。代码必须以 `export default async ({ data, settings, env }) => { ... }` 形式导出，并在文件顶部以注释声明 `@widget-api`、`@name`、`@permissions`。可在 `data` 中读取 billing/budgets/categories/tags 等数据。调用前请先阅读 `widget` skill 了解完整 API。",
     argSchema: z.object({
@@ -22,12 +23,18 @@ export const CreateWidgetTool = createTool({
         saved: z.boolean().describe("用户是否保存了 widget"),
         cancelled: z.boolean().describe("用户是否取消"),
     }),
-    handler: async (arg: { code: string }) => {
+    handler: async (arg: { code: string }, ctx) => {
+        ctx.signal?.throwIfAborted();
+        const editor = openWidgetEdit({ code: arg.code } as Widget);
+        const cancel = () => editor.cancel();
+        ctx.signal?.addEventListener("abort", cancel, { once: true });
         try {
-            await showWidgetEdit({ code: arg.code } as Widget);
+            await editor.promise;
             return { saved: true, cancelled: false };
         } catch {
             return { saved: false, cancelled: true };
+        } finally {
+            ctx.signal?.removeEventListener("abort", cancel);
         }
     },
 });

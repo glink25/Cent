@@ -209,6 +209,20 @@ button {
 	--color-income-medium-legacy: #34d399;
 }
 
+:root.reverse-income-expense-colors {
+	--color-income: #b91c1c;
+	--color-income-medium-legacy: #f87171;
+	--color-expense: #15803d;
+	--color-expense-medium-legacy: #34d399;
+}
+
+.dark.reverse-income-expense-colors {
+	--color-income: #991b1b;
+	--color-income-medium-legacy: #fb7185;
+	--color-expense: #166534;
+	--color-expense-medium-legacy: #34d399;
+}
+
 @layer base {
 	* {
 		@apply border-border outline-ring/50;

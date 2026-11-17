@@ -12,7 +12,6 @@
 		"test": "vitest run"
 	},
 	"peerDependencies": {
-		"@glink25/chaty": "^0.2.0",
 		"clsx": "^2.1.1",
 		"dayjs": "^1.11.0",
 		"react": "^19.0.0",
@@ -22,7 +21,6 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.2.2",
-		"@glink25/chaty": "workspace:*",
 		"@glink25/tailwind-config": "workspace:*",
 		"@iconify-json/mdi": "^1.2.3",
 		"@iconify/tailwind4": "^1.0.6",
@@ -42,5 +40,8 @@
 		"vite": "^8.0.8",
 		"vitest": "^4.1.9",
 		"zod": "^4.1.11"
+	},
+	"dependencies": {
+		"@glink25/agent-core": "workspace:*"
 	}
 }

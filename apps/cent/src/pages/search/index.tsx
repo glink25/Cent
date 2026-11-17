@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { useShallow } from "zustand/shallow";
 import { StorageDeferredAPI } from "@/api/storage";
+import { addBillsToAssistant } from "@/components/assistant/launcher";
+import { usePageEnv } from "@/components/assistant/tools/env";
 import BillFilterForm from "@/components/bill-filter";
 import Clearable from "@/components/clearable";
 import { HintTooltip } from "@/components/hint";
@@ -108,6 +110,12 @@ export default function Page() {
         useShallow((state) => state.showAssetsInLedger),
     );
 
+    const searchRequest = useRef(0);
+    const bookId = useBookStore((s) => s.currentBookId);
+    const [lastSearch, setLastSearch] = useState<{
+        bookId: string;
+        filter: BillFilter;
+    }>();
     const [list, setList] = useState<Bill[]>([]);
     const [searched, setSearched] = useState(false);
     const toSearch = useCallback(async () => {
@@ -117,7 +125,14 @@ export default function Page() {
         }
         setEnableSelect(false);
         setSelectedIds([]);
+        const request = ++searchRequest.current;
         const result = await StorageDeferredAPI.filter(book, form);
+        if (
+            useBookStore.getState().currentBookId !== book ||
+            request !== searchRequest.current
+        )
+            return;
+        setLastSearch({ bookId: book, filter: form });
         setList(result);
         measure("search_submitted", { mode: getSearchMode(form) });
     }, [form]);
@@ -150,6 +165,21 @@ export default function Page() {
     }, [toSearch]);
 
     const [sortIndex, setSortIndex] = useState(0);
+    useEffect(() => {
+        if (lastSearch && lastSearch.bookId !== bookId) {
+            setList([]);
+            setLastSearch(undefined);
+            setSelectedIds([]);
+        }
+    }, [bookId, lastSearch]);
+    usePageEnv({
+        type: "search",
+        draft: form,
+        submitted:
+            lastSearch?.bookId === bookId ? lastSearch?.filter : undefined,
+        sort: SORTS[sortIndex].label,
+        resultCount: lastSearch?.bookId === bookId ? list.length : 0,
+    });
     const sorted = useMemo(() => {
         const sort = SORTS[sortIndex] ?? SORTS[0];
         return orderBy(list, [sort.by], [sort.order]);
@@ -392,6 +422,24 @@ export default function Page() {
                                             onClick={toBatchEdit}
                                         >
                                             {t("edit")}
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            aria-label={t("add-to-assistant")}
+                                            title={t("add-to-assistant")}
+                                            onClick={() =>
+                                                addBillsToAssistant(
+                                                    sorted.filter((bill) =>
+                                                        selectedIds.includes(
+                                                            bill.id,
+                                                        ),
+                                                    ),
+                                                )
+                                            }
+                                        >
+                                            <i className="icon-[mdi--shimmer-outline] size-4" />
                                         </Button>
                                         <Button
                                             className="p-1 h-fit text-destructive"
