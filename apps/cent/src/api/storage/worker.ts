@@ -16,6 +16,8 @@ import { blobToBase64 } from "@/utils/file";
 import { filterOrderedBillListByTimeRangeAnd } from "@/utils/filter";
 import { type AnalysisType, analysis as analysisBills } from "./analysis";
 
+let storagePrefix = "";
+
 const storeMap = new Map<
     string,
     {
@@ -28,7 +30,7 @@ const getDB = (storeFullName: string) => {
     const stored = storeMap.get(storeFullName);
     const itemStorage =
         stored?.itemStorage ??
-        new BillIndexedDBStorage(`book-${storeFullName}`);
+        new BillIndexedDBStorage(`book-${storagePrefix}${storeFullName}`);
     const itemBucket =
         stored?.itemBucket ??
         new StashBucket(
@@ -161,7 +163,9 @@ const startPredict = async (
 };
 
 const exposed = {
-    init: (v: any) => {},
+    init: (prefix: string) => {
+        storagePrefix = prefix;
+    },
     getInfo,
     readAllBills: (bookId: string) => getDB(bookId).itemBucket.getItems(),
     filter,

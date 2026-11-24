@@ -13,7 +13,17 @@ const supported = new Set([
 
 /** Keep attachment bytes out of persisted tool results and text context. */
 export function retainToolImage(message: ToolMessage) {
-    if (message.formatted.name !== "readBillAttachment") return;
+    const candidate = message.formatted.returns;
+    if (
+        message.formatted.name !== "readBillAttachment" &&
+        !(
+            candidate &&
+            typeof candidate === "object" &&
+            "kind" in candidate &&
+            candidate.kind === "toolImage"
+        )
+    )
+        return;
     const value = message.formatted.returns;
     if (!value || typeof value !== "object") return;
     if (
@@ -30,7 +40,11 @@ export function retainToolImage(message: ToolMessage) {
         const oldest = images.keys().next().value;
         if (images.size >= 8 && oldest !== undefined) images.delete(oldest);
         images.set(imageId, { mimeType: value.mimeType, data: value.data });
-        message.formatted.returns = { imageId, mimeType: value.mimeType };
+        message.formatted.returns = {
+            kind: "toolImage",
+            imageId,
+            mimeType: value.mimeType,
+        };
     } else {
         message.formatted.returns = undefined;
         message.formatted.errors = {
@@ -50,7 +64,11 @@ export function withToolImages(history: History): History {
         if (
             index > latestUser &&
             message.role === "tool" &&
-            message.formatted.name === "readBillAttachment"
+            (message.formatted.name === "readBillAttachment" ||
+                (message.formatted.returns &&
+                    typeof message.formatted.returns === "object" &&
+                    "kind" in message.formatted.returns &&
+                    message.formatted.returns.kind === "toolImage"))
         ) {
             const result = message.formatted.returns;
             const token =
@@ -73,7 +91,7 @@ export function withToolImages(history: History): History {
             message,
             {
                 role: "user",
-                raw: "Image attachments retrieved from the current ledger by the preceding tools.",
+                raw: "Image attachments retrieved by the preceding tools.",
                 toolImages: assets,
             },
         ];

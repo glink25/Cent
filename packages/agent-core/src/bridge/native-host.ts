@@ -153,6 +153,14 @@ function createNativeBridge(transport: NativeTransport): HostBridge {
             );
             if (init.bridgeVersion !== AGENT_BRIDGE_VERSION)
                 throw new Error("Incompatible native agent bridge");
+            host.copyText = init.clipboardSupport
+                ? (text) =>
+                      nativePromise<void>(transport, (id) => ({
+                          id,
+                          type: "copyText",
+                          payload: { text },
+                      }))
+                : undefined;
             if (init.extraPromptSupport) {
                 host.getExtraPrompt = () =>
                     nativePromise<string>(transport, (id) => ({

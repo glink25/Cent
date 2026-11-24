@@ -91,7 +91,7 @@ export type ConfigAction =
 export type MeasurementEventMap = {
     app_open: undefined;
     login_method_used: {
-        method: "github" | "gitee" | "webdav" | "s3" | "offline";
+        method: "github" | "gitee" | "webdav" | "s3" | "offline" | "folder";
     };
     bill_created: {
         source: BillCreateSource;

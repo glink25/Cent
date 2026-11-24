@@ -1,0 +1,29 @@
+@import "tailwindcss/theme.css";
+@import "tailwindcss/utilities.css";
+@source "./components";
+@plugin "@iconify/tailwind4";
+@plugin "tailwindcss-animate";
+@custom-variant dark (&:where(.dark, .dark *));
+@theme inline {
+ --color-background: var(--chaty-background, #fff);
+ --color-foreground: var(--chaty-foreground, #252525);
+ --color-muted: var(--chaty-muted, #f7f7f5);
+ --color-muted-foreground: var(--chaty-muted-foreground, #808080);
+ --color-border: var(--chaty-border, #e7e7e7);
+ --color-primary: var(--chaty-foreground, #252525);
+ --color-primary-foreground: var(--chaty-background, #fff);
+ --color-accent: var(--chaty-muted, #f7f7f5);
+ --color-accent-foreground: var(--chaty-foreground, #252525);
+ --color-popover: var(--chaty-background, #fff);
+ --color-popover-foreground: var(--chaty-foreground, #252525);
+ --color-ring: var(--chaty-border, #e7e7e7);
+}
+
+.chaty-root { --foreground: var(--chaty-foreground, #252525); --border: var(--chaty-border, #e7e7e7); --muted: var(--chaty-muted, #f7f7f5); --muted-foreground: var(--chaty-muted-foreground, #808080); --radius: 0.5rem; }
+@layer base {
+  .chaty-root { color: var(--chaty-foreground, #252525); line-height: 1.5; }
+  .chaty-root *, .chaty-root *::before, .chaty-root *::after { box-sizing: border-box; border-width: 0; border-style: solid; border-color: var(--chaty-border, #e7e7e7); }
+  .chaty-root button, .chaty-root input, .chaty-root textarea, .chaty-root select { font: inherit; color: inherit; background-color: transparent; border-radius: 0; }
+  .chaty-root button { appearance: button; }
+  .chaty-root textarea { resize: vertical; }
+}

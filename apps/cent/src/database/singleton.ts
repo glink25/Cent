@@ -28,10 +28,10 @@ export function asyncSingleton<T extends (...args: any[]) => Promise<any>>(
         cache.set(key, promise);
 
         // 等待 Promise 完成（无论成功或失败），然后从缓存中清除
-        promise.finally(() => {
-            // console.log(`Cache cleared for key: ${key}`);
+        const clear = () => {
             cache.delete(key);
-        });
+        };
+        void promise.then(clear, clear);
 
         // 返回原始 Promise
         return promise;

@@ -12,7 +12,7 @@ import type {
 import { ChangeCard, TurnChanges } from "./change-card";
 import { Peek, PreviewAnswer, PreviewStatus, Thought, ToolGroup } from "./flow";
 import { useI18n } from "./i18n";
-import { MessageBubble } from "./message";
+import { MessageBubble, ReplyActions } from "./message";
 import { projectFlow, turnPreview, turnReceipts } from "./turn-model";
 
 type PendingApproval = {
@@ -72,12 +72,16 @@ const Turn = memo(
         tools = [],
         startedAt,
         contextStatus,
+        onBranch,
+        branchDisabled,
     }: {
         messages: Message[];
         activity?: RunActivity;
         tools?: Tool[];
         startedAt?: number;
         contextStatus?: string;
+        onBranch?: (message: Message) => void;
+        branchDisabled?: boolean;
         approval?: PendingApproval;
         undo?: (receipt: ChangeReceipt) => Promise<void>;
         undoDisabled?: boolean;
@@ -287,6 +291,16 @@ const Turn = memo(
                     active={active}
                     collapsed={!open}
                 />
+                {!active &&
+                    final &&
+                    user?.turnStatus !== "cancelled" &&
+                    user?.turnStatus !== "failed" && (
+                        <ReplyActions
+                            message={final}
+                            onBranch={onBranch}
+                            branchDisabled={branchDisabled}
+                        />
+                    )}
                 {markersAfter(final)}
                 {!!receipts.length && (
                     <TurnChanges
@@ -367,12 +381,16 @@ export function ConversationTurns({
     tools = [],
     startedAt,
     contextStatus,
+    onBranch,
+    branchDisabled,
 }: {
     history: History;
     activity?: RunActivity;
     tools?: Tool[];
     startedAt?: number;
     contextStatus?: string;
+    onBranch?: (message: Message) => void;
+    branchDisabled?: boolean;
     approval?: PendingApproval;
     undo?: (receipt: ChangeReceipt) => Promise<void>;
     undoDisabled?: boolean;
@@ -391,6 +409,8 @@ export function ConversationTurns({
                 <Turn
                     key={messages[0]?.id ?? index}
                     messages={messages}
+                    onBranch={onBranch}
+                    branchDisabled={branchDisabled}
                     approval={
                         pending &&
                         index === turns.length - 1 &&

@@ -47,6 +47,8 @@ export type RuntimeConfig = {
     /** 聊天记录隔离域。未传时使用独立的默认域。 */
     scope?: string;
     provider: Provider;
+    /** Write text to the embedding host's clipboard. */
+    copyText?: (text: string) => void | Promise<void>;
     resolveReferences?: ReferenceResolver;
     referenceDraft?: ReferenceDraft;
     saveReferenceDraft?: (draft: ReferenceDraft) => void;
@@ -62,6 +64,8 @@ export type RuntimeConfig = {
     presetPrompts?: AIChatPresetPrompt[];
     locale?: AIChatLocale;
     theme?: AIChatTheme;
+    /** Embedded hosts own document theme. */
+    hostManagedTheme?: boolean;
     title?: string;
     emptyStateSlogan?: string;
 };

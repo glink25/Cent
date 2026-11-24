@@ -1,9 +1,10 @@
+import { folderStoragePrefix } from "@/api/endpoints/folder";
 import type { Full } from "@/database/stash";
 import { BillIndexedDBStorage } from "@/database/storage";
 import type { ZenPost } from "./types";
 
 const zenStorage = (bookId: string) =>
-    new BillIndexedDBStorage(`book-${bookId}--zen`);
+    new BillIndexedDBStorage(`book-${folderStoragePrefix()}${bookId}--zen`);
 
 export async function readZenPost(
     bookId: string,

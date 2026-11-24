@@ -1,0 +1,21 @@
+{
+	"extends": "./tsconfig.app.json",
+	"compilerOptions": {
+		"noEmit": false,
+		"declaration": true,
+		"emitDeclarationOnly": true,
+		"rootDir": "..",
+		"outDir": "dist/types",
+		"noUncheckedSideEffectImports": false,
+		"types": ["vite/client"]
+	},
+	"include": [
+		"src/assistant/index.ts",
+		"src/providers/index.ts",
+		"src/chaty/host.ts",
+		"src/ui/index.ts",
+		"src/playground/index.ts",
+		"../agent-core/src/**/*.ts"
+	],
+	"exclude": ["../agent-core/src/**/*.test.ts"]
+}

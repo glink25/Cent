@@ -1,4 +1,12 @@
 {
+  "icloud-download-pending": "Downloading from iCloud. Try syncing again once the download finishes.",
+  "icloud-file-conflict": "iCloud has conflicting versions of a Cent file. Resolve the conflict in iCloud Drive before syncing.",
+  "folder-login": "Choose folder",
+  "folder-authorization-expired": "Folder access expired. Reauthorize in Settings.",
+  "folder-different-storage": "Select the folder originally connected to Cent.",
+  "folder-invalid-storage": "The folder has an invalid Cent storage ID.",
+  "folder-delete-book-manually": "Remove this book from the selected folder manually.",
+  "icloud-unavailable": "iCloud is unavailable. Check that iCloud Drive is enabled.",
   "assistant-extra-prompt": "Extra assistant prompt",
   "assistant-extra-prompt-description": "Add instructions for the AI assistant. Saved instructions sync with your personal settings for this ledger.",
   "assistant-extra-prompt-reset": "Reset",

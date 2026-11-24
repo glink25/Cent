@@ -201,6 +201,7 @@ type AIChatInitPayload = {
 
 type HostBridge = {
   getInit?: () => AIChatInitPayload | Promise<AIChatInitPayload>;
+  copyText?: (text: string) => void | Promise<void>;
   requestAI(args: {
     requestId: string;
     configId?: string;
@@ -248,6 +249,7 @@ treated as an internal detail only).
 ```ts
 type NativeBridgeMessage =
   | { id: string; type: "getInit" }
+  | { id: string; type: "copyText"; payload: { text: string } }
   | { id: string; type: "requestAI";
       payload: { requestId: string; configId?: string; history: History;
                  tools: AIChatToolDefinition[] } }
@@ -256,6 +258,10 @@ type NativeBridgeMessage =
   | { id: string; type: "callTool";
       payload: { callId: string; name: string; params: unknown; history: History } };
 ```
+
+Native hosts advertise `clipboardSupport: true` in `getInit` when they
+handle `copyText`. Write the supplied text to the system clipboard and
+invoke the request's `resolve` or `reject` callback.
 
 **Native → JS callbacks** (native invokes these via `evaluateJavascript` /
 `evaluateJavaScript`). The app registers a callback object per message `id` on
@@ -366,3 +372,17 @@ input:
 corepack pnpm run lint
 corepack pnpm run build
 ```
+
+## Library build and embedded hosts
+
+Run `corepack pnpm --filter @glink25/chaty build:lib` from the Cent repository before consuming the local package. The package exports compiled ESM and declarations through `.`, `/providers`, `/host`, `/ui` and `/playground`. The private agent-core implementation and declarations are included in the library output; consumers do not install the private package.
+
+Embedded hosts import `/styles.css` and `/prose.css` once. Both stylesheets scope their rules to `.chaty-root`, including portalled popovers. `/styles.css` includes utility classes and icons without global preflight. Hosts may bind `--chaty-background`, `--chaty-foreground`, `--chaty-muted`, `--chaty-muted-foreground` and `--chaty-border` to their theme tokens. Wrap separately rendered `MainAssistant.Actions` in `.chaty-root` as well.
+
+Set `runtime.hostManagedTheme: true` when the embedding host owns the document theme; Chaty then does not mutate the document theme. Retain a single `MainAssistant.Root` while switching between desktop and mobile content. Supply a scope for each connection/account/workspace and unmount the root when that binding ends; unmount aborts active requests.
+
+Set `runtime.copyText` in a direct React embed or `HostBridge.copyText` in a standalone host to route UI copy actions to the host clipboard. Resolve after writing and reject on failure. Chaty uses the browser clipboard when the callback is absent.
+
+`/playground` exposes `createPlaygroundTool` and `PlaygroundSkill`. The host must authorize actual RPC operations; tool exposure is not an authorization boundary. Native tools returning `{kind: "toolImage", mimeType, data}` can deliver supported Base64 images to the Provider without keeping bytes in persisted tool observations.
+
+The `prepack` script rebuilds the library. Validate the tarball in a separate consumer before publishing. Tio integration currently uses local link; npm publication remains gated on explicit integration acceptance. The historical `scripts/publish.mjs` manages Git tags, and does not publish this npm package.

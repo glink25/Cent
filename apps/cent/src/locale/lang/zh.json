@@ -1,4 +1,12 @@
 {
+  "icloud-download-pending": "正在从 iCloud 下载文件，完成后请重试同步。",
+  "icloud-file-conflict": "iCloud 中有冲突的 Cent 文件版本，请先在 iCloud 云盘中处理冲突，再重新同步。",
+  "folder-login": "选择文件夹",
+  "folder-authorization-expired": "文件夹授权已失效，请到设置页面重新授权。",
+  "folder-different-storage": "请选择最初连接到 Cent 的文件夹。",
+  "folder-invalid-storage": "此文件夹的 Cent 存储标识无效。",
+  "folder-delete-book-manually": "请在所选文件夹中手动删除此账本。",
+  "icloud-unavailable": "iCloud 暂不可用，请检查是否已开启 iCloud 云盘。",
   "assistant-extra-prompt": "AI 助手额外提示词",
   "assistant-extra-prompt-description": "为 AI 助手添加指令。保存后的指令会随当前账本的个人设置同步。",
   "assistant-extra-prompt-reset": "恢复默认",

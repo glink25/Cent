@@ -80,6 +80,29 @@
 	background: transparent;
 	font-size: 0.85em;
 }
+.chaty-code-block {
+	position: relative;
+}
+.prose .chaty-code-block pre {
+	padding-top: 2.75rem;
+}
+.chaty-code-copy {
+	position: absolute;
+	top: 0.25rem;
+	right: 0.25rem;
+	display: grid;
+	width: 2.25rem;
+	height: 2.25rem;
+	place-items: center;
+	border-radius: 0.375rem;
+	color: var(--muted-foreground);
+	cursor: pointer;
+}
+.chaty-code-copy:hover,
+.chaty-code-copy:focus-visible {
+	background: var(--muted);
+	color: var(--foreground);
+}
 .prose hr {
 	margin: 1em 0;
 	border: 0;

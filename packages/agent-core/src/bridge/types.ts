@@ -13,6 +13,7 @@ import type {
     ReferenceDelivery,
     ReferenceDeliverySubscriber,
     ReferenceDraft,
+    RuntimeConfig,
 } from "./runtime";
 
 export type {
@@ -65,6 +66,7 @@ export type AIChatInitPayload = {
     referenceSupport?: boolean;
     changeSupport?: boolean;
     extraPromptSupport?: boolean;
+    clipboardSupport?: boolean;
     writeBatchSupport?: boolean;
     referenceDraft?: ReferenceDraft;
     configs: AIChatConfig[];
@@ -86,6 +88,7 @@ export type HostRequestHandle = {
 };
 
 export type HostBridge = {
+    copyText?: RuntimeConfig["copyText"];
     zen?: <T>(
         operation: ZenOperation,
         params?: unknown,
@@ -151,6 +154,7 @@ export type ChangeControl =
 
 export type NativeBridgeMessage =
     | { id: string; type: "getInit" | "getExtraPrompt" }
+    | { id: string; type: "copyText"; payload: { text: string } }
     | {
           id: string;
           type: "zen";

@@ -308,7 +308,7 @@ export async function loadHostRuntimeConfig(
 export function adaptHostRuntime(
     host: HostBridge,
     init: AIChatInitPayload,
-    fallback: Pick<RuntimeConfig, "tools" | "skills">,
+    fallback: Pick<RuntimeConfig, "tools" | "skills" | "copyText">,
 ): RuntimeConfig {
     const defaultConfigId = init.configs.some(
         (config) => config.id === init.defaultConfigId,
@@ -329,6 +329,7 @@ export function adaptHostRuntime(
 
     return {
         scope: init.scope,
+        copyText: host.copyText?.bind(host) ?? fallback.copyText,
         resolveReferences: host.resolveReferences,
         undoChange: changeControl
             ? (changeId) => changeControl({ operation: "undo", changeId })

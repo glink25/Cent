@@ -1,13 +1,30 @@
 {
 	"name": "@glink25/chaty",
-	"version": "0.2.0",
+	"version": "0.3.0",
 	"type": "module",
 	"exports": {
-		".": "./src/assistant/index.ts",
-		"./providers": "./src/providers/index.ts",
-		"./host": "./src/chaty/host.ts",
-		"./ui": "./src/ui/index.ts",
-		"./prose.css": "./src/components/assistant/prose.css"
+		".": {
+			"types": "./dist/types/chaty/src/assistant/index.d.ts",
+			"import": "./dist/index.js"
+		},
+		"./providers": {
+			"types": "./dist/types/chaty/src/providers/index.d.ts",
+			"import": "./dist/providers.js"
+		},
+		"./host": {
+			"types": "./dist/types/chaty/src/chaty/host.d.ts",
+			"import": "./dist/host.js"
+		},
+		"./ui": {
+			"types": "./dist/types/chaty/src/ui/index.d.ts",
+			"import": "./dist/ui.js"
+		},
+		"./playground": {
+			"types": "./dist/types/chaty/src/playground/index.d.ts",
+			"import": "./dist/playground.js"
+		},
+		"./prose.css": "./dist/prose.css",
+		"./styles.css": "./dist/styles.css"
 	},
 	"scripts": {
 		"dev": "vite --host",
@@ -16,7 +33,9 @@
 		"lint": "tsc -b && biome check --diagnostic-level error",
 		"test": "vitest run",
 		"preview": "vite preview --host --port 5173",
-		"check": "biome check --write"
+		"check": "biome check --write",
+		"build:lib": "node scripts/build-lib.mjs",
+		"prepack": "pnpm run build:lib"
 	},
 	"peerDependencies": {
 		"jsonrepair": "^3.13.3",
@@ -68,10 +87,30 @@
 		"vitest": "^4.1.9",
 		"zod": "^4.1.11",
 		"zustand": "^5.0.8",
-		"zustand-indexeddb": "^0.1.1"
+		"zustand-indexeddb": "^0.1.1",
+		"postcss": "^8.5.6",
+		"@glink25/agent-core": "workspace:*"
 	},
 	"dependencies": {
 		"dompurify": "^3.4.17",
-		"@glink25/agent-core": "workspace:*"
-	}
+		"@radix-ui/react-popover": "^1.1.15",
+		"@radix-ui/react-slot": "^1.2.3",
+		"class-variance-authority": "^0.7.1",
+		"clsx": "^2.1.1",
+		"marked": "^18.0.4",
+		"radix-ui": "^1.4.3",
+		"sonner": "^2.0.7",
+		"tailwind-merge": "^3.3.1",
+		"zustand": "^5.0.8",
+		"zustand-indexeddb": "^0.1.1"
+	},
+	"files": [
+		"dist"
+	],
+	"publishConfig": {
+		"access": "public"
+	},
+	"sideEffects": [
+		"**/*.css"
+	]
 }

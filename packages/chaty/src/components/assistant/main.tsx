@@ -27,12 +27,18 @@ import {
     type ConversationReference,
     createSession,
     type History,
+    type Message,
     type TurnResult,
 } from "../../assistant";
 import { showFilePicker } from "../file-picker";
 import { Button } from "../ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import { conversationTitle, hasCurrentResponse } from "./conversation";
+import { ClipboardContext } from "./clipboard";
+import {
+    branchConversation,
+    conversationTitle,
+    hasCurrentResponse,
+} from "./conversation";
 import { I18nProvider, useI18n } from "./i18n";
 import type { RuntimeConfig } from "./runtime";
 import {
@@ -69,6 +75,7 @@ type AssistantContext = {
     canSend: boolean;
     send: (nextInput?: Input) => void;
     abortCurrentChat: () => void;
+    branchFromReply: (message: Message) => void;
     rerunToolCall: (messageIndex: number) => void;
 };
 
@@ -281,7 +288,13 @@ function Root({
         [scope, setAllChats],
     );
 
-    useEffect(() => applyThemePreference(runtime.theme), [runtime.theme]);
+    useEffect(
+        () =>
+            runtime.hostManagedTheme
+                ? undefined
+                : applyThemePreference(runtime.theme),
+        [runtime.theme, runtime.hostManagedTheme],
+    );
 
     useEffect(() => {
         return () => {
@@ -567,6 +580,19 @@ function Root({
         chat?.abortController?.abort();
     }, [currentChatId, readCurrentChat]);
 
+    const branchFromReply = useCallback(
+        (message: Message) => {
+            if (approval) return;
+            const source = readCurrentChat();
+            if (!source) return;
+            const branch = branchConversation(source, message, createChatId());
+            if (!branch) return;
+            setChats((chats) => [...chats, branch]);
+            setCurrentChatId(branch.id);
+        },
+        [approval, readCurrentChat, setChats],
+    );
+
     const rerunToolCall = useCallback(
         async (messageIndex: number) => {
             const chat = readCurrentChat();
@@ -603,6 +629,7 @@ function Root({
             canSend,
             send,
             abortCurrentChat,
+            branchFromReply,
             rerunToolCall,
         }),
         [
@@ -616,6 +643,7 @@ function Root({
             canSend,
             send,
             abortCurrentChat,
+            branchFromReply,
             rerunToolCall,
         ],
     );
@@ -625,9 +653,11 @@ function Root({
     // 背景与尺寸由 Content 自身承载。
     return (
         <I18nProvider locale={runtime.locale}>
-            <AssistantContext.Provider value={ctx}>
-                {children}
-            </AssistantContext.Provider>
+            <ClipboardContext.Provider value={runtime.copyText}>
+                <AssistantContext.Provider value={ctx}>
+                    {children}
+                </AssistantContext.Provider>
+            </ClipboardContext.Provider>
         </I18nProvider>
     );
 }
@@ -699,10 +729,21 @@ const Actions = memo(function Actions() {
             Object.fromEntries(
                 state.chats
                     .filter((chat) => chat.scope === (runtime.scope ?? null))
-                    .map((chat) => [
-                        chat.id,
-                        conversationTitle(chat.history, t("newChat")),
-                    ]),
+                    .map((chat) => {
+                        const title = conversationTitle(
+                            chat.history,
+                            t("newChat"),
+                        );
+                        return [
+                            chat.id,
+                            chat.isBranch
+                                ? t("branchChatTitle").replace(
+                                      "{{title}}",
+                                      () => title,
+                                  )
+                                : title,
+                        ];
+                    }),
             ),
         ),
     );
@@ -791,8 +832,14 @@ const Actions = memo(function Actions() {
 });
 
 function Content({ hideHeader }: { hideHeader?: boolean } = {}) {
-    const { approval, send, setChats, currentChatId, runtime } =
-        useAssistantContext();
+    const {
+        approval,
+        send,
+        setChats,
+        currentChatId,
+        runtime,
+        branchFromReply,
+    } = useAssistantContext();
     const { t } = useI18n();
     const currentChat = useAssistantChatStore((state) =>
         state.chats.find(
@@ -875,19 +922,19 @@ function Content({ hideHeader }: { hideHeader?: boolean } = {}) {
         const content = messagesContentRef.current;
         if (!element || !content) return;
         let frame: number | undefined;
-        let lastHeight = -1;
+        const scrollToLatest = () => {
+            if (followLatest.current) element.scrollTop = element.scrollHeight;
+        };
+        scrollToLatest();
         const observer = new ResizeObserver(() => {
             if (frame !== undefined) return;
             frame = requestAnimationFrame(() => {
                 frame = undefined;
-                const height = content.getBoundingClientRect().height;
-                if (height === lastHeight) return;
-                lastHeight = height;
-                if (followLatest.current)
-                    element.scrollTop = element.scrollHeight;
+                scrollToLatest();
             });
         });
         observer.observe(content);
+        observer.observe(element);
         return () => {
             observer.disconnect();
             if (frame !== undefined) cancelAnimationFrame(frame);
@@ -938,7 +985,7 @@ function Content({ hideHeader }: { hideHeader?: boolean } = {}) {
                         el.scrollHeight - el.scrollTop - el.clientHeight < 100;
                     setShowLatest(!followLatest.current);
                 }}
-                className="w-full flex-1 flex flex-col gap-4 overflow-y-auto px-2 py-2 min-h-0 text-sm"
+                className="w-full flex-1 flex flex-col gap-4 overflow-y-auto [overflow-anchor:none] px-2 py-2 min-h-0 text-sm"
             >
                 <div
                     ref={messagesContentRef}
@@ -948,6 +995,8 @@ function Content({ hideHeader }: { hideHeader?: boolean } = {}) {
                         <ConversationTurns
                             history={currentChat.history}
                             approval={approval}
+                            onBranch={branchFromReply}
+                            branchDisabled={isPending || !!approval}
                             undo={undo}
                             undoDisabled={isPending}
                             contextEvents={
@@ -994,10 +1043,9 @@ function Content({ hideHeader }: { hideHeader?: boolean } = {}) {
                         onClick={() => {
                             followLatest.current = true;
                             setShowLatest(false);
-                            messagesContainerRef.current?.scrollTo({
-                                top: messagesContainerRef.current.scrollHeight,
-                                behavior: "smooth",
-                            });
+                            const element = messagesContainerRef.current;
+                            if (element)
+                                element.scrollTop = element.scrollHeight;
                         }}
                     >
                         <i

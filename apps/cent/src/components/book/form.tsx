@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
+import { authorizeFolder } from "@/api/endpoints/folder";
 import type { Book } from "@/api/endpoints/type";
 import { loadStorageAPI } from "@/api/storage/dynamic";
 import { useIntl } from "@/locale";
 import { measure } from "@/measurement";
 import { useBookStore } from "@/store/book";
-import { useIsLogin } from "@/store/user";
+import { useIsLogin, useUserStore } from "@/store/user";
 import Loading from "../loading";
 import modal from "../modal";
 import { Button } from "../ui/button";
@@ -14,6 +15,7 @@ import { Label } from "../ui/label";
 export function BookForm() {
     const t = useIntl();
     const isLogin = useIsLogin();
+    const expired = useUserStore((state) => state.expired);
     const { books, currentBookId, loading } = useBookStore();
     // const bookNum = books.length;
 
@@ -29,13 +31,17 @@ export function BookForm() {
     }, []);
 
     useEffect(() => {
-        useBookStore.getState().updateBookList();
+        void useBookStore
+            .getState()
+            .updateBookList()
+            .catch(() => undefined);
     }, []);
 
     if (!isLogin) {
         return null;
     }
 
+    const needsFolderAuth = core?.StorageAPI.type === "folder" && expired;
     const toSwitchBook = (bookId: string) => {
         useBookStore.getState().switchToBook(bookId);
     };
@@ -131,8 +137,18 @@ export function BookForm() {
                 ) : (
                     <div className="flex-1">{t("no-books-go-create-one")}</div>
                 )}
+                {needsFolderAuth && (
+                    <Button
+                        variant="outline"
+                        onClick={() => {
+                            void authorizeFolder(modal);
+                        }}
+                    >
+                        {t("re-login")}
+                    </Button>
+                )}
                 <Button
-                    disabled={creating}
+                    disabled={creating || needsFolderAuth}
                     onClick={async () => {
                         const name = (await modal.prompt({
                             title: t("please-input-book-name"),

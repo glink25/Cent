@@ -5,6 +5,15 @@ import { shortId } from "@/database/id";
 import { registerProxy } from "@/utils/fetch-proxy";
 import type { AssetKey, FileLike, StoreStructure, Syncer } from ".";
 
+export type TidalFileClient = Pick<
+    WebDAVClient,
+    | "getDirectoryContents"
+    | "getFileContents"
+    | "createDirectory"
+    | "deleteFile"
+    | "putFileContents"
+>;
+
 type WebDAVConfig = {
     remoteUrl: string;
     username?: string;
@@ -124,7 +133,10 @@ const fileStatsToStructure = (
     return structure;
 };
 
-export const createWebDAVSyncer = (cfg: WebDAVConfig): Syncer => {
+export const createWebDAVSyncer = (
+    cfg: WebDAVConfig,
+    directoryClient?: TidalFileClient,
+): Syncer => {
     const config = {
         baseDir: "cent",
         repoPrefix: "cent-journal",
@@ -134,6 +146,7 @@ export const createWebDAVSyncer = (cfg: WebDAVConfig): Syncer => {
 
     let clientInstance: WebDAVClient | undefined;
     const getClient = async () => {
+        if (directoryClient) return directoryClient;
         if (clientInstance) return clientInstance;
         const [client] = await createClient(
             config.remoteUrl,
@@ -220,6 +233,7 @@ export const createWebDAVSyncer = (cfg: WebDAVConfig): Syncer => {
 
         // process files in series (safe for WebDAV with concurrency limits)
         for (const f of files) {
+            if (directoryClient) signal?.throwIfAborted();
             const fullPath = `${storePath}/${f.path}`;
             if (f.content === null || f.content === undefined) {
                 // delete if exists (some servers may return 404, ignore)
@@ -252,7 +266,10 @@ export const createWebDAVSyncer = (cfg: WebDAVConfig): Syncer => {
     };
 
     const transformAsset = (file: File, storeFullName: string) => {
-        const assetPath = `assets/${shortId()}-${file.name}`;
+        const filename = directoryClient
+            ? file.name.replace(/[\\/]/g, "_")
+            : file.name;
+        const assetPath = `assets/${shortId()}-${filename}`;
         return `${config.baseDir}/${storeFullName}/${assetPath}`;
     };
 
@@ -265,6 +282,14 @@ export const createWebDAVSyncer = (cfg: WebDAVConfig): Syncer => {
     const getAsset = async (fileKey: AssetKey, storeFullName: string) => {
         // 从 URL 中提取路径
         const path = fileKey;
+        if (
+            directoryClient &&
+            !path
+                .replace(/^\//, "")
+                .startsWith(`${config.baseDir}/${storeFullName}/assets/`)
+        ) {
+            throw new Error("Invalid folder attachment path");
+        }
 
         try {
             const client = await getClient();
@@ -282,6 +307,9 @@ export const createWebDAVSyncer = (cfg: WebDAVConfig): Syncer => {
     const createStore = async (name: string) => {
         const client = await getClient();
         const storeName = `${config.repoPrefix}-${name}`;
+        if (directoryClient && (await fetchAllStore()).includes(storeName)) {
+            return { id: storeName, name: storeName };
+        }
         const storePath = `${config.baseDir}/${storeName}`;
         await client.createDirectory(storePath, { recursive: true });
         await client.putFileContents(

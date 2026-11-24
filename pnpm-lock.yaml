@@ -343,16 +343,46 @@ importers:
 
   packages/chaty:
     dependencies:
-      '@glink25/agent-core':
-        specifier: workspace:*
-        version: link:../agent-core
+      '@radix-ui/react-popover':
+        specifier: ^1.1.15
+        version: 1.1.15(@types/react-dom@19.1.9(@types/react@19.1.12))(@types/react@19.1.12)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      '@radix-ui/react-slot':
+        specifier: ^1.2.3
+        version: 1.2.3(@types/react@19.1.12)(react@19.1.1)
+      class-variance-authority:
+        specifier: ^0.7.1
+        version: 0.7.1
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
       dompurify:
         specifier: ^3.4.17
         version: 3.4.17
+      marked:
+        specifier: ^18.0.4
+        version: 18.0.4
+      radix-ui:
+        specifier: ^1.4.3
+        version: 1.4.3(@types/react-dom@19.1.9(@types/react@19.1.12))(@types/react@19.1.12)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      sonner:
+        specifier: ^2.0.7
+        version: 2.0.7(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      tailwind-merge:
+        specifier: ^3.3.1
+        version: 3.3.1
+      zustand:
+        specifier: ^5.0.8
+        version: 5.0.8(@types/react@19.1.12)(immer@10.1.1)(react@19.1.1)(use-sync-external-store@1.5.0(react@19.1.1))
+      zustand-indexeddb:
+        specifier: ^0.1.1
+        version: 0.1.1(zustand@5.0.8(@types/react@19.1.12)(immer@10.1.1)(react@19.1.1)(use-sync-external-store@1.5.0(react@19.1.1)))
     devDependencies:
       '@biomejs/biome':
         specifier: 2.2.2
         version: 2.2.2
+      '@glink25/agent-core':
+        specifier: workspace:*
+        version: link:../agent-core
       '@glink25/tailwind-config':
         specifier: workspace:*
         version: link:../tailwind-config
@@ -365,12 +395,6 @@ importers:
       '@iconify/tailwind4':
         specifier: ^1.0.6
         version: 1.0.6(tailwindcss@4.1.12)
-      '@radix-ui/react-popover':
-        specifier: ^1.1.15
-        version: 1.1.15(@types/react-dom@19.1.9(@types/react@19.1.12))(@types/react@19.1.12)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@radix-ui/react-slot':
-        specifier: ^1.2.3
-        version: 1.2.3(@types/react@19.1.12)(react@19.1.1)
       '@tailwindcss/vite':
         specifier: ^4.1.12
         version: 4.1.12(vite@8.0.8(@types/node@24.3.1)(esbuild@0.27.2)(jiti@2.6.1)(sass-embedded@1.93.3)(sass@1.93.3)(terser@5.46.1))
@@ -386,12 +410,6 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^6.0.1
         version: 6.0.1(vite@8.0.8(@types/node@24.3.1)(esbuild@0.27.2)(jiti@2.6.1)(sass-embedded@1.93.3)(sass@1.93.3)(terser@5.46.1))
-      class-variance-authority:
-        specifier: ^0.7.1
-        version: 0.7.1
-      clsx:
-        specifier: ^2.1.1
-        version: 2.1.1
       idb:
         specifier: ^8.0.3
         version: 8.0.3
@@ -401,27 +419,18 @@ importers:
       lucide-react:
         specifier: ^0.544.0
         version: 0.544.0(react@19.1.1)
-      marked:
-        specifier: ^18.0.4
-        version: 18.0.4
       next-themes:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      radix-ui:
-        specifier: ^1.4.3
-        version: 1.4.3(@types/react-dom@19.1.9(@types/react@19.1.12))(@types/react@19.1.12)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      postcss:
+        specifier: ^8.5.6
+        version: 8.5.9
       react:
         specifier: ^19.1.1
         version: 19.1.1
       react-dom:
         specifier: ^19.1.1
         version: 19.1.1(react@19.1.1)
-      sonner:
-        specifier: ^2.0.7
-        version: 2.0.7(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      tailwind-merge:
-        specifier: ^3.3.1
-        version: 3.3.1
       tailwindcss:
         specifier: ^4.1.12
         version: 4.1.12
@@ -452,12 +461,6 @@ importers:
       zod:
         specifier: ^4.1.11
         version: 4.4.3
-      zustand:
-        specifier: ^5.0.8
-        version: 5.0.8(@types/react@19.1.12)(immer@10.1.1)(react@19.1.1)(use-sync-external-store@1.5.0(react@19.1.1))
-      zustand-indexeddb:
-        specifier: ^0.1.1
-        version: 0.1.1(zustand@5.0.8(@types/react@19.1.12)(immer@10.1.1)(react@19.1.1)(use-sync-external-store@1.5.0(react@19.1.1)))
 
   packages/tailwind-config:
     dependencies:

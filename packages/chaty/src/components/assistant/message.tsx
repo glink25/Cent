@@ -1,22 +1,43 @@
 /** biome-ignore-all lint/security/noDangerouslySetInnerHtml: Markdown is rendered from local chat text in this UI shell. */
 import { recordStreamTiming } from "@glink25/agent-core/assistant/stream-scheduling";
 import DOMPurify from "dompurify";
-import { marked } from "marked";
+import { Marked } from "marked";
 import { Collapsible } from "radix-ui";
 import { memo, useId, useLayoutEffect, useRef, useState } from "react";
 import "./prose.css";
 import type { Message, Tool } from "@glink25/agent-core";
-import { toast } from "sonner";
+import { useCopyText } from "./clipboard";
 import { useI18n } from "./i18n";
 import { toolLabel } from "./turn-model";
 
 const markdownCache = new Map<string, string>();
 let cachedCharacters = 0;
+
+function escapeHtml(text: string) {
+    return text
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+}
+
+const markdown = new Marked({
+    renderer: {
+        code({ text, lang }) {
+            const language = lang?.match(/\S+/)?.[0];
+            const className = language
+                ? ` class="language-${escapeHtml(language)}"`
+                : "";
+            return `<pre><code${className}>${escapeHtml(text)}</code></pre>\n`;
+        },
+    },
+});
+
 function renderMarkdown(text: string) {
     const cached = markdownCache.get(text);
     if (cached !== undefined) return cached;
     const started = performance.now();
-    const html = DOMPurify.sanitize(marked.parse(text, { async: false }));
+    const html = DOMPurify.sanitize(markdown.parse(text, { async: false }));
     recordStreamTiming("markdown", text.length, {
         duration: performance.now() - started,
     });
@@ -31,6 +52,105 @@ function renderMarkdown(text: string) {
     markdownCache.set(text, html);
     cachedCharacters += size;
     return html;
+}
+
+function MarkdownAnswer({ text }: { text: string }) {
+    const { t } = useI18n();
+    const copy = useCopyText();
+    const body = useRef<HTMLDivElement>(null);
+    const html = renderMarkdown(text);
+    const label = t("flowCopyCode");
+
+    useLayoutEffect(() => {
+        const root = body.current;
+        if (!root || !html) return;
+        const wrappers = Array.from(
+            root.querySelectorAll("pre > code"),
+            (code) => {
+                const pre = code.parentElement;
+                if (!pre) return;
+                const wrapper = document.createElement("div");
+                wrapper.className = "chaty-code-block";
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "chaty-code-copy";
+                button.title = label;
+                button.setAttribute("aria-label", label);
+                const icon = document.createElement("i");
+                icon.className = "icon-[mdi--content-copy] size-4";
+                icon.setAttribute("aria-hidden", "true");
+                button.append(icon);
+                button.onclick = () => void copy(code.textContent ?? "");
+                pre.before(wrapper);
+                wrapper.append(button, pre);
+                return { wrapper, pre };
+            },
+        );
+        return () => {
+            for (const entry of wrappers) {
+                if (entry && root.contains(entry.wrapper)) {
+                    entry.wrapper.replaceWith(entry.pre);
+                }
+            }
+        };
+    }, [html, label, copy]);
+
+    return (
+        <div
+            ref={body}
+            className="prose max-w-none select-text text-[15px] leading-7"
+            dangerouslySetInnerHTML={{ __html: html }}
+        />
+    );
+}
+
+const actionClass =
+    "grid size-9 place-items-center rounded cursor-pointer hover:bg-muted hover:text-foreground disabled:cursor-default disabled:opacity-40";
+
+export function ReplyActions({
+    message,
+    onBranch,
+    branchDisabled,
+}: {
+    message: Extract<Message, { role: "assistant" }>;
+    onBranch?: (message: Message) => void;
+    branchDisabled?: boolean;
+}) {
+    const { t } = useI18n();
+    const copy = useCopyText();
+    return (
+        <div className="flex items-center gap-1 text-muted-foreground">
+            <button
+                type="button"
+                aria-label={t("flowCopyAnswer")}
+                title={t("flowCopyAnswer")}
+                className={actionClass}
+                onClick={() =>
+                    void copy(message.formatted.answer ?? message.raw)
+                }
+            >
+                <i
+                    aria-hidden="true"
+                    className="icon-[mdi--content-copy] size-4"
+                />
+            </button>
+            {onBranch && (
+                <button
+                    type="button"
+                    aria-label={t("flowBranch")}
+                    title={t("flowBranch")}
+                    className={actionClass}
+                    disabled={branchDisabled}
+                    onClick={() => onBranch(message)}
+                >
+                    <i
+                        aria-hidden="true"
+                        className="icon-[mdi--source-branch] size-4"
+                    />
+                </button>
+            )}
+        </div>
+    );
 }
 
 const USER_MESSAGE_MAX_HEIGHT = 240;
@@ -106,6 +226,7 @@ export const MessageBubble = memo(function MessageBubble({
     onRerunToolCall?: () => void;
 }) {
     const { t } = useI18n();
+    const copy = useCopyText();
 
     switch (message.role) {
         case "user":
@@ -159,16 +280,8 @@ export const MessageBubble = memo(function MessageBubble({
                             type="button"
                             aria-label={t("flowCopy")}
                             title={t("flowCopy")}
-                            className="grid size-8 place-items-center rounded hover:bg-muted"
-                            onClick={async () => {
-                                try {
-                                    await navigator.clipboard.writeText(
-                                        message.raw,
-                                    );
-                                } catch {
-                                    toast.error(t("flowCopyFailed"));
-                                }
-                            }}
+                            className={actionClass}
+                            onClick={() => void copy(message.raw)}
                         >
                             <i
                                 aria-hidden="true"
@@ -193,13 +306,8 @@ export const MessageBubble = memo(function MessageBubble({
                                 </div>
                             </details>
                         )}
-                        <div
-                            className="prose max-w-none select-text text-[15px] leading-7"
-                            dangerouslySetInnerHTML={{
-                                __html: renderMarkdown(
-                                    message.formatted.answer ?? message.raw,
-                                ),
-                            }}
+                        <MarkdownAnswer
+                            text={message.formatted.answer ?? message.raw}
                         />
                     </div>
                 </div>

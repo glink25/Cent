@@ -3,10 +3,12 @@ import { KeyRound } from "lucide-react";
 import { type ReactNode, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useShallow } from "zustand/shallow";
+import { authorizeFolder, canPickFolder } from "@/api/endpoints/folder";
 import {
     AppDownloadIcons,
     useLoginAppDownloadPlatforms,
 } from "@/components/app-download";
+import modal from "@/components/modal";
 import { useIntl } from "@/locale";
 import { isMeasurementEnabled, measure } from "@/measurement";
 import { useIsLogin, useUserStore } from "@/store/user";
@@ -22,9 +24,16 @@ const primaryButtonStyle = `inline-flex items-center justify-center gap-2 whites
 
 const secondaryButtonStyle = `inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 h-9 px-4 py-2 w-full`;
 
-const betaClassName = `relative after:content-['beta'] after:rounded after:bg-yellow-400 after:px-[2px] after:text-[8px] after:block after:absolute after:top-0 after:right-0 after:translate-x-[calc(50%)]`;
+const betaClassName = `relative after:content-['beta'] after:rounded after:bg-yellow-400 after:px-[2px] after:text-[8px] after:block after:absolute after:top-0.5 after:right-1 after:py-0.5 after:leading-none after:pointer-events-none`;
 
-const LOGIN_METHODS = ["github", "gitee", "webdav", "s3", "offline"] as const;
+const LOGIN_METHODS = [
+    "github",
+    "gitee",
+    "webdav",
+    "s3",
+    "offline",
+    "folder",
+] as const;
 type LoginMethod = (typeof LOGIN_METHODS)[number];
 let loginMethodMeasured = false;
 
@@ -95,11 +104,11 @@ export default function Login() {
                                                 <path d="M11.984 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.016 0zm6.09 5.333c.328 0 .593.266.592.593v1.482a.594.594 0 0 1-.593.592H9.777c-.982 0-1.778.796-1.778 1.778v5.63c0 .327.266.592.593.592h5.63c.982 0 1.778-.796 1.778-1.778v-.296a.593.593 0 0 0-.592-.593h-4.15a.592.592 0 0 1-.592-.592v-1.482a.593.593 0 0 1 .593-.592h6.815c.327 0 .593.265.593.592v3.408a4 4 0 0 1-4 4H5.926a.593.593 0 0 1-.593-.593V9.778a4.444 4.444 0 0 1 4.445-4.444h8.296z" />
                                             </svg>
                                         </ProviderLoginButtons>
-                                        {/* Web DAV */}
-                                        <div>
+                                        {/* WebDAV and folder storage */}
+                                        <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
-                                                className={`${secondaryButtonStyle} ${betaClassName}`}
+                                                className={`${secondaryButtonStyle} ${betaClassName} min-w-0 flex-1`}
                                                 onClick={async () => {
                                                     const StorageAPI =
                                                         await loadStorageAPI();
@@ -113,6 +122,26 @@ export default function Login() {
                                                     Web DAV
                                                 </div>
                                             </button>
+                                            {canPickFolder() && (
+                                                <button
+                                                    type="button"
+                                                    className={`${secondaryButtonStyle} ${betaClassName} !w-9 shrink-0 !px-0`}
+                                                    aria-label={t(
+                                                        "folder-login",
+                                                    )}
+                                                    title={t("folder-login")}
+                                                    onClick={() => {
+                                                        void authorizeFolder(
+                                                            modal,
+                                                        );
+                                                    }}
+                                                >
+                                                    <i
+                                                        className="icon-[mdi--folder-open-outline] mt-2 size-4"
+                                                        aria-hidden="true"
+                                                    />
+                                                </button>
+                                            )}
                                         </div>
                                         {/* S3 */}
                                         <div>

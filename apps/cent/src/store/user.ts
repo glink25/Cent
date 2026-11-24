@@ -74,11 +74,7 @@ export const useUserStore = create<UserStore>()(
                             },
                         );
                     }
-                    set(
-                        produce((state: UserStore) => {
-                            state.expired = true;
-                        }),
-                    );
+                    if (StorageAPI.type !== "folder") set({ expired: true });
                     throw error;
                 } finally {
                     set(
@@ -89,7 +85,10 @@ export const useUserStore = create<UserStore>()(
                 }
             };
 
-            updateUserInfo();
+            window.addEventListener("cent-folder-expired", () => {
+                set({ expired: true });
+            });
+            void updateUserInfo().catch(() => undefined);
 
             const getUserInfo = async (login: string) => {
                 const run = async () => {

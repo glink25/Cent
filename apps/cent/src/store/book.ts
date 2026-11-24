@@ -57,7 +57,7 @@ export const useBookStore = create<BookStore>()(
                     );
                 }
             };
-            updateBookList();
+            void updateBookList().catch(() => undefined);
             return {
                 loading,
                 visible,

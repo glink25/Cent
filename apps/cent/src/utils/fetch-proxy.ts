@@ -60,4 +60,4 @@ self.fetch = async (url: RequestInfo | URL, options: RequestInit = {}) => {
 registerProxy(relayrMiddleware);
 
 // 导出 registerProxy
-export { registerProxy };
+export { originalFetch, registerProxy };

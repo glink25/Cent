@@ -1,6 +1,7 @@
 import { wrap } from "comlink";
 import modal from "@/components/modal";
 import { EmptyEndpoint } from "../endpoints/empty";
+import { FolderEndpoint, folderStoragePrefix } from "../endpoints/folder";
 import { GiteeEndpoint } from "../endpoints/gitee";
 import { GithubEndpoint } from "../endpoints/github";
 import { OfflineEndpoint } from "../endpoints/offline";
@@ -15,6 +16,7 @@ const APIS = {
     webdav: WebDAVEndpoint,
     gitee: GiteeEndpoint,
     s3: S3Endpoint,
+    folder: FolderEndpoint,
 };
 
 const SYNC_ENDPOINT_KEY = "SYNC_ENDPOINT";
@@ -41,6 +43,9 @@ export const StorageAPI = {
         if (type === "webdav") {
             return WebDAVEndpoint.login({ modal });
         }
+        if (type === "folder") {
+            return FolderEndpoint.login({ modal });
+        }
         if (type === "s3") {
             return S3Endpoint.login({ modal });
         }
@@ -61,5 +66,6 @@ const workerInstance = new DeferredWorker({
     /* normal Worker options*/
 });
 const StorageDeferredAPI = wrap<Exposed>(workerInstance);
+if (type === "folder") void StorageDeferredAPI.init(folderStoragePrefix());
 
 export { StorageDeferredAPI };

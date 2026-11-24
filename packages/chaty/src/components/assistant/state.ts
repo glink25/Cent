@@ -15,6 +15,7 @@ import { checkpointStorage } from "./checkpoint-storage";
 export type Chat = {
     id: string;
     scope: string | null;
+    isBranch?: true;
     history: History;
     contextState?: ContextState;
     contextEvents?: ContextEvent[];
@@ -38,7 +39,12 @@ export type AssistantChatState = {
 type PersistedAssistantChatState = {
     chats: Pick<
         Chat,
-        "id" | "scope" | "history" | "contextState" | "contextEvents"
+        | "id"
+        | "scope"
+        | "isBranch"
+        | "history"
+        | "contextState"
+        | "contextEvents"
     >[];
 };
 
@@ -63,17 +69,25 @@ function persistedSnapshot(
         previousSnapshot.chats.map((chat) => [chat.id, chat]),
     );
     const chats = state.chats.map(
-        ({ id, scope, history, contextState, contextEvents }) => {
+        ({ id, scope, isBranch, history, contextState, contextEvents }) => {
             const old = previous.get(id);
             if (
                 old &&
                 old.scope === scope &&
+                old.isBranch === isBranch &&
                 old.history === history &&
                 old.contextState === contextState &&
                 old.contextEvents === contextEvents
             )
                 return old;
-            return { id, scope, history, contextState, contextEvents };
+            return {
+                id,
+                scope,
+                isBranch,
+                history,
+                contextState,
+                contextEvents,
+            };
         },
     );
     if (

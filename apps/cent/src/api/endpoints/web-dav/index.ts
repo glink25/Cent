@@ -1,11 +1,13 @@
+import type { Modal } from "@/components/modal";
 import type { WebDAVEdit } from "@/components/modal/web-dav";
 import { Scheduler } from "@/database/scheduler";
 import { BillIndexedDBStorage } from "@/database/storage";
 import type { Bill } from "@/ledger/type";
+import type { Syncer } from "@/tidal";
 import { createTidal } from "@/tidal";
 import { checkWebDAVConfig, createWebDAVSyncer } from "@/tidal/web-dav";
 import type { ZenPost } from "@/zen/types";
-import type { SyncEndpointFactory } from "../type";
+import type { SyncEndpoint, SyncEndpointFactory } from "../type";
 
 const ZEN_ENTRY_NAME = "zen";
 
@@ -70,137 +72,171 @@ export const WebDAVEndpoint: SyncEndpointFactory = {
             remoteUrl: remote,
             proxy: auth.proxy,
         };
-        const repo = createTidal<Bill>({
-            storageFactory: (name) => new BillIndexedDBStorage(`book-${name}`),
-            entryName: config.entryName,
-            syncerFactory: () =>
+        return createFileEndpoint({
+            modal,
+            auth,
+            makeSyncer: (entryName) =>
                 createWebDAVSyncer({
                     ...config,
                     ...webDAVSyncerConfig,
+                    entryName,
                 }),
         });
-        const zenRepo = createTidal<ZenPost>({
-            storageFactory: (name) =>
-                new BillIndexedDBStorage(`book-${name}--${ZEN_ENTRY_NAME}`),
-            entryName: ZEN_ENTRY_NAME,
-            syncerFactory: () =>
-                createWebDAVSyncer({
-                    ...config,
-                    ...webDAVSyncerConfig,
-                    entryName: ZEN_ENTRY_NAME,
-                }),
-        });
-        const toBookName = (bookId: string) => {
-            return bookId.replace(`${config.repoPrefix}-`, "");
-        };
+    },
+};
 
-        const getUserAliases = async (storeName: string) => {
-            const meta: WebDAVPrivateMeta | undefined =
-                await repo.getMeta(storeName);
-            if (!meta?._webDAVUserAliases) {
-                return [];
-            }
-            return meta._webDAVUserAliases;
-        };
+export function createFileEndpoint({
+    modal,
+    auth,
+    makeSyncer,
+    storagePrefix = "",
+    validate,
+    runExclusive,
+    deleteBookMessage = () =>
+        "Please delete this folder on your Web DAV server/app manually",
+}: {
+    modal: Modal;
+    auth: { username: string; customUserName?: string };
+    makeSyncer: (entryName: string) => Syncer;
+    storagePrefix?: string;
+    validate?: () => Promise<unknown>;
+    deleteBookMessage?: () => string;
+    runExclusive?: (
+        signal: AbortSignal,
+        task: () => Promise<void>,
+    ) => Promise<void>;
+}): SyncEndpoint {
+    const repo = createTidal<Bill>({
+        storageFactory: (name) =>
+            new BillIndexedDBStorage(`book-${storagePrefix}${name}`),
+        entryName: config.entryName,
+        syncerFactory: () => makeSyncer(config.entryName),
+    });
+    const zenRepo = createTidal<ZenPost>({
+        storageFactory: (name) =>
+            new BillIndexedDBStorage(
+                `book-${storagePrefix}${name}--${ZEN_ENTRY_NAME}`,
+            ),
+        entryName: ZEN_ENTRY_NAME,
+        syncerFactory: () => makeSyncer(ZEN_ENTRY_NAME),
+    });
+    const toBookName = (bookId: string) => {
+        return bookId.replace(`${config.repoPrefix}-`, "");
+    };
 
-        // ledger 与 zen 顺序同步，保持单一上传通道
-        const scheduler = new Scheduler(async (signal) => {
+    const getUserAliases = async (storeName: string) => {
+        const meta: WebDAVPrivateMeta | undefined =
+            await repo.getMeta(storeName);
+        if (!meta?._webDAVUserAliases) {
+            return [];
+        }
+        return meta._webDAVUserAliases;
+    };
+
+    // ledger 与 zen 顺序同步，保持单一上传通道
+    const scheduler = new Scheduler(async (signal) => {
+        const sync = async () => {
+            await validate?.();
+            signal.throwIfAborted();
             const [ledgerFinished, cancelLedger] = repo.sync();
             signal.onabort = cancelLedger;
             await ledgerFinished;
+            signal.throwIfAborted();
             const [zenFinished, cancelZen] = zenRepo.sync();
             signal.onabort = cancelZen;
             await zenFinished;
-        });
-
-        return {
-            logout: async () => {
-                await repo.detach();
-                await zenRepo.detach();
-            },
-            getUserInfo: async () => {
-                const Me = {
-                    id: auth.customUserName || auth.username,
-                    name: auth.customUserName || auth.username,
-                    avatar_url: "/icon.png",
-                };
-                return Me;
-            },
-            getCollaborators: async (id) => {
-                const aliases = await getUserAliases(id);
-                const Me = {
-                    id: auth.username,
-                    name: auth.username,
-                    avatar_url: "/icon.png",
-                };
-                const users = [
-                    Me,
-                    ...aliases
-                        .filter((a) => a !== Me.name)
-                        .map((alias) => ({
-                            id: alias,
-                            name: alias,
-                            avatar_url: "/icon.png",
-                        })),
-                ];
-                return users;
-            },
-            getOnlineAsset: (src, store) => repo.getAsset(src, store),
-            fetchAllBooks: async () => {
-                const res = await repo.fetchAllStore();
-                return res.map((v) => ({ id: v, name: toBookName(v) }));
-            },
-            createBook: repo.create,
-            initBook: async (name) => {
-                await Promise.all([repo.init(name), zenRepo.init(name)]);
-                repo.getMeta(name).then((meta?: WebDAVPrivateMeta) => {
-                    const customUserName = auth.customUserName;
-                    if (!customUserName) {
-                        return;
-                    }
-                    if (!meta?._webDAVUserAliases?.includes(customUserName)) {
-                        const newMeta = meta ?? {};
-                        newMeta._webDAVUserAliases = [
-                            ...(meta?._webDAVUserAliases ?? []),
-                            customUserName,
-                        ];
-                        repo.batch(name, [
-                            {
-                                type: "meta",
-                                metaValue: newMeta,
-                            },
-                        ]);
-                    }
-                });
-            },
-            deleteBook: async () => {
-                await modal.prompt({
-                    title: "Please delete this folder on your Web DAV server/app manually",
-                });
-            },
-            inviteForBook: undefined,
-
-            batch: async (...args) => {
-                await repo.batch(...args);
-                scheduler.schedule();
-            },
-            getMeta: repo.getMeta,
-            getAllItems: repo.getAllItems,
-            onChange: repo.onChange,
-
-            batchZen: async (...args) => {
-                await zenRepo.batch(...args);
-                scheduler.schedule();
-            },
-            getAllZenItems: zenRepo.getAllItems,
-            onZenChange: zenRepo.onChange,
-
-            getIsNeedSync: async () =>
-                (await repo.hasStashes()) || (await zenRepo.hasStashes()),
-            onSync: scheduler.onProcess.bind(scheduler),
-            toSync: scheduler.schedule.bind(scheduler),
-
-            forceNeedSync: repo.forceNeedSync,
         };
-    },
-};
+        return runExclusive ? runExclusive(signal, sync) : sync();
+    });
+
+    return {
+        logout: async () => {
+            await repo.detach();
+            await zenRepo.detach();
+        },
+        getUserInfo: async () => {
+            await validate?.();
+            const Me = {
+                id: auth.customUserName || auth.username,
+                name: auth.customUserName || auth.username,
+                avatar_url: "/icon.png",
+            };
+            return Me;
+        },
+        getCollaborators: async (id) => {
+            const aliases = await getUserAliases(id);
+            const Me = {
+                id: auth.username,
+                name: auth.username,
+                avatar_url: "/icon.png",
+            };
+            const users = [
+                Me,
+                ...aliases
+                    .filter((a) => a !== Me.name)
+                    .map((alias) => ({
+                        id: alias,
+                        name: alias,
+                        avatar_url: "/icon.png",
+                    })),
+            ];
+            return users;
+        },
+        getOnlineAsset: (src, store) => repo.getAsset(src, store),
+        fetchAllBooks: async () => {
+            const res = await repo.fetchAllStore();
+            return res.map((v) => ({ id: v, name: toBookName(v) }));
+        },
+        createBook: repo.create,
+        initBook: async (name) => {
+            await Promise.all([repo.init(name), zenRepo.init(name)]);
+            repo.getMeta(name).then((meta?: WebDAVPrivateMeta) => {
+                const customUserName = auth.customUserName;
+                if (!customUserName) {
+                    return;
+                }
+                if (!meta?._webDAVUserAliases?.includes(customUserName)) {
+                    const newMeta = meta ?? {};
+                    newMeta._webDAVUserAliases = [
+                        ...(meta?._webDAVUserAliases ?? []),
+                        customUserName,
+                    ];
+                    repo.batch(name, [
+                        {
+                            type: "meta",
+                            metaValue: newMeta,
+                        },
+                    ]);
+                }
+            });
+        },
+        deleteBook: async () => {
+            await modal.prompt({
+                title: deleteBookMessage(),
+            });
+        },
+        inviteForBook: undefined,
+
+        batch: async (...args) => {
+            await repo.batch(...args);
+            scheduler.schedule();
+        },
+        getMeta: repo.getMeta,
+        getAllItems: repo.getAllItems,
+        onChange: repo.onChange,
+
+        batchZen: async (...args) => {
+            await zenRepo.batch(...args);
+            scheduler.schedule();
+        },
+        getAllZenItems: zenRepo.getAllItems,
+        onZenChange: zenRepo.onChange,
+
+        getIsNeedSync: async () =>
+            (await repo.hasStashes()) || (await zenRepo.hasStashes()),
+        onSync: scheduler.onProcess.bind(scheduler),
+        toSync: scheduler.schedule.bind(scheduler),
+
+        forceNeedSync: repo.forceNeedSync,
+    };
+}
