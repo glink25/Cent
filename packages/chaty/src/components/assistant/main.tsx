@@ -685,7 +685,7 @@ function ModelSwitcher() {
                 <button
                     type="button"
                     title={label}
-                    className="inline-flex h-8 max-w-[160px] cursor-pointer items-center gap-1 rounded-full px-2 text-xs text-foreground/70 hover:bg-muted hover:text-foreground"
+                    className="inline-flex h-8 max-w-full cursor-pointer items-center gap-1 rounded-full px-2 text-xs text-foreground/70 hover:bg-muted hover:text-foreground"
                 >
                     <span className="truncate">{label}</span>
                     <i className="icon-[mdi--unfold-more-horizontal] size-3.5 flex-shrink-0 opacity-70"></i>
@@ -857,6 +857,14 @@ function Content({ hideHeader }: { hideHeader?: boolean } = {}) {
         ),
     );
     const isPending = Boolean(currentChat?.pending);
+    const hasMessages = Boolean(currentChat?.history.length);
+    const hasPresets = Boolean(runtime.presetPrompts?.length);
+    const fadeAtPresets = hasMessages && hasPresets;
+    const transcriptSpacing = fadeAtPresets
+        ? "-mb-[calc(var(--chaty-preset-height)+var(--chaty-composer-top))] pb-(--chaty-preset-height)"
+        : hasMessages
+          ? "pb-12"
+          : "pb-2";
     const undo = useCallback(
         async (receipt: ChangeReceipt) => {
             try {
@@ -947,7 +955,7 @@ function Content({ hideHeader }: { hideHeader?: boolean } = {}) {
     }, [currentChat?.history]);
 
     return (
-        <div className="chaty-root isolate w-full h-full min-h-0 flex-1 flex flex-col overflow-hidden relative bg-background text-foreground">
+        <div className="chaty-root isolate w-full h-full min-h-0 flex-1 flex flex-col overflow-hidden relative bg-background text-foreground [--chaty-composer-top:0.75rem] [--chaty-preset-height:2rem]">
             {!hideHeader && (
                 <header className="relative z-10 shrink-0 flex justify-center items-center py-2 h-12 bg-background">
                     <div>{runtime.title ?? t("appTitle")}</div>
@@ -959,7 +967,7 @@ function Content({ hideHeader }: { hideHeader?: boolean } = {}) {
             <div
                 ref={containerRef}
                 onScroll={onScroll}
-                className="w-full flex-1 flex flex-col gap-4 overflow-y-auto overscroll-y-contain scroll-auto [overflow-anchor:none] px-2 py-2 min-h-0 text-sm"
+                className={`w-full flex-1 flex flex-col gap-4 overflow-y-auto overscroll-y-contain scroll-auto [overflow-anchor:none] px-2 pt-2 min-h-0 text-sm ${transcriptSpacing}`}
             >
                 <div
                     ref={contentRef}
@@ -1007,13 +1015,19 @@ function Content({ hideHeader }: { hideHeader?: boolean } = {}) {
                     )}
                 </div>
             </div>
-            {showLatest && (
-                <div className="relative h-0 z-10">
+            <div className="pointer-events-none relative z-10 h-0 shrink-0">
+                {hasMessages && !fadeAtPresets && (
+                    <div
+                        aria-hidden="true"
+                        className="absolute inset-x-0 bottom-0 h-12 bg-linear-to-b from-transparent via-background/65 to-background"
+                    />
+                )}
+                {showLatest && (
                     <button
                         type="button"
                         aria-label={t("flowLatest")}
                         title={t("flowLatest")}
-                        className="absolute bottom-3 left-1/2 -translate-x-1/2 grid size-9 place-items-center rounded-full border bg-background shadow"
+                        className="pointer-events-auto absolute bottom-3 left-1/2 -translate-x-1/2 grid size-9 place-items-center rounded-full border bg-background shadow"
                         onClick={resumeFollowing}
                     >
                         <i
@@ -1021,14 +1035,18 @@ function Content({ hideHeader }: { hideHeader?: boolean } = {}) {
                             className="icon-[mdi--arrow-down] size-5"
                         />
                     </button>
-                </div>
-            )}
-            <Composer />
+                )}
+            </div>
+            <Composer fadeAtPresets={fadeAtPresets} />
         </div>
     );
 }
 
-const Composer = memo(function Composer() {
+const Composer = memo(function Composer({
+    fadeAtPresets,
+}: {
+    fadeAtPresets: boolean;
+}) {
     const {
         runtime,
         input,
@@ -1058,9 +1076,15 @@ const Composer = memo(function Composer() {
     const sendRef = useRef(send);
     sendRef.current = send;
     return (
-        <div className="w-full shrink-0 px-2 py-3 flex flex-col gap-2">
+        <div className="pointer-events-none relative w-full shrink-0 px-2 pt-(--chaty-composer-top) pb-3 flex flex-col gap-2">
+            {fadeAtPresets && (
+                <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-x-0 top-[calc(var(--chaty-composer-top)-0.5rem)] h-[calc(var(--chaty-preset-height)+0.5rem)] bg-linear-to-b from-transparent via-background/65 to-background"
+                />
+            )}
             {runtime.presetPrompts?.length ? (
-                <div className="w-full flex overflow-x-auto scrollbar-hidden gap-2">
+                <div className="pointer-events-auto relative flex h-(--chaty-preset-height) w-full items-start gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                     {runtime.presetPrompts.map((presetPrompt) => (
                         <button
                             key={presetPrompt.id}
@@ -1078,14 +1102,14 @@ const Composer = memo(function Composer() {
                                     sendRef.current(nextInput);
                                 }
                             }}
-                            className="rounded-full border shadow py-1 px-2 text-xs hover:bg-muted cursor-pointer bg-background flex-shrink-0"
+                            className="rounded-full border shadow py-1 px-2 text-xs whitespace-nowrap hover:bg-muted cursor-pointer bg-background flex-shrink-0"
                         >
                             {presetPrompt.label}
                         </button>
                     ))}
                 </div>
             ) : null}
-            <div className="rounded-2xl w-full border shadow p-1 flex flex-col gap-2 bg-background">
+            <div className="pointer-events-auto rounded-2xl w-full border shadow p-1 flex flex-col gap-2 bg-background">
                 {!!input.references?.length && (
                     <div className="flex gap-2 px-2 overflow-x-auto">
                         {input.references.map((ref) => (
@@ -1176,12 +1200,12 @@ const Composer = memo(function Composer() {
                     }}
                     className="w-full h-10 p-2 resize-none !outline-none text-sm bg-transparent"
                 />
-                <div className="flex justify-between items-center">
-                    <div className="flex min-w-0 items-center gap-1">
+                <div className="flex justify-between items-center gap-2">
+                    <div className="flex min-w-0 flex-1 items-center gap-1">
                         <Button
                             variant="ghost"
                             disabled={isPending}
-                            className="rounded-full p-0 w-8 h-8"
+                            className="size-8 shrink-0 rounded-full p-0"
                             onClick={async () => {
                                 if (input.assets.length >= 3) {
                                     toast.error(t("uploadLimit"));
@@ -1202,37 +1226,34 @@ const Composer = memo(function Composer() {
                         >
                             <i className="icon-[mdi--plus] size-5"></i>
                         </Button>
-                        <fieldset disabled={isPending} className="min-w-0">
+                        <fieldset
+                            disabled={isPending}
+                            className="min-w-0 max-w-40"
+                        >
                             <ModelSwitcher />
                         </fieldset>
                     </div>
-                    {isPending ? (
-                        <Button
-                            variant="ghost"
-                            className="rounded-full p-0 w-8 h-8 bg-foreground/10"
-                            onClick={abortCurrentChat}
-                            aria-busy={awaitingResponse}
-                            aria-label={t("stopResponse")}
-                        >
-                            <i
-                                className={
-                                    !awaitingResponse
-                                        ? "icon-[mdi--stop] size-4"
-                                        : "icon-[mdi--loading] size-4 animate-spin"
-                                }
-                            ></i>
-                        </Button>
-                    ) : (
-                        <Button
-                            variant="ghost"
-                            className="rounded-full p-0 w-8 h-8 bg-foreground/10 hover:bg-foreground/40"
-                            disabled={!canSend}
-                            onClick={() => send()}
-                            aria-label={t("sendMessage")}
-                        >
-                            <i className="icon-[mdi--send] size-4"></i>
-                        </Button>
-                    )}
+                    <Button
+                        variant="ghost"
+                        className={`size-8 shrink-0 rounded-full p-0 bg-foreground/10 ${isPending ? "" : "hover:bg-foreground/40"}`}
+                        disabled={!isPending && !canSend}
+                        onClick={isPending ? abortCurrentChat : () => send()}
+                        aria-busy={isPending ? awaitingResponse : undefined}
+                        aria-label={t(
+                            isPending ? "stopResponse" : "sendMessage",
+                        )}
+                    >
+                        <i
+                            aria-hidden="true"
+                            className={
+                                !isPending
+                                    ? "icon-[mdi--send] size-4"
+                                    : awaitingResponse
+                                      ? "icon-[mdi--loading] size-4 animate-spin"
+                                      : "icon-[mdi--stop] size-4"
+                            }
+                        />
+                    </Button>
                 </div>
             </div>
         </div>
