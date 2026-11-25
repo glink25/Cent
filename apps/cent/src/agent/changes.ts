@@ -6,6 +6,7 @@ import type {
 import { isEqual } from "lodash-es";
 import { toast } from "sonner";
 import { create } from "zustand";
+import { folderStoragePrefix } from "@/api/endpoints/folder";
 import { loadStorageAPI } from "@/api/storage/dynamic";
 import type { Action } from "@/database/stash";
 import type { Bill, GlobalMeta } from "@/ledger/type";
@@ -73,7 +74,11 @@ async function currentScope() {
     return {
         book,
         viewer,
-        scope: JSON.stringify([StorageAPI.type, book, viewer]),
+        scope: JSON.stringify([
+            folderStoragePrefix() || StorageAPI.type,
+            book,
+            viewer,
+        ]),
         api: StorageAPI,
     };
 }

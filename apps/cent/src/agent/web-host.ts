@@ -9,8 +9,7 @@ import { BillCategories } from "@/ledger/category";
 import type { GlobalMeta } from "@/ledger/type";
 import { useBookStore } from "@/store/book";
 import { useUserStore } from "@/store/user";
-import { cacheInDB } from "@/utils/cache";
-import { GetOnlineAssetsCacheKey } from "@/utils/constant";
+import { resolveAttachment } from "@/utils/attachment";
 import { base64ToFile } from "@/utils/file";
 import { creatorKey } from "./data";
 import type { AgentSnapshot } from "./operations";
@@ -132,14 +131,9 @@ export async function readAgentSnapshot(): Promise<AgentSnapshot> {
             if (!image) throw new Error("Attachment not found");
             if (typeof image !== "string") return image;
             if (image.startsWith("data:")) return base64ToFile(image);
-            const load = StorageAPI.getOnlineAsset;
-            const blob = load
-                ? await cacheInDB(load, GetOnlineAssetsCacheKey)?.(
-                      image,
-                      bookId,
-                  )
-                : undefined;
-            if (!blob) throw new Error("Attachment unavailable");
+            const blob = await resolveAttachment(image, bookId);
+            if (typeof blob === "string")
+                throw new Error("Attachment unavailable");
             return blob;
         },
         timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,

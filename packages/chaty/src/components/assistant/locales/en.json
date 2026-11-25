@@ -21,6 +21,7 @@
 	"flowCopyCode": "Copy code",
 	"flowCopied": "Copied",
 	"flowBranch": "Branch from this reply",
+	"flowBranched": "Branched to a new chat",
 	"branchChatTitle": "{{title}} (Branch)",
 	"flowCopyFailed": "Copy failed",
 	"flowLatest": "Back to latest",

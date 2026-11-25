@@ -5,6 +5,7 @@ import {
     StashBucket,
     type StashStorage,
 } from "@/database/stash";
+import { OFFLINE_BOOK_ID_PREFIX } from "@/database/storage";
 import type { Bill } from "@/ledger/type";
 
 export type Processor = (finished: Promise<void>) => void;
@@ -13,10 +14,8 @@ export type OfflineStorageConfig = {
     storage: (storeFullBame: string) => StashStorage;
 };
 
-const PREFIX = "offline/";
-
 const toBookName = (bookId: string) => {
-    return bookId.replace(`book-${PREFIX}`, "");
+    return bookId.replace(`book-${OFFLINE_BOOK_ID_PREFIX}`, "");
 };
 
 export class OfflineStorage<Item extends BaseItem = Bill> {
@@ -34,7 +33,9 @@ export class OfflineStorage<Item extends BaseItem = Bill> {
                 databases
                     .map((db) => db.name)
                     .filter((name) => name !== undefined)
-                    .filter((name) => name.startsWith(`book-${PREFIX}`))
+                    .filter((name) =>
+                        name.startsWith(`book-${OFFLINE_BOOK_ID_PREFIX}`),
+                    )
                     // 排除额外 entry（如 zen）的本地库，避免被当成账本列出
                     .filter((name) => !name!.includes("--"))
                     .map((name) => ({
@@ -52,7 +53,7 @@ export class OfflineStorage<Item extends BaseItem = Bill> {
      * 在本地indexedDB 中创建一个对应名称的
      */
     async createStore(name: string): Promise<{ id: string; name: string }> {
-        const book = { id: `${PREFIX}${name}`, name: name };
+        const book = { id: `${OFFLINE_BOOK_ID_PREFIX}${name}`, name };
         await this.initStore(book.id);
         return book;
     }

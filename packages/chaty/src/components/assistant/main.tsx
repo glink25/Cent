@@ -39,6 +39,7 @@ import {
     conversationTitle,
     hasCurrentResponse,
 } from "./conversation";
+import { useFollowLatest } from "./follow-latest";
 import { I18nProvider, useI18n } from "./i18n";
 import type { RuntimeConfig } from "./runtime";
 import {
@@ -75,7 +76,7 @@ type AssistantContext = {
     canSend: boolean;
     send: (nextInput?: Input) => void;
     abortCurrentChat: () => void;
-    branchFromReply: (message: Message) => void;
+    branchFromReply: (message: Message) => boolean;
     rerunToolCall: (messageIndex: number) => void;
 };
 
@@ -582,13 +583,14 @@ function Root({
 
     const branchFromReply = useCallback(
         (message: Message) => {
-            if (approval) return;
+            if (approval) return false;
             const source = readCurrentChat();
-            if (!source) return;
+            if (!source) return false;
             const branch = branchConversation(source, message, createChatId());
-            if (!branch) return;
+            if (!branch) return false;
             setChats((chats) => [...chats, branch]);
             setCurrentChatId(branch.id);
+            return true;
         },
         [approval, readCurrentChat, setChats],
     );
@@ -841,6 +843,12 @@ function Content({ hideHeader }: { hideHeader?: boolean } = {}) {
         branchFromReply,
     } = useAssistantContext();
     const { t } = useI18n();
+    const handleBranch = useCallback(
+        (message: Message) => {
+            if (branchFromReply(message)) toast.success(t("flowBranched"));
+        },
+        [branchFromReply, t],
+    );
     const currentChat = useAssistantChatStore((state) =>
         state.chats.find(
             (chat) =>
@@ -907,39 +915,10 @@ function Content({ hideHeader }: { hideHeader?: boolean } = {}) {
         },
         [runtime.undoChange, currentChatId, setChats],
     );
-    const messagesContainerRef = useRef<HTMLDivElement>(null);
-    const messagesContentRef = useRef<HTMLDivElement>(null);
-    const followLatest = useRef(true);
-    const [showLatest, setShowLatest] = useState(false);
+    const { containerRef, contentRef, onScroll, resumeFollowing, showLatest } =
+        useFollowLatest(currentChatId, currentChat);
     const sendRef = useRef(send);
     sendRef.current = send;
-
-    useLayoutEffect(() => {
-        followLatest.current = true;
-        setShowLatest(false);
-        if (!currentChatId) return;
-        const element = messagesContainerRef.current;
-        const content = messagesContentRef.current;
-        if (!element || !content) return;
-        let frame: number | undefined;
-        const scrollToLatest = () => {
-            if (followLatest.current) element.scrollTop = element.scrollHeight;
-        };
-        scrollToLatest();
-        const observer = new ResizeObserver(() => {
-            if (frame !== undefined) return;
-            frame = requestAnimationFrame(() => {
-                frame = undefined;
-                scrollToLatest();
-            });
-        });
-        observer.observe(content);
-        observer.observe(element);
-        return () => {
-            observer.disconnect();
-            if (frame !== undefined) cancelAnimationFrame(frame);
-        };
-    }, [currentChatId]);
 
     useLayoutEffect(() => {
         if (!currentChat?.history.length) return;
@@ -978,24 +957,19 @@ function Content({ hideHeader }: { hideHeader?: boolean } = {}) {
                 </header>
             )}
             <div
-                ref={messagesContainerRef}
-                onScroll={(event) => {
-                    const el = event.currentTarget;
-                    followLatest.current =
-                        el.scrollHeight - el.scrollTop - el.clientHeight < 100;
-                    setShowLatest(!followLatest.current);
-                }}
-                className="w-full flex-1 flex flex-col gap-4 overflow-y-auto [overflow-anchor:none] px-2 py-2 min-h-0 text-sm"
+                ref={containerRef}
+                onScroll={onScroll}
+                className="w-full flex-1 flex flex-col gap-4 overflow-y-auto overscroll-y-contain scroll-auto [overflow-anchor:none] px-2 py-2 min-h-0 text-sm"
             >
                 <div
-                    ref={messagesContentRef}
-                    className="flex min-w-0 flex-col gap-4 min-h-full"
+                    ref={contentRef}
+                    className="flex min-w-0 shrink-0 flex-col gap-4 min-h-full"
                 >
                     {currentChat ? (
                         <ConversationTurns
                             history={currentChat.history}
                             approval={approval}
-                            onBranch={branchFromReply}
+                            onBranch={handleBranch}
                             branchDisabled={isPending || !!approval}
                             undo={undo}
                             undoDisabled={isPending}
@@ -1040,13 +1014,7 @@ function Content({ hideHeader }: { hideHeader?: boolean } = {}) {
                         aria-label={t("flowLatest")}
                         title={t("flowLatest")}
                         className="absolute bottom-3 left-1/2 -translate-x-1/2 grid size-9 place-items-center rounded-full border bg-background shadow"
-                        onClick={() => {
-                            followLatest.current = true;
-                            setShowLatest(false);
-                            const element = messagesContainerRef.current;
-                            if (element)
-                                element.scrollTop = element.scrollHeight;
-                        }}
+                        onClick={resumeFollowing}
                     >
                         <i
                             aria-hidden="true"

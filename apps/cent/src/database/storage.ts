@@ -9,6 +9,8 @@ import {
     type StorageFactory,
 } from "./stash";
 
+export const OFFLINE_BOOK_ID_PREFIX = "offline/";
+
 const DB_VERSION = 2;
 
 export interface GitrayDBSchema extends DBSchema {
@@ -213,12 +215,14 @@ export class BillIndexedDBStorage implements StashStorage {
     };
 
     dangerousClearAll = async () => {
-        // return deleteDB(this.dbName);
         const databases = await indexedDB.databases();
         await Promise.all(
             databases.map((db) => {
                 const dbName = db.name;
-                if (dbName === undefined) {
+                if (
+                    dbName === undefined ||
+                    dbName.startsWith(`book-${OFFLINE_BOOK_ID_PREFIX}`)
+                ) {
                     return;
                 }
                 return deleteDB(dbName);

@@ -21,6 +21,7 @@
 	"flowCopyCode": "复制代码",
 	"flowCopied": "已复制",
 	"flowBranch": "从此回复创建分支",
+	"flowBranched": "已分支到新对话",
 	"branchChatTitle": "{{title}}（分支）",
 	"flowCopyFailed": "复制失败",
 	"flowLatest": "回到最新",

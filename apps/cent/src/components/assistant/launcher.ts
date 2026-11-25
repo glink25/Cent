@@ -1,5 +1,6 @@
 import type { ConversationReference } from "@glink25/chaty";
 import { create } from "zustand";
+import { folderStoragePrefix } from "@/api/endpoints/folder";
 import { StorageAPI } from "@/api/storage";
 import type { Bill } from "@/ledger/type";
 import { useBookStore } from "@/store/book";
@@ -12,7 +13,7 @@ export const useAssistantLauncher = create<{
 
 export function assistantScope() {
     return JSON.stringify([
-        StorageAPI.type,
+        folderStoragePrefix() || StorageAPI.type,
         useBookStore.getState().currentBookId,
         useUserStore.getState().id,
     ]);

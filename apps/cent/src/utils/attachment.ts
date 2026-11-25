@@ -12,10 +12,11 @@ export async function resolveAttachment(
     if (source instanceof File) return source;
     if (/^(data:|blob:)/i.test(source)) return source;
     if (bookId && StorageAPI.getOnlineAsset) {
-        const file = await cacheInDB(
-            StorageAPI.getOnlineAsset,
-            GetOnlineAssetsCacheKey,
-        )(source, bookId);
+        const load =
+            StorageAPI.type === "folder"
+                ? StorageAPI.getOnlineAsset
+                : cacheInDB(StorageAPI.getOnlineAsset, GetOnlineAssetsCacheKey);
+        const file = await load(source, bookId);
         if (file) return file;
     }
     return source;

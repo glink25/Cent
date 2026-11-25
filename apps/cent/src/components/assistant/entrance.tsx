@@ -1,4 +1,5 @@
 import { MainAssistant, type RuntimeConfig } from "@glink25/chaty/ui";
+import { folderStoragePrefix } from "@/api/endpoints/folder";
 // cent 自身已是 Tailwind v4：chaty 组件的工具类由 cent 的 Tailwind 统一扫描 dist
 // 生成（见 tailwind.config.mjs 的 content），避免引入第二份编译产物导致 layer 冲突。
 // 这里只需补充 chaty 的 markdown 渲染样式（纯 CSS，无工具类冲突）。
@@ -114,7 +115,7 @@ export default function AssistantButton() {
                     toTokenUsageApiType(getAIConfig(request.configId).apiType),
             ),
             scope: currentBookId
-                ? `${StorageAPI.type}:${currentBookId}`
+                ? `${folderStoragePrefix() || StorageAPI.type}:${currentBookId}`
                 : undefined,
             undoChange,
             resolveReferences: async (refs, signal) => {

@@ -27,12 +27,17 @@ export const canPickFolder = () =>
 const mode = { mode: "readwrite" } as const;
 const marker = "cent-storage-id";
 const scopeKey = "cent-folder-id";
-export const folderStoragePrefix = () => {
-    const id = localStorage.getItem(scopeKey);
-    return localStorage.getItem("SYNC_ENDPOINT") === "folder" && id
-        ? `folder-${id}-`
-        : "";
-};
+const activeScope =
+    localStorage.getItem("SYNC_ENDPOINT") === "folder"
+        ? localStorage.getItem(scopeKey)
+        : null;
+export const folderStoragePrefix = () =>
+    activeScope ? `folder-${activeScope}-` : "";
+window.addEventListener("storage", ({ key, newValue }) => {
+    if (key === scopeKey && activeScope && newValue !== activeScope) {
+        location.reload();
+    }
+});
 const database = () =>
     openDB("cent-folder", 1, {
         upgrade: (db) => db.createObjectStore("handles"),
@@ -71,29 +76,45 @@ async function initializeIdentity(root: Directory) {
 export async function authorizeFolder(modal: Modal) {
     const choose = picker();
     if (!choose || !canPickFolder()) return;
+    const endpoint = localStorage.getItem("SYNC_ENDPOINT");
+    const expectedId =
+        endpoint === "folder" ? localStorage.getItem(scopeKey) : null;
     try {
         const root = await choose.call(window, mode);
-        const expected =
-            localStorage.getItem("SYNC_ENDPOINT") === "folder"
-                ? localStorage.getItem(scopeKey)
-                : null;
-        const id = expected
-            ? await readIdentity(root).catch((error) => {
-                  if (missing(error))
-                      throw new Error(t("folder-different-storage"));
-                  throw error;
-              })
-            : await navigator.locks.request("cent-folder-authorize", () =>
-                  initializeIdentity(root),
-              );
-        if (expected && id !== expected)
-            throw new Error(t("folder-different-storage"));
-        const db = await database();
-        await db.put("handles", root, id);
-        db.close();
-        localStorage.setItem(scopeKey, id);
-        localStorage.setItem("SYNC_ENDPOINT", "folder");
-        location.reload();
+        await navigator.locks.request("cent-folder-authorize", async () => {
+            if (
+                localStorage.getItem("SYNC_ENDPOINT") !== endpoint ||
+                (endpoint === "folder" &&
+                    localStorage.getItem(scopeKey) !== expectedId)
+            )
+                return;
+
+            let id: string;
+            if (endpoint === "folder") {
+                const selectedId = await readIdentity(root).catch((error) => {
+                    if (missing(error)) return null;
+                    throw error;
+                });
+                if (!expectedId || selectedId !== expectedId)
+                    throw new Error(t("folder-different-storage"));
+                id = expectedId;
+            } else {
+                id = await initializeIdentity(root);
+            }
+            const db = await database();
+            try {
+                await db.put("handles", root, id);
+            } finally {
+                db.close();
+            }
+            if (!expectedId) {
+                localStorage.removeItem("book-store");
+                localStorage.removeItem("user-store");
+                localStorage.setItem(scopeKey, id);
+                localStorage.setItem("SYNC_ENDPOINT", "folder");
+            }
+            location.reload();
+        });
     } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError")
             return;
@@ -255,7 +276,7 @@ export const FolderEndpoint: SyncEndpointFactory = {
     name: "Folder",
     login: ({ modal }) => authorizeFolder(modal),
     init: ({ modal }) => {
-        const id = localStorage.getItem(scopeKey) ?? "";
+        const id = activeScope ?? "";
         let expired = false;
         const markExpired = () => {
             if (expired) return;
