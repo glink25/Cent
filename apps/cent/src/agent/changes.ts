@@ -14,6 +14,12 @@ import { useBookStore } from "@/store/book";
 import { usePreferenceStore } from "@/store/preference";
 import { useUserStore } from "@/store/user";
 
+import {
+    assistantAuthorizationGeneration,
+    hasAssistantGrant,
+    rememberAssistantGrant,
+} from "./assistant-grants";
+
 type Snapshot = { bills: Bill[]; meta: GlobalMeta; viewer: string | number };
 type BillPatch = { id: string; before?: Bill; after?: Bill };
 type MetaPatch = {
@@ -35,7 +41,6 @@ type Change = {
 type Decision = { approved: boolean; remember?: boolean };
 const active = new Map<string, Change>();
 const locks = new Map<string, Promise<unknown>>();
-const storageKey = "cent-agent-grants-v1";
 const database = () =>
     new Promise<IDBDatabase>((resolve, reject) => {
         const request = indexedDB.open("cent-agent-changes", 1);
@@ -81,21 +86,6 @@ async function currentScope() {
         ]),
         api: StorageAPI,
     };
-}
-
-type Grant = { key: string; scope: string; label: string };
-export function listChangeGrants(): Grant[] {
-    try {
-        return JSON.parse(localStorage.getItem(storageKey) ?? "[]");
-    } catch {
-        return [];
-    }
-}
-export function revokeChangeGrant(key: string) {
-    localStorage.setItem(
-        storageKey,
-        JSON.stringify(listChangeGrants().filter((item) => item.key !== key)),
-    );
 }
 
 export const useExternalApprovals = create<{
@@ -204,6 +194,7 @@ async function apply(
     change: Change,
     undo = false,
     signal?: AbortSignal,
+    stillAuthorized?: () => boolean,
 ): Promise<ChangeReceipt> {
     return serial(change.scope, async () => {
         const { book, viewer, scope, api } = await currentScope();
@@ -259,6 +250,8 @@ async function apply(
             return makeReceipt(change, "expired");
         if (!undo) await journal(change.proposal.id, change);
         if ((await currentScope()).scope !== change.scope || signal?.aborted)
+            return makeReceipt(change, "expired");
+        if (stillAuthorized && !stillAuthorized())
             return makeReceipt(change, "expired");
         let succeeded = false;
         try {
@@ -465,10 +458,11 @@ async function submitChange(
         source,
     };
     const key = JSON.stringify([scope, source, resource, operation]);
+    const generation = canRemember
+        ? assistantAuthorizationGeneration(scope)
+        : undefined;
     const execute = async () => {
-        const remembered =
-            canRemember &&
-            listChangeGrants().some((grant) => grant.key === key);
+        const remembered = canRemember && hasAssistantGrant(scope, key);
         const approval =
             ctx.source === "webmcp"
                 ? requestExternalApproval
@@ -488,16 +482,23 @@ async function submitChange(
             );
             return change.receipt;
         }
-        const receipt = await apply(change, false, ctx.signal);
+        const receipt = await apply(
+            change,
+            false,
+            ctx.signal,
+            remembered
+                ? () =>
+                      assistantAuthorizationGeneration(scope) === generation &&
+                      hasAssistantGrant(scope, key)
+                : undefined,
+        );
         change.receipt = receipt;
-        if (canRemember && decision.remember && receipt.status === "applied") {
-            localStorage.setItem(
-                storageKey,
-                JSON.stringify([
-                    ...listChangeGrants().filter((grant) => grant.key !== key),
-                    { key, scope, label: `${source} · ${title}` },
-                ]),
-            );
+        if (
+            generation !== undefined &&
+            decision.remember &&
+            receipt.status === "applied"
+        ) {
+            rememberAssistantGrant(scope, key, generation);
         }
         return receipt;
     };

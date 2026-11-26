@@ -1,4 +1,6 @@
 {
+	"toolAuthorizationDetails": "Show request details",
+	"toolAuthorizationTitle": "Allow website access?",
 	"changePermission": "Allow data changes?",
 	"changeCreate": "Create",
 	"changeUpdate": "Update",
@@ -34,7 +36,7 @@
 	"changeResult": "Change result",
 	"changePending": "Pending approval",
 	"changeDetails": "Show changes",
-	"changeRemember": "Remember for this operation in this book",
+	"changeRemember": "Skip future confirmations",
 	"changeReject": "Reject",
 	"changeApprove": "Approve",
 	"changeUndo": "Undo",

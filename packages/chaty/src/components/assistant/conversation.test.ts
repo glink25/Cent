@@ -60,3 +60,32 @@ it("forks the exact history prefix and keeps only matching context", () => {
             ?.contextState,
     ).toBeUndefined();
 });
+
+it("inherits files as of the chosen reply, including further branches", () => {
+    const a = {
+        id: "a",
+        role: "assistant",
+        raw: "first",
+        formatted: { answer: "first" },
+    } as const;
+    const b = { ...a, id: "b" };
+    const source: Chat = {
+        id: "chat",
+        scope: "workspace",
+        history: [a, b],
+        files: { "index.html": "current" },
+        fileCheckpoints: {
+            a: { "index.html": "first" },
+            b: { "index.html": "second" },
+        },
+    };
+    const branch = branchConversation(source, a, "branch");
+    expect(branch?.files).toEqual({ "index.html": "first" });
+    expect(branch?.fileCheckpoints).toEqual({
+        a: { "index.html": "first" },
+    });
+    expect(source.files).toEqual({ "index.html": "current" });
+    expect(branch && branchConversation(branch, a, "nested")?.files).toEqual(
+        branch?.files,
+    );
+});

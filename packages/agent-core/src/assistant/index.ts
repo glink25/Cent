@@ -15,12 +15,14 @@ export {
     stringifyJson,
     withAbort,
 } from "./shared";
+export { finishToolAuthorization } from "./tool-authorization";
 export { withToolImages } from "./tool-images";
 export { createTool, executeToolCall } from "./tooling";
 export type {
     AbortablePromise,
     ApproveChange,
     AssistantMessage,
+    AuthorizeTool,
     ChangeProposal,
     ChangeReceipt,
     Chat,
@@ -48,6 +50,7 @@ export type {
     SkillMeta,
     SystemMessage,
     Tool,
+    ToolAuthorizationRequest,
     ToolContext,
     ToolExposure,
     ToolJsonSchema,

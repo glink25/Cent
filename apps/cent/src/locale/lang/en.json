@@ -1,4 +1,7 @@
 {
+  "assistant-reset-authorizations": "Reset all authorizations",
+  "assistant-authorizations-reset": "Authorizations for this ledger were reset on this device.",
+  "assistant-authorizations-reset-failed": "Could not reset authorizations.",
   "icloud-download-pending": "Downloading from iCloud. Try syncing again once the download finishes.",
   "icloud-file-conflict": "iCloud has conflicting versions of a Cent file. Resolve the conflict in iCloud Drive before syncing.",
   "folder-login": "Choose folder",

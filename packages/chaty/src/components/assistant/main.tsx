@@ -22,7 +22,6 @@ import { useShallow } from "zustand/react/shallow";
 import { shallow } from "zustand/shallow";
 import {
     type ApproveChange,
-    type ChangeProposal,
     type ChangeReceipt,
     type ConversationReference,
     createSession,
@@ -41,6 +40,7 @@ import {
 } from "./conversation";
 import { useFollowLatest } from "./follow-latest";
 import { I18nProvider, useI18n } from "./i18n";
+import { decideEnter } from "./ime-enter";
 import type { RuntimeConfig } from "./runtime";
 import {
     type Chat,
@@ -50,7 +50,7 @@ import {
 import { streamUpdates } from "./stream-updates";
 import { applyThemePreference } from "./theme";
 import { changeReceiptFrom } from "./turn-model";
-import { ConversationTurns } from "./turns";
+import { ConversationTurns, type PendingApproval } from "./turns";
 
 type Input = {
     text: string;
@@ -61,11 +61,7 @@ type Input = {
 
 type AssistantContext = {
     input: Input;
-    approval?: {
-        proposal: ChangeProposal;
-        call?: { id: string; name: string };
-        decide: (approved: boolean, remember?: boolean) => void;
-    };
+    approval?: PendingApproval;
     setInput: Dispatch<SetStateAction<Input>>;
     setChats: (updater: SetStateAction<Chat[]>) => void;
     currentChatId: Chat["id"] | undefined;
@@ -149,31 +145,46 @@ function Root({
     references?: ConversationReference[];
     onReferencesConsumed?: () => void;
 }) {
-    const [approval, setApproval] = useState<AssistantContext["approval"]>();
-    const approveChange = useCallback<ApproveChange>(
-        (proposal, signal, call) =>
-            new Promise((resolve) => {
+    const [approval, setApproval] = useState<PendingApproval>();
+    const pendingApproval = useRef<PendingApproval>(undefined);
+    const requestApproval = useCallback(
+        (
+            proposal: PendingApproval["proposal"],
+            signal?: AbortSignal,
+            call?: PendingApproval["call"],
+        ): ReturnType<ApproveChange> => {
+            if (signal?.aborted || pendingApproval.current)
+                return Promise.resolve({ approved: false });
+            return new Promise((resolve) => {
                 const decide = (approved: boolean, remember?: boolean) => {
+                    if (pendingApproval.current?.proposal.id !== proposal.id)
+                        return;
+                    pendingApproval.current = undefined;
                     clearTimeout(timeout);
                     signal?.removeEventListener("abort", cancel);
-                    setApproval((current) =>
-                        current?.proposal.id === proposal.id
-                            ? undefined
-                            : current,
-                    );
+                    setApproval(undefined);
                     resolve({ approved, remember });
                     void flushChatCheckpoints();
                 };
                 const cancel = () => decide(false);
                 const timeout = setTimeout(cancel, 120_000);
-                if (signal?.aborted) cancel();
-                else {
-                    signal?.addEventListener("abort", cancel, { once: true });
-                    setApproval({ proposal, decide, call });
-                }
-            }),
+                const request = { proposal, decide, call };
+                signal?.addEventListener("abort", cancel, { once: true });
+                pendingApproval.current = request;
+                setApproval(request);
+            });
+        },
         [],
     );
+    useEffect(() => {
+        const dismiss = () => {
+            const request = pendingApproval.current;
+            if (request && "scope" in request.proposal) request.decide(false);
+        };
+        window.addEventListener("chaty:assistant-hidden", dismiss);
+        return () =>
+            window.removeEventListener("chaty:assistant-hidden", dismiss);
+    }, []);
     const [input, setInput] = useState<Input>(() => ({
         ...EMPTY_INPUT,
         text: runtime.referenceDraft?.text ?? "",
@@ -302,6 +313,7 @@ function Root({
             for (const request of activeRequestsRef.current) {
                 request.abort();
             }
+            pendingApproval.current?.decide(false);
         };
     }, []);
 
@@ -327,10 +339,15 @@ function Root({
 
     // updater 形式便于在「新建会话」与「更新流式历史 / pending 状态」间复用。
     const updateChat = useCallback(
-        (chatId: string, updater: (prev: Chat, exist: boolean) => Chat) => {
+        (
+            chatId: string,
+            updater: (prev: Chat, exist: boolean) => Chat,
+            create = false,
+        ) => {
             setChats((prev) => {
                 const index = prev.findIndex((chat) => chat.id === chatId);
                 if (index === -1) {
+                    if (!create) return prev;
                     return [
                         ...prev,
                         updater({ id: chatId, scope, history: [] }, false),
@@ -363,17 +380,48 @@ function Root({
                 scope,
                 history: [],
             };
+            const review: typeof requestApproval = (proposal, signal, call) => {
+                updates.flush();
+                void flushChatCheckpoints();
+                setCurrentChatId(prevChat.id);
+                return requestApproval(proposal, signal, call);
+            };
             const session = createSession({
                 history: prevChat.history,
                 contextState: prevChat.contextState,
                 ...runtime,
                 configId: selectedConfigId,
-                approveChange: (proposal, signal, call) => {
-                    updates.flush();
-                    void flushChatCheckpoints();
-                    setCurrentChatId(prevChat.id);
-                    return approveChange(proposal, signal, call);
+                playgroundFiles: {
+                    read: () => {
+                        const chat = useAssistantChatStore
+                            .getState()
+                            .chats.find(
+                                (item) =>
+                                    item.id === prevChat.id &&
+                                    item.scope === scope,
+                            );
+                        if (!chat?.pending)
+                            throw new Error("Conversation is closed");
+                        return chat.files ?? {};
+                    },
+                    update: (apply) => {
+                        setChats((chats) => {
+                            const chat = chats.find(
+                                (item) => item.id === prevChat.id,
+                            );
+                            if (!chat?.pending)
+                                throw new Error("Conversation is closed");
+                            const files = apply(chat.files ?? {});
+                            return files === chat.files
+                                ? chats
+                                : chats.map((item) =>
+                                      item === chat ? { ...chat, files } : item,
+                                  );
+                        });
+                    },
                 },
+                authorizeTool: review,
+                approveChange: review,
             });
             sendingRef.current = true;
             setInput(payload);
@@ -384,6 +432,7 @@ function Root({
             const yieldIfBusy = streamBudget();
             const updates = streamUpdates<TurnResult>((chunk) => {
                 updateChat(prevChat.id, (prev) => {
+                    if (!prev.pending) return prev;
                     const history = accepted
                         ? normalizeHistory(chunk.history, prev.history)
                         : prev.history;
@@ -399,9 +448,19 @@ function Root({
                         source: chunk,
                         target: history,
                     });
+                    const reply =
+                        chunk.status === "completed" ? message : undefined;
+                    const fileCheckpoints =
+                        reply?.id && prev.files
+                            ? {
+                                  ...prev.fileCheckpoints,
+                                  [reply.id]: prev.files,
+                              }
+                            : prev.fileCheckpoints;
                     return {
                         ...prev,
                         history,
+                        fileCheckpoints,
                         activeTool: chunk.activeTool,
                         activity: chunk.activity,
                         contextState: chunk.contextState,
@@ -484,20 +543,24 @@ function Root({
             };
             activeRequestsRef.current.add(request);
             try {
-                updateChat(prevChat.id, (prev, exist) => {
-                    if (!exist) {
-                        Promise.resolve().then(() =>
-                            setCurrentChatId(prevChat.id),
-                        );
-                    }
-                    return {
-                        ...prev,
-                        pending: true,
-                        awaitingResponse: true,
-                        turnStartedAt: turnStarted,
-                        abortController: request,
-                    };
-                });
+                updateChat(
+                    prevChat.id,
+                    (prev, exist) => {
+                        if (!exist) {
+                            Promise.resolve().then(() =>
+                                setCurrentChatId(prevChat.id),
+                            );
+                        }
+                        return {
+                            ...prev,
+                            pending: true,
+                            awaitingResponse: true,
+                            turnStartedAt: turnStarted,
+                            abortController: request,
+                        };
+                    },
+                    true,
+                );
 
                 const stream = await request;
                 for await (const chunk of stream) {
@@ -569,7 +632,8 @@ function Root({
             scope,
             selectedConfigId,
             updateChat,
-            approveChange,
+            setChats,
+            requestApproval,
         ],
     );
 
@@ -808,6 +872,13 @@ const Actions = memo(function Actions() {
                                         onClick={(event) => {
                                             event.preventDefault();
                                             event.stopPropagation();
+                                            useAssistantChatStore
+                                                .getState()
+                                                .chats.find(
+                                                    (item) =>
+                                                        item.id === chat.id,
+                                                )
+                                                ?.abortController?.abort();
                                             setChats((prev) =>
                                                 prev.filter(
                                                     (item) =>
@@ -1075,6 +1146,28 @@ const Composer = memo(function Composer({
     );
     const sendRef = useRef(send);
     sendRef.current = send;
+    const composingRef = useRef(false);
+    const suppressEnterRef = useRef(false);
+    const suppressEnterTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+        null,
+    );
+    const armSuppressEnter = useCallback(() => {
+        suppressEnterRef.current = true;
+        if (suppressEnterTimerRef.current !== null) {
+            clearTimeout(suppressEnterTimerRef.current);
+        }
+        suppressEnterTimerRef.current = setTimeout(() => {
+            suppressEnterRef.current = false;
+            suppressEnterTimerRef.current = null;
+        }, 0);
+    }, []);
+    useEffect(() => {
+        return () => {
+            if (suppressEnterTimerRef.current !== null) {
+                clearTimeout(suppressEnterTimerRef.current);
+            }
+        };
+    }, []);
     return (
         <div className="pointer-events-none relative w-full shrink-0 px-2 pt-(--chaty-composer-top) pb-3 flex flex-col gap-2">
             {fadeAtPresets && (
@@ -1182,16 +1275,40 @@ const Composer = memo(function Composer({
                             text: event.target.value,
                         }));
                     }}
+                    onCompositionStart={() => {
+                        composingRef.current = true;
+                    }}
+                    onCompositionEnd={() => {
+                        composingRef.current = false;
+                        armSuppressEnter();
+                    }}
                     onKeyDown={(event) => {
-                        if (event.nativeEvent.isComposing) {
+                        const decision = decideEnter({
+                            key: event.key,
+                            shiftKey: event.shiftKey,
+                            metaKey: event.metaKey,
+                            ctrlKey: event.ctrlKey,
+                            keyCode: event.nativeEvent.keyCode,
+                            isComposing: event.nativeEvent.isComposing,
+                            composing: composingRef.current,
+                            suppressEnter: suppressEnterRef.current,
+                        });
+                        if (decision === "ignore") {
+                            if (event.key === "Enter") {
+                                armSuppressEnter();
+                            }
                             return;
                         }
-                        if (
-                            event.key === "Enter" &&
-                            !event.shiftKey &&
-                            !event.metaKey &&
-                            !event.ctrlKey
-                        ) {
+                        if (decision === "suppress") {
+                            event.preventDefault();
+                            suppressEnterRef.current = false;
+                            if (suppressEnterTimerRef.current !== null) {
+                                clearTimeout(suppressEnterTimerRef.current);
+                                suppressEnterTimerRef.current = null;
+                            }
+                            return;
+                        }
+                        if (decision === "send") {
                             event.preventDefault();
                             if (canSend) {
                                 send();

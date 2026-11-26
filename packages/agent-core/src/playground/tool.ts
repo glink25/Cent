@@ -6,6 +6,7 @@ import {
     type ToolContext,
 } from "../assistant";
 import { parseWithSchema } from "../assistant/shared";
+import { callPlaygroundFiles } from "./files";
 import createSandBox from "./sandbox";
 
 function toErrorMessage(error: unknown): string {
@@ -35,7 +36,7 @@ export function createPlaygroundTool(
         describe:
             "Execute JavaScript module code in a sandboxed worker. Supports getFile(index) for uploaded files in this conversation. " +
             "Also exposes an async `tools` object: call any other available tool as a function, e.g. `await tools.listSkills({})`. " +
-            "Use this to compute data and invoke a tool with it in one snippet, instead of emitting the payload as a separate tool call.",
+            "Use this to compute data and pass it directly to tools. In Chaty conversations, fs provides async list, read, write, replace, and remove for persistent text files. Return only the data the conversation needs.",
         argSchema: z.object({
             code: z
                 .string()
@@ -78,7 +79,12 @@ export function createPlaygroundTool(
             // 宿主侧的工具调用：根据名称在本会话的工具列表中查找并执行其 handler，
             // 复用与普通工具调用一致的 schema 校验。这些调用不会写入对话历史，
             // 视为 playground 调用的内部行为（与 getFile 一样），避免污染上下文。
+            let live = true;
             const callHost = async (name: string, params: unknown) => {
+                ctx.signal?.throwIfAborted();
+                if (!live) throw new Error("Playground execution ended");
+                if (name === "@playground/files" && ctx.playgroundFiles)
+                    return callPlaygroundFiles(ctx.playgroundFiles, params);
                 if (name === "playground") {
                     throw new Error("playground cannot call itself.");
                 }
@@ -115,9 +121,20 @@ export function createPlaygroundTool(
                         `tools[${JSON.stringify(name)}] = (params) => globalThis.__CALL_HOST__(${JSON.stringify(name)}, params);`,
                 )
                 .join("\n");
+            const filePrelude = ctx.playgroundFiles
+                ? `const fileCall = (method, args) => globalThis.__CALL_HOST__("@playground/files", {method, ...args});
+const fs = Object.freeze({
+    list: () => fileCall("list"),
+    read: (path, range) => fileCall("read", {path, range}),
+    write: (path, text) => fileCall("write", {path, text}),
+    replace: (path, oldText, newText) => fileCall("replace", {path, oldText, newText}),
+    remove: (path) => fileCall("remove", {path})
+});
+`
+                : "";
             const prelude =
                 `const getFile = (index) => globalThis.__FROM_TRANSFER__.find(f => f.index === index)?.file;\n` +
-                `const tools = {};\n${toolsPrelude}\n`;
+                `const tools = {};\n${toolsPrelude}\n${filePrelude}`;
 
             const sandbox = createSandBox(
                 [],
@@ -145,6 +162,7 @@ export function createPlaygroundTool(
                     error: toErrorMessage(error),
                 };
             } finally {
+                live = false;
                 sandbox.destroy();
                 batch?.dispose();
             }

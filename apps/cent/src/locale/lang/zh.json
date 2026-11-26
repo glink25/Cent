@@ -1,4 +1,7 @@
 {
+  "assistant-reset-authorizations": "重置所有授权",
+  "assistant-authorizations-reset": "已重置本设备上当前账本的授权。",
+  "assistant-authorizations-reset-failed": "无法重置授权。",
   "icloud-download-pending": "正在从 iCloud 下载文件，完成后请重试同步。",
   "icloud-file-conflict": "iCloud 中有冲突的 Cent 文件版本，请先在 iCloud 云盘中处理冲突，再重新同步。",
   "folder-login": "选择文件夹",

@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import type { ChangeProposal, ChangeReceipt } from "../../assistant";
+import type {
+    ChangeProposal,
+    ChangeReceipt,
+    ToolAuthorizationRequest,
+} from "../../assistant";
 import { useI18n } from "./i18n";
 
 export function ChangeCard({
@@ -9,7 +13,7 @@ export function ChangeCard({
     undo,
     undoDisabled,
 }: {
-    proposal: ChangeProposal;
+    proposal: ChangeProposal | ToolAuthorizationRequest;
     receipt?: ChangeReceipt;
     decide?: (approved: boolean, remember?: boolean) => void;
     undo?: () => void | Promise<void>;
@@ -33,12 +37,12 @@ export function ChangeCard({
     const affected = receipt?.results.filter(
         (item) => item.status === "applied",
     ).length;
+    const website = "scope" in proposal ? proposal : undefined;
+    const diffs = "diffs" in proposal ? proposal.diffs : [];
     const counts = {
-        create: proposal.diffs.filter((diff) => diff.before === undefined)
-            .length,
-        delete: proposal.diffs.filter((diff) => diff.after === undefined)
-            .length,
-        update: proposal.diffs.filter(
+        create: diffs.filter((diff) => diff.before === undefined).length,
+        delete: diffs.filter((diff) => diff.after === undefined).length,
+        update: diffs.filter(
             (diff) => diff.before !== undefined && diff.after !== undefined,
         ).length,
     };
@@ -56,35 +60,51 @@ export function ChangeCard({
                 </div>
                 <div className="min-w-0 flex-1 space-y-1">
                     <div className="font-medium text-foreground">
-                        {t(pending ? "changePermission" : status)}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                        {proposal.diffs.length} {t("changeObjects")}
-                        {affected !== undefined && (
-                            <span className="ml-2">
-                                {affected} {t("changeApplied")}
-                            </span>
+                        {t(
+                            website
+                                ? "toolAuthorizationTitle"
+                                : pending
+                                  ? "changePermission"
+                                  : status,
                         )}
                     </div>
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                        {(["create", "update", "delete"] as const)
-                            .filter((action) => counts[action])
-                            .map((action) => (
-                                <span
-                                    key={action}
-                                    className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground"
-                                >
-                                    {t(
-                                        action === "create"
-                                            ? "changeCreate"
-                                            : action === "update"
-                                              ? "changeUpdate"
-                                              : "changeDelete",
-                                    )}{" "}
-                                    {counts[action]}
-                                </span>
-                            ))}
+                    <div className="text-xs text-muted-foreground">
+                        {website ? (
+                            <bdi dir="ltr" className="break-all">
+                                {website.scope.origin}
+                            </bdi>
+                        ) : (
+                            <>
+                                {diffs.length} {t("changeObjects")}
+                                {affected !== undefined && (
+                                    <span className="ml-2">
+                                        {affected} {t("changeApplied")}
+                                    </span>
+                                )}
+                            </>
+                        )}
                     </div>
+                    {!website && (
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                            {(["create", "update", "delete"] as const)
+                                .filter((action) => counts[action])
+                                .map((action) => (
+                                    <span
+                                        key={action}
+                                        className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground"
+                                    >
+                                        {t(
+                                            action === "create"
+                                                ? "changeCreate"
+                                                : action === "update"
+                                                  ? "changeUpdate"
+                                                  : "changeDelete",
+                                        )}{" "}
+                                        {counts[action]}
+                                    </span>
+                                ))}
+                        </div>
+                    )}
                 </div>
                 {undo && <UndoButton undo={undo} disabled={undoDisabled} />}
             </div>
@@ -94,13 +114,33 @@ export function ChangeCard({
                         aria-hidden="true"
                         className="icon-[mdi--chevron-right] size-4 transition-transform group-open:rotate-90"
                     />
-                    {t("changeDetails")}
+                    {t(website ? "toolAuthorizationDetails" : "changeDetails")}
                 </summary>
                 <div className="max-h-60 overflow-auto border-t bg-muted/40 px-4 py-3 break-all whitespace-pre-wrap text-xs font-mono">
-                    <div className="mb-3 font-sans text-muted-foreground">
-                        {proposal.title}
-                    </div>
-                    {proposal.diffs.map(({ target, before, after }) => (
+                    {website ? (
+                        <div dir="ltr" className="space-y-2">
+                            <div>
+                                {website.details.method} {website.details.url}
+                            </div>
+                            {website.details.contentType && (
+                                <div>
+                                    Content-Type: {website.details.contentType}
+                                </div>
+                            )}
+                            {website.details.body !== undefined && (
+                                <pre className="whitespace-pre-wrap break-all border-t pt-2">
+                                    {website.details.body}
+                                </pre>
+                            )}
+                        </div>
+                    ) : (
+                        "title" in proposal && (
+                            <div className="mb-3 font-sans text-muted-foreground">
+                                {proposal.title}
+                            </div>
+                        )
+                    )}
+                    {diffs.map(({ target, before, after }) => (
                         <div key={target} className="my-2">
                             {target}
                             {before !== undefined && (

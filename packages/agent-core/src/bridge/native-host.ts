@@ -168,6 +168,39 @@ function createNativeBridge(transport: NativeTransport): HostBridge {
                         type: "getExtraPrompt",
                     }));
             }
+            host.toolAuthorization = init.toolAuthorizationSupport
+                ? (action, signal) => {
+                      const callId = createRequestId();
+                      const hidden = new AbortController();
+                      const cancel = () => hidden.abort();
+                      const combined = signal
+                          ? AbortSignal.any([signal, hidden.signal])
+                          : hidden.signal;
+                      return (async () => {
+                          window.addEventListener(
+                              "chaty:assistant-hidden",
+                              cancel,
+                          );
+                          try {
+                              return await cancelableNativePromise(
+                                  transport,
+                                  callId,
+                                  (id) => ({
+                                      id,
+                                      type: "toolAuthorization",
+                                      payload: { ...action, callId },
+                                  }),
+                                  combined,
+                              );
+                          } finally {
+                              window.removeEventListener(
+                                  "chaty:assistant-hidden",
+                                  cancel,
+                              );
+                          }
+                      })();
+                  }
+                : undefined;
             if (init.changeSupport) {
                 host.changeControl = (decision, signal) => {
                     const callId = createRequestId();

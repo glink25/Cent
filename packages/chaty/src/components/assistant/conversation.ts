@@ -12,7 +12,17 @@ export function branchConversation(
     if (index < 0) return;
     const history = source.history.slice(0, index + 1);
     const ids = new Set(history.map((message) => message.id));
+    const files = reply.id ? source.fileCheckpoints?.[reply.id] : undefined;
+    const fileCheckpoints =
+        source.fileCheckpoints &&
+        Object.fromEntries(
+            Object.entries(source.fileCheckpoints).filter(([id]) =>
+                ids.has(id),
+            ),
+        );
     return {
+        ...(files && { files }),
+        ...(fileCheckpoints && { fileCheckpoints }),
         id,
         scope: source.scope,
         history,

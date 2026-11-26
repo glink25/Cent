@@ -5,7 +5,7 @@ import {
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/shallow";
-import { listChangeGrants, revokeChangeGrant } from "@/agent/changes";
+import { resetAssistantAuthorizations } from "@/agent/assistant-grants";
 import { assistantScope } from "@/components/assistant/launcher";
 import PopupLayout from "@/layouts/popup-layout";
 import type { AIConfig, JSONObject } from "@/ledger/extra-type";
@@ -815,7 +815,9 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                         stored={extraPrompt ?? ""}
                     />
                 )}
-                <AgentGrants />
+                {bookId && userId && (
+                    <ResetAuthorizations scope={assistantScope()} />
+                )}
             </div>
             <ConfigFormProvider />
         </PopupLayout>
@@ -853,23 +855,24 @@ export default function AssistantSettingsItem() {
     );
 }
 
-function AgentGrants() {
+function ResetAuthorizations({ scope }: { scope: string }) {
     const t = useIntl();
-    const [grants, setGrants] = useState(() => listChangeGrants());
-    const current = grants.filter((grant) => grant.scope === assistantScope());
-    if (!current.length) return null;
     return (
-        <section className="px-4 py-2 flex items-center justify-between gap-3">
-            <div className="text-sm font-medium">{t("agent-grants")}</div>
+        <section className="px-4 py-2">
             <Button
                 size="sm"
-                variant="ghost"
+                variant="outline"
                 onClick={() => {
-                    current.forEach((grant) => revokeChangeGrant(grant.key));
-                    setGrants(listChangeGrants());
+                    if (assistantScope() !== scope) return;
+                    try {
+                        resetAssistantAuthorizations(scope);
+                        toast.success(t("assistant-authorizations-reset"));
+                    } catch {
+                        toast.error(t("assistant-authorizations-reset-failed"));
+                    }
                 }}
             >
-                {t("agent-revoke-grant")}
+                {t("assistant-reset-authorizations")}
             </Button>
         </section>
     );

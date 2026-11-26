@@ -1,3 +1,4 @@
+import type { PlaygroundFiles } from "@glink25/agent-core/playground/files";
 import type { SetStateAction } from "react";
 import { create, type StateCreator } from "zustand";
 import { type PersistOptions, persist } from "zustand/middleware";
@@ -16,6 +17,8 @@ export type Chat = {
     id: string;
     scope: string | null;
     isBranch?: true;
+    files?: PlaygroundFiles;
+    fileCheckpoints?: Readonly<Record<string, PlaygroundFiles>>;
     history: History;
     contextState?: ContextState;
     contextEvents?: ContextEvent[];
@@ -45,6 +48,8 @@ type PersistedAssistantChatState = {
         | "history"
         | "contextState"
         | "contextEvents"
+        | "files"
+        | "fileCheckpoints"
     >[];
 };
 
@@ -69,7 +74,16 @@ function persistedSnapshot(
         previousSnapshot.chats.map((chat) => [chat.id, chat]),
     );
     const chats = state.chats.map(
-        ({ id, scope, isBranch, history, contextState, contextEvents }) => {
+        ({
+            id,
+            scope,
+            isBranch,
+            history,
+            contextState,
+            contextEvents,
+            files,
+            fileCheckpoints,
+        }) => {
             const old = previous.get(id);
             if (
                 old &&
@@ -77,7 +91,9 @@ function persistedSnapshot(
                 old.isBranch === isBranch &&
                 old.history === history &&
                 old.contextState === contextState &&
-                old.contextEvents === contextEvents
+                old.contextEvents === contextEvents &&
+                old.files === files &&
+                old.fileCheckpoints === fileCheckpoints
             )
                 return old;
             return {
@@ -87,6 +103,8 @@ function persistedSnapshot(
                 history,
                 contextState,
                 contextEvents,
+                files,
+                fileCheckpoints,
             };
         },
     );
@@ -133,12 +151,15 @@ export const useAssistantChatStore = create<AssistantChatState>()(
                             const old = previous.get(chat.id);
                             return (
                                 !old ||
+                                old.files !== chat.files ||
                                 (!chat.pending &&
                                     (old.history !== chat.history ||
                                         old.contextState !==
                                             chat.contextState ||
                                         old.contextEvents !==
-                                            chat.contextEvents))
+                                            chat.contextEvents ||
+                                        old.fileCheckpoints !==
+                                            chat.fileCheckpoints))
                             );
                         });
                     return { chats };

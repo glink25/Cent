@@ -35,6 +35,7 @@ import {
 } from "./tooling";
 import type {
     ApproveChange,
+    AuthorizeTool,
     ContextEvent,
     ContextMetrics,
     ContextPolicy,
@@ -67,6 +68,8 @@ export function createSession({
     contextState,
     resolveReferences,
     approveChange,
+    authorizeTool,
+    playgroundFiles,
 }: {
     history?: History;
     provider: Provider;
@@ -79,6 +82,8 @@ export function createSession({
     contextState?: ContextState;
     resolveReferences?: ReferenceResolver;
     approveChange?: ApproveChange;
+    authorizeTool?: AuthorizeTool;
+    playgroundFiles?: ToolContext["playgroundFiles"];
 }): Session {
     const incomingHistory = ensureMessageIds(cloneHistory(history));
     const baseTools: Tool<any, any>[] = [...tools];
@@ -213,10 +218,14 @@ export function createSession({
             approveChange:
                 approveChange &&
                 ((proposal, signal) => approveChange(proposal, signal, call)),
+            authorizeTool:
+                authorizeTool &&
+                ((proposal, signal) => authorizeTool(proposal, signal, call)),
             tools: runtimeTools,
             signal: controller.signal,
             surface: "native",
             resources,
+            playgroundFiles,
         });
         async function* run(): AsyncGenerator<TurnResult> {
             let protocolBackoff = 0;

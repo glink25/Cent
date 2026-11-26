@@ -4,6 +4,7 @@ import type {
     History,
     ProviderRequestChunk,
     ReferenceResolver,
+    ToolAuthorizationRequest,
 } from "../assistant";
 import type {
     AIChatConfig,
@@ -24,6 +25,7 @@ export type {
 export type AIChatToolDefinition = {
     /** Plain user-facing name; omitted from model tool definitions. */
     label?: string;
+    requiresAuthorization?: boolean;
     exposure?: { native: boolean; code: boolean };
     effect?: "read" | "write" | "ui";
     endsTurn?: boolean;
@@ -65,6 +67,7 @@ export type AIChatInitPayload = {
     bridgeVersion?: number;
     referenceSupport?: boolean;
     changeSupport?: boolean;
+    toolAuthorizationSupport?: boolean;
     extraPromptSupport?: boolean;
     clipboardSupport?: boolean;
     writeBatchSupport?: boolean;
@@ -125,6 +128,10 @@ export type HostBridge = {
         batchId?: string;
         signal?: AbortSignal;
     }) => Promise<unknown>;
+    toolAuthorization?: (
+        action: ToolAuthorizationAction,
+        signal?: AbortSignal,
+    ) => Promise<unknown>;
     resolveReferences?: ReferenceResolver;
     saveReferenceDraft?: (draft: ReferenceDraft) => void;
     subscribeReferenceDeliveries?: ReferenceDeliverySubscriber;
@@ -152,6 +159,20 @@ export type ChangeControl =
       }
     | { operation: "undo"; changeId: string };
 
+export type ToolAuthorizationAction =
+    | { operation: "prepare"; name: string; params: unknown }
+    | {
+          operation: "decide";
+          authorizationId: string;
+          approved: boolean;
+          remember: boolean;
+      };
+
+export type ToolAuthorizationProposal = {
+    kind: "toolAuthorization";
+    request: ToolAuthorizationRequest;
+};
+
 export type NativeBridgeMessage =
     | { id: string; type: "getInit" | "getExtraPrompt" }
     | { id: string; type: "copyText"; payload: { text: string } }
@@ -168,6 +189,11 @@ export type NativeBridgeMessage =
           id: string;
           type: "changeControl";
           payload: ChangeControl & { callId: string };
+      }
+    | {
+          id: string;
+          type: "toolAuthorization";
+          payload: ToolAuthorizationAction & { callId: string };
       }
     | { id: string; type: "referencesReady" }
     | {

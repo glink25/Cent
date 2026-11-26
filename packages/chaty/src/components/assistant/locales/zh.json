@@ -1,4 +1,6 @@
 {
+	"toolAuthorizationDetails": "查看授权详情",
+	"toolAuthorizationTitle": "允许访问网站？",
 	"changePermission": "允许更改数据？",
 	"changeCreate": "新增",
 	"changeUpdate": "修改",
@@ -34,7 +36,7 @@
 	"changeResult": "变更结果",
 	"changePending": "待确认",
 	"changeDetails": "查看差异",
-	"changeRemember": "在当前账本对此类操作不再提示",
+	"changeRemember": "后续无需确认",
 	"changeReject": "拒绝",
 	"changeApprove": "确认",
 	"changeUndo": "撤回",

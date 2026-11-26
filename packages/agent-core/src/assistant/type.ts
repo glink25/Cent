@@ -26,6 +26,24 @@ export type ApproveChange = (
     call?: { id: string; name: string },
 ) => Promise<{ approved: boolean; remember?: boolean }>;
 
+export type ToolAuthorizationRequest = {
+    id: string;
+    scope: { type: "website"; origin: string };
+    details: {
+        url: string;
+        method: string;
+        contentType?: string;
+        body?: string;
+    };
+    canRemember: boolean;
+};
+
+export type AuthorizeTool = (
+    request: ToolAuthorizationRequest,
+    signal?: AbortSignal,
+    call?: { id: string; name: string },
+) => Promise<{ approved: boolean; remember?: boolean }>;
+
 import type { ZodType, z } from "zod";
 
 export type ConversationReference = {
@@ -228,7 +246,9 @@ export type ToolPromptDefinition = string;
 export type ToolExposure = { code: boolean; native: boolean };
 
 export type ToolContext = {
+    playgroundFiles?: import("../playground/files").PlaygroundFileStore;
     approveChange?: ApproveChange;
+    authorizeTool?: AuthorizeTool;
     source?: "webmcp";
     resources?: Map<string, unknown>;
     signal?: AbortSignal;

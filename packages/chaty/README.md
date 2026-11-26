@@ -385,4 +385,8 @@ Set `runtime.copyText` in a direct React embed or `HostBridge.copyText` in a sta
 
 `/playground` exposes `createPlaygroundTool` and `PlaygroundSkill`. The host must authorize actual RPC operations; tool exposure is not an authorization boundary. Native tools returning `{kind: "toolImage", mimeType, data}` can deliver supported Base64 images to the Provider without keeping bytes in persisted tool observations.
 
+Inside a `MainAssistant` conversation, Playground also provides asynchronous `fs.list()`, `fs.read(path, range?)`, `fs.write(path, text)`, `fs.replace(path, oldText, newText)`, and `fs.remove(path)`. Files use relative paths and UTF-8 text, with up to 64 files, 5 MiB per file, and 10 MiB of current files per conversation. Reads accept zero-based UTF-16 offsets with an exclusive end. Replace requires one exact match. File APIs are separate from uploaded `File` objects accessed with `getFile()`.
+
+Drafts are saved with local conversations; branching uses the file snapshot associated with the chosen reply. To keep source out of tool observations, pass a draft directly from `await fs.read(path)` to a host tool inside Playground, then return only the receipt. Hosts using the headless session may supply their own `PlaygroundFileStore`.
+
 The `prepack` script rebuilds the library. Validate the tarball in a separate consumer before publishing. Tio integration currently uses local link; npm publication remains gated on explicit integration acceptance. The historical `scripts/publish.mjs` manages Git tags, and does not publish this npm package.

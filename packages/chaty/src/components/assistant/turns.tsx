@@ -8,6 +8,7 @@ import type {
     Message,
     RunActivity,
     Tool,
+    ToolAuthorizationRequest,
 } from "../../assistant";
 import { ChangeCard, TurnChanges } from "./change-card";
 import { Peek, PreviewAnswer, PreviewStatus, Thought, ToolGroup } from "./flow";
@@ -15,8 +16,8 @@ import { useI18n } from "./i18n";
 import { MessageBubble, ReplyActions } from "./message";
 import { projectFlow, turnPreview, turnReceipts } from "./turn-model";
 
-type PendingApproval = {
-    proposal: ChangeProposal;
+export type PendingApproval = {
+    proposal: ChangeProposal | ToolAuthorizationRequest;
     call?: { id: string; name: string };
     decide: (approved: boolean, remember?: boolean) => void;
 };

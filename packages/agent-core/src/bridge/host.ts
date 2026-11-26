@@ -9,6 +9,7 @@ import type {
 } from "../assistant";
 import { createAgentId as createRequestId } from "../assistant/id";
 import { withAbort } from "../assistant/shared";
+import { finishToolAuthorization } from "../assistant/tool-authorization";
 import { createTool } from "../assistant/tooling";
 import { ledgerToolContracts, ledgerToolDefinitions } from "../ledger-tools";
 import { getAndroidNativeHost, getIosNativeHost } from "./native-host";
@@ -19,6 +20,7 @@ import type {
     AIChatToolDefinition,
     HostBridge,
     HostRequestHandle,
+    ToolAuthorizationProposal,
 } from "./types";
 
 export type { RuntimeConfig };
@@ -33,7 +35,11 @@ const hostToolDefinitions = new WeakMap<Tool, AIChatToolDefinition>();
 function serializeTool(tool: Tool): AIChatToolDefinition {
     const hostDef = hostToolDefinitions.get(tool);
     if (hostDef) {
-        const { label: _label, ...definition } = hostDef;
+        const {
+            label: _label,
+            requiresAuthorization: _requiresAuthorization,
+            ...definition
+        } = hostDef;
         return definition;
     }
     return {
@@ -202,8 +208,12 @@ export function createHostProvider(
     };
 }
 
+function requiresAuthorization(tool: AIChatToolDefinition) {
+    return tool.requiresAuthorization === true || tool.name === "nativeFetch";
+}
+
 export function createHostTool(
-    host: Pick<HostBridge, "callTool" | "changeControl">,
+    host: Pick<HostBridge, "callTool" | "changeControl" | "toolAuthorization">,
     tool: AIChatInitPayload["tools"][number],
 ): Tool {
     const argDescription = tool.argJsonSchema
@@ -213,7 +223,9 @@ export function createHostTool(
         ? ledgerToolContracts[tool.name as keyof typeof ledgerToolContracts]
         : undefined;
     const runtimeTool: Tool = {
-        exposure: tool.exposure ?? { native: true, code: false },
+        exposure: requiresAuthorization(tool)
+            ? { native: true, code: false }
+            : (tool.exposure ?? { native: true, code: false }),
         effect: tool.effect ?? "write",
         endsTurn: tool.endsTurn,
         name: tool.name,
@@ -224,6 +236,33 @@ export function createHostTool(
             contract?.returnSchema ??
             z.unknown().describe(JSON.stringify(tool.returnJsonSchema)),
         handler: async (params, ctx) => {
+            if (requiresAuthorization(tool)) {
+                const control = host.toolAuthorization;
+                if (!control || !ctx.authorizeTool || ctx.surface === "code")
+                    throw new Error("Tool authorization is unavailable");
+                ctx.signal?.throwIfAborted();
+                const value = await control(
+                    { operation: "prepare", name: tool.name, params },
+                    ctx.signal,
+                );
+                const proposal = value as ToolAuthorizationProposal | undefined;
+                if (proposal?.kind !== "toolAuthorization") return value;
+                return finishToolAuthorization(
+                    proposal.request,
+                    (authorizationId, approved, remember, signal) =>
+                        control(
+                            {
+                                operation: "decide",
+                                authorizationId,
+                                approved,
+                                remember,
+                            },
+                            signal,
+                        ),
+                    ctx.authorizeTool,
+                    ctx.signal,
+                );
+            }
             const callId = createRequestId();
             const value = await host.callTool({
                 callId,
@@ -387,7 +426,13 @@ export function adaptHostRuntime(
             }),
             DiscoverTools as Tool,
             ...init.tools
-                .filter((tool) => tool.name !== "discover")
+                .filter(
+                    (tool) =>
+                        tool.name !== "discover" &&
+                        (!requiresAuthorization(tool) ||
+                            (init.toolAuthorizationSupport &&
+                                host.toolAuthorization)),
+                )
                 .map((tool) =>
                     createHostTool(host, useSharedLedgerContract(tool)),
                 ),
